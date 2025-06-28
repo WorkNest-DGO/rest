@@ -1,6 +1,6 @@
 async function cargarHistorial() {
     try {
-        const resp = await fetch('../../../api/ventas/listar_ventas.php');
+        const resp = await fetch('../../api/ventas/listar_ventas.php');
         const data = await resp.json();
         if (data.success) {
             const tbody = document.querySelector('#historial tbody');
@@ -35,7 +35,7 @@ let catalogo = [];
 
 async function cargarProductos() {
     try {
-        const resp = await fetch('../../../api/inventario/listar_productos.php');
+        const resp = await fetch('../../api/inventario/listar_productos.php');
         const data = await resp.json();
         if (data.success) {
             catalogo = data.resultado;
@@ -98,7 +98,7 @@ async function registrarVenta() {
     const payload = { mesa_id, usuario_id, productos };
 
     try {
-        const resp = await fetch('../../../api/ventas/crear_venta.php', {
+        const resp = await fetch('../../api/ventas/crear_venta.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -121,7 +121,7 @@ async function registrarVenta() {
 async function cancelarVenta(id) {
     if (!confirm('¿Seguro de cancelar la venta?')) return;
     try {
-        const resp = await fetch('../../../api/ventas/cancelar_venta.php', {
+        const resp = await fetch('../../api/ventas/cancelar_venta.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ venta_id: parseInt(id) })
