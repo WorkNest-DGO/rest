@@ -62,3 +62,33 @@ CREATE TABLE corte_caja (
     total DECIMAL(10,2),
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
+
+
+
+--inserts de prueba 
+INSERT INTO usuarios (nombre, usuario, contrasena, rol) VALUES
+('Administrador', 'admin', 'admin123', 'admin'),
+('Carlos Mesero', 'carlos', 'carlos123', 'mesero'),
+('Laura Cajera', 'laura', 'laura123', 'cajero');
+
+INSERT INTO mesas (nombre, estado, capacidad) VALUES
+('Mesa 1', 'libre', 4),
+('Mesa 2', 'libre', 4),
+('Mesa 3', 'ocupada', 6);
+
+INSERT INTO productos (nombre, precio, descripcion, existencia) VALUES
+('Tacos al Pastor', 45.00, '3 piezas con piña', 50),
+('Hamburguesa Especial', 85.00, 'Incluye papas y bebida', 30),
+('Ensalada César', 60.00, 'Con pollo y aderezo', 20),
+('Refresco 600ml', 20.00, 'Refresco embotellado', 100);
+
+-- Venta simple con productos
+INSERT INTO ventas (fecha, mesa_id, usuario_id, total, estatus)
+VALUES (NOW(), 1, 2, 150.00, 'cerrada');
+
+SET @venta_id = LAST_INSERT_ID();
+
+INSERT INTO venta_detalles (venta_id, producto_id, cantidad, precio_unitario)
+VALUES
+(@venta_id, 1, 2, 45.00),
+(@venta_id, 4, 3, 20.00);
