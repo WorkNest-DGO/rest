@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket de Venta</title>
+    <style>
+        body {
+            width: 58mm;
+            margin: 0 auto;
+            font-family: Courier, monospace;
+            font-size: 12px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+        }
+        #productos td {
+            text-align: left;
+        }
+        #productos td:last-child {
+            text-align: right;
+        }
+        #totalVenta {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        @media print {
+            #btnImprimir {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2 id="nombreRestaurante">Mi Restaurante</h2>
+    <div id="fechaHora"></div>
+    <div>Número de venta: <span id="ventaId"></span></div>
+    <table id="productos">
+        <tbody></tbody>
+    </table>
+    <div id="totalVenta"></div>
+    <p>Gracias por su compra</p>
+    <button id="btnImprimir" onclick="window.print()">Imprimir</button>
+
+    <script>
+        function llenarTicket(data) {
+            document.getElementById('ventaId').textContent = data.venta_id;
+            document.getElementById('fechaHora').textContent = data.fecha;
+            if (data.restaurante) {
+                document.getElementById('nombreRestaurante').textContent = data.restaurante;
+            }
+            const tbody = document.querySelector('#productos tbody');
+            tbody.innerHTML = '';
+            data.productos.forEach(p => {
+                const tr = document.createElement('tr');
+                const subtotal = p.cantidad * p.precio_unitario;
+                tr.innerHTML = `<td>${p.nombre}</td><td>${p.cantidad} x ${p.precio_unitario} = ${subtotal}</td>`;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('totalVenta').textContent = 'Total: $' + data.total;
+        }
+
+        // Ejemplo de uso
+        const datos = {
+            venta_id: 123,
+            fecha: "2024-06-28 12:34",
+            productos: [
+                { nombre: "Taco al Pastor", cantidad: 2, precio_unitario: 45 },
+                { nombre: "Refresco", cantidad: 1, precio_unitario: 20 }
+            ],
+            total: 110
+        };
+        llenarTicket(datos);
+    </script>
+</body>
+</html>
