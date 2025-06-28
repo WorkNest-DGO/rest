@@ -15,12 +15,16 @@ async function cargarHistorial() {
                     <td>${v.fecha}</td>
                     <td>${v.total}</td>
                     <td>${v.estatus}</td>
+                    <td><button class="detalles" data-id="${v.id}">Ver detalles</button></td>
                     <td>${accion}</td>
                 `;
                 tbody.appendChild(row);
             });
             tbody.querySelectorAll('button.cancelar').forEach(btn => {
                 btn.addEventListener('click', () => cancelarVenta(btn.dataset.id));
+            });
+            tbody.querySelectorAll('button.detalles').forEach(btn => {
+                btn.addEventListener('click', () => verDetalles(btn.dataset.id));
             });
         } else {
             alert(data.mensaje);
@@ -32,6 +36,28 @@ async function cargarHistorial() {
 }
 
 let catalogo = [];
+
+async function cargarMeseros() {
+    try {
+        const resp = await fetch('../../api/usuarios/listar_meseros.php');
+        const data = await resp.json();
+        if (data.success) {
+            const select = document.getElementById('usuario_id');
+            select.innerHTML = '<option value="">--Selecciona--</option>';
+            data.resultado.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = u.nombre;
+                select.appendChild(opt);
+            });
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al cargar meseros');
+    }
+}
 
 async function cargarProductos() {
     try {
@@ -77,6 +103,25 @@ function actualizarPrecio(select) {
     } else {
         precioInput.value = '';
     }
+}
+
+function agregarFilaProducto() {
+    const tbody = document.querySelector('#productos tbody');
+    const base = tbody.querySelector('tr');
+    const nueva = base.cloneNode(true);
+    nueva.querySelectorAll('input').forEach(inp => inp.value = '');
+    tbody.appendChild(nueva);
+    const select = nueva.querySelector('.producto');
+    select.innerHTML = '<option value="">--Selecciona--</option>';
+    catalogo.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nombre;
+        opt.dataset.precio = p.precio;
+        select.appendChild(opt);
+    });
+    select.addEventListener('change', () => actualizarPrecio(select));
+    nueva.querySelector('.cantidad').addEventListener('input', () => actualizarPrecio(select));
 }
 
 async function registrarVenta() {
@@ -139,8 +184,39 @@ async function cancelarVenta(id) {
     }
 }
 
+async function verDetalles(id) {
+    try {
+        const resp = await fetch('../../api/ventas/detalle_venta.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ venta_id: parseInt(id) })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            const contenedor = document.getElementById('modal-detalles');
+            let html = '<h3>Detalle de venta</h3><ul>';
+            data.productos.forEach(p => {
+                html += `<li>${p.nombre} - ${p.cantidad} x ${p.precio_unitario} = ${p.subtotal}</li>`;
+            });
+            html += '</ul><button id="cerrarDetalle">Cerrar</button>';
+            contenedor.innerHTML = html;
+            contenedor.style.display = 'block';
+            document.getElementById('cerrarDetalle').addEventListener('click', () => {
+                contenedor.style.display = 'none';
+            });
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al obtener detalles');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    cargarMeseros();
     cargarProductos();
     cargarHistorial();
     document.getElementById('registrarVenta').addEventListener('click', registrarVenta);
+    document.getElementById('agregarProducto').addEventListener('click', agregarFilaProducto);
 });
