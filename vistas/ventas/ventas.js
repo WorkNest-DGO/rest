@@ -78,10 +78,8 @@ async function cargarProductos() {
                 select.addEventListener('change', () => actualizarPrecio(select));
             });
             document.querySelectorAll('#productos .cantidad').forEach(inp => {
-                inp.addEventListener('input', () => {
-                    const select = inp.closest('tr').querySelector('.producto');
-                    actualizarPrecio(select);
-                });
+                const select = inp.closest('tr').querySelector('.producto');
+                inp.addEventListener('input', () => manejarCantidad(inp, select));
             });
         } else {
             alert(data.mensaje);
@@ -105,6 +103,20 @@ function actualizarPrecio(select) {
     }
 }
 
+function manejarCantidad(input, select) {
+    let val = parseInt(input.value) || 0;
+    if (val === 0) {
+        const quitar = confirm('Cantidad es 0. ¿Quitar producto?');
+        if (quitar) {
+            input.closest('tr').remove();
+            return;
+        }
+        val = 1;
+        input.value = 1;
+    }
+    actualizarPrecio(select || input.closest('tr').querySelector('.producto'));
+}
+
 function agregarFilaProducto() {
     const tbody = document.querySelector('#productos tbody');
     const base = tbody.querySelector('tr');
@@ -121,7 +133,8 @@ function agregarFilaProducto() {
         select.appendChild(opt);
     });
     select.addEventListener('change', () => actualizarPrecio(select));
-    nueva.querySelector('.cantidad').addEventListener('input', () => actualizarPrecio(select));
+    const cantidadInput = nueva.querySelector('.cantidad');
+    cantidadInput.addEventListener('input', () => manejarCantidad(cantidadInput, select));
 }
 
 async function registrarVenta() {
@@ -194,7 +207,9 @@ async function verDetalles(id) {
         const data = await resp.json();
         if (data.success) {
             const contenedor = document.getElementById('modal-detalles');
-            let html = '<h3>Detalle de venta</h3><ul>';
+            let html = `<h3>Detalle de venta</h3>
+                        <p>Mesa: ${data.mesa} <br>Mesero: ${data.mesero}</p>
+                        <ul>`;
             data.productos.forEach(p => {
                 html += `<li>${p.nombre} - ${p.cantidad} x ${p.precio_unitario} = ${p.subtotal}</li>`;
             });

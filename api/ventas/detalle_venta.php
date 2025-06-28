@@ -14,7 +14,29 @@ if (!$input || !isset($input['venta_id'])) {
     exit;
 }
 
+
 $venta_id = (int)$input['venta_id'];
+
+// Obtener mesa y mesero relacionados con la venta
+$info = $conn->prepare(
+    'SELECT m.nombre AS mesa, u.nombre AS mesero
+     FROM ventas v
+     JOIN mesas m ON v.mesa_id = m.id
+     JOIN usuarios u ON v.usuario_id = u.id
+     WHERE v.id = ?'
+);
+if (!$info) {
+    echo json_encode(['success' => false, 'mensaje' => 'Error al preparar consulta']);
+    exit;
+}
+$info->bind_param('i', $venta_id);
+if (!$info->execute()) {
+    echo json_encode(['success' => false, 'mensaje' => 'Error al ejecutar consulta']);
+    $info->close();
+    exit;
+}
+$datosVenta = $info->get_result()->fetch_assoc();
+$info->close();
 
 $stmt = $conn->prepare(
     'SELECT p.nombre, vd.cantidad, vd.precio_unitario, ' .
@@ -42,4 +64,9 @@ while ($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
-echo json_encode(['success' => true, 'productos' => $productos]);
+echo json_encode([
+    'success'   => true,
+    'mesa'      => $datosVenta['mesa'] ?? '',
+    'mesero'    => $datosVenta['mesero'] ?? '',
+    'productos' => $productos
+]);
