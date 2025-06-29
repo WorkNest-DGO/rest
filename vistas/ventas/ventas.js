@@ -126,8 +126,9 @@ function actualizarPrecio(select) {
     const row = select.closest('tr');
     const precioInput = row.querySelector('.precio');
     const cantidadInput = row.querySelector('.cantidad');
-    const productoId = parseInt(select.value);
-    const producto = productos.find(p => parseInt(p.id) === productoId);
+    const productoId = select.value;
+    const producto = productos.find(p => parseInt(p.id) === parseInt(productoId));
+    console.log(productoId, producto);
     if (producto) {
         precioInput.value = parseFloat(producto.precio).toFixed(2);
         if (!cantidadInput.value || parseInt(cantidadInput.value) === 0) {
@@ -275,7 +276,7 @@ async function verDetalles(id) {
                 const venta = ventasData[id] || {};
                 const total = venta.total || info.productos.reduce((s, p) => s + parseFloat(p.subtotal), 0);
                 const payload = {
-                    venta_id: id,
+                    venta_id: parseInt(id),
                     fecha: venta.fecha || '',
                     productos: info.productos,
                     total
