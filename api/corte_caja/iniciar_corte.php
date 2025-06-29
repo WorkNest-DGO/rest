@@ -37,5 +37,15 @@ if (!$stmt->execute()) {
 $corte_id = $stmt->insert_id;
 $stmt->close();
 
+// Lógica reemplazada por base de datos: ver bd.sql (Logs)
+$log = $conn->prepare('INSERT INTO logs_accion (usuario_id, modulo, accion, referencia_id) VALUES (?, ?, ?, ?)');
+if ($log) {
+    $mod = 'corte_caja';
+    $accion = 'Creación de corte';
+    $log->bind_param('issi', $usuario_id, $mod, $accion, $corte_id);
+    $log->execute();
+    $log->close();
+}
+
 success(['corte_id' => $corte_id]);
 ?>

@@ -70,5 +70,16 @@ foreach ($productos as $p) {
 }
 $detalle->close();
 
+// Lógica reemplazada por base de datos: ver bd.sql (Logs)
+// Registrar acción en logs
+$log = $conn->prepare('INSERT INTO logs_accion (usuario_id, modulo, accion, referencia_id) VALUES (?, ?, ?, ?)');
+if ($log) {
+    $mod = 'ventas';
+    $accion = 'Alta de venta';
+    $log->bind_param('issi', $usuario_id, $mod, $accion, $venta_id);
+    $log->execute();
+    $log->close();
+}
+
 success(['venta_id' => $venta_id]);
 

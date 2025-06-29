@@ -46,84 +46,29 @@ if (!isset($transiciones[$actual]) || $transiciones[$actual] !== $nuevo_estado) 
     error('Transición no permitida');
 }
 
-$warnings = [];
-$descargados = (int) $detalle['insumos_descargados'];
-
-if ($nuevo_estado === 'listo' && $descargados === 0) {
-    $conn->begin_transaction();
-    try {
-        $producto_id = (int) $detalle['producto_id'];
-        $cantidad    = (int) $detalle['cantidad'];
-
-        $receta = $conn->prepare('SELECT insumo_id, cantidad FROM recetas WHERE producto_id = ?');
-        if (!$receta) {
-            throw new Exception('Error al preparar receta: ' . $conn->error);
-        }
-        $receta->bind_param('i', $producto_id);
-        if (!$receta->execute()) {
-            $receta->close();
-            throw new Exception('Error al ejecutar receta: ' . $receta->error);
-        }
-        $res = $receta->get_result();
-        while ($row = $res->fetch_assoc()) {
-            $insumo_id = (int) $row['insumo_id'];
-            $total     = (float) $row['cantidad'] * $cantidad;
-
-            $check = $conn->prepare('SELECT existencia FROM insumos WHERE id = ?');
-            if ($check) {
-                $check->bind_param('i', $insumo_id);
-                $check->execute();
-                $ex = $check->get_result()->fetch_assoc();
-                if ($ex && (float) $ex['existencia'] < $total) {
-                    $warnings[] = "Insumo {$insumo_id} insuficiente";
-                }
-                $check->close();
-            }
-
-            $updIn = $conn->prepare('UPDATE insumos SET existencia = existencia - ? WHERE id = ?');
-            if (!$updIn) {
-                $receta->close();
-                throw new Exception('Error al preparar descuento: ' . $conn->error);
-            }
-            $updIn->bind_param('di', $total, $insumo_id);
-            if (!$updIn->execute()) {
-                $updIn->close();
-                $receta->close();
-                throw new Exception('Error al descontar insumo: ' . $updIn->error);
-            }
-            $updIn->close();
-        }
-        $receta->close();
-
-        $upd = $conn->prepare('UPDATE venta_detalles SET estatus_preparacion = ?, insumos_descargados = 1 WHERE id = ?');
-        if (!$upd) {
-            throw new Exception('Error al preparar actualización: ' . $conn->error);
-        }
-        $upd->bind_param('si', $nuevo_estado, $detalle_id);
-        if (!$upd->execute()) {
-            $upd->close();
-            throw new Exception('Error al actualizar: ' . $upd->error);
-        }
-        $upd->close();
-
-        $conn->commit();
-        success(['warning' => $warnings]);
-    } catch (Exception $e) {
-        $conn->rollback();
-        error($e->getMessage());
-    }
-} else {
-    $upd = $conn->prepare('UPDATE venta_detalles SET estatus_preparacion = ? WHERE id = ?');
-    if (!$upd) {
-        error('Error al preparar actualización: ' . $conn->error);
-    }
-    $upd->bind_param('si', $nuevo_estado, $detalle_id);
-    if (!$upd->execute()) {
-        $upd->close();
-        error('Error al actualizar: ' . $upd->error);
-    }
-    $upd->close();
-
-    success(true);
+// Lógica reemplazada por base de datos: ver bd.sql (Trigger/SP)
+$upd = $conn->prepare('UPDATE venta_detalles SET estatus_preparacion = ? WHERE id = ?');
+if (!$upd) {
+    error('Error al preparar actualización: ' . $conn->error);
 }
+$upd->bind_param('si', $nuevo_estado, $detalle_id);
+if (!$upd->execute()) {
+    $upd->close();
+    error('Error al actualizar: ' . $upd->error);
+}
+$upd->close();
+
+if ($nuevo_estado === 'listo') {
+    $log = $conn->prepare('INSERT INTO logs_accion (usuario_id, modulo, accion, referencia_id) VALUES (?, ?, ?, ?)');
+    if ($log) {
+        $usuario_id = $input['usuario_id'] ?? null;
+        $mod = 'cocina';
+        $accion = 'Producto marcado como listo';
+        $log->bind_param('issi', $usuario_id, $mod, $accion, $detalle_id);
+        $log->execute();
+        $log->close();
+    }
+}
+
+success(true);
 ?>
