@@ -74,7 +74,8 @@ CREATE TABLE insumos (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(100),
   unidad VARCHAR(20),
-  existencia DECIMAL(10,2)
+  existencia DECIMAL(10,2),
+  tipo_control ENUM('por_receta', 'unidad_completa', 'uso_general', 'no_controlado', 'desempaquetado') DEFAULT 'por_receta'
 );
 
 CREATE TABLE recetas (

@@ -20,7 +20,7 @@ if (!$proveedor_id || !$productos) {
 
 $total = 0;
 foreach ($productos as $p) {
-    if (!isset($p['producto_id'], $p['cantidad'], $p['precio_unitario'])) {
+    if (!isset($p['insumo_id'], $p['cantidad'], $p['precio_unitario'])) {
         error('Formato de producto incorrecto');
     }
     $total += $p['cantidad'] * $p['precio_unitario'];
@@ -43,24 +43,40 @@ $entrada_id = $stmtEntrada->insert_id;
 $stmtEntrada->close();
 
 $det = $conn->prepare('INSERT INTO entradas_detalle (entrada_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)');
-$upd = $conn->prepare('UPDATE productos SET existencia = existencia + ? WHERE id = ?');
-if (!$det || !$upd) {
+$upd = $conn->prepare('UPDATE insumos SET existencia = existencia + ? WHERE id = ?');
+$tipoStmt = $conn->prepare('SELECT tipo_control FROM insumos WHERE id = ?');
+if (!$det || !$upd || !$tipoStmt) {
     $conn->rollback();
     error('Error al preparar detalles: ' . $conn->error);
 }
 
 foreach ($productos as $p) {
-    $producto_id = (int)$p['producto_id'];
-    $cantidad = (int)$p['cantidad'];
-    $precio = (float)$p['precio_unitario'];
-    $det->bind_param('iiid', $entrada_id, $producto_id, $cantidad, $precio);
+    $insumo_id = (int)$p['insumo_id'];
+    $cantidad  = (int)$p['cantidad'];
+    $precio    = (float)$p['precio_unitario'];
+
+    // obtener tipo de control del insumo
+    $tipoStmt->bind_param('i', $insumo_id);
+    if (!$tipoStmt->execute()) {
+        $conn->rollback();
+        error('Error al obtener tipo de insumo: ' . $tipoStmt->error);
+    }
+    $tipoStmt->bind_result($tipo);
+    $tipoStmt->fetch();
+    $tipoStmt->free_result();
+
+    $unidades = isset($p['unidades']) ? (float)$p['unidades'] : 1;
+    $cantidad_final = ($tipo === 'desempaquetado') ? $cantidad * $unidades : $cantidad;
+
+    $det->bind_param('iiid', $entrada_id, $insumo_id, $cantidad, $precio);
     if (!$det->execute()) {
         $conn->rollback();
         $det->close();
         $upd->close();
         error('Error al insertar detalle: ' . $det->error);
     }
-    $upd->bind_param('ii', $cantidad, $producto_id);
+
+    $upd->bind_param('di', $cantidad_final, $insumo_id);
     if (!$upd->execute()) {
         $conn->rollback();
         $det->close();
@@ -70,6 +86,7 @@ foreach ($productos as $p) {
 }
 $det->close();
 $upd->close();
+$tipoStmt->close();
 
 $conn->commit();
 

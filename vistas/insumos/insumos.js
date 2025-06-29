@@ -22,19 +22,20 @@ async function cargarProveedores() {
     }
 }
 
-async function cargarProductos() {
+async function cargarInsumos() {
     try {
-        const resp = await fetch('../../api/inventario/listar_productos.php');
+        const resp = await fetch('../../api/insumos/listar_insumos.php');
         const data = await resp.json();
         if (data.success) {
             catalogo = data.resultado;
             actualizarSelectsProducto();
+            mostrarCatalogo();
         } else {
             alert(data.mensaje);
         }
     } catch (err) {
         console.error(err);
-        alert('Error al cargar productos');
+        alert('Error al cargar insumos');
     }
 }
 
@@ -47,7 +48,49 @@ function actualizarSelectsProducto() {
             opt.textContent = p.nombre;
             sel.appendChild(opt);
         });
+        sel.addEventListener('change', () => mostrarTipoEnFila(sel));
     });
+}
+
+function mostrarTipoEnFila(select) {
+    const id = parseInt(select.value);
+    const fila = select.closest('tr');
+    const tipoCell = fila.querySelector('.tipo');
+    const unidadesInput = fila.querySelector('.unidades');
+    const cantidadInput = fila.querySelector('.cantidad');
+    const precioInput = fila.querySelector('.precio');
+    const encontrado = catalogo.find(c => c.id == id);
+    if (encontrado) {
+        tipoCell.textContent = encontrado.tipo_control;
+        if (encontrado.tipo_control === 'desempaquetado') {
+            unidadesInput.style.display = '';
+        } else {
+            unidadesInput.style.display = 'none';
+            unidadesInput.value = '';
+        }
+
+        if (encontrado.tipo_control === 'unidad_completa' || encontrado.tipo_control === 'desempaquetado') {
+            cantidadInput.step = 1;
+            cantidadInput.min = 1;
+        } else {
+            cantidadInput.step = '0.01';
+            cantidadInput.min = 0;
+        }
+
+        if (encontrado.tipo_control === 'no_controlado') {
+            cantidadInput.disabled = true;
+            precioInput.disabled = true;
+        } else {
+            cantidadInput.disabled = false;
+            precioInput.disabled = false;
+        }
+    } else {
+        tipoCell.textContent = '';
+        unidadesInput.style.display = 'none';
+        unidadesInput.value = '';
+        cantidadInput.disabled = false;
+        precioInput.disabled = false;
+    }
 }
 
 function agregarFila() {
@@ -57,6 +100,22 @@ function agregarFila() {
     nueva.querySelectorAll('input').forEach(i => i.value = '');
     tbody.appendChild(nueva);
     actualizarSelectsProducto();
+}
+
+function mostrarCatalogo() {
+    const tbody = document.querySelector('#listaInsumos tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    catalogo.forEach(i => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${i.nombre}</td>
+            <td>${i.unidad}</td>
+            <td>${i.existencia}</td>
+            <td>${i.tipo_control}</td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
 async function nuevoProveedor() {
@@ -92,11 +151,14 @@ async function registrarEntrada() {
     const filas = document.querySelectorAll('#tablaProductos tbody tr');
     const productos = [];
     filas.forEach(f => {
-        const producto_id = parseInt(f.querySelector('.producto').value);
+        const insumo_id = parseInt(f.querySelector('.producto').value);
         const cantidad = parseInt(f.querySelector('.cantidad').value);
         const precio_unitario = parseFloat(f.querySelector('.precio').value) || 0;
-        if (!isNaN(producto_id) && !isNaN(cantidad)) {
-            productos.push({ producto_id, cantidad, precio_unitario });
+        const unidades = parseFloat(f.querySelector('.unidades').value) || 0;
+        if (!isNaN(insumo_id) && !isNaN(cantidad)) {
+            const obj = { insumo_id, cantidad, precio_unitario };
+            if (unidades > 0) obj.unidades = unidades;
+            productos.push(obj);
         }
     });
     const payload = { proveedor_id, productos };
@@ -147,7 +209,7 @@ async function cargarHistorial() {
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarProveedores();
-    cargarProductos();
+    cargarInsumos();
     cargarHistorial();
     document.getElementById('agregarFila').addEventListener('click', agregarFila);
     document.getElementById('registrarEntrada').addEventListener('click', registrarEntrada);
