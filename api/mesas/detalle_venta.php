@@ -34,7 +34,7 @@ $info->close();
 
 // Obtener productos con estatus de preparación
 $stmt = $conn->prepare(
-    'SELECT p.nombre, vd.cantidad, vd.precio_unitario,
+    'SELECT vd.id, p.nombre, vd.cantidad, vd.precio_unitario,
             (vd.cantidad * vd.precio_unitario) AS subtotal,
             vd.estatus_preparacion
      FROM venta_detalles vd
