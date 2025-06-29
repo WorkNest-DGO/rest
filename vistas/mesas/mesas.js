@@ -34,7 +34,7 @@ async function cargarMesas() {
                     <p>Estado: ${m.estado}</p>
                     <p>${ventaTxt}</p>
                     <p>${unionTxt}</p>
-                    <button class="detalles" data-venta="${m.venta_id}" style="display:${m.venta_activa ? 'inline' : 'none'}">Detalles</button>
+                    <button class="detalles" data-venta="${m.venta_id || ''}" data-mesa="${m.id}" data-nombre="${m.nombre}" data-estado="${m.estado}">Detalles</button>
                     <button class="dividir" data-id="${m.id}">Dividir</button>
                     <button class="cambiar" data-id="${m.id}">Cambiar estado</button>
                 `;
@@ -48,7 +48,14 @@ async function cargarMesas() {
                 btn.addEventListener('click', () => dividirMesa(btn.dataset.id));
             });
             tablero.querySelectorAll('button.detalles').forEach(btn => {
-                btn.addEventListener('click', () => verVenta(btn.dataset.venta));
+                btn.addEventListener('click', () =>
+                    verVenta(
+                        btn.dataset.venta,
+                        btn.dataset.mesa,
+                        btn.dataset.nombre,
+                        btn.dataset.estado
+                    )
+                );
             });
         } else {
             alert(data.mensaje);
@@ -153,16 +160,20 @@ async function unirSeleccionadas() {
     }
 }
 
-async function verVenta(id) {
+async function verVenta(ventaId, mesaId, mesaNombre, estado) {
+    if (!ventaId) {
+        mostrarModalDetalle({ mesa: mesaNombre, mesero: '', productos: [] }, null, mesaId, estado);
+        return;
+    }
     try {
         const resp = await fetch('../../api/mesas/detalle_venta.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ venta_id: parseInt(id) })
+            body: JSON.stringify({ venta_id: parseInt(ventaId) })
         });
         const data = await resp.json();
         if (data.success) {
-            mostrarModalDetalle(data.resultado, id);
+            mostrarModalDetalle(data.resultado, ventaId, mesaId, estado);
         } else {
             alert(data.mensaje);
         }
@@ -187,9 +198,9 @@ function renderSelectProductos(select) {
     });
 }
 
-function mostrarModalDetalle(datos, ventaId) {
+function mostrarModalDetalle(datos, ventaId, mesaId, estado) {
     const modal = document.getElementById('modal-detalle');
-    let html = `<h3>Mesa ${datos.mesa} - Venta ${ventaId}</h3>`;
+    let html = `<h3>Mesa ${datos.mesa} - Venta ${ventaId || ''}</h3>`;
     html += `<table border="1"><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th><th></th></tr></thead><tbody>`;
     datos.productos.forEach(p => {
         const btnEliminar = (p.estatus_preparacion !== 'en preparación' && p.estatus_preparacion !== 'entregado')
@@ -204,7 +215,8 @@ function mostrarModalDetalle(datos, ventaId) {
     html += `<h4>Agregar producto</h4>`;
     html += `<select id="nuevo_producto"></select>`;
     html += `<input type="number" id="nuevo_cantidad" value="1" min="1">`;
-    html += `<button id="agregarProductoVenta" data-venta="${ventaId}">Agregar producto</button>`;
+    const disabled = !ventaId && estado !== 'ocupada' ? 'disabled' : '';
+    html += `<button id="agregarProductoVenta" data-venta="${ventaId || ''}" data-mesa="${mesaId}" data-estado="${estado}" ${disabled}>Agregar producto</button>`;
     html += ` <button id="cerrarModal">Cerrar</button>`;
     modal.innerHTML = html;
     modal.style.display = 'block';
@@ -217,7 +229,7 @@ function mostrarModalDetalle(datos, ventaId) {
     modal.querySelectorAll('.entregar').forEach(btn => {
         btn.addEventListener('click', () => marcarEntregado(btn.dataset.id, ventaId));
     });
-    modal.querySelector('#agregarProductoVenta').addEventListener('click', () => agregarProductoVenta(ventaId));
+    modal.querySelector('#agregarProductoVenta').addEventListener('click', () => agregarProductoVenta(ventaId, mesaId, estado));
     modal.querySelector('#cerrarModal').addEventListener('click', cerrarModal);
 }
 
@@ -260,7 +272,12 @@ async function marcarEntregado(detalleId, ventaId) {
     }
 }
 
-async function agregarProductoVenta(ventaId) {
+async function agregarProductoVenta(ventaId, mesaId, estado) {
+    if (!ventaId && estado !== 'ocupada') {
+        alert('La mesa debe estar ocupada para iniciar una venta');
+        return;
+    }
+
     const select = document.getElementById('nuevo_producto');
     const cantidad = parseInt(document.getElementById('nuevo_cantidad').value);
     const productoId = parseInt(select.value);
@@ -271,29 +288,59 @@ async function agregarProductoVenta(ventaId) {
         return;
     }
 
-    const payload = {
-        venta_id: ventaId,
-        producto_id: productoId,
-        cantidad,
-        precio_unitario: precio
-    };
+    let currentVentaId = ventaId;
 
-    try {
-        const resp = await fetch('../../api/mesas/agregar_producto_venta.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const data = await resp.json();
-        if (data.success) {
-            verVenta(ventaId);
-        } else {
-            alert(data.mensaje);
+    if (!currentVentaId) {
+        const crearPayload = {
+            mesa_id: parseInt(mesaId),
+            usuario_id: 2,
+            productos: [{ producto_id: productoId, cantidad, precio_unitario: precio }]
+        };
+        try {
+            const resp = await fetch('../../api/ventas/crear_venta.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(crearPayload)
+            });
+            const data = await resp.json();
+            if (data.success) {
+                currentVentaId = data.resultado.venta_id;
+            } else {
+                alert(data.mensaje);
+                return;
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error al crear venta');
+            return;
         }
-    } catch (err) {
-        console.error(err);
-        alert('Error al agregar producto');
+    } else {
+        const payload = {
+            venta_id: currentVentaId,
+            producto_id: productoId,
+            cantidad,
+            precio_unitario: precio
+        };
+        try {
+            const resp = await fetch('../../api/mesas/agregar_producto_venta.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await resp.json();
+            if (!data.success) {
+                alert(data.mensaje);
+                return;
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error al agregar producto');
+            return;
+        }
     }
+
+    verVenta(currentVentaId, mesaId, '', estado);
+    await cargarMesas();
 }
 
 document.getElementById('btn-unir').addEventListener('click', unirSeleccionadas);
