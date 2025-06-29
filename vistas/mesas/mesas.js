@@ -27,7 +27,7 @@ async function cargarMesas() {
                 }
 
                 const ventaTxt = m.venta_activa ? `Venta activa: ${m.venta_id}` : 'Sin venta';
-                const meseroTxt = m.mesero_id ? `Mesero ID: ${m.mesero_id}` : '';
+                const meseroTxt = m.mesero_nombre ? `Mesero: ${m.mesero_nombre}` : '';
 
                 card.innerHTML = `
                     <input type="checkbox" class="seleccionar" data-id="${m.id}">
@@ -36,7 +36,7 @@ async function cargarMesas() {
                     <p>${ventaTxt}</p>
                     <p>${meseroTxt}</p>
                     <p>${unionTxt}</p>
-                    <button class="detalles" data-venta="${m.venta_id || ''}" data-mesa="${m.id}" data-nombre="${m.nombre}" data-estado="${m.estado}">Detalles</button>
+                    <button class="detalles" data-venta="${m.venta_id || ''}" data-mesa="${m.id}" data-nombre="${m.nombre}" data-estado="${m.estado}" data-mesero="${m.mesero_id || ''}">Detalles</button>
                     <button class="dividir" data-id="${m.id}">Dividir</button>
                     <button class="cambiar" data-id="${m.id}">Cambiar estado</button>
                 `;
@@ -55,7 +55,8 @@ async function cargarMesas() {
                         btn.dataset.venta,
                         btn.dataset.mesa,
                         btn.dataset.nombre,
-                        btn.dataset.estado
+                        btn.dataset.estado,
+                        btn.dataset.mesero
                     )
                 );
             });
@@ -95,6 +96,33 @@ async function cambiarEstado(id, estado) {
 }
 
 let productos = [];
+let meseros = [];
+const meseroSeleccionado = {};
+
+async function cargarMeseros() {
+    try {
+        const resp = await fetch('../../api/usuarios/listar_meseros.php');
+        const data = await resp.json();
+        if (data.success) {
+            meseros = data.resultado;
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function renderSelectMeseros(select, seleccionado) {
+    select.innerHTML = '<option value="">--Mesero--</option>';
+    meseros.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.nombre;
+        if (seleccionado && parseInt(seleccionado) === parseInt(m.id)) {
+            opt.selected = true;
+        }
+        select.appendChild(opt);
+    });
+}
 
 async function cargarCatalogo() {
     try {
@@ -110,6 +138,7 @@ async function cargarCatalogo() {
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarCatalogo();
+    cargarMeseros();
     cargarMesas();
 });
 
@@ -162,9 +191,9 @@ async function unirSeleccionadas() {
     }
 }
 
-async function verVenta(ventaId, mesaId, mesaNombre, estado) {
+async function verVenta(ventaId, mesaId, mesaNombre, estado, meseroId) {
     if (!ventaId) {
-        mostrarModalDetalle({ mesa: mesaNombre, mesero: '', productos: [] }, null, mesaId, estado);
+        mostrarModalDetalle({ mesa: mesaNombre, mesero: '', productos: [] }, null, mesaId, estado, meseroId);
         return;
     }
     try {
@@ -175,7 +204,7 @@ async function verVenta(ventaId, mesaId, mesaNombre, estado) {
         });
         const data = await resp.json();
         if (data.success) {
-            mostrarModalDetalle(data.resultado, ventaId, mesaId, estado);
+            mostrarModalDetalle(data.resultado, ventaId, mesaId, estado, meseroId);
         } else {
             alert(data.mensaje);
         }
@@ -200,7 +229,7 @@ function renderSelectProductos(select) {
     });
 }
 
-function mostrarModalDetalle(datos, ventaId, mesaId, estado) {
+function mostrarModalDetalle(datos, ventaId, mesaId, estado, meseroId) {
     const modal = document.getElementById('modal-detalle');
     let html = `<h3>Mesa ${datos.mesa} - Venta ${ventaId || ''}</h3>`;
     html += `<table border="1"><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th><th></th></tr></thead><tbody>`;
@@ -214,15 +243,21 @@ function mostrarModalDetalle(datos, ventaId, mesaId, estado) {
         html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${p.estatus_preparacion}</td><td>${btnEliminar}</td><td>${btnEntregar}</td></tr>`;
     });
     html += `</tbody></table>`;
+    html += `<h4>Mesero</h4>`;
+    html += `<select id="select_mesero"></select>`;
     html += `<h4>Agregar producto</h4>`;
     html += `<select id="nuevo_producto"></select>`;
     html += `<input type="number" id="nuevo_cantidad" value="1" min="1">`;
     const disabled = !ventaId && estado !== 'ocupada' ? 'disabled' : '';
     html += `<button id="agregarProductoVenta" data-venta="${ventaId || ''}" data-mesa="${mesaId}" data-estado="${estado}" ${disabled}>Agregar producto</button>`;
+    if (ventaId) {
+        html += ` <button id="guardarMesero" data-venta="${ventaId}">Actualizar mesero</button>`;
+    }
     html += ` <button id="cerrarModal">Cerrar</button>`;
     modal.innerHTML = html;
     modal.style.display = 'block';
 
+    renderSelectMeseros(document.getElementById('select_mesero'), meseroSeleccionado[mesaId] || meseroId);
     renderSelectProductos(document.getElementById('nuevo_producto'));
 
     modal.querySelectorAll('.eliminar').forEach(btn => {
@@ -231,6 +266,15 @@ function mostrarModalDetalle(datos, ventaId, mesaId, estado) {
     modal.querySelectorAll('.entregar').forEach(btn => {
         btn.addEventListener('click', () => marcarEntregado(btn.dataset.id, ventaId));
     });
+    const selMesero = modal.querySelector('#select_mesero');
+    selMesero.addEventListener('change', () => {
+        if (!ventaId) {
+            meseroSeleccionado[mesaId] = parseInt(selMesero.value) || null;
+        }
+    });
+    if (ventaId) {
+        modal.querySelector('#guardarMesero').addEventListener('click', () => actualizarMesero(ventaId));
+    }
     modal.querySelector('#agregarProductoVenta').addEventListener('click', () => agregarProductoVenta(ventaId, mesaId, estado));
     modal.querySelector('#cerrarModal').addEventListener('click', cerrarModal);
 }
@@ -274,6 +318,28 @@ async function marcarEntregado(detalleId, ventaId) {
     }
 }
 
+async function actualizarMesero(ventaId, usuarioId) {
+    const id = usuarioId || parseInt(document.getElementById('select_mesero').value);
+    if (!id) {
+        alert('Selecciona un mesero');
+        return;
+    }
+    try {
+        const resp = await fetch('../../api/ventas/cambiar_mesero.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ venta_id: parseInt(ventaId), usuario_id: id })
+        });
+        const data = await resp.json();
+        if (!data.success) {
+            alert(data.mensaje);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al actualizar mesero');
+    }
+}
+
 async function agregarProductoVenta(ventaId, mesaId, estado) {
     if (!ventaId && estado !== 'ocupada') {
         alert('La mesa debe estar ocupada para iniciar una venta');
@@ -292,11 +358,19 @@ async function agregarProductoVenta(ventaId, mesaId, estado) {
     }
 
     let currentVentaId = ventaId;
+    const meseroSelect = document.getElementById('select_mesero');
+    const usuarioId = parseInt(meseroSelect.value) || meseroSeleccionado[mesaId];
 
     if (!currentVentaId) {
+        if (!usuarioId) {
+            alert('Selecciona un mesero');
+            return;
+        }
+        meseroSeleccionado[mesaId] = usuarioId;
         const crearPayload = {
             mesa_id: parseInt(mesaId),
-            usuario_id: 2,
+            usuario_id: usuarioId,
+            tipo: 'mesa',
             productos: [{ producto_id: productoId, cantidad, precio_unitario: precio }]
         };
         try {
@@ -318,6 +392,10 @@ async function agregarProductoVenta(ventaId, mesaId, estado) {
             return;
         }
     } else {
+        if (usuarioId && usuarioId !== meseroSeleccionado[mesaId]) {
+            await actualizarMesero(currentVentaId, usuarioId);
+            meseroSeleccionado[mesaId] = usuarioId;
+        }
         const payload = {
             venta_id: currentVentaId,
             producto_id: productoId,
@@ -342,7 +420,7 @@ async function agregarProductoVenta(ventaId, mesaId, estado) {
         }
     }
 
-    verVenta(currentVentaId, mesaId, '', estado);
+    verVenta(currentVentaId, mesaId, '', estado, meseroSeleccionado[mesaId]);
     await cargarMesas();
 }
 
