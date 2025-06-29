@@ -63,6 +63,9 @@ CREATE TABLE corte_caja (
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 
+ALTER TABLE venta_detalles
+ADD COLUMN estatus_preparacion ENUM('pendiente', 'en preparación', 'listo', 'entregado') DEFAULT 'pendiente';
+
 
 
 --inserts de prueba 
