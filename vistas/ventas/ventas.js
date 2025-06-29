@@ -125,10 +125,14 @@ async function cargarProductos() {
 function actualizarPrecio(select) {
     const row = select.closest('tr');
     const precioInput = row.querySelector('.precio');
+    const cantidadInput = row.querySelector('.cantidad');
     const productoId = parseInt(select.value);
-    const producto = productos.find(p => p.id === productoId);
+    const producto = productos.find(p => parseInt(p.id) === productoId);
     if (producto) {
         precioInput.value = parseFloat(producto.precio).toFixed(2);
+        if (!cantidadInput.value || parseInt(cantidadInput.value) === 0) {
+            cantidadInput.value = 1;
+        }
     } else {
         precioInput.value = '';
     }
@@ -181,7 +185,9 @@ async function registrarVenta() {
         const cantidad = parseInt(fila.querySelector('.cantidad').value);
         if (!isNaN(producto_id) && !isNaN(cantidad)) {
             const precio_unitario = parseFloat(fila.querySelector('.precio').value);
-            productos.push({ producto_id, cantidad, precio_unitario });
+            if (precio_unitario > 0) {
+                productos.push({ producto_id, cantidad, precio_unitario });
+            }
         }
     });
 
@@ -250,12 +256,13 @@ async function verDetalles(id) {
         });
         const data = await resp.json();
         if (data.success) {
+            const info = data.resultado || data;
             const contenedor = document.getElementById('modal-detalles');
-            const destino = data.tipo_entrega === 'mesa' ? data.mesa : data.repartidor;
+            const destino = info.tipo_entrega === 'mesa' ? info.mesa : info.repartidor;
             let html = `<h3>Detalle de venta</h3>
-                        <p>Tipo: ${data.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${data.mesero}</p>
+                        <p>Tipo: ${info.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${info.mesero}</p>
                         <ul>`;
-            data.productos.forEach(p => {
+            info.productos.forEach(p => {
                 html += `<li>${p.nombre} - ${p.cantidad} x ${p.precio_unitario} = ${p.subtotal}</li>`;
             });
             html += '</ul><button id="imprimirTicket">Imprimir ticket</button> <button id="cerrarDetalle">Cerrar</button>';
@@ -266,11 +273,11 @@ async function verDetalles(id) {
             });
             document.getElementById('imprimirTicket').addEventListener('click', () => {
                 const venta = ventasData[id] || {};
-                const total = venta.total || data.productos.reduce((s, p) => s + parseFloat(p.subtotal), 0);
+                const total = venta.total || info.productos.reduce((s, p) => s + parseFloat(p.subtotal), 0);
                 const payload = {
                     venta_id: id,
                     fecha: venta.fecha || '',
-                    productos: data.productos,
+                    productos: info.productos,
                     total
                 };
                 localStorage.setItem('ticketData', JSON.stringify(payload));
@@ -287,17 +294,7 @@ async function verDetalles(id) {
 
 document.addEventListener("change", function (e) {
     if (e.target.classList.contains("producto")) {
-        const select = e.target;
-        const row = select.closest("tr");
-        const precioInput = row.querySelector(".precio");
-        const productoId = parseInt(select.value);
-
-        const producto = productos.find(p => p.id === productoId);
-        if (producto) {
-            precioInput.value = parseFloat(producto.precio).toFixed(2);
-        } else {
-            precioInput.value = '';
-        }
+        actualizarPrecio(e.target);
     }
 });
 
