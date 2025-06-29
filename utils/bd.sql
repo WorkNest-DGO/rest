@@ -153,3 +153,6 @@ INSERT INTO venta_detalles (venta_id, producto_id, cantidad, precio_unitario)
 VALUES
 (@venta_id, 1, 2, 45.00),
 (@venta_id, 4, 3, 20.00);
+
+-- Column to mark if delivery completed by repartidor
+ALTER TABLE ventas ADD COLUMN entregado TINYINT(1) DEFAULT 0;
