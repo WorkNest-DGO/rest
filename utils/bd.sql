@@ -67,6 +67,8 @@ CREATE TABLE corte_caja (
 ALTER TABLE venta_detalles
 ADD COLUMN estatus_preparacion ENUM('pendiente', 'en preparación', 'listo', 'entregado') DEFAULT 'pendiente';
 
+ALTER TABLE venta_detalles ADD COLUMN insumos_descargados TINYINT(1) DEFAULT 0;
+
 -- Agrega una columna para saber si una mesa está unida a otra
 ALTER TABLE mesas ADD COLUMN mesa_principal_id INT DEFAULT NULL;
 
