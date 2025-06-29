@@ -41,16 +41,56 @@ foreach ($productos as $p) {
     $total += $p['cantidad'] * $p['precio_unitario'];
 }
 
-$stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total) VALUES (?, ?, ?, ?, ?)');
-if (!$stmt) {
-    error('Error al preparar venta: ' . $conn->error);
+// Si la venta es en mesa, revisar si ya existe una venta activa para esa mesa
+if ($tipo === 'mesa') {
+    $check = $conn->prepare("SELECT id, usuario_id FROM ventas WHERE mesa_id = ? AND estatus = 'activa' LIMIT 1");
+    if (!$check) {
+        error('Error al preparar consulta: ' . $conn->error);
+    }
+    $check->bind_param('i', $mesa_id);
+    if (!$check->execute()) {
+        $check->close();
+        error('Error al ejecutar consulta: ' . $check->error);
+    }
+    $res = $check->get_result();
+    $existing = $res->fetch_assoc();
+    $check->close();
+    if ($existing) {
+        $venta_id = (int)$existing['id'];
+        // Si se especificó un usuario distinto, actualizarlo
+        if ($usuario_id && $usuario_id !== (int)$existing['usuario_id']) {
+            $upUser = $conn->prepare('UPDATE ventas SET usuario_id = ? WHERE id = ?');
+            if ($upUser) {
+                $upUser->bind_param('ii', $usuario_id, $venta_id);
+                $upUser->execute();
+                $upUser->close();
+            }
+        }
+        // Actualizar total acumulado
+        $upTotal = $conn->prepare('UPDATE ventas SET total = total + ? WHERE id = ?');
+        if ($upTotal) {
+            $upTotal->bind_param('di', $total, $venta_id);
+            $upTotal->execute();
+            $upTotal->close();
+        }
+    }
 }
-$stmt->bind_param('iiisd', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total);
-if (!$stmt->execute()) {
-    error('Error al crear venta: ' . $stmt->error);
+
+$nueva_venta = false;
+
+if (!isset($venta_id)) {
+    $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total) VALUES (?, ?, ?, ?, ?)');
+    if (!$stmt) {
+        error('Error al preparar venta: ' . $conn->error);
+    }
+    $stmt->bind_param('iiisd', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total);
+    if (!$stmt->execute()) {
+        error('Error al crear venta: ' . $stmt->error);
+    }
+    $venta_id = $stmt->insert_id;
+    $stmt->close();
+    $nueva_venta = true;
 }
-$venta_id = $stmt->insert_id;
-$stmt->close();
 
 $detalle = $conn->prepare('INSERT INTO venta_detalles (venta_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)');
 if (!$detalle) {
@@ -75,7 +115,7 @@ $detalle->close();
 $log = $conn->prepare('INSERT INTO logs_accion (usuario_id, modulo, accion, referencia_id) VALUES (?, ?, ?, ?)');
 if ($log) {
     $mod = 'ventas';
-    $accion = 'Alta de venta';
+    $accion = $nueva_venta ? 'Alta de venta' : 'Actualización de venta';
     $log->bind_param('issi', $usuario_id, $mod, $accion, $venta_id);
     $log->execute();
     $log->close();
