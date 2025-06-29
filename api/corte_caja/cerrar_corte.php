@@ -29,34 +29,48 @@ $row = $res->fetch_assoc();
 $fecha_inicio = $row['fecha_inicio'];
 $stmt->close();
 
-$stmt = $conn->prepare("SELECT COUNT(* ) AS num, SUM(total) AS total FROM ventas WHERE usuario_id = ? AND fecha >= ? AND fecha <= NOW() AND estatus = 'cerrada'");
+
+// Lógica reemplazada por base de datos: ver bd.sql (SP)
+$call = $conn->prepare('CALL sp_cerrar_corte(?)');
+if (!$call) {
+    error('Error al preparar cierre: ' . $conn->error);
+}
+$call->bind_param('i', $usuario_id);
+if (!$call->execute()) {
+    $call->close();
+    error('Error al cerrar corte: ' . $call->error);
+}
+$call->close();
+
+$stmt = $conn->prepare('SELECT fecha_inicio, fecha_fin, total FROM corte_caja WHERE id = ?');
 if (!$stmt) {
-    error('Error al preparar consulta de ventas: ' . $conn->error);
+    error('Error al obtener corte: ' . $conn->error);
 }
-$stmt->bind_param('is', $usuario_id, $fecha_inicio);
-if (!$stmt->execute()) {
-    $stmt->close();
-    error('Error al obtener ventas: ' . $stmt->error);
-}
-$ventas = $stmt->get_result()->fetch_assoc();
-$numVentas = (int)($ventas['num'] ?? 0);
-$total = (float)($ventas['total'] ?? 0);
+$stmt->bind_param('i', $corte_id);
+$stmt->execute();
+$info = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-if ($numVentas === 0) {
-    error('No hay ventas para cerrar corte');
-}
-
-$stmt = $conn->prepare('UPDATE corte_caja SET fecha_fin = NOW(), total = ? WHERE id = ?');
-if (!$stmt) {
-    error('Error al preparar actualización: ' . $conn->error);
-}
-$stmt->bind_param('di', $total, $corte_id);
-if (!$stmt->execute()) {
+$stmt = $conn->prepare("SELECT COUNT(*) AS num FROM ventas WHERE usuario_id = ? AND fecha >= ? AND fecha <= ? AND estatus = 'cerrada'");
+if ($stmt) {
+    $stmt->bind_param('iss', $usuario_id, $info['fecha_inicio'], $info['fecha_fin']);
+    $stmt->execute();
+    $c = $stmt->get_result()->fetch_assoc();
+    $numVentas = (int)($c['num'] ?? 0);
     $stmt->close();
-    error('Error al cerrar corte: ' . $stmt->error);
+} else {
+    $numVentas = 0;
 }
-$stmt->close();
 
-success(['ventas_realizadas' => $numVentas, 'total' => $total]);
+// Registrar acción en logs
+$log = $conn->prepare('INSERT INTO logs_accion (usuario_id, modulo, accion, referencia_id) VALUES (?, ?, ?, ?)');
+if ($log) {
+    $mod = 'corte_caja';
+    $accion = 'Cierre de corte';
+    $log->bind_param('issi', $usuario_id, $mod, $accion, $corte_id);
+    $log->execute();
+    $log->close();
+}
+
+success(['ventas_realizadas' => $numVentas, 'total' => (float)$info['total']]);
 ?>
