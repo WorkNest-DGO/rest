@@ -285,6 +285,22 @@ async function verDetalles(id) {
     }
 }
 
+document.addEventListener("change", function (e) {
+    if (e.target.classList.contains("producto")) {
+        const select = e.target;
+        const row = select.closest("tr");
+        const precioInput = row.querySelector(".precio");
+        const productoId = parseInt(select.value);
+
+        const producto = productos.find(p => p.id === productoId);
+        if (producto) {
+            precioInput.value = parseFloat(producto.precio).toFixed(2);
+        } else {
+            precioInput.value = '';
+        }
+    }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     cargarMeseros();
     cargarProductos();
