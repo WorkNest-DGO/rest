@@ -41,6 +41,7 @@ async function cargarHistorial() {
 }
 
 let catalogo = [];
+let productos = [];
 let ventasData = {};
 let repartidores = [];
 
@@ -95,6 +96,7 @@ async function cargarProductos() {
         const data = await resp.json();
         if (data.success) {
             catalogo = data.resultado;
+            productos = data.resultado;
             const selects = document.querySelectorAll('#productos select.producto');
             selects.forEach(select => {
                 select.innerHTML = '<option value="">--Selecciona--</option>';
@@ -122,12 +124,11 @@ async function cargarProductos() {
 
 function actualizarPrecio(select) {
     const row = select.closest('tr');
-    const cantidad = parseFloat(row.querySelector('.cantidad').value) || 0;
     const precioInput = row.querySelector('.precio');
-    const option = select.selectedOptions[0];
-    if (option && option.dataset.precio) {
-        const precioUnitario = parseFloat(option.dataset.precio);
-        precioInput.value = (precioUnitario * cantidad).toFixed(2);
+    const productoId = parseInt(select.value);
+    const producto = productos.find(p => p.id === productoId);
+    if (producto) {
+        precioInput.value = parseFloat(producto.precio).toFixed(2);
     } else {
         precioInput.value = '';
     }
@@ -179,8 +180,7 @@ async function registrarVenta() {
         const producto_id = parseInt(fila.querySelector('.producto').value);
         const cantidad = parseInt(fila.querySelector('.cantidad').value);
         if (!isNaN(producto_id) && !isNaN(cantidad)) {
-            const prod = catalogo.find(p => p.id === producto_id);
-            const precio_unitario = prod ? parseFloat(prod.precio) : 0;
+            const precio_unitario = parseFloat(fila.querySelector('.precio').value);
             productos.push({ producto_id, cantidad, precio_unitario });
         }
     });

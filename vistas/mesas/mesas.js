@@ -92,14 +92,14 @@ async function cambiarEstado(id, estado) {
     }
 }
 
-let catalogoProductos = [];
+let productos = [];
 
 async function cargarCatalogo() {
     try {
         const resp = await fetch('../../api/inventario/listar_productos.php');
         const data = await resp.json();
         if (data.success) {
-            catalogoProductos = data.resultado;
+            productos = data.resultado;
         }
     } catch (err) {
         console.error(err);
@@ -189,7 +189,7 @@ function cerrarModal() {
 
 function renderSelectProductos(select) {
     select.innerHTML = '<option value="">--Selecciona--</option>';
-    catalogoProductos.forEach(p => {
+    productos.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.id;
         opt.textContent = `${p.nombre} - $${p.precio}`;
@@ -281,7 +281,8 @@ async function agregarProductoVenta(ventaId, mesaId, estado) {
     const select = document.getElementById('nuevo_producto');
     const cantidad = parseInt(document.getElementById('nuevo_cantidad').value);
     const productoId = parseInt(select.value);
-    const precio = parseFloat(select.selectedOptions[0]?.dataset.precio || '0');
+    const prod = productos.find(p => p.id === productoId);
+    const precio = prod ? parseFloat(prod.precio) : 0;
 
     if (isNaN(productoId) || isNaN(cantidad) || cantidad <= 0) {
         alert('Producto o cantidad inválida');
