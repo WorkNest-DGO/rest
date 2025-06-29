@@ -7,12 +7,23 @@
 <body>
     <h1>Registro de Venta</h1>
     <form id="formVenta">
-        <label for="mesa_id">Mesa:</label>
-        <select id="mesa_id" name="mesa_id">
-            <option value="1">Mesa 1</option>
-            <option value="2">Mesa 2</option>
-            <option value="3">Mesa 3</option>
+        <label for="tipo_entrega">Tipo de venta:</label>
+        <select id="tipo_entrega" name="tipo_entrega">
+            <option value="mesa">En restaurante</option>
+            <option value="domicilio">A domicilio</option>
         </select>
+        <div id="campoMesa">
+            <label for="mesa_id">Mesa:</label>
+            <select id="mesa_id" name="mesa_id">
+                <option value="1">Mesa 1</option>
+                <option value="2">Mesa 2</option>
+                <option value="3">Mesa 3</option>
+            </select>
+        </div>
+        <div id="campoRepartidor" style="display:none;">
+            <label for="repartidor_id">Repartidor:</label>
+            <select id="repartidor_id" name="repartidor_id"></select>
+        </div>
         <label for="usuario_id">Mesero:</label>
         <select id="usuario_id" name="usuario_id" required></select>
         <h2>Productos</h2>
@@ -45,6 +56,8 @@
                 <th>ID</th>
                 <th>Fecha</th>
                 <th>Total</th>
+                <th>Tipo</th>
+                <th>Destino</th>
                 <th>Estatus</th>
                 <th>Ver detalles</th>
                 <th>Acci&oacute;n</th>

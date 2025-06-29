@@ -17,11 +17,12 @@ if (!$input || !isset($input['venta_id'])) {
 
 $venta_id = (int)$input['venta_id'];
 
-// Obtener mesa y mesero relacionados con la venta
+// Obtener datos generales de la venta
 $info = $conn->prepare(
-    'SELECT m.nombre AS mesa, u.nombre AS mesero
+    'SELECT v.tipo_entrega, m.nombre AS mesa, r.nombre AS repartidor, u.nombre AS mesero
      FROM ventas v
-     JOIN mesas m ON v.mesa_id = m.id
+     LEFT JOIN mesas m ON v.mesa_id = m.id
+     LEFT JOIN repartidores r ON v.repartidor_id = r.id
      JOIN usuarios u ON v.usuario_id = u.id
      WHERE v.id = ?'
 );
@@ -65,8 +66,10 @@ while ($row = $res->fetch_assoc()) {
 $stmt->close();
 
 echo json_encode([
-    'success'   => true,
-    'mesa'      => $datosVenta['mesa'] ?? '',
-    'mesero'    => $datosVenta['mesero'] ?? '',
-    'productos' => $productos
+    'success'      => true,
+    'tipo_entrega' => $datosVenta['tipo_entrega'] ?? '',
+    'mesa'         => $datosVenta['mesa'] ?? '',
+    'repartidor'   => $datosVenta['repartidor'] ?? '',
+    'mesero'       => $datosVenta['mesero'] ?? '',
+    'productos'    => $productos
 ]);

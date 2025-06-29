@@ -2,7 +2,11 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
-$query = "SELECT * FROM ventas ORDER BY fecha DESC";
+$query = "SELECT v.*, m.nombre AS mesa, r.nombre AS repartidor
+          FROM ventas v
+          LEFT JOIN mesas m ON v.mesa_id = m.id
+          LEFT JOIN repartidores r ON v.repartidor_id = r.id
+          ORDER BY v.fecha DESC";
 $result = $conn->query($query);
 
 if (!$result) {

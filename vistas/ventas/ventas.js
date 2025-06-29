@@ -12,10 +12,13 @@ async function cargarHistorial() {
                 const accion = v.estatus !== 'cancelada'
                     ? `<button class="cancelar" data-id="${v.id}">Cancelar</button>`
                     : '';
+                const destino = v.tipo_entrega === 'mesa' ? v.mesa : v.repartidor;
                 row.innerHTML = `
                     <td>${v.id}</td>
                     <td>${v.fecha}</td>
                     <td>${v.total}</td>
+                    <td>${v.tipo_entrega}</td>
+                    <td>${destino || ''}</td>
                     <td>${v.estatus}</td>
                     <td><button class="detalles" data-id="${v.id}">Ver detalles</button></td>
                     <td>${accion}</td>
@@ -39,6 +42,30 @@ async function cargarHistorial() {
 
 let catalogo = [];
 let ventasData = {};
+let repartidores = [];
+
+async function cargarRepartidores() {
+    try {
+        const resp = await fetch('../../api/repartidores/listar_repartidores.php');
+        const data = await resp.json();
+        if (data.success) {
+            repartidores = data.resultado;
+            const select = document.getElementById('repartidor_id');
+            select.innerHTML = '<option value="">--Selecciona--</option>';
+            repartidores.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.id;
+                opt.textContent = r.nombre;
+                select.appendChild(opt);
+            });
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al cargar repartidores');
+    }
+}
 
 async function cargarMeseros() {
     try {
@@ -141,7 +168,9 @@ function agregarFilaProducto() {
 }
 
 async function registrarVenta() {
+    const tipo = document.getElementById('tipo_entrega').value;
     const mesa_id = parseInt(document.getElementById('mesa_id').value);
+    const repartidor_id = parseInt(document.getElementById('repartidor_id').value);
     const usuario_id = parseInt(document.getElementById('usuario_id').value);
     const filas = document.querySelectorAll('#productos tbody tr');
     const productos = [];
@@ -156,7 +185,19 @@ async function registrarVenta() {
         }
     });
 
-    const payload = { mesa_id, usuario_id, productos };
+    if (tipo === 'mesa') {
+        if (isNaN(mesa_id) || !mesa_id || !isNaN(repartidor_id) && repartidor_id) {
+            alert('Selecciona una mesa válida');
+            return;
+        }
+    } else {
+        if (isNaN(repartidor_id) || !repartidor_id || !isNaN(mesa_id) && mesa_id) {
+            alert('Selecciona un repartidor válido');
+            return;
+        }
+    }
+
+    const payload = { tipo, mesa_id, repartidor_id, usuario_id, productos };
 
     try {
         const resp = await fetch('../../api/ventas/crear_venta.php', {
@@ -210,8 +251,9 @@ async function verDetalles(id) {
         const data = await resp.json();
         if (data.success) {
             const contenedor = document.getElementById('modal-detalles');
+            const destino = data.tipo_entrega === 'mesa' ? data.mesa : data.repartidor;
             let html = `<h3>Detalle de venta</h3>
-                        <p>Mesa: ${data.mesa} <br>Mesero: ${data.mesero}</p>
+                        <p>Tipo: ${data.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${data.mesero}</p>
                         <ul>`;
             data.productos.forEach(p => {
                 html += `<li>${p.nombre} - ${p.cantidad} x ${p.precio_unitario} = ${p.subtotal}</li>`;
@@ -246,7 +288,13 @@ async function verDetalles(id) {
 document.addEventListener('DOMContentLoaded', () => {
     cargarMeseros();
     cargarProductos();
+    cargarRepartidores();
     cargarHistorial();
     document.getElementById('registrarVenta').addEventListener('click', registrarVenta);
     document.getElementById('agregarProducto').addEventListener('click', agregarFilaProducto);
+    document.getElementById('tipo_entrega').addEventListener('change', () => {
+        const tipo = document.getElementById('tipo_entrega').value;
+        document.getElementById('campoMesa').style.display = tipo === 'mesa' ? 'block' : 'none';
+        document.getElementById('campoRepartidor').style.display = tipo === 'domicilio' ? 'block' : 'none';
+    });
 });
