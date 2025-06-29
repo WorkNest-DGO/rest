@@ -5,7 +5,9 @@ async function cargarHistorial() {
         if (data.success) {
             const tbody = document.querySelector('#historial tbody');
             tbody.innerHTML = '';
+            ventasData = {};
             data.resultado.forEach(v => {
+                ventasData[v.id] = v;
                 const row = document.createElement('tr');
                 const accion = v.estatus !== 'cancelada'
                     ? `<button class="cancelar" data-id="${v.id}">Cancelar</button>`
@@ -36,6 +38,7 @@ async function cargarHistorial() {
 }
 
 let catalogo = [];
+let ventasData = {};
 
 async function cargarMeseros() {
     try {
@@ -213,11 +216,23 @@ async function verDetalles(id) {
             data.productos.forEach(p => {
                 html += `<li>${p.nombre} - ${p.cantidad} x ${p.precio_unitario} = ${p.subtotal}</li>`;
             });
-            html += '</ul><button id="cerrarDetalle">Cerrar</button>';
+            html += '</ul><button id="imprimirTicket">Imprimir ticket</button> <button id="cerrarDetalle">Cerrar</button>';
             contenedor.innerHTML = html;
             contenedor.style.display = 'block';
             document.getElementById('cerrarDetalle').addEventListener('click', () => {
                 contenedor.style.display = 'none';
+            });
+            document.getElementById('imprimirTicket').addEventListener('click', () => {
+                const venta = ventasData[id] || {};
+                const total = venta.total || data.productos.reduce((s, p) => s + parseFloat(p.subtotal), 0);
+                const payload = {
+                    venta_id: id,
+                    fecha: venta.fecha || '',
+                    productos: data.productos,
+                    total
+                };
+                localStorage.setItem('ticketData', JSON.stringify(payload));
+                window.open('ticket.html', '_blank');
             });
         } else {
             alert(data.mensaje);
