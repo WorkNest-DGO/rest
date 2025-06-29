@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Insumos</title>
+</head>
+<body>
+    <h1>Entradas de Insumos</h1>
+    <form id="formEntrada">
+        <label for="proveedor">Proveedor:</label>
+        <select id="proveedor" name="proveedor"></select>
+        <button type="button" id="btnNuevoProveedor">Nuevo proveedor</button>
+        <h2>Productos</h2>
+        <table id="tablaProductos" border="1">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio unitario</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><select class="producto"></select></td>
+                    <td><input type="number" class="cantidad"></td>
+                    <td><input type="number" class="precio"></td>
+                </tr>
+            </tbody>
+        </table>
+        <button type="button" id="agregarFila">Agregar producto</button>
+        <button type="button" id="registrarEntrada">Registrar entrada</button>
+    </form>
+
+    <h2>Historial de Entradas</h2>
+    <table id="historial" border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Proveedor</th>
+                <th>Fecha</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script src="insumos.js"></script>
+</body>
+</html>

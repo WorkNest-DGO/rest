@@ -86,6 +86,32 @@ CREATE TABLE recetas (
   FOREIGN KEY (insumo_id) REFERENCES insumos(id)
 );
 
+CREATE TABLE proveedores (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(100),
+  telefono VARCHAR(20),
+  direccion TEXT
+);
+
+CREATE TABLE entradas_insumo (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  proveedor_id INT,
+  fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+  total DECIMAL(10,2),
+  FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
+);
+
+CREATE TABLE entradas_detalle (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  entrada_id INT,
+  producto_id INT,
+  cantidad INT,
+  precio_unitario DECIMAL(10,2),
+  subtotal DECIMAL(10,2) GENERATED ALWAYS AS (cantidad * precio_unitario) STORED,
+  FOREIGN KEY (entrada_id) REFERENCES entradas_insumo(id),
+  FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
 
 --inserts de prueba 
 INSERT INTO usuarios (nombre, usuario, contrasena, rol) VALUES
