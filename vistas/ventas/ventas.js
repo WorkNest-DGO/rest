@@ -7,20 +7,21 @@ async function cargarHistorial() {
             tbody.innerHTML = '';
             ventasData = {};
             data.resultado.forEach(v => {
-                ventasData[v.id] = v;
+                const id = v.venta_id || v.id; // compatibilidad con vista
+                ventasData[id] = v;
                 const row = document.createElement('tr');
                 const accion = v.estatus !== 'cancelada'
-                    ? `<button class="cancelar" data-id="${v.id}">Cancelar</button>`
+                    ? `<button class="cancelar" data-id="${id}">Cancelar</button>`
                     : '';
                 const destino = v.tipo_entrega === 'mesa' ? v.mesa : v.repartidor;
                 row.innerHTML = `
-                    <td>${v.id}</td>
+                    <td>${id}</td>
                     <td>${v.fecha}</td>
                     <td>${v.total}</td>
                     <td>${v.tipo_entrega}</td>
                     <td>${destino || ''}</td>
                     <td>${v.estatus}</td>
-                    <td><button class="detalles" data-id="${v.id}">Ver detalles</button></td>
+                    <td><button class="detalles" data-id="${id}">Ver detalles</button></td>
                     <td>${accion}</td>
                 `;
                 tbody.appendChild(row);

@@ -3,7 +3,8 @@ require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
 // Obtener mesas y, en su caso, la venta activa asociada
-$query = "SELECT m.id, m.nombre, m.estado, m.capacidad, m.mesa_principal_id, v.id AS venta_id
+$query = "SELECT m.id, m.nombre, m.estado, m.capacidad, m.mesa_principal_id,
+                v.id AS venta_id, v.usuario_id AS mesero_id
           FROM mesas m
           LEFT JOIN ventas v ON v.mesa_id = m.id AND v.estatus = 'activa'
           ORDER BY m.id ASC";
@@ -23,7 +24,8 @@ while ($row = $result->fetch_assoc()) {
         'capacidad'         => (int)$row['capacidad'],
         'mesa_principal_id' => $row['mesa_principal_id'] ? (int)$row['mesa_principal_id'] : null,
         'venta_activa'      => $row['venta_id'] !== null,
-        'venta_id'          => $row['venta_id'] !== null ? (int)$row['venta_id'] : null
+        'venta_id'          => $row['venta_id'] !== null ? (int)$row['venta_id'] : null,
+        'mesero_id'         => $row['mesero_id'] !== null ? (int)$row['mesero_id'] : null
     ];
 }
 
