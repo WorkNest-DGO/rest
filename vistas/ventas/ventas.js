@@ -278,6 +278,7 @@ async function verDetalles(id) {
                 const total = venta.total || info.productos.reduce((s, p) => s + parseFloat(p.subtotal), 0);
                 const payload = {
                     venta_id: parseInt(id),
+                    usuario_id: venta.usuario_id || 1,
                     fecha: venta.fecha || '',
                     productos: info.productos,
                     total
