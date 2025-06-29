@@ -27,12 +27,14 @@ async function cargarMesas() {
                 }
 
                 const ventaTxt = m.venta_activa ? `Venta activa: ${m.venta_id}` : 'Sin venta';
+                const meseroTxt = m.mesero_id ? `Mesero ID: ${m.mesero_id}` : '';
 
                 card.innerHTML = `
                     <input type="checkbox" class="seleccionar" data-id="${m.id}">
                     <h3>${m.nombre}</h3>
                     <p>Estado: ${m.estado}</p>
                     <p>${ventaTxt}</p>
+                    <p>${meseroTxt}</p>
                     <p>${unionTxt}</p>
                     <button class="detalles" data-venta="${m.venta_id || ''}" data-mesa="${m.id}" data-nombre="${m.nombre}" data-estado="${m.estado}">Detalles</button>
                     <button class="dividir" data-id="${m.id}">Dividir</button>
