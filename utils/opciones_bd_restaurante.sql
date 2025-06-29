@@ -67,36 +67,55 @@ END;
 //
 DELIMITER ;
 
+--  PROCEDIMIENTO PARA DESCONTAR INSUMOS POR PRODUCTO DE UN DETALLE DE VENTA
+DELIMITER //
+CREATE PROCEDURE sp_descuento_insumos_por_detalle(IN p_detalle_id INT)
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE rid INT;
+    DECLARE cant DECIMAL(10,2);
+    DECLARE v_cantidad INT;
+    DECLARE v_producto_id INT;
+
+    -- Obtener cantidad y producto_id del detalle
+    SELECT cantidad, producto_id INTO v_cantidad, v_producto_id
+    FROM venta_detalles WHERE id = p_detalle_id;
+
+    -- Cursor para recorrer la receta
+    DECLARE cur CURSOR FOR 
+        SELECT insumo_id, cantidad * v_cantidad
+        FROM recetas WHERE producto_id = v_producto_id;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    OPEN cur;
+    insumo_loop: LOOP
+        FETCH cur INTO rid, cant;
+        IF done THEN
+            LEAVE insumo_loop;
+        END IF;
+        UPDATE insumos SET existencia = existencia - cant WHERE id = rid;
+    END LOOP;
+    CLOSE cur;
+
+    -- Marcar como descontado
+    UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = p_detalle_id;
+END;
+//
+DELIMITER ;
 -- =========================
 -- 3. TRIGGERS
 -- =========================
 
 -- Trigger para descontar insumos al marcar platillo como 'listo'
 DELIMITER //
-CREATE TRIGGER trg_descuento_insumos
+CREATE TRIGGER trg_llama_descuento_insumos
 AFTER UPDATE ON venta_detalles
 FOR EACH ROW
 BEGIN
-    IF NEW.estatus_preparacion = 'listo' AND OLD.estatus_preparacion <> 'listo' AND NEW.insumos_descargados = 0 THEN
-        DECLARE done INT DEFAULT 0;
-        DECLARE rid INT;
-        DECLARE cant DECIMAL(10,2);
-        DECLARE cur CURSOR FOR 
-            SELECT insumo_id, cantidad * NEW.cantidad
-            FROM recetas WHERE producto_id = NEW.producto_id;
-        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
-
-        OPEN cur;
-        insumo_loop: LOOP
-            FETCH cur INTO rid, cant;
-            IF done THEN
-                LEAVE insumo_loop;
-            END IF;
-            UPDATE insumos SET existencia = existencia - cant WHERE id = rid;
-        END LOOP;
-        CLOSE cur;
-
-        UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = NEW.id;
+    IF NEW.estatus_preparacion = 'listo'
+       AND OLD.estatus_preparacion <> 'listo'
+       AND NEW.insumos_descargados = 0 THEN
+        CALL sp_descuento_insumos_por_detalle(NEW.id);
     END IF;
 END;
 //
