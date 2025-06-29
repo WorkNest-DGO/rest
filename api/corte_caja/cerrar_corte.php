@@ -29,34 +29,29 @@ $row = $res->fetch_assoc();
 $fecha_inicio = $row['fecha_inicio'];
 $stmt->close();
 
-$stmt = $conn->prepare("SELECT COUNT(* ) AS num, SUM(total) AS total FROM ventas WHERE usuario_id = ? AND fecha >= ? AND fecha <= NOW() AND estatus = 'cerrada'");
+// Lógica ahora gestionada por la base de datos vía STORED PROCEDURE
+$stmt = $conn->prepare('CALL sp_cerrar_corte(?)');
 if (!$stmt) {
-    error('Error al preparar consulta de ventas: ' . $conn->error);
+    error('Error al preparar cierre: ' . $conn->error);
 }
-$stmt->bind_param('is', $usuario_id, $fecha_inicio);
+$stmt->bind_param('i', $usuario_id);
 if (!$stmt->execute()) {
     $stmt->close();
-    error('Error al obtener ventas: ' . $stmt->error);
-}
-$ventas = $stmt->get_result()->fetch_assoc();
-$numVentas = (int)($ventas['num'] ?? 0);
-$total = (float)($ventas['total'] ?? 0);
-$stmt->close();
-
-if ($numVentas === 0) {
-    error('No hay ventas para cerrar corte');
-}
-
-$stmt = $conn->prepare('UPDATE corte_caja SET fecha_fin = NOW(), total = ? WHERE id = ?');
-if (!$stmt) {
-    error('Error al preparar actualización: ' . $conn->error);
-}
-$stmt->bind_param('di', $total, $corte_id);
-if (!$stmt->execute()) {
-    $stmt->close();
-    error('Error al cerrar corte: ' . $stmt->error);
+    error('Error al ejecutar cierre: ' . $stmt->error);
 }
 $stmt->close();
 
-success(['ventas_realizadas' => $numVentas, 'total' => $total]);
+$info = $conn->prepare('SELECT total FROM corte_caja WHERE id = ?');
+if (!$info) {
+    error('Error al obtener total: ' . $conn->error);
+}
+$info->bind_param('i', $corte_id);
+if (!$info->execute()) {
+    $info->close();
+    error('Error al consultar corte: ' . $info->error);
+}
+$row = $info->get_result()->fetch_assoc();
+$info->close();
+
+success(['total' => (float)($row['total'] ?? 0)]);
 ?>
