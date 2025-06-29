@@ -19,15 +19,25 @@ CREATE TABLE mesas (
     capacidad INT DEFAULT 4
 );
 
+--  Repartidores
+CREATE TABLE IF NOT EXISTS repartidores (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100),
+    telefono VARCHAR(20)
+);
+
 --  Ventas
 CREATE TABLE ventas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
     mesa_id INT,
+    repartidor_id INT DEFAULT NULL,
+    tipo_entrega ENUM('mesa','domicilio') DEFAULT 'mesa',
     usuario_id INT,
     total DECIMAL(10, 2) DEFAULT 0.00,
     estatus ENUM('activa', 'cerrada', 'cancelada') DEFAULT 'activa',
     FOREIGN KEY (mesa_id) REFERENCES mesas(id),
+    FOREIGN KEY (repartidor_id) REFERENCES repartidores(id),
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 

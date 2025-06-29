@@ -11,12 +11,26 @@ if (!$input) {
     error('JSON inválido');
 }
 
-$mesa_id    = isset($input['mesa_id']) ? (int) $input['mesa_id'] : null;
-$usuario_id = isset($input['usuario_id']) ? (int) $input['usuario_id'] : null;
-$productos  = isset($input['productos']) && is_array($input['productos']) ? $input['productos'] : null;
+$tipo          = isset($input['tipo']) ? $input['tipo'] : null;
+$mesa_id       = isset($input['mesa_id']) ? (int) $input['mesa_id'] : null;
+$repartidor_id = isset($input['repartidor_id']) ? (int) $input['repartidor_id'] : null;
+$usuario_id    = isset($input['usuario_id']) ? (int) $input['usuario_id'] : null;
+$productos     = isset($input['productos']) && is_array($input['productos']) ? $input['productos'] : null;
 
-if (!$mesa_id || !$usuario_id || !$productos) {
+if (!$tipo || !$usuario_id || !$productos) {
     error('Datos incompletos para crear la venta');
+}
+
+if ($tipo === 'mesa') {
+    if (!$mesa_id || $repartidor_id) {
+        error('Venta en mesa requiere mesa_id y sin repartidor_id');
+    }
+} elseif ($tipo === 'domicilio') {
+    if (!$repartidor_id || $mesa_id) {
+        error('Venta a domicilio requiere repartidor_id y sin mesa_id');
+    }
+} else {
+    error('Tipo de venta inválido');
 }
 
 $total = 0;
@@ -27,11 +41,11 @@ foreach ($productos as $p) {
     $total += $p['cantidad'] * $p['precio_unitario'];
 }
 
-$stmt = $conn->prepare('INSERT INTO ventas (mesa_id, usuario_id, total) VALUES (?, ?, ?)');
+$stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total) VALUES (?, ?, ?, ?, ?)');
 if (!$stmt) {
     error('Error al preparar venta: ' . $conn->error);
 }
-$stmt->bind_param('iid', $mesa_id, $usuario_id, $total);
+$stmt->bind_param('iiisd', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total);
 if (!$stmt->execute()) {
     error('Error al crear venta: ' . $stmt->error);
 }
