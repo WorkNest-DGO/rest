@@ -165,7 +165,18 @@ CREATE TABLE IF NOT EXISTS ticket_detalles (
 INSERT INTO usuarios (nombre, usuario, contrasena, rol) VALUES
 ('Administrador', 'admin', 'admin123', 'admin'),
 ('Carlos Mesero', 'carlos', 'carlos123', 'mesero'),
-('Laura Cajera', 'laura', 'laura123', 'cajero');
+('Laura Cajera', 'laura', 'laura123', 'cajero'),
+('Juan Mesero', 'juan', 'juan123', 'mesero'),
+('Luisa Mesera', 'luisa', 'luisa123', 'mesero');
+
+-- SERIES
+INSERT INTO catalogo_folios (descripcion, folio_actual) VALUES
+('Serie Restaurante', 1000),
+('Serie Domicilio', 2000);
+-- REPARTIDORES
+INSERT INTO repartidores (nombre, telefono) VALUES
+('Pedro Repartidor', '555-000-1111'),
+('Ana Repartidora', '555-999-2222');
 
 -- MESAS
 INSERT INTO mesas (nombre, estado, capacidad) VALUES
@@ -299,6 +310,7 @@ DELIMITER ;
 
 --  PROCEDIMIENTO PARA DESCONTAR INSUMOS POR PRODUCTO DE UN DETALLE DE VENTA
 DELIMITER //
+
 CREATE PROCEDURE sp_descuento_insumos_por_detalle(IN p_detalle_id INT)
 BEGIN
     DECLARE done INT DEFAULT 0;
@@ -326,10 +338,11 @@ BEGIN
     END LOOP;
     CLOSE cur;
 
-    -- Marcar como descontado
-    UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = p_detalle_id;
+
+
 END;
 //
+
 DELIMITER ;
 
 -- =========================
