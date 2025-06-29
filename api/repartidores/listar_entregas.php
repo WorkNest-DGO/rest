@@ -1,0 +1,68 @@
+<?php
+require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../../utils/response.php';
+
+$repartidor_id = null;
+
+if (isset($_GET['repartidor_id'])) {
+    $repartidor_id = (int) $_GET['repartidor_id'];
+} elseif (isset($_POST['repartidor_id'])) {
+    $repartidor_id = (int) $_POST['repartidor_id'];
+} else {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if ($input && isset($input['repartidor_id'])) {
+        $repartidor_id = (int) $input['repartidor_id'];
+    }
+}
+
+if (!$repartidor_id) {
+    error('repartidor_id requerido');
+}
+
+$stmt = $conn->prepare(
+    "SELECT id, fecha, total, estatus, entregado FROM ventas WHERE repartidor_id = ? AND estatus IN ('activa','cerrada') ORDER BY fecha DESC"
+);
+if (!$stmt) {
+    error('Error al preparar consulta: ' . $conn->error);
+}
+$stmt->bind_param('i', $repartidor_id);
+if (!$stmt->execute()) {
+    $stmt->close();
+    error('Error al ejecutar consulta: ' . $stmt->error);
+}
+$res = $stmt->get_result();
+$ventas = [];
+while ($row = $res->fetch_assoc()) {
+    $ventas[$row['id']] = [
+        'id'        => (int)$row['id'],
+        'fecha'     => $row['fecha'],
+        'total'     => (float)$row['total'],
+        'estatus'   => $row['estatus'],
+        'entregado' => (int)$row['entregado'],
+        'productos' => []
+    ];
+}
+$stmt->close();
+
+if ($ventas) {
+    $ids = implode(',', array_keys($ventas));
+    $det = $conn->query(
+        "SELECT vd.venta_id, p.nombre, vd.cantidad, vd.precio_unitario FROM venta_detalles vd JOIN productos p ON vd.producto_id = p.id WHERE vd.venta_id IN ($ids)"
+    );
+    if ($det) {
+        while ($d = $det->fetch_assoc()) {
+            $ventaId = (int)$d['venta_id'];
+            if (isset($ventas[$ventaId])) {
+                $ventas[$ventaId]['productos'][] = [
+                    'nombre' => $d['nombre'],
+                    'cantidad' => (int)$d['cantidad'],
+                    'precio_unitario' => (float)$d['precio_unitario']
+                ];
+            }
+        }
+        $det->free();
+    }
+}
+
+success(array_values($ventas));
+?>
