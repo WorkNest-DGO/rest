@@ -2,7 +2,10 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
-$query = "SELECT * FROM vw_ventas_detalladas ORDER BY fecha DESC"; // Lógica reemplazada por base de datos: ver bd.sql (Vista)
+$query = "SELECT vw.*, v.tipo_entrega
+          FROM vw_ventas_detalladas vw
+          JOIN ventas v ON v.id = vw.venta_id
+          ORDER BY vw.fecha DESC"; // Lógica reemplazada por base de datos: ver bd.sql (Vista)
 $result = $conn->query($query);
 
 if (!$result) {
