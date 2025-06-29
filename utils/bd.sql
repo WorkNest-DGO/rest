@@ -129,6 +129,38 @@ CREATE TABLE IF NOT EXISTS entradas_detalle (
     FOREIGN KEY (producto_id) REFERENCES productos(id)
 );
 
+-- Catálogo de folios
+CREATE TABLE IF NOT EXISTS catalogo_folios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    descripcion VARCHAR(100),
+    folio_actual INT DEFAULT 0
+);
+
+-- Tabla de tickets divididos por subcuenta
+CREATE TABLE IF NOT EXISTS tickets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    venta_id INT NOT NULL,
+    folio INT NOT NULL,
+    total DECIMAL(10,2) NOT NULL,
+    propina DECIMAL(10,2) DEFAULT 0,
+    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+    usuario_id INT,
+    FOREIGN KEY (venta_id) REFERENCES ventas(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+-- Detalle de productos en cada subticket
+CREATE TABLE IF NOT EXISTS ticket_detalles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ticket_id INT NOT NULL,
+    producto_id INT NOT NULL,
+    cantidad INT NOT NULL,
+    precio_unitario DECIMAL(10,2),
+    subtotal DECIMAL(10,2) GENERATED ALWAYS AS (cantidad * precio_unitario) STORED,
+    FOREIGN KEY (ticket_id) REFERENCES tickets(id),
+    FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
 -- INSERTS DE PRUEBA
 INSERT INTO usuarios (nombre, usuario, contrasena, rol) VALUES
 ('Administrador', 'admin', 'admin123', 'admin'),
