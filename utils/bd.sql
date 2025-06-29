@@ -70,6 +70,21 @@ ADD COLUMN estatus_preparacion ENUM('pendiente', 'en preparación', 'listo', 'en
 -- Agrega una columna para saber si una mesa está unida a otra
 ALTER TABLE mesas ADD COLUMN mesa_principal_id INT DEFAULT NULL;
 
+CREATE TABLE insumos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(100),
+  unidad VARCHAR(20),
+  existencia DECIMAL(10,2)
+);
+
+CREATE TABLE recetas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  producto_id INT,
+  insumo_id INT,
+  cantidad DECIMAL(10,2),
+  FOREIGN KEY (producto_id) REFERENCES productos(id),
+  FOREIGN KEY (insumo_id) REFERENCES insumos(id)
+);
 
 
 --inserts de prueba 
