@@ -61,17 +61,13 @@
             document.getElementById('totalVenta').textContent = 'Total: $' + data.total;
         }
 
-        // Ejemplo de uso
-        const datos = {
-            venta_id: 123,
-            fecha: "2024-06-28 12:34",
-            productos: [
-                { nombre: "Taco al Pastor", cantidad: 2, precio_unitario: 45 },
-                { nombre: "Refresco", cantidad: 1, precio_unitario: 20 }
-            ],
-            total: 110
-        };
-        llenarTicket(datos);
+        document.addEventListener('DOMContentLoaded', () => {
+            const almacenado = localStorage.getItem('ticketData');
+            if (almacenado) {
+                const datos = JSON.parse(almacenado);
+                llenarTicket(datos);
+            }
+        });
     </script>
 </body>
 </html>
