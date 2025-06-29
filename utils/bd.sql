@@ -63,8 +63,12 @@ CREATE TABLE corte_caja (
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 
+--agregar estatus a producto
 ALTER TABLE venta_detalles
 ADD COLUMN estatus_preparacion ENUM('pendiente', 'en preparación', 'listo', 'entregado') DEFAULT 'pendiente';
+
+-- Agrega una columna para saber si una mesa está unida a otra
+ALTER TABLE mesas ADD COLUMN mesa_principal_id INT DEFAULT NULL;
 
 
 
