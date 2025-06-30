@@ -194,18 +194,24 @@ async function registrarVenta() {
     });
 
     if (tipo === 'mesa') {
-        if (isNaN(mesa_id) || !mesa_id || !isNaN(repartidor_id) && repartidor_id) {
+        if (isNaN(mesa_id) || !mesa_id) {
             alert('Selecciona una mesa válida');
             return;
         }
     } else {
-        if (isNaN(repartidor_id) || !repartidor_id || !isNaN(mesa_id) && mesa_id) {
+        if (isNaN(repartidor_id) || !repartidor_id) {
             alert('Selecciona un repartidor válido');
             return;
         }
     }
 
-    const payload = { tipo, mesa_id, repartidor_id, usuario_id, productos };
+    const payload = {
+        tipo,
+        mesa_id: tipo === 'mesa' ? mesa_id : null,
+        repartidor_id: tipo === 'domicilio' ? repartidor_id : null,
+        usuario_id,
+        productos
+    };
 
     try {
         const resp = await fetch('../../api/ventas/crear_venta.php', {
