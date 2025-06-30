@@ -15,17 +15,22 @@ if (isset($_GET['repartidor_id'])) {
     }
 }
 
-if (!$repartidor_id) {
-    error('repartidor_id requerido');
+if ($repartidor_id) {
+    $stmt = $conn->prepare(
+        "SELECT id, fecha, total, estatus, entregado FROM ventas WHERE repartidor_id = ? AND estatus IN ('activa','cerrada') ORDER BY fecha DESC"
+    );
+    if (!$stmt) {
+        error('Error al preparar consulta: ' . $conn->error);
+    }
+    $stmt->bind_param('i', $repartidor_id);
+} else {
+    $stmt = $conn->prepare(
+        "SELECT id, fecha, total, estatus, entregado FROM ventas WHERE tipo_entrega = 'domicilio' AND estatus IN ('activa','cerrada') ORDER BY fecha DESC"
+    );
+    if (!$stmt) {
+        error('Error al preparar consulta: ' . $conn->error);
+    }
 }
-
-$stmt = $conn->prepare(
-    "SELECT id, fecha, total, estatus, entregado FROM ventas WHERE repartidor_id = ? AND estatus IN ('activa','cerrada') ORDER BY fecha DESC"
-);
-if (!$stmt) {
-    error('Error al preparar consulta: ' . $conn->error);
-}
-$stmt->bind_param('i', $repartidor_id);
 if (!$stmt->execute()) {
     $stmt->close();
     error('Error al ejecutar consulta: ' . $stmt->error);

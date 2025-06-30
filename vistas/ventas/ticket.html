@@ -53,6 +53,8 @@
             </thead>
             <tbody></tbody>
         </table>
+        <label for="serie_id">Serie:</label>
+        <select id="serie_id"></select>
         <button id="agregarSub">Agregar subcuenta</button>
         <button id="guardarSub">Guardar Tickets</button>
         <div id="subcuentas"></div>
@@ -104,9 +106,32 @@
                 document.getElementById('imprimir').style.display = 'block';
                 llenarTicket(datos);
             } else {
+                cargarSeries();
                 inicializarDividir(datos);
             }
         });
+
+        async function cargarSeries() {
+            try {
+                const resp = await fetch('../../api/tickets/listar_series.php');
+                const data = await resp.json();
+                if (data.success) {
+                    const sel = document.getElementById('serie_id');
+                    sel.innerHTML = '';
+                    data.resultado.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = s.descripcion;
+                        sel.appendChild(opt);
+                    });
+                } else {
+                    alert(data.mensaje);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error al cargar series');
+            }
+        }
 
         let productos = [];
         let numSub = 1;
@@ -195,7 +220,7 @@
 
         function guardarSubcuentas() {
             const info = JSON.parse(localStorage.getItem('ticketData'));
-            const payload = { venta_id: info.venta_id, usuario_id: info.usuario_id || 1, subcuentas: [] };
+            const payload = { venta_id: info.venta_id, usuario_id: info.usuario_id || 1, serie_id: parseInt(document.getElementById('serie_id').value), subcuentas: [] };
             for (let i = 1; i <= numSub; i++) {
                 const prods = productos
                     .filter(p => p.subcuenta === i)

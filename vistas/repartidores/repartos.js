@@ -2,9 +2,11 @@ const params = new URLSearchParams(location.search);
 const repartidorId = params.get('id');
 
 async function cargarEntregas() {
-    if (!repartidorId) return;
     try {
-        const resp = await fetch(`../../api/repartidores/listar_entregas.php?repartidor_id=${repartidorId}`);
+        const url = repartidorId
+            ? `../../api/repartidores/listar_entregas.php?repartidor_id=${repartidorId}`
+            : '../../api/repartidores/listar_entregas.php';
+        const resp = await fetch(url);
         const data = await resp.json();
         if (data.success) {
             const pendientesBody = document.querySelector('#tabla-pendientes tbody');

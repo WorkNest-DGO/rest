@@ -10,7 +10,7 @@ async function cargarPendientes() {
                 const inicioVisible = p.estatus === 'pendiente';
                 const listoVisible = p.estatus === 'en preparación';
                 tr.innerHTML = `
-                    <td>${p.mesa}</td>
+                    <td>${p.destino}</td>
                     <td>${p.producto}</td>
                     <td>${p.cantidad}</td>
                     <td>${p.hora}</td>

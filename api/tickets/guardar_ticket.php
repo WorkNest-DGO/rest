@@ -14,18 +14,33 @@ if (!$input || !isset($input['venta_id'], $input['usuario_id'], $input['subcuent
 $venta_id   = (int)$input['venta_id'];
 $usuario_id = (int)$input['usuario_id'];
 $subcuentas = $input['subcuentas'];
+$serie_id   = isset($input['serie_id']) ? (int)$input['serie_id'] : null;
 
 $conn->begin_transaction();
 
-$folioRes = $conn->query('SELECT id, folio_actual FROM catalogo_folios LIMIT 1 FOR UPDATE');
-if (!$folioRes) {
+$folioStmt = $serie_id
+    ? $conn->prepare('SELECT id, folio_actual FROM catalogo_folios WHERE id = ? FOR UPDATE')
+    : $conn->prepare('SELECT id, folio_actual FROM catalogo_folios LIMIT 1 FOR UPDATE');
+if (!$folioStmt) {
     $conn->rollback();
-    error('Error al obtener folio: ' . $conn->error);
+    error('Error al preparar folio: ' . $conn->error);
 }
-$row = $folioRes->fetch_assoc();
+if ($serie_id) {
+    $folioStmt->bind_param('i', $serie_id);
+}
+if (!$folioStmt->execute()) {
+    $conn->rollback();
+    error('Error al obtener folio: ' . $folioStmt->error);
+}
+$resFolio = $folioStmt->get_result();
+$row = $resFolio->fetch_assoc();
+$folioStmt->close();
+if (!$row) {
+    $conn->rollback();
+    error('Serie de folios no encontrada');
+}
 $catalogo_id = (int)$row['id'];
 $folio_actual = (int)$row['folio_actual'];
-$folioRes->close();
 
 $insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, total, propina, usuario_id) VALUES (?, ?, ?, ?, ?)');
 $insDetalle = $conn->prepare('INSERT INTO ticket_detalles (ticket_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)');
