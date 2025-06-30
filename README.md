@@ -24,10 +24,11 @@ Para mejorar la integridad y rendimiento del sistema, se delegaron varias operac
 
 ###  STORED PROCEDURES
 
-- `sp_descuento_insumos_por_detalle(detalle_id)`  
-  Aplica receta y descuenta insumos asociados.
+- ~~`sp_descuento_insumos_por_detalle(detalle_id)`~~
+  La lógica de descuento de insumos se implementó directamente en PHP para
+  mayor transparencia.
 
-- `sp_cerrar_corte(usuario_id)`  
+- `sp_cerrar_corte(usuario_id)`
   Calcula el total de ventas cerradas desde el último corte de caja y actualiza `corte_caja`.
 
 ###  VISTAS

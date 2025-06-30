@@ -2,6 +2,30 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
+function descontarInsumos($productoId, $cantidad)
+{
+    global $conn;
+    $q = $conn->prepare('SELECT insumo_id, cantidad FROM recetas WHERE producto_id = ?');
+    if (!$q) {
+        return;
+    }
+    $q->bind_param('i', $productoId);
+    if ($q->execute()) {
+        $res = $q->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $insumo = (int)$row['insumo_id'];
+            $cant   = (float)$row['cantidad'] * $cantidad;
+            $up = $conn->prepare('UPDATE insumos SET existencia = existencia - ? WHERE id = ?');
+            if ($up) {
+                $up->bind_param('di', $cant, $insumo);
+                $up->execute();
+                $up->close();
+            }
+        }
+    }
+    $q->close();
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error('Método no permitido');
 }
@@ -11,18 +35,58 @@ if (!$input || !isset($input['detalle_id'])) {
     error('Datos inválidos');
 }
 
-$detalle_id = (int) $input['detalle_id'];
+$detalle_id = (int)$input['detalle_id'];
 
-$stmt = $conn->prepare("UPDATE venta_detalles SET estatus_preparacion = 'entregado' WHERE id = ?");
-if (!$stmt) {
+$info = $conn->prepare('SELECT producto_id, cantidad, estatus_preparacion, insumos_descargados FROM venta_detalles WHERE id = ?');
+if (!$info) {
+    error('Error al preparar consulta: ' . $conn->error);
+}
+$info->bind_param('i', $detalle_id);
+if (!$info->execute()) {
+    $info->close();
+    error('Error al obtener detalle: ' . $info->error);
+}
+$res      = $info->get_result();
+$detalle  = $res->fetch_assoc();
+$info->close();
+
+if (!$detalle) {
+    error('Detalle no encontrado');
+}
+
+$upd = $conn->prepare("UPDATE venta_detalles SET estatus_preparacion = 'entregado' WHERE id = ?");
+if (!$upd) {
     error('Error al preparar actualización: ' . $conn->error);
 }
-$stmt->bind_param('i', $detalle_id);
-if (!$stmt->execute()) {
-    $stmt->close();
-    error('Error al marcar entregado: ' . $stmt->error);
+$upd->bind_param('i', $detalle_id);
+if (!$upd->execute()) {
+    $upd->close();
+    error('Error al marcar entregado: ' . $upd->error);
 }
-$stmt->close();
+$upd->close();
+
+// Descontar insumos si aún no se ha hecho
+if ((int)$detalle['insumos_descargados'] === 0) {
+    descontarInsumos((int)$detalle['producto_id'], (int)$detalle['cantidad']);
+    $mark = $conn->prepare('UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = ?');
+    if ($mark) {
+        $mark->bind_param('i', $detalle_id);
+        $mark->execute();
+        $mark->close();
+    }
+}
+
+// Descontar existencia del producto si no estaba listo previamente
+if (!in_array($detalle['estatus_preparacion'], ['listo', 'entregado'], true)) {
+    $upProd = $conn->prepare('UPDATE productos SET existencia = existencia - ? WHERE id = ?');
+    if ($upProd) {
+        $cant = (int)$detalle['cantidad'];
+        $pid  = (int)$detalle['producto_id'];
+        $upProd->bind_param('ii', $cant, $pid);
+        $upProd->execute();
+        $upProd->close();
+    }
+}
 
 success(true);
 ?>
