@@ -47,7 +47,27 @@ $upd->close();
 
 // Descontar insumos si aún no se ha hecho
 if ((int)$detalle['insumos_descargados'] === 0) {
-    descontarInsumos((int)$detalle['producto_id'], (int)$detalle['cantidad']);
+    $productoId    = (int)$detalle['producto_id'];
+    $cantidadVenta = (int)$detalle['cantidad'];
+    $rec = $conn->prepare('SELECT insumo_id, cantidad FROM recetas WHERE producto_id = ?');
+    if ($rec) {
+        $rec->bind_param('i', $productoId);
+        if ($rec->execute()) {
+            $res = $rec->get_result();
+            while ($row = $res->fetch_assoc()) {
+                $insumoId  = (int)$row['insumo_id'];
+                $descuento = $cantidadVenta * (float)$row['cantidad'];
+                $up = $conn->prepare('UPDATE insumos SET existencia = existencia - ? WHERE id = ?');
+                if ($up) {
+                    $up->bind_param('di', $descuento, $insumoId);
+                    $up->execute();
+                    $up->close();
+                }
+            }
+        }
+        $rec->close();
+    }
+
     $mark = $conn->prepare('UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = ?');
     if ($mark) {
         $mark->bind_param('i', $detalle_id);
