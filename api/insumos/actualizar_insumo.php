@@ -11,20 +11,21 @@ if (!$input || !isset($input['id'])) {
     error('Datos inválidos');
 }
 
-$id     = (int)$input['id'];
-$nombre = isset($input['nombre']) ? trim($input['nombre']) : '';
-$unidad = isset($input['unidad']) ? trim($input['unidad']) : '';
-$tipo   = isset($input['tipo_control']) ? trim($input['tipo_control']) : '';
+$id        = (int)$input['id'];
+$nombre    = isset($input['nombre']) ? trim($input['nombre']) : '';
+$unidad    = isset($input['unidad']) ? trim($input['unidad']) : '';
+$existencia = isset($input['existencia']) ? (float)$input['existencia'] : 0;
+$tipo      = isset($input['tipo_control']) ? trim($input['tipo_control']) : '';
 
 if ($nombre === '' || $unidad === '' || $tipo === '') {
     error('Datos incompletos');
 }
 
-$stmt = $conn->prepare('UPDATE insumos SET nombre = ?, unidad = ?, tipo_control = ? WHERE id = ?');
+$stmt = $conn->prepare('UPDATE insumos SET nombre = ?, unidad = ?, existencia = ?, tipo_control = ? WHERE id = ?');
 if (!$stmt) {
     error('Error al preparar actualización: ' . $conn->error);
 }
-$stmt->bind_param('sssi', $nombre, $unidad, $tipo, $id);
+$stmt->bind_param('ssdsi', $nombre, $unidad, $existencia, $tipo, $id);
 if (!$stmt->execute()) {
     $stmt->close();
     error('Error al actualizar insumo: ' . $stmt->error);

@@ -17,7 +17,7 @@ if (isset($_GET['repartidor_id'])) {
 
 if ($repartidor_id) {
     $stmt = $conn->prepare(
-        "SELECT id, fecha, total, estatus, entregado FROM ventas WHERE repartidor_id = ? AND estatus IN ('activa','cerrada') ORDER BY fecha DESC"
+        "SELECT v.id, v.fecha, v.total, v.estatus, v.entregado, r.nombre AS repartidor FROM ventas v JOIN repartidores r ON v.repartidor_id = r.id WHERE v.repartidor_id = ? AND v.estatus IN ('activa','cerrada') ORDER BY v.fecha DESC"
     );
     if (!$stmt) {
         error('Error al preparar consulta: ' . $conn->error);
@@ -25,7 +25,7 @@ if ($repartidor_id) {
     $stmt->bind_param('i', $repartidor_id);
 } else {
     $stmt = $conn->prepare(
-        "SELECT id, fecha, total, estatus, entregado FROM ventas WHERE tipo_entrega = 'domicilio' AND estatus IN ('activa','cerrada') ORDER BY fecha DESC"
+        "SELECT v.id, v.fecha, v.total, v.estatus, v.entregado, r.nombre AS repartidor FROM ventas v JOIN repartidores r ON v.repartidor_id = r.id WHERE v.tipo_entrega = 'domicilio' AND v.estatus IN ('activa','cerrada') ORDER BY v.fecha DESC"
     );
     if (!$stmt) {
         error('Error al preparar consulta: ' . $conn->error);
@@ -44,6 +44,7 @@ while ($row = $res->fetch_assoc()) {
         'total'     => (float)$row['total'],
         'estatus'   => $row['estatus'],
         'entregado' => (int)$row['entregado'],
+        'repartidor'=> $row['repartidor'] ?? '',
         'productos' => []
     ];
 }

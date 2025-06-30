@@ -18,6 +18,23 @@ if (!$venta_id) {
     error('Datos inválidos');
 }
 
+// verificar que todos los productos estén listos
+$check = $conn->prepare("SELECT COUNT(*) AS faltan FROM venta_detalles WHERE venta_id = ? AND estatus_preparacion <> 'listo'");
+if (!$check) {
+    error('Error al preparar verificación: ' . $conn->error);
+}
+$check->bind_param('i', $venta_id);
+if (!$check->execute()) {
+    $check->close();
+    error('Error al ejecutar verificación: ' . $check->error);
+}
+$res = $check->get_result();
+$row = $res->fetch_assoc();
+$check->close();
+if ($row && (int)$row['faltan'] > 0) {
+    error('Aún hay productos sin preparar');
+}
+
 $stmt = $conn->prepare("UPDATE ventas SET estatus = 'cerrada', entregado = 1 WHERE id = ?");
 if (!$stmt) {
     error('Error al preparar actualización: ' . $conn->error);
