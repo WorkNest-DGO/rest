@@ -301,7 +301,8 @@ async function verDetalles(id) {
                     total
                 };
                 localStorage.setItem('ticketData', JSON.stringify(payload));
-                window.open('ticket.html', '_blank');
+                const mesaId = venta.mesa_id ? `&mesa=${venta.mesa_id}` : '';
+                window.open(`ticket.html?print=1${mesaId}&venta=${id}`, '_blank');
             });
         } else {
             alert(data.mensaje);
