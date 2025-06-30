@@ -2,6 +2,9 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
+// Toda la lógica de descuento de insumos se maneja en este archivo,
+// sin apoyarse en triggers ni procedimientos almacenados.
+
 function descontarInsumos($productoId, $cantidad)
 {
     global $conn;
@@ -69,6 +72,13 @@ $upd->close();
 if ((int)$detalle['insumos_descargados'] === 0) {
     descontarInsumos((int)$detalle['producto_id'], (int)$detalle['cantidad']);
     $mark = $conn->prepare('UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = ?');
+    if ($mark) {
+        $mark->bind_param('i', $detalle_id);
+        $mark->execute();
+        $mark->close();
+    }
+} else {
+    $mark = $conn->prepare('UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = ? AND insumos_descargados = 0');
     if ($mark) {
         $mark->bind_param('i', $detalle_id);
         $mark->execute();
