@@ -85,7 +85,27 @@ if ($nuevo_estado === 'en preparación') {
 if ($nuevo_estado === 'listo') {
     // Descontamos insumos solo una vez por producto utilizando la receta
     if ((int)$detalle['insumos_descargados'] === 0) {
-        descontarInsumos((int)$detalle['producto_id'], (int)$detalle['cantidad']);
+        $productoId = (int)$detalle['producto_id'];
+        $cantidadVenta = (int)$detalle['cantidad'];
+        $rec = $conn->prepare('SELECT insumo_id, cantidad FROM recetas WHERE producto_id = ?');
+        if ($rec) {
+            $rec->bind_param('i', $productoId);
+            if ($rec->execute()) {
+                $res = $rec->get_result();
+                while ($row = $res->fetch_assoc()) {
+                    $insumoId = (int)$row['insumo_id'];
+                    $descuento = $cantidadVenta * (float)$row['cantidad'];
+                    $upInsumo = $conn->prepare('UPDATE insumos SET existencia = existencia - ? WHERE id = ?');
+                    if ($upInsumo) {
+                        $upInsumo->bind_param('di', $descuento, $insumoId);
+                        $upInsumo->execute();
+                        $upInsumo->close();
+                    }
+                }
+            }
+            $rec->close();
+        }
+
         $stmt = $conn->prepare('UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = ?');
         if ($stmt) {
             $stmt->bind_param('i', $detalle_id);
