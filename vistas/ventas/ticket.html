@@ -296,6 +296,14 @@
                 console.error('Error al liberar mesa');
             }
         }
+
+        window.addEventListener('beforeunload', () => {
+            const params = new URLSearchParams(window.location.search);
+            const mesaId = params.get('mesa');
+            if (window.opener && window.opener.ticketPrinted && mesaId) {
+                window.opener.ticketPrinted(parseInt(mesaId));
+            }
+        });
     </script>
 </body>
 
