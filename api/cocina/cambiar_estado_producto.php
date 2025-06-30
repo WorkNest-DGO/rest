@@ -59,6 +59,33 @@ if (!$upd->execute()) {
 
 $upd->close();
 
+// Si se inicia la preparación descontamos insumos inmediatamente
+if ($nuevo_estado === 'en preparación' && (int)$detalle['insumos_descargados'] === 0) {
+    $sp = $conn->prepare('CALL sp_descuento_insumos_por_detalle(?)');
+    if ($sp) {
+        $sp->bind_param('i', $detalle_id);
+        $sp->execute();
+        $sp->close();
+    }
+
+    $mark = $conn->prepare('UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = ?');
+    if ($mark) {
+        $mark->bind_param('i', $detalle_id);
+        $mark->execute();
+        $mark->close();
+    }
+
+    $log = $conn->prepare('INSERT INTO logs_accion (usuario_id, modulo, accion, referencia_id) VALUES (?, ?, ?, ?)');
+    if ($log) {
+        $usuario_id = $input['usuario_id'] ?? null;
+        $mod        = 'cocina';
+        $accion     = 'Producto iniciado';
+        $log->bind_param('issi', $usuario_id, $mod, $accion, $detalle_id);
+        $log->execute();
+        $log->close();
+    }
+}
+
 // Tras cambiar a "listo" el trigger descuenta insumos. Ahora marcamos que
 // ya se descargaron si aún no estaba registrado.
 if ($nuevo_estado === 'listo') {
@@ -66,6 +93,16 @@ if ($nuevo_estado === 'listo') {
     $stmt->bind_param("i", $detalle_id);
     $stmt->execute();
     $stmt->close();
+
+    // Descontar existencia del producto vendido
+    $updProd = $conn->prepare('UPDATE productos SET existencia = existencia - ? WHERE id = ?');
+    if ($updProd) {
+        $cant = (int)$detalle['cantidad'];
+        $pid  = (int)$detalle['producto_id'];
+        $updProd->bind_param('ii', $cant, $pid);
+        $updProd->execute();
+        $updProd->close();
+    }
 
     $log = $conn->prepare('INSERT INTO logs_accion (usuario_id, modulo, accion, referencia_id) VALUES (?, ?, ?, ?)');
     if ($log) {

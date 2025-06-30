@@ -366,8 +366,8 @@ async function agregarProductoVenta(ventaId, mesaId, estado) {
     const select = document.getElementById('nuevo_producto');
     const cantidad = parseInt(document.getElementById('nuevo_cantidad').value);
     const productoId = parseInt(select.value);
-    const prod = productos.find(p => p.id === productoId);
-    const precio = prod ? parseFloat(prod.precio) : 0;
+    const selected = select.selectedOptions[0];
+    const precio = selected ? parseFloat(selected.dataset.precio || '0') : 0;
 
     if (isNaN(productoId) || isNaN(cantidad) || cantidad <= 0) {
         alert('Producto o cantidad inválida');
