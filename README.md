@@ -19,8 +19,8 @@ Para mejorar la integridad y rendimiento del sistema, se delegaron varias operac
 
 ###  TRIGGERS
 
-- `trg_llama_descuento_insumos`  
-  Al marcar un producto como "listo", se activa un trigger que descuenta automáticamente los insumos según la receta registrada.
+- ~~`trg_llama_descuento_insumos`~~
+  La deducción de insumos ahora se realiza en PHP al cambiar el estado del producto.
 
 ###  STORED PROCEDURES
 
@@ -53,7 +53,7 @@ Para mejorar la integridad y rendimiento del sistema, se delegaron varias operac
 
 | Archivo PHP | Reemplazo sugerido |
 |-------------|--------------------|
-| `crear_venta.php` | Delega descuento de insumos al trigger |
+| `crear_venta.php` | Registra la venta; el descuento se realiza al marcar el producto como listo o entregado |
 | `cambiar_estado_producto.php` | Descuenta insumos y actualiza estado sin triggers |
 | `cerrar_corte.php` | Solo llama a `CALL sp_cerrar_corte(usuario_id)` |
 | `listar_ventas.php` | Usa vista `vw_ventas_detalladas` |
