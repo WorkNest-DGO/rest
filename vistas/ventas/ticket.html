@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Ticket de Venta</title>
@@ -11,20 +12,25 @@
             font-size: 12px;
             text-align: center;
         }
+
         table {
             width: 100%;
         }
+
         #productos td {
             text-align: left;
         }
+
         #productos td:last-child {
             text-align: right;
         }
+
         #totalVenta {
             font-size: 1.2em;
             font-weight: bold;
             margin-top: 10px;
         }
+
         @media print {
             #btnImprimir {
                 display: none;
@@ -32,12 +38,18 @@
         }
     </style>
 </head>
+
 <body>
     <div id="dividir" style="display:none;">
         <h2>Dividir venta</h2>
         <table id="tablaProductos" border="1">
             <thead>
-                <tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subcuenta</th></tr>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cant</th>
+                    <th>Precio</th>
+                    <th>Subcuenta</th>
+                </tr>
             </thead>
             <tbody></tbody>
         </table>
@@ -185,7 +197,13 @@
             const info = JSON.parse(localStorage.getItem('ticketData'));
             const payload = { venta_id: info.venta_id, usuario_id: info.usuario_id || 1, subcuentas: [] };
             for (let i = 1; i <= numSub; i++) {
-                const prods = productos.filter(p => p.subcuenta === i).map(p => ({ producto_id: p.producto_id, cantidad: p.cantidad, precio_unitario: p.precio_unitario }));
+                const prods = productos.filter(p => p.subcuenta === i)
+                    .map(p => ({
+                        producto_id: p.producto_id,
+                        cantidad: p.cantidad,
+                        precio_unitario: p.precio_unitario
+                    }))
+                    ;
                 if (prods.length === 0) continue;
                 const prop = parseFloat(document.getElementById('propina' + i).value || 0);
                 payload.subcuentas.push({ productos: prods, propina: prop });
@@ -232,4 +250,5 @@
         }
     </script>
 </body>
+
 </html>
