@@ -253,7 +253,7 @@
                     if (d.success) {
                         ticketsGuardados = d.resultado.tickets || [];
                         alert('Tickets guardados');
-                        mostrarBotonesImprimir(payload);
+                        mostrarBotonesImprimir(payload, true);
                     } else {
                         alert(d.mensaje);
                     }
@@ -261,26 +261,32 @@
                 .catch(() => alert('Error al guardar'));
         }
 
-        function mostrarBotonesImprimir(payload) {
+        function mostrarBotonesImprimir(payload, auto) {
+            const params = new URLSearchParams(window.location.search);
+            const mesaId = params.get('mesa');
             ticketsGuardados.forEach((t, i) => {
-                const div = document.getElementById('sub' + (i + 1));
-                if (!div) return;
-                const btn = document.createElement('button');
-                btn.textContent = 'Imprimir Ticket';
-                btn.addEventListener('click', () => {
-                    const prods = productos.filter(p => p.subcuenta === i + 1);
-                    const data = {
-                        venta_id: payload.venta_id,
-                        folio: t.folio,
-                        fecha: new Date().toLocaleString(),
-                        productos: prods,
-                        propina: t.propina,
-                        total: t.total
-                    };
+                const prods = productos.filter(p => p.subcuenta === i + 1);
+                const data = {
+                    venta_id: payload.venta_id,
+                    folio: t.folio,
+                    fecha: new Date().toLocaleString(),
+                    productos: prods,
+                    propina: t.propina,
+                    total: t.total
+                };
+                const url = mesaId ? `ticket.html?print=1&mesa=${mesaId}` : 'ticket.html?print=1';
+                const imprimir = () => {
                     localStorage.setItem('ticketData', JSON.stringify(data));
-                    window.open('ticket.html?print=1', '_blank');
-                });
-                div.appendChild(btn);
+                    window.open(url, '_blank');
+                };
+                const div = document.getElementById('sub' + (i + 1));
+                if (div) {
+                    const btn = document.createElement('button');
+                    btn.textContent = 'Imprimir Ticket';
+                    btn.addEventListener('click', imprimir);
+                    div.appendChild(btn);
+                }
+                if (auto) imprimir();
             });
         }
 
@@ -296,6 +302,12 @@
                 console.error('Error al liberar mesa');
             }
         }
+
+        window.ticketPrinted = function (mesaId) {
+            if (window.opener && window.opener.ticketPrinted) {
+                window.opener.ticketPrinted(mesaId);
+            }
+        };
 
         window.addEventListener('beforeunload', () => {
             const params = new URLSearchParams(window.location.search);

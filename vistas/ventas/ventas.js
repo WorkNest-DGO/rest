@@ -301,8 +301,8 @@ async function verDetalles(id) {
                     total
                 };
                 localStorage.setItem('ticketData', JSON.stringify(payload));
-                const mesaId = venta.mesa_id ? `&mesa=${venta.mesa_id}` : '';
-                window.open(`ticket.html?print=1${mesaId}&venta=${id}`, '_blank');
+                const mesaParam = venta.mesa_id ? `&mesa=${venta.mesa_id}` : '';
+                window.open(`ticket.html?venta=${id}${mesaParam}`, '_blank');
             });
         } else {
             alert(data.mensaje);
@@ -348,7 +348,7 @@ async function imprimirSolicitud(mesaId, ventaId) {
                 total
             };
             localStorage.setItem('ticketData', JSON.stringify(payload));
-            const w = window.open(`ticket.html?print=1&mesa=${mesaId}&venta=${ventaId}`, '_blank');
+            const w = window.open(`ticket.html?venta=${ventaId}&mesa=${mesaId}`, '_blank');
             if (w) w.focus();
         } else {
             alert(data.mensaje);
