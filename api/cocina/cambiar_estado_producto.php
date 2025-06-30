@@ -1,32 +1,8 @@
 <?php
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
+require_once __DIR__ . '/../../utils/inventario.php';
 
-function descontarInsumos($productoId, $cantidad)
-{
-    global $conn;
-    $q = $conn->prepare('SELECT insumo_id, cantidad FROM recetas WHERE producto_id = ?');
-    if (!$q) {
-        return;
-    }
-    $q->bind_param('i', $productoId);
-    if (!$q->execute()) {
-        $q->close();
-        return;
-    }
-    $res = $q->get_result();
-    while ($row = $res->fetch_assoc()) {
-        $insumo = (int)$row['insumo_id'];
-        $cant   = (float)$row['cantidad'] * $cantidad;
-        $up = $conn->prepare('UPDATE insumos SET existencia = existencia - ? WHERE id = ?');
-        if ($up) {
-            $up->bind_param('di', $cant, $insumo);
-            $up->execute();
-            $up->close();
-        }
-    }
-    $q->close();
-}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error('Método no permitido');
