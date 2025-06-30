@@ -41,7 +41,7 @@ $info->close();
 
 $stmt = $conn->prepare(
     'SELECT vd.id, vd.producto_id, p.nombre, vd.cantidad, vd.precio_unitario, ' .
-    '(vd.cantidad * vd.precio_unitario) AS subtotal ' .
+    '(vd.cantidad * vd.precio_unitario) AS subtotal, vd.estatus_preparacion ' .
     'FROM venta_detalles vd ' .
     'JOIN productos p ON vd.producto_id = p.id ' .
     'WHERE vd.venta_id = ?'

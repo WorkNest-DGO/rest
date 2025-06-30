@@ -111,10 +111,18 @@ async function cargarProductos() {
                     opt.value = p.id;
                     opt.textContent = p.nombre;
                     opt.dataset.precio = p.precio;
+                    opt.dataset.existencia = p.existencia;
                     select.appendChild(opt);
                 });
                 select.addEventListener('change', () => {
                     actualizarPrecio(select);
+                    const cantInput = select.closest('tr').querySelector('.cantidad');
+                    const exist = select.selectedOptions[0].dataset.existencia;
+                    if (exist) {
+                        cantInput.max = exist;
+                    } else {
+                        cantInput.removeAttribute('max');
+                    }
                     validarInventario();
                 });
             });
@@ -148,9 +156,11 @@ function actualizarPrecio(select) {
         if (!cantidadInput.value || parseInt(cantidadInput.value) === 0) {
             cantidadInput.value = 1;
         }
+        cantidadInput.max = producto.existencia;
     } else {
         precioInput.value = '';
         delete precioInput.dataset.unitario;
+        cantidadInput.removeAttribute('max');
     }
 }
 
@@ -164,6 +174,12 @@ function manejarCantidad(input, select) {
         }
         val = 1;
         input.value = 1;
+    }
+    const max = parseInt(input.max || 0);
+    if (max && val > max) {
+        alert(`Solo hay ${max} unidades disponibles`);
+        val = max;
+        input.value = max;
     }
     actualizarPrecio(select || input.closest('tr').querySelector('.producto'));
     validarInventario();
@@ -179,14 +195,28 @@ function validarInventario() {
             totales[id] = (totales[id] || 0) + cant;
         }
     });
+    let ok = true;
     for (const id in totales) {
         const prod = productos.find(p => parseInt(p.id) === parseInt(id));
         if (prod && totales[id] > parseInt(prod.existencia)) {
+            const excedente = totales[id] - parseInt(prod.existencia);
+            let restante = excedente;
+            rows.forEach(r => {
+                const sid = parseInt(r.querySelector('.producto').value);
+                if (sid === parseInt(id) && restante > 0) {
+                    const inp = r.querySelector('.cantidad');
+                    const val = parseInt(inp.value) || 0;
+                    const nuevo = Math.max(val - restante, 0);
+                    restante -= val - nuevo;
+                    inp.value = nuevo;
+                    actualizarPrecio(r.querySelector('.producto'));
+                }
+            });
             alert(`No hay existencia suficiente de ${prod.nombre}`);
-            return false;
+            ok = false;
         }
     }
-    return true;
+    return ok;
 }
 
 function agregarFilaProducto() {
@@ -205,13 +235,22 @@ function agregarFilaProducto() {
         opt.value = p.id;
         opt.textContent = p.nombre;
         opt.dataset.precio = p.precio;
+        opt.dataset.existencia = p.existencia;
         select.appendChild(opt);
     });
     select.addEventListener('change', () => {
         actualizarPrecio(select);
+        const cantInput = select.closest('tr').querySelector('.cantidad');
+        const exist = select.selectedOptions[0].dataset.existencia;
+        if (exist) {
+            cantInput.max = exist;
+        } else {
+            cantInput.removeAttribute('max');
+        }
         validarInventario();
     });
     const cantidadInput = nueva.querySelector('.cantidad');
+    cantidadInput.value = '';
     cantidadInput.addEventListener('input', () => {
         manejarCantidad(cantidadInput, select);
         validarInventario();
@@ -318,10 +357,13 @@ async function verDetalles(id) {
             const destino = info.tipo_entrega === 'mesa' ? info.mesa : info.repartidor;
             let html = `<h3>Detalle de venta</h3>
                         <p>Tipo: ${info.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${info.mesero}</p>`;
-            html += `<table border="1"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th></th></tr></thead><tbody>`;
+            html += `<table border="1"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th></tr></thead><tbody>`;
             info.productos.forEach(p => {
-                html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td>` +
-                        `<td><button class="delDetalle" data-id="${p.id}">Eliminar</button></td></tr>`;
+                const btn = p.estatus_preparacion !== 'entregado'
+                    ? `<button class="delDetalle" data-id="${p.id}">Eliminar</button>`
+                    : '';
+                html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${p.estatus_preparacion || ''}</td>` +
+                        `<td>${btn}</td></tr>`;
             });
             html += `</tbody></table>`;
             html += `<h4>Agregar producto</h4>`;
@@ -340,7 +382,17 @@ async function verDetalles(id) {
                 opt.value = p.id;
                 opt.textContent = p.nombre;
                 opt.dataset.precio = p.precio;
+                opt.dataset.existencia = p.existencia;
                 selectProd.appendChild(opt);
+            });
+            const cantDetalle = document.getElementById('detalle_cantidad');
+            selectProd.addEventListener('change', () => {
+                const exist = selectProd.selectedOptions[0].dataset.existencia;
+                if (exist) {
+                    cantDetalle.max = exist;
+                } else {
+                    cantDetalle.removeAttribute('max');
+                }
             });
 
             contenedor.querySelectorAll('.delDetalle').forEach(btn => {
@@ -402,6 +454,10 @@ async function agregarDetalle(ventaId) {
     const precio = prod ? parseFloat(prod.precio) : 0;
     if (isNaN(productoId) || isNaN(cantidad) || cantidad <= 0) {
         alert('Producto o cantidad inválida');
+        return;
+    }
+    if (prod && cantidad > parseInt(prod.existencia)) {
+        alert(`Solo hay ${prod.existencia} disponibles de ${prod.nombre}`);
         return;
     }
     try {

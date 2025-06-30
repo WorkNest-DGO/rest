@@ -29,7 +29,7 @@ if (!$detalle) {
     error('Detalle no encontrado');
 }
 
-if (in_array($detalle['estatus_preparacion'], ['en preparación', 'entregado'])) {
+if ($detalle['estatus_preparacion'] === 'entregado') {
     error('No se puede eliminar el producto');
 }
 
