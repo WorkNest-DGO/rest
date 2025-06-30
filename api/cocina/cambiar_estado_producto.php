@@ -72,7 +72,8 @@ if (!isset($transiciones[$actual]) || $transiciones[$actual] !== $nuevo_estado) 
     error('Transición no permitida');
 }
 
-// Lógica reemplazada por base de datos: ver bd.sql (Trigger/SP)
+// La actualización del estado ya no depende de triggers o procedimientos
+// almacenados. Todo se realiza directamente desde PHP.
 $upd = $conn->prepare('UPDATE venta_detalles SET estatus_preparacion = ? WHERE id = ?');
 if (!$upd) {
     error('Error al preparar actualización: ' . $conn->error);
@@ -85,16 +86,8 @@ if (!$upd->execute()) {
 
 $upd->close();
 
-// Si se inicia la preparación descontamos insumos inmediatamente
-if ($nuevo_estado === 'en preparación' && (int)$detalle['insumos_descargados'] === 0) {
-    descontarInsumos((int)$detalle['producto_id'], (int)$detalle['cantidad']);
-    $mark = $conn->prepare('UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = ?');
-    if ($mark) {
-        $mark->bind_param('i', $detalle_id);
-        $mark->execute();
-        $mark->close();
-    }
-
+// Al pasar a "en preparación" solo registramos el cambio de estado
+if ($nuevo_estado === 'en preparación') {
     $log = $conn->prepare('INSERT INTO logs_accion (usuario_id, modulo, accion, referencia_id) VALUES (?, ?, ?, ?)');
     if ($log) {
         $usuario_id = $input['usuario_id'] ?? null;
@@ -109,10 +102,24 @@ if ($nuevo_estado === 'en preparación' && (int)$detalle['insumos_descargados'] 
 // Al pasar a "listo" aseguramos que los insumos ya se descontaron y restamos
 // la existencia del producto vendido.
 if ($nuevo_estado === 'listo') {
-    $stmt = $conn->prepare("UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = ? AND insumos_descargados = 0");
-    $stmt->bind_param("i", $detalle_id);
-    $stmt->execute();
-    $stmt->close();
+    // Descontamos insumos solo una vez por producto utilizando la receta
+    if ((int)$detalle['insumos_descargados'] === 0) {
+        descontarInsumos((int)$detalle['producto_id'], (int)$detalle['cantidad']);
+        $stmt = $conn->prepare('UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = ?');
+        if ($stmt) {
+            $stmt->bind_param('i', $detalle_id);
+            $stmt->execute();
+            $stmt->close();
+        }
+    } else {
+        // Aseguramos el flag por si proviene de datos inconsistentes
+        $stmt = $conn->prepare('UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = ? AND insumos_descargados = 0');
+        if ($stmt) {
+            $stmt->bind_param('i', $detalle_id);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
 
     // Descontar existencia del producto vendido
     $updProd = $conn->prepare('UPDATE productos SET existencia = existencia - ? WHERE id = ?');

@@ -54,7 +54,7 @@ Para mejorar la integridad y rendimiento del sistema, se delegaron varias operac
 | Archivo PHP | Reemplazo sugerido |
 |-------------|--------------------|
 | `crear_venta.php` | Delega descuento de insumos al trigger |
-| `cambiar_estado_producto.php` | Ya no actualiza inventario, solo estado |
+| `cambiar_estado_producto.php` | Descuenta insumos y actualiza estado sin triggers |
 | `cerrar_corte.php` | Solo llama a `CALL sp_cerrar_corte(usuario_id)` |
 | `listar_ventas.php` | Usa vista `vw_ventas_detalladas` |
 | `listar_insumos_consumidos.php` | Usa vista `vw_consumo_insumos` |
