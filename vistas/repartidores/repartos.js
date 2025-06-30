@@ -32,6 +32,12 @@ async function cargarEntregas() {
                     row.appendChild(accionTd);
                     pendientesBody.appendChild(row);
                 } else {
+                    const btn = document.createElement('button');
+                    btn.textContent = 'Ver detalle';
+                    btn.addEventListener('click', () => mostrarDetalle(v));
+                    const detTd = document.createElement('td');
+                    detTd.appendChild(btn);
+                    row.appendChild(detTd);
                     entregadasBody.appendChild(row);
                 }
             });
@@ -61,6 +67,21 @@ async function marcarEntregada(id) {
         console.error(err);
         alert('Error al actualizar');
     }
+}
+
+function mostrarDetalle(info) {
+    const contenedor = document.getElementById('modal-detalles');
+    let html = '<h3>Productos entregados</h3><ul>';
+    info.productos.forEach(p => {
+        const sub = p.cantidad * p.precio_unitario;
+        html += `<li>${p.nombre} - ${p.cantidad} x ${p.precio_unitario} = ${sub}</li>`;
+    });
+    html += `</ul><p>Total: ${info.total}</p><button id="cerrarDetalle">Cerrar</button>`;
+    contenedor.innerHTML = html;
+    contenedor.style.display = 'block';
+    document.getElementById('cerrarDetalle').addEventListener('click', () => {
+        contenedor.style.display = 'none';
+    });
 }
 
 document.addEventListener('DOMContentLoaded', cargarEntregas);

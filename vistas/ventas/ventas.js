@@ -134,14 +134,16 @@ function actualizarPrecio(select) {
     const cantidadInput = row.querySelector('.cantidad');
     const productoId = select.value;
     const producto = productos.find(p => parseInt(p.id) === parseInt(productoId));
-    console.log(productoId, producto);
     if (producto) {
-        precioInput.value = parseFloat(producto.precio).toFixed(2);
+        const cant = parseInt(cantidadInput.value) || 1;
+        precioInput.dataset.unitario = producto.precio;
+        precioInput.value = (cant * parseFloat(producto.precio)).toFixed(2);
         if (!cantidadInput.value || parseInt(cantidadInput.value) === 0) {
             cantidadInput.value = 1;
         }
     } else {
         precioInput.value = '';
+        delete precioInput.dataset.unitario;
     }
 }
 
@@ -163,7 +165,10 @@ function agregarFilaProducto() {
     const tbody = document.querySelector('#productos tbody');
     const base = tbody.querySelector('tr');
     const nueva = base.cloneNode(true);
-    nueva.querySelectorAll('input').forEach(inp => inp.value = '');
+    nueva.querySelectorAll('input').forEach(inp => {
+        inp.value = '';
+        if (inp.classList.contains('precio')) delete inp.dataset.unitario;
+    });
     tbody.appendChild(nueva);
     const select = nueva.querySelector('.producto');
     select.innerHTML = '<option value="">--Selecciona--</option>';
@@ -191,7 +196,8 @@ async function registrarVenta() {
         const producto_id = parseInt(fila.querySelector('.producto').value);
         const cantidad = parseInt(fila.querySelector('.cantidad').value);
         if (!isNaN(producto_id) && !isNaN(cantidad)) {
-            const precio_unitario = parseFloat(fila.querySelector('.precio').value);
+            const precioInput = fila.querySelector('.precio');
+            const precio_unitario = parseFloat(precioInput.dataset.unitario || 0);
             if (precio_unitario > 0) {
                 productos.push({ producto_id, cantidad, precio_unitario });
             }
