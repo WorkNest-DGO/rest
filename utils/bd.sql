@@ -307,62 +307,8 @@ BEGIN
 END;
 //
 DELIMITER ;
+-- sp_descuento_insumos_por_detalle y trigger trg_llama_descuento_insumos eliminados; la lógica de inventario se maneja en PHP.
 
---  PROCEDIMIENTO PARA DESCONTAR INSUMOS POR PRODUCTO DE UN DETALLE DE VENTA
-DELIMITER //
-
-CREATE PROCEDURE sp_descuento_insumos_por_detalle(IN p_detalle_id INT)
-BEGIN
-    DECLARE done INT DEFAULT 0;
-    DECLARE rid INT;
-    DECLARE cant DECIMAL(10,2);
-    DECLARE v_cantidad INT;
-    DECLARE v_producto_id INT;
-    DECLARE cur CURSOR FOR 
-        SELECT r.insumo_id, r.cantidad * v_cantidad
-        FROM recetas r
-        WHERE r.producto_id = v_producto_id;
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
-
-    -- Obtener cantidad y producto_id del detalle
-    SELECT cantidad, producto_id INTO v_cantidad, v_producto_id
-    FROM venta_detalles WHERE id = p_detalle_id;
-
-    OPEN cur;
-    insumo_loop: LOOP
-        FETCH cur INTO rid, cant;
-        IF done THEN
-            LEAVE insumo_loop;
-        END IF;
-        UPDATE insumos SET existencia = existencia - cant WHERE id = rid;
-    END LOOP;
-    CLOSE cur;
-
-
-
-END;
-//
-
-DELIMITER ;
-
--- =========================
--- 3. TRIGGERS
--- =========================
-
--- Trigger para descontar insumos al marcar platillo como 'listo'
-DELIMITER //
-CREATE TRIGGER trg_llama_descuento_insumos
-AFTER UPDATE ON venta_detalles
-FOR EACH ROW
-BEGIN
-    IF NEW.estatus_preparacion = 'listo'
-       AND OLD.estatus_preparacion <> 'listo'
-       AND NEW.insumos_descargados = 0 THEN
-        CALL sp_descuento_insumos_por_detalle(NEW.id);
-    END IF;
-END;
-//
-DELIMITER ;
 
 -- =========================
 -- 4. LOGS / AUDITORÍA
