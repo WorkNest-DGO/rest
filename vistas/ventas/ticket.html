@@ -197,17 +197,24 @@
             const info = JSON.parse(localStorage.getItem('ticketData'));
             const payload = { venta_id: info.venta_id, usuario_id: info.usuario_id || 1, subcuentas: [] };
             for (let i = 1; i <= numSub; i++) {
-                const prods = productos.filter(p => p.subcuenta === i)
-                    .map(p => ({
-                        producto_id: p.producto_id,
-                        cantidad: p.cantidad,
-                        precio_unitario: p.precio_unitario
-                    }))
-                    ;
+                const prods = productos
+                    .filter(p => p.subcuenta === i)
+                    .map(p => {
+                        if (!p.producto_id) {
+                            alert('Producto sin ID en subcuenta ' + i);
+                            throw new Error('Producto sin id');
+                        }
+                        return {
+                            producto_id: Number(p.producto_id),
+                            cantidad: p.cantidad,
+                            precio_unitario: p.precio_unitario
+                        };
+                    });
                 if (prods.length === 0) continue;
                 const prop = parseFloat(document.getElementById('propina' + i).value || 0);
                 payload.subcuentas.push({ productos: prods, propina: prop });
             }
+            console.log(JSON.stringify(payload));
             fetch('../../api/tickets/guardar_ticket.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
