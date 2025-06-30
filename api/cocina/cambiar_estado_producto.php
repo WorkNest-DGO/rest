@@ -2,6 +2,32 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
+function descontarInsumos($productoId, $cantidad)
+{
+    global $conn;
+    $q = $conn->prepare('SELECT insumo_id, cantidad FROM recetas WHERE producto_id = ?');
+    if (!$q) {
+        return;
+    }
+    $q->bind_param('i', $productoId);
+    if (!$q->execute()) {
+        $q->close();
+        return;
+    }
+    $res = $q->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $insumo = (int)$row['insumo_id'];
+        $cant   = (float)$row['cantidad'] * $cantidad;
+        $up = $conn->prepare('UPDATE insumos SET existencia = existencia - ? WHERE id = ?');
+        if ($up) {
+            $up->bind_param('di', $cant, $insumo);
+            $up->execute();
+            $up->close();
+        }
+    }
+    $q->close();
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error('Método no permitido');
 }
@@ -61,13 +87,7 @@ $upd->close();
 
 // Si se inicia la preparación descontamos insumos inmediatamente
 if ($nuevo_estado === 'en preparación' && (int)$detalle['insumos_descargados'] === 0) {
-    $sp = $conn->prepare('CALL sp_descuento_insumos_por_detalle(?)');
-    if ($sp) {
-        $sp->bind_param('i', $detalle_id);
-        $sp->execute();
-        $sp->close();
-    }
-
+    descontarInsumos((int)$detalle['producto_id'], (int)$detalle['cantidad']);
     $mark = $conn->prepare('UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = ?');
     if ($mark) {
         $mark->bind_param('i', $detalle_id);
@@ -86,8 +106,8 @@ if ($nuevo_estado === 'en preparación' && (int)$detalle['insumos_descargados'] 
     }
 }
 
-// Tras cambiar a "listo" el trigger descuenta insumos. Ahora marcamos que
-// ya se descargaron si aún no estaba registrado.
+// Al pasar a "listo" aseguramos que los insumos ya se descontaron y restamos
+// la existencia del producto vendido.
 if ($nuevo_estado === 'listo') {
     $stmt = $conn->prepare("UPDATE venta_detalles SET insumos_descargados = 1 WHERE id = ? AND insumos_descargados = 0");
     $stmt->bind_param("i", $detalle_id);
