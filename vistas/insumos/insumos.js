@@ -113,8 +113,18 @@ function mostrarCatalogo() {
             <td>${i.unidad}</td>
             <td>${i.existencia}</td>
             <td>${i.tipo_control}</td>
+            <td>
+                <button class="editar" data-id="${i.id}">Editar</button>
+                <button class="eliminar" data-id="${i.id}">Eliminar</button>
+            </td>
         `;
         tbody.appendChild(tr);
+    });
+    tbody.querySelectorAll('button.editar').forEach(btn => {
+        btn.addEventListener('click', () => editarInsumo(btn.dataset.id));
+    });
+    tbody.querySelectorAll('button.eliminar').forEach(btn => {
+        btn.addEventListener('click', () => eliminarInsumo(btn.dataset.id));
     });
 }
 
@@ -139,6 +149,79 @@ async function nuevoProveedor() {
     } catch (err) {
         console.error(err);
         alert('Error al agregar proveedor');
+    }
+}
+
+async function nuevoInsumo() {
+    const nombre = prompt('Nombre del insumo:');
+    if (!nombre) return;
+    const unidad = prompt('Unidad:');
+    if (!unidad) return;
+    const tipo = prompt('Tipo de control (por_receta, unidad_completa, uso_general, no_controlado, desempaquetado):', 'por_receta');
+    if (!tipo) return;
+    try {
+        const resp = await fetch('../../api/insumos/agregar_insumo.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre, unidad, tipo_control: tipo })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            alert('Insumo agregado');
+            cargarInsumos();
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al agregar insumo');
+    }
+}
+
+async function editarInsumo(id) {
+    const ins = catalogo.find(i => i.id == id);
+    if (!ins) return;
+    const nombre = prompt('Nombre del insumo:', ins.nombre);
+    if (!nombre) return;
+    const unidad = prompt('Unidad:', ins.unidad);
+    if (!unidad) return;
+    const tipo = prompt('Tipo de control:', ins.tipo_control);
+    if (!tipo) return;
+    try {
+        const resp = await fetch('../../api/insumos/actualizar_insumo.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: parseInt(id), nombre, unidad, tipo_control: tipo })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            cargarInsumos();
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al actualizar');
+    }
+}
+
+async function eliminarInsumo(id) {
+    if (!confirm('¿Eliminar insumo?')) return;
+    try {
+        const resp = await fetch('../../api/insumos/eliminar_insumo.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: parseInt(id) })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            cargarInsumos();
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al eliminar');
     }
 }
 
@@ -214,4 +297,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('agregarFila').addEventListener('click', agregarFila);
     document.getElementById('registrarEntrada').addEventListener('click', registrarEntrada);
     document.getElementById('btnNuevoProveedor').addEventListener('click', nuevoProveedor);
+    const btnNuevoInsumo = document.getElementById('btnNuevoInsumo');
+    if (btnNuevoInsumo) {
+        btnNuevoInsumo.addEventListener('click', nuevoInsumo);
+    }
 });
