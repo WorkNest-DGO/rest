@@ -27,7 +27,7 @@ async function cargarMesas() {
                 }
 
                 const ventaTxt = m.venta_activa ? `Venta activa: ${m.venta_id}` : 'Sin venta';
-                const meseroTxt = m.mesero_nombre ? `Mesero: ${m.mesero_nombre}` : '';
+    const meseroTxt = m.mesero_nombre ? `Mesero: ${m.mesero_nombre}` : 'Sin mesero asignado';
 
                 card.innerHTML = `
                     <input type="checkbox" class="seleccionar" data-id="${m.id}">
@@ -112,7 +112,7 @@ async function cargarMeseros() {
 }
 
 function renderSelectMeseros(select, seleccionado) {
-    select.innerHTML = '<option value="">--Mesero--</option>';
+    select.innerHTML = '<option value="">Sin mesero asignado</option>';
     meseros.forEach(m => {
         const opt = document.createElement('option');
         opt.value = m.id;
@@ -319,16 +319,16 @@ async function marcarEntregado(detalleId, ventaId) {
 }
 
 async function actualizarMesero(ventaId, usuarioId) {
-    const id = usuarioId || parseInt(document.getElementById('select_mesero').value);
-    if (!id) {
-        alert('Selecciona un mesero');
-        return;
-    }
+    const select = document.getElementById('select_mesero');
+    const valor = usuarioId !== undefined ? usuarioId : select.value;
     try {
         const resp = await fetch('../../api/ventas/cambiar_mesero.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ venta_id: parseInt(ventaId), usuario_id: id })
+            body: JSON.stringify({
+                venta_id: parseInt(ventaId),
+                usuario_id: valor === '' ? null : parseInt(valor)
+            })
         });
         const data = await resp.json();
         if (!data.success) {

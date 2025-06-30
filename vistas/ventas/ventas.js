@@ -14,6 +14,9 @@ async function cargarHistorial() {
                     ? `<button class="cancelar" data-id="${id}">Cancelar</button>`
                     : '';
                 const destino = v.tipo_entrega === 'mesa' ? v.mesa : v.repartidor;
+                const entregado = v.tipo_entrega === 'domicilio'
+                    ? v.entregado
+                    : 'N/A';
                 row.innerHTML = `
                     <td>${id}</td>
                     <td>${v.fecha}</td>
@@ -21,6 +24,7 @@ async function cargarHistorial() {
                     <td>${v.tipo_entrega}</td>
                     <td>${destino || ''}</td>
                     <td>${v.estatus}</td>
+                    <td>${entregado}</td>
                     <td><button class="detalles" data-id="${id}">Ver detalles</button></td>
                     <td>${accion}</td>
                 `;
