@@ -15,7 +15,7 @@ async function cargarHistorial() {
                     : '';
                 const destino = v.tipo_entrega === 'mesa' ? v.mesa : v.repartidor;
                 const entregado = v.tipo_entrega === 'domicilio'
-                    ? v.entregado
+                    ? (parseInt(v.entregado) === 1 ? 'Entregado' : 'No entregado')
                     : 'N/A';
                 row.innerHTML = `
                     <td>${id}</td>
@@ -49,6 +49,7 @@ let catalogo = [];
 let productos = [];
 let ventasData = {};
 let repartidores = [];
+let ticketRequests = [];
 
 async function cargarRepartidores() {
     try {
@@ -305,6 +306,60 @@ async function verDetalles(id) {
     }
 }
 
+function cargarSolicitudes() {
+    const tbody = document.querySelector('#solicitudes tbody');
+    if (!tbody) return;
+    ticketRequests = JSON.parse(localStorage.getItem('ticketRequests') || '[]');
+    tbody.innerHTML = '';
+    ticketRequests.forEach(req => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${req.nombre}</td><td><button class="printReq" data-mesa="${req.mesa_id}" data-venta="${req.venta_id}">Imprimir</button></td>`;
+        tbody.appendChild(tr);
+    });
+    tbody.querySelectorAll('button.printReq').forEach(btn => {
+        btn.addEventListener('click', () => imprimirSolicitud(btn.dataset.mesa, btn.dataset.venta));
+    });
+}
+
+async function imprimirSolicitud(mesaId, ventaId) {
+    try {
+        const resp = await fetch('../../api/ventas/detalle_venta.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ venta_id: parseInt(ventaId) })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            const info = data.resultado || data;
+            const venta = ventasData[ventaId] || {};
+            const total = venta.total || info.productos.reduce((s, p) => s + parseFloat(p.subtotal), 0);
+            const payload = {
+                venta_id: parseInt(ventaId),
+                usuario_id: venta.usuario_id || 1,
+                fecha: venta.fecha || '',
+                productos: info.productos,
+                total
+            };
+            localStorage.setItem('ticketData', JSON.stringify(payload));
+            const w = window.open(`ticket.html?print=1&mesa=${mesaId}&venta=${ventaId}`, '_blank');
+            if (w) w.focus();
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al obtener detalles');
+    }
+}
+
+function ticketPrinted(mesaId) {
+    let reqs = JSON.parse(localStorage.getItem('ticketRequests') || '[]');
+    reqs = reqs.filter(r => parseInt(r.mesa_id) !== parseInt(mesaId));
+    localStorage.setItem('ticketRequests', JSON.stringify(reqs));
+    cargarSolicitudes();
+}
+window.ticketPrinted = ticketPrinted;
+
 document.addEventListener("change", function (e) {
     if (e.target.classList.contains("producto")) {
         actualizarPrecio(e.target);
@@ -316,6 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarProductos();
     cargarRepartidores();
     cargarHistorial();
+    cargarSolicitudes();
     document.getElementById('registrarVenta').addEventListener('click', registrarVenta);
     document.getElementById('agregarProducto').addEventListener('click', agregarFilaProducto);
     document.getElementById('tipo_entrega').addEventListener('change', () => {

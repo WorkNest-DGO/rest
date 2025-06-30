@@ -39,6 +39,7 @@ async function cargarMesas() {
                     <button class="detalles" data-venta="${m.venta_id || ''}" data-mesa="${m.id}" data-nombre="${m.nombre}" data-estado="${m.estado}" data-mesero="${m.mesero_id || ''}">Detalles</button>
                     <button class="dividir" data-id="${m.id}">Dividir</button>
                     <button class="cambiar" data-id="${m.id}">Cambiar estado</button>
+                    <button class="ticket" data-mesa="${m.id}" data-nombre="${m.nombre}" data-venta="${m.venta_id || ''}">Solicitar ticket</button>
                 `;
                 tablero.appendChild(card);
             });
@@ -59,6 +60,9 @@ async function cargarMesas() {
                         btn.dataset.mesero
                     )
                 );
+            });
+            tablero.querySelectorAll('button.ticket').forEach(btn => {
+                btn.addEventListener('click', () => solicitarTicket(btn.dataset.mesa, btn.dataset.nombre, btn.dataset.venta));
             });
         } else {
             alert(data.mensaje);
@@ -92,6 +96,19 @@ async function cambiarEstado(id, estado) {
     } catch (err) {
         console.error(err);
         alert('Error al cambiar estado');
+    }
+}
+
+function solicitarTicket(mesaId, nombre, ventaId) {
+    if (!ventaId) {
+        alert('La mesa no tiene venta activa');
+        return;
+    }
+    let reqs = JSON.parse(localStorage.getItem('ticketRequests') || '[]');
+    if (!reqs.find(r => parseInt(r.mesa_id) === parseInt(mesaId))) {
+        reqs.push({ mesa_id: parseInt(mesaId), nombre, venta_id: parseInt(ventaId) });
+        localStorage.setItem('ticketRequests', JSON.stringify(reqs));
+        alert('Ticket solicitado');
     }
 }
 
