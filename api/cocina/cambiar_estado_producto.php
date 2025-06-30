@@ -3,6 +3,11 @@ require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 require_once __DIR__ . '/../../utils/inventario.php';
 
+// Antes se invocaba al procedimiento almacenado
+// `sp_descuento_insumos_por_detalle` para rebajar inventario.
+// Esa función fue eliminada y el descuento se hace aquí
+// mediante `descontarInsumos()`.
+
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error('Método no permitido');
