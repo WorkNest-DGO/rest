@@ -157,13 +157,14 @@ async function nuevoInsumo() {
     if (!nombre) return;
     const unidad = prompt('Unidad:');
     if (!unidad) return;
+    const existencia = parseFloat(prompt('Existencia inicial:', '0')) || 0;
     const tipo = prompt('Tipo de control (por_receta, unidad_completa, uso_general, no_controlado, desempaquetado):', 'por_receta');
     if (!tipo) return;
     try {
         const resp = await fetch('../../api/insumos/agregar_insumo.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nombre, unidad, tipo_control: tipo })
+            body: JSON.stringify({ nombre, unidad, existencia, tipo_control: tipo })
         });
         const data = await resp.json();
         if (data.success) {
@@ -185,13 +186,14 @@ async function editarInsumo(id) {
     if (!nombre) return;
     const unidad = prompt('Unidad:', ins.unidad);
     if (!unidad) return;
+    const existencia = parseFloat(prompt('Existencia:', ins.existencia)) || 0;
     const tipo = prompt('Tipo de control:', ins.tipo_control);
     if (!tipo) return;
     try {
         const resp = await fetch('../../api/insumos/actualizar_insumo.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: parseInt(id), nombre, unidad, tipo_control: tipo })
+            body: JSON.stringify({ id: parseInt(id), nombre, unidad, existencia, tipo_control: tipo })
         });
         const data = await resp.json();
         if (data.success) {

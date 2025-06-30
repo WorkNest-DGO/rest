@@ -20,6 +20,7 @@ async function cargarEntregas() {
                     <td>${v.id}</td>
                     <td>${v.fecha}</td>
                     <td>${v.total}</td>
+                    <td>${v.repartidor}</td>
                     <td>${productos}</td>
                 `;
                 if (v.estatus === 'activa' && !v.entregado) {
