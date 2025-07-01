@@ -94,7 +94,7 @@
             document.getElementById('totalVenta').textContent = 'Total: $' + data.total;
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const params = new URLSearchParams(window.location.search);
             const imprimir = params.get('print') === '1';
             const almacenado = localStorage.getItem('ticketData');
@@ -105,7 +105,7 @@
                 llenarTicket(datos);
                 liberarMesa(datos.venta_id);
             } else {
-                cargarSeries();
+                await cargarSeries();
                 inicializarDividir(datos);
             }
         });
@@ -129,6 +129,7 @@
         let productos = [];
         let numSub = 1;
         let ticketsGuardados = [];
+        const seleccionSeries = {};
 
         function inicializarDividir(data) {
             document.getElementById('dividir').style.display = 'block';
@@ -204,6 +205,12 @@
                     opt.value = s.id;
                     opt.textContent = s.descripcion;
                     sel.appendChild(opt);
+                });
+                if (seleccionSeries[i]) {
+                    sel.value = seleccionSeries[i];
+                }
+                sel.addEventListener('change', () => {
+                    seleccionSeries[i] = parseInt(sel.value);
                 });
             }
             mostrarTotal();

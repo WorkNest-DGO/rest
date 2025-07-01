@@ -150,6 +150,33 @@ function mostrarCatalogo() {
     });
 }
 
+async function cargarBajoStock() {
+    try {
+        const resp = await fetch('../../api/insumos/listar_bajo_stock.php');
+        const data = await resp.json();
+        if (data.success) {
+            mostrarBajoStock(data.resultado);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al cargar insumos de bajo stock');
+    }
+}
+
+function mostrarBajoStock(lista) {
+    const tbody = document.querySelector('#bajoStock tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    lista.forEach(i => {
+        const tr = document.createElement('tr');
+        if (parseFloat(i.existencia) < 20) {
+            tr.style.backgroundColor = '#f8d7da';
+        }
+        tr.innerHTML = `<td>${i.id}</td><td>${i.nombre}</td><td>${i.unidad}</td><td>${i.existencia}</td>`;
+        tbody.appendChild(tr);
+    });
+}
+
 async function nuevoProveedor() {
     const nombre = prompt('Nombre del proveedor:');
     if (!nombre) return;
@@ -324,6 +351,7 @@ async function cargarHistorial() {
 document.addEventListener('DOMContentLoaded', () => {
     cargarProveedores();
     cargarInsumos();
+    cargarBajoStock();
     cargarHistorial();
     document.getElementById('agregarFila').addEventListener('click', agregarFila);
     document.getElementById('registrarEntrada').addEventListener('click', registrarEntrada);
