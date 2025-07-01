@@ -5,53 +5,9 @@
     <title>Insumos</title>
 </head>
 <body>
-    <h1>Entradas de Insumos</h1>
-    <form id="formEntrada">
-        <label for="proveedor">Proveedor:</label>
-        <select id="proveedor" name="proveedor"></select>
-        <button type="button" id="btnNuevoProveedor">Nuevo proveedor</button>
-        <h2>Productos</h2>
-        <table id="tablaProductos" border="1">
-            <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th>Tipo de control</th>
-                    <th>Cantidad</th>
-                    <th>Unidad</th>
-                    <th>Unidades</th>
-                    <th>Precio unitario</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><select class="producto"></select></td>
-                    <td class="tipo"></td>
-                    <td><input type="number" class="cantidad"></td>
-                    <td class="unidad"></td>
-                    <td><input type="number" class="unidades" style="display:none"></td>
-                    <td><input type="number" class="precio"></td>
-                </tr>
-            </tbody>
-        </table>
-        <p><strong>Total: $<span id="total">0.00</span></strong></p>
-        <button type="button" id="agregarFila">Agregar producto</button>
-        <button type="button" id="registrarEntrada">Registrar entrada</button>
-    </form>
+     <h1>Entradas de Insumos</h1>
 
-    <h2>Historial de Entradas</h2>
-    <table id="historial" border="1">
-        <thead>
-            <tr>
-                <th>Proveedor</th>
-                <th>Fecha</th>
-                <th>Total</th>
-                <th>Producto</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-
-    <h2>Listado de Insumos</h2>
+        <h2>Crear Insumos</h2>
     <button type="button" id="btnNuevoInsumo">Nuevo insumo</button>
     <table id="listaInsumos" border="1">
         <thead>
@@ -61,6 +17,52 @@
                 <th>Existencia</th>
                 <th>Tipo de control</th>
                 <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+
+    <form id="formEntrada">
+
+        <h2>Productos</h2>
+
+                <label for="proveedor">Proveedor:</label>
+        <select id="proveedor" name="proveedor"></select>
+        <button type="button" id="btnNuevoProveedor">Nuevo proveedor</button>
+        <table id="tablaProductos" border="1">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Tipo de control</th>
+                    <th>Cantidad</th>
+                    <th>Unidad</th>
+                    <th>Precio unitario</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><select class="producto"></select></td>
+                    <td class="tipo"></td>
+                    <td><input type="number" class="cantidad"></td>
+                    <td class="unidad"></td>
+                    <td><input type="number" class="precio"></td>
+                </tr>
+            </tbody>
+        </table>
+        <p><strong>Total (cantidad X precio): $<span id="total">0.00</span></strong></p>
+        <button type="button" id="agregarFila">Agregar producto</button>
+        <button type="button" id="registrarEntrada">Registrar entrada</button>
+    </form>
+
+    <h2>Historial de Entradas por Proveedor</h2>
+    <table id="historial" border="1">
+        <thead>
+            <tr>
+                <th>Proveedor</th>
+                <th>Fecha</th>
+                <th>Total</th>
+                <th>Producto</th>
             </tr>
         </thead>
         <tbody></tbody>

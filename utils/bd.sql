@@ -330,3 +330,8 @@ ALTER TABLE entradas_detalle DROP FOREIGN KEY entradas_detalle_ibfk_2;
 ALTER TABLE entradas_detalle CHANGE producto_id insumo_id INT NOT NULL;
 ALTER TABLE entradas_detalle
 ADD CONSTRAINT fk_entrada_detalle_insumo FOREIGN KEY (insumo_id) REFERENCES insumos(id);
+
+ALTER TABLE entradas_insumo
+ADD COLUMN usuario_id INT AFTER proveedor_id,
+ADD CONSTRAINT fk_entrada_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id);
+
