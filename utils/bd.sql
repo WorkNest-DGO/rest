@@ -324,6 +324,9 @@ CREATE TABLE IF NOT EXISTS logs_accion (
     referencia_id INT
 );
 
--- Ejemplo de uso (desde un SP o trigger)
--- INSERT INTO logs_accion (usuario_id, modulo, accion, referencia_id)
--- VALUES (2, 'ventas', 'Producto marcado como listo', 123);
+
+-- correccion de insumos
+ALTER TABLE entradas_detalle DROP FOREIGN KEY entradas_detalle_ibfk_2;
+ALTER TABLE entradas_detalle CHANGE producto_id insumo_id INT NOT NULL;
+ALTER TABLE entradas_detalle
+ADD CONSTRAINT fk_entrada_detalle_insumo FOREIGN KEY (insumo_id) REFERENCES insumos(id);
