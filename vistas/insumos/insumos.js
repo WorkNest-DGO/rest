@@ -47,6 +47,7 @@ function actualizarSelectsProducto() {
             const opt = document.createElement('option');
             opt.value = p.id;
             opt.textContent = p.nombre;
+            opt.dataset.unidad = p.unidad;
             sel.appendChild(opt);
         });
         sel.addEventListener('change', () => mostrarTipoEnFila(sel));
@@ -57,12 +58,14 @@ function mostrarTipoEnFila(select) {
     const id = parseInt(select.value);
     const fila = select.closest('tr');
     const tipoCell = fila.querySelector('.tipo');
+    const unidadCell = fila.querySelector('.unidad');
     const unidadesInput = fila.querySelector('.unidades');
     const cantidadInput = fila.querySelector('.cantidad');
     const precioInput = fila.querySelector('.precio');
     const encontrado = catalogo.find(c => c.id == id);
     if (encontrado) {
         tipoCell.textContent = encontrado.tipo_control;
+        unidadCell.textContent = encontrado.unidad;
         if (encontrado.tipo_control === 'desempaquetado') {
             unidadesInput.style.display = '';
         } else {
@@ -87,6 +90,7 @@ function mostrarTipoEnFila(select) {
         }
     } else {
         tipoCell.textContent = '';
+        unidadCell.textContent = '';
         unidadesInput.style.display = 'none';
         unidadesInput.value = '';
         cantidadInput.disabled = false;
@@ -112,6 +116,8 @@ function agregarFila() {
     const base = tbody.querySelector('tr');
     const nueva = base.cloneNode(true);
     nueva.querySelectorAll('input').forEach(i => i.value = '');
+    const unidadCell = nueva.querySelector('.unidad');
+    if (unidadCell) unidadCell.textContent = '';
     nueva.querySelector('.cantidad').addEventListener('input', calcularTotal);
     nueva.querySelector('.precio').addEventListener('input', calcularTotal);
     tbody.appendChild(nueva);
@@ -276,6 +282,8 @@ async function registrarEntrada() {
             document.querySelectorAll('#tablaProductos tbody tr').forEach((f, i) => {
                 if (i > 0) f.remove();
                 f.querySelectorAll('input').forEach(inp => inp.value = '');
+                const uCell = f.querySelector('.unidad');
+                if (uCell) uCell.textContent = '';
             });
             calcularTotal();
         } else {
@@ -297,10 +305,10 @@ async function cargarHistorial() {
             data.resultado.forEach(e => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${e.id}</td>
                     <td>${e.proveedor}</td>
                     <td>${e.fecha}</td>
                     <td>${e.total}</td>
+                    <td>${e.producto}</td>
                 `;
                 tbody.appendChild(tr);
             });
