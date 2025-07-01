@@ -1,4 +1,5 @@
 let catalogo = [];
+const usuarioId = 1; // En entorno real se obtendría de la sesión
 
 async function cargarProveedores() {
     try {
@@ -93,11 +94,26 @@ function mostrarTipoEnFila(select) {
     }
 }
 
+function calcularTotal() {
+    let total = 0;
+    document.querySelectorAll('#tablaProductos tbody tr').forEach(f => {
+        const cantidad = parseFloat(f.querySelector('.cantidad').value) || 0;
+        const precio = parseFloat(f.querySelector('.precio').value) || 0;
+        total += cantidad * precio;
+    });
+    const totalEl = document.getElementById('total');
+    if (totalEl) {
+        totalEl.textContent = total.toFixed(2);
+    }
+}
+
 function agregarFila() {
     const tbody = document.querySelector('#tablaProductos tbody');
     const base = tbody.querySelector('tr');
     const nueva = base.cloneNode(true);
     nueva.querySelectorAll('input').forEach(i => i.value = '');
+    nueva.querySelector('.cantidad').addEventListener('input', calcularTotal);
+    nueva.querySelector('.precio').addEventListener('input', calcularTotal);
     tbody.appendChild(nueva);
     actualizarSelectsProducto();
 }
@@ -246,7 +262,7 @@ async function registrarEntrada() {
             productos.push(obj);
         }
     });
-    const payload = { proveedor_id, productos };
+    const payload = { proveedor_id, usuario_id: usuarioId, productos };
     try {
         const resp = await fetch('../../api/insumos/crear_entrada.php', {
             method: 'POST',
@@ -257,6 +273,11 @@ async function registrarEntrada() {
         if (data.success) {
             alert('Entrada registrada');
             cargarHistorial();
+            document.querySelectorAll('#tablaProductos tbody tr').forEach((f, i) => {
+                if (i > 0) f.remove();
+                f.querySelectorAll('input').forEach(inp => inp.value = '');
+            });
+            calcularTotal();
         } else {
             alert(data.mensaje);
         }
@@ -303,4 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnNuevoInsumo) {
         btnNuevoInsumo.addEventListener('click', nuevoInsumo);
     }
+    document.querySelectorAll('.cantidad').forEach(i => i.addEventListener('input', calcularTotal));
+    document.querySelectorAll('.precio').forEach(i => i.addEventListener('input', calcularTotal));
+    calcularTotal();
 });
