@@ -20,12 +20,12 @@ if (!$input || !isset($input['detalle_id'], $input['nuevo_estado'])) {
 
 $detalle_id = (int)$input['detalle_id'];
 $nuevo_estado = $input['nuevo_estado'];
-$permitidos = ['pendiente', 'en preparación', 'listo', 'entregado'];
+$permitidos = ['pendiente', 'en_preparacion', 'listo', 'entregado'];
 if (!in_array($nuevo_estado, $permitidos, true)) {
     error('Estado no válido');
 }
 
-$stmt = $conn->prepare('SELECT estatus_preparacion, producto_id, cantidad, insumos_descargados FROM venta_detalles WHERE id = ?');
+$stmt = $conn->prepare('SELECT estado_producto, producto_id, cantidad, insumos_descargados FROM venta_detalles WHERE id = ?');
 if (!$stmt) {
     error('Error al preparar consulta: ' . $conn->error);
 }
@@ -37,16 +37,17 @@ if (!$result || $result->num_rows === 0) {
     error('Detalle no encontrado');
 }
 $detalle = $result->fetch_assoc();
-$actual   = $detalle['estatus_preparacion'];
+$actual   = $detalle['estado_producto'];
 $stmt->close();
 
-if (in_array($actual, ['listo', 'entregado'], true)) {
+if ($actual === 'entregado') {
     error('No se puede modificar este producto');
 }
 
 $transiciones = [
-    'pendiente'      => 'en preparación',
-    'en preparación' => 'listo'
+    'pendiente'        => 'en_preparacion',
+    'en_preparacion'   => 'listo',
+    'listo'            => 'entregado'
 ];
 
 if (!isset($transiciones[$actual]) || $transiciones[$actual] !== $nuevo_estado) {
@@ -55,7 +56,7 @@ if (!isset($transiciones[$actual]) || $transiciones[$actual] !== $nuevo_estado) 
 
 // La actualización del estado ya no depende de triggers o procedimientos
 // almacenados. Todo se realiza directamente desde PHP.
-$upd = $conn->prepare('UPDATE venta_detalles SET estatus_preparacion = ? WHERE id = ?');
+$upd = $conn->prepare('UPDATE venta_detalles SET estado_producto = ? WHERE id = ?');
 if (!$upd) {
     error('Error al preparar actualización: ' . $conn->error);
 }
@@ -67,8 +68,8 @@ if (!$upd->execute()) {
 
 $upd->close();
 
-// Al pasar a "en preparación" solo registramos el cambio de estado
-if ($nuevo_estado === 'en preparación') {
+// Al pasar a "en_preparacion" solo registramos el cambio de estado
+if ($nuevo_estado === 'en_preparacion') {
     $log = $conn->prepare('INSERT INTO logs_accion (usuario_id, modulo, accion, referencia_id) VALUES (?, ?, ?, ?)');
     if ($log) {
         $usuario_id = $input['usuario_id'] ?? null;
