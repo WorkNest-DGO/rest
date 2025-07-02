@@ -15,21 +15,22 @@ async function cargarMesas() {
 
             const areas = {};
             data.resultado.forEach(m => {
-                const area = m.area || 'Sin área';
-                if (!areas[area]) areas[area] = [];
-                areas[area].push(m);
+                const nombre = m.area || 'Sin área';
+                const key = m.area_id !== null ? String(m.area_id) : nombre;
+                if (!areas[key]) areas[key] = { nombre, mesas: [] };
+                areas[key].mesas.push(m);
             });
 
-            Object.keys(areas).forEach(areaNombre => {
+            Object.values(areas).forEach(areaInfo => {
                 const seccion = document.createElement('section');
                 const h2 = document.createElement('h2');
-                h2.textContent = areaNombre;
+                h2.textContent = areaInfo.nombre;
                 seccion.appendChild(h2);
                 const cont = document.createElement('div');
                 seccion.appendChild(cont);
                 tablero.appendChild(seccion);
 
-                areas[areaNombre].forEach(m => {
+                areaInfo.mesas.forEach(m => {
                     const card = document.createElement('div');
                     card.className = 'mesa';
 

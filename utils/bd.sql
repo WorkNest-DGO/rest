@@ -14,6 +14,12 @@ CREATE TABLE IF NOT EXISTS usuarios (
     activo TINYINT(1) DEFAULT 1
 );
 
+-- Catálogo de áreas para las mesas
+CREATE TABLE IF NOT EXISTS catalogo_areas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL
+);
+
 -- Tabla de mesas del restaurante
 CREATE TABLE IF NOT EXISTS mesas (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -198,11 +204,21 @@ INSERT INTO repartidores (nombre, telefono) VALUES
 ('Pedro Repartidor', '555-000-1111'),
 ('Ana Repartidora', '555-999-2222');
 
+-- ÁREAS DE MESAS
+INSERT INTO catalogo_areas (nombre) VALUES
+('Ala izquierda'),
+('Ala derecha'),
+('Terraza');
+
+ALTER TABLE mesas
+ADD COLUMN area_id INT DEFAULT NULL,
+ADD CONSTRAINT fk_mesa_area FOREIGN KEY (area_id) REFERENCES catalogo_areas(id);
+
 -- MESAS
-INSERT INTO mesas (nombre, estado, capacidad, area) VALUES
-('Mesa 1', 'libre', 4, 'General'),
-('Mesa 2', 'ocupada', 4, 'General'),
-('Mesa 3', 'reservada', 6, 'Terraza');
+INSERT INTO mesas (nombre, estado, capacidad, area, area_id) VALUES
+('Mesa 1', 'libre', 4, 'Ala izquierda', 1),
+('Mesa 2', 'ocupada', 4, 'Ala derecha', 2),
+('Mesa 3', 'reservada', 6, 'Terraza', 3);
 
 -- PRODUCTOS
 INSERT INTO productos (nombre, precio, descripcion, existencia) VALUES
