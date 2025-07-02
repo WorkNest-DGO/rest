@@ -26,37 +26,68 @@ foreach ($receta as $r) {
     $ids[] = $insumo_id;
 }
 
+
+// Obtener receta existente para aplicar cambios incrementales
+$existente = [];
+$sel = $conn->prepare('SELECT insumo_id, cantidad FROM recetas WHERE producto_id = ?');
+if (!$sel) {
+    error('Error al preparar consulta: ' . $conn->error);
+}
+$sel->bind_param('i', $producto_id);
+if (!$sel->execute()) {
+    $sel->close();
+    error('Error al consultar receta: ' . $sel->error);
+}
+$res = $sel->get_result();
+while ($row = $res->fetch_assoc()) {
+    $existente[(int)$row['insumo_id']] = (float)$row['cantidad'];
+}
+$sel->close();
+
 $conn->begin_transaction();
 
-$del = $conn->prepare('DELETE FROM recetas WHERE producto_id = ?');
-if (!$del) {
+$stmtIns = $conn->prepare('INSERT INTO recetas (producto_id, insumo_id, cantidad) VALUES (?, ?, ?)');
+$stmtUpd = $conn->prepare('UPDATE recetas SET cantidad = ? WHERE producto_id = ? AND insumo_id = ?');
+$stmtDel = $conn->prepare('DELETE FROM recetas WHERE producto_id = ? AND insumo_id = ?');
+if (!$stmtIns || !$stmtUpd || !$stmtDel) {
     $conn->rollback();
-    error('Error al preparar eliminación: ' . $conn->error);
+    error('Error al preparar sentencias: ' . $conn->error);
 }
-$del->bind_param('i', $producto_id);
-if (!$del->execute()) {
-    $del->close();
-    $conn->rollback();
-    error('Error al eliminar receta anterior: ' . $del->error);
-}
-$del->close();
 
-$ins = $conn->prepare('INSERT INTO recetas (producto_id, insumo_id, cantidad) VALUES (?, ?, ?)');
-if (!$ins) {
-    $conn->rollback();
-    error('Error al preparar inserción: ' . $conn->error);
-}
 foreach ($receta as $r) {
-    $insumo_id = (int) $r['insumo_id'];
-    $cantidad  = (float) $r['cantidad'];
-    $ins->bind_param('iid', $producto_id, $insumo_id, $cantidad);
-    if (!$ins->execute()) {
-        $ins->close();
-        $conn->rollback();
-        error('Error al guardar receta: ' . $ins->error);
+    $insumo_id = (int)$r['insumo_id'];
+    $cantidad  = (float)$r['cantidad'];
+
+    if (isset($existente[$insumo_id])) {
+        if ($existente[$insumo_id] != $cantidad) {
+            $stmtUpd->bind_param('dii', $cantidad, $producto_id, $insumo_id);
+            if (!$stmtUpd->execute()) {
+                $conn->rollback();
+                error('Error al actualizar receta: ' . $stmtUpd->error);
+            }
+        }
+        unset($existente[$insumo_id]);
+    } else {
+        $stmtIns->bind_param('iid', $producto_id, $insumo_id, $cantidad);
+        if (!$stmtIns->execute()) {
+            $conn->rollback();
+            error('Error al insertar receta: ' . $stmtIns->error);
+        }
     }
 }
-$ins->close();
+
+// Eliminar insumos que ya no están en la receta
+foreach (array_keys($existente) as $idEliminar) {
+    $stmtDel->bind_param('ii', $producto_id, $idEliminar);
+    if (!$stmtDel->execute()) {
+        $conn->rollback();
+        error('Error al eliminar insumo: ' . $stmtDel->error);
+    }
+}
+
 $conn->commit();
+$stmtIns->close();
+$stmtUpd->close();
+$stmtDel->close();
 
 success(true);
