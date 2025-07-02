@@ -19,7 +19,8 @@ $venta_id = (int)$input['venta_id'];
 
 // Obtener datos generales de la venta
 $info = $conn->prepare(
-    'SELECT v.tipo_entrega, m.nombre AS mesa, r.nombre AS repartidor, u.nombre AS mesero
+    'SELECT v.tipo_entrega, m.nombre AS mesa, r.nombre AS repartidor, u.nombre AS mesero,
+            v.seudonimo_entrega, v.foto_entrega
      FROM ventas v
      LEFT JOIN mesas m ON v.mesa_id = m.id
      LEFT JOIN repartidores r ON v.repartidor_id = r.id
@@ -66,10 +67,12 @@ while ($row = $res->fetch_assoc()) {
 $stmt->close();
 
 echo json_encode([
-    'success'      => true,
-    'tipo_entrega' => $datosVenta['tipo_entrega'] ?? '',
-    'mesa'         => $datosVenta['mesa'] ?? '',
-    'repartidor'   => $datosVenta['repartidor'] ?? '',
-    'mesero'       => $datosVenta['mesero'] ?? '',
-    'productos'    => $productos
+    'success'          => true,
+    'tipo_entrega'     => $datosVenta['tipo_entrega'] ?? '',
+    'mesa'             => $datosVenta['mesa'] ?? '',
+    'repartidor'       => $datosVenta['repartidor'] ?? '',
+    'mesero'           => $datosVenta['mesero'] ?? '',
+    'seudonimo_entrega'=> $datosVenta['seudonimo_entrega'] ?? '',
+    'foto_entrega'     => $datosVenta['foto_entrega'] ?? '',
+    'productos'        => $productos
 ]);
