@@ -1,3 +1,5 @@
+let areaFiltro = 'todas';
+
 async function cargarMesas() {
     try {
         const resp = await fetch('../../api/mesas/listar_mesas.php');
@@ -21,7 +23,18 @@ async function cargarMesas() {
                 areas[key].mesas.push(m);
             });
 
-            Object.values(areas).forEach(areaInfo => {
+            const selectArea = document.getElementById('filtro-area');
+            selectArea.innerHTML = '<option value="todas">Todas las áreas</option>';
+            Object.entries(areas).forEach(([key, a]) => {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = a.nombre;
+                if (key === areaFiltro) opt.selected = true;
+                selectArea.appendChild(opt);
+            });
+
+            Object.entries(areas).forEach(([key, areaInfo]) => {
+                if (areaFiltro !== 'todas' && areaFiltro !== key) return;
                 const seccion = document.createElement('section');
                 const h2 = document.createElement('h2');
                 h2.textContent = areaInfo.nombre;
@@ -188,6 +201,10 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarCatalogo();
     cargarMeseros();
     cargarMesas();
+    document.getElementById('filtro-area').addEventListener('change', e => {
+        areaFiltro = e.target.value;
+        cargarMesas();
+    });
 });
 
 async function dividirMesa(id) {

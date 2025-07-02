@@ -79,7 +79,11 @@ if ($tipo === 'mesa') {
 $nueva_venta = false;
 
 if (!isset($venta_id)) {
-    $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total) VALUES (?, ?, ?, ?, ?)');
+    if ($tipo === 'domicilio') {
+        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, fecha_asignacion) VALUES (?, ?, ?, ?, ?, NOW())');
+    } else {
+        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total) VALUES (?, ?, ?, ?, ?)');
+    }
     if (!$stmt) {
         error('Error al preparar venta: ' . $conn->error);
     }
