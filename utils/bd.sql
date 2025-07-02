@@ -62,11 +62,13 @@ CREATE TABLE IF NOT EXISTS ventas (
     tipo_entrega ENUM('mesa','domicilio') DEFAULT 'mesa',
     usuario_id INT,
     total DECIMAL(10,2) DEFAULT 0.00,
+    corte_id INT DEFAULT NULL,
     estatus ENUM('activa','cerrada','cancelada') DEFAULT 'activa',
     entregado TINYINT(1) DEFAULT 0,
     FOREIGN KEY (mesa_id) REFERENCES mesas(id),
     FOREIGN KEY (repartidor_id) REFERENCES repartidores(id),
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    FOREIGN KEY (corte_id) REFERENCES corte_caja(id)
 );
 
 -- Detalles de cada venta
@@ -104,6 +106,7 @@ CREATE TABLE IF NOT EXISTS corte_caja (
     fecha_inicio DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_fin DATETIME,
     total DECIMAL(10,2),
+    observaciones TEXT,
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 

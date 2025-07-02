@@ -9,6 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = json_decode(file_get_contents('php://input'), true);
 $corte_id   = $input['corte_id'] ?? null;
 $usuario_id = $input['usuario_id'] ?? null;
+$observa    = $input['observaciones'] ?? '';
 
 if (!$corte_id || !$usuario_id) {
     error('Datos incompletos');
@@ -42,6 +43,13 @@ if (!$call->execute()) {
 }
 $call->close();
 
+$updObs = $conn->prepare('UPDATE corte_caja SET observaciones = ? WHERE id = ?');
+if ($updObs) {
+    $updObs->bind_param('si', $observa, $corte_id);
+    $updObs->execute();
+    $updObs->close();
+}
+
 $stmt = $conn->prepare('SELECT fecha_inicio, fecha_fin, total FROM corte_caja WHERE id = ?');
 if (!$stmt) {
     error('Error al obtener corte: ' . $conn->error);
@@ -50,6 +58,13 @@ $stmt->bind_param('i', $corte_id);
 $stmt->execute();
 $info = $stmt->get_result()->fetch_assoc();
 $stmt->close();
+
+$updVentas = $conn->prepare("UPDATE ventas SET corte_id = ? WHERE usuario_id = ? AND fecha >= ? AND fecha <= ? AND estatus = 'cerrada' AND (corte_id IS NULL)");
+if ($updVentas) {
+    $updVentas->bind_param('iiss', $corte_id, $usuario_id, $info['fecha_inicio'], $info['fecha_fin']);
+    $updVentas->execute();
+    $updVentas->close();
+}
 
 $stmt = $conn->prepare("SELECT COUNT(*) AS num FROM ventas WHERE usuario_id = ? AND fecha >= ? AND fecha <= ? AND estatus = 'cerrada'");
 if ($stmt) {
