@@ -20,7 +20,14 @@ CREATE TABLE IF NOT EXISTS mesas (
     nombre VARCHAR(50) NOT NULL,
     estado ENUM('libre','ocupada','reservada') DEFAULT 'libre',
     capacidad INT DEFAULT 4,
-    mesa_principal_id INT DEFAULT NULL
+    mesa_principal_id INT DEFAULT NULL,
+    area VARCHAR(50),
+    tiempo_ocupacion_inicio DATETIME DEFAULT NULL,
+    estado_reserva ENUM('ninguna','reservada') DEFAULT 'ninguna',
+    nombre_reserva VARCHAR(100),
+    fecha_reserva DATETIME,
+    usuario_id INT,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 
 -- Tabla de repartidores para ventas a domicilio
@@ -69,6 +76,19 @@ CREATE TABLE IF NOT EXISTS venta_detalles (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (venta_id) REFERENCES ventas(id),
     FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
+-- Historial de uso de mesas
+CREATE TABLE log_mesas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    mesa_id INT NOT NULL,
+    venta_id INT,
+    usuario_id INT,
+    fecha_inicio DATETIME,
+    fecha_fin DATETIME,
+    FOREIGN KEY (mesa_id) REFERENCES mesas(id),
+    FOREIGN KEY (venta_id) REFERENCES ventas(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 
 -- Tabla de corte de caja por usuario
@@ -179,10 +199,10 @@ INSERT INTO repartidores (nombre, telefono) VALUES
 ('Ana Repartidora', '555-999-2222');
 
 -- MESAS
-INSERT INTO mesas (nombre, estado, capacidad) VALUES
-('Mesa 1', 'libre', 4),
-('Mesa 2', 'ocupada', 4),
-('Mesa 3', 'reservada', 6);
+INSERT INTO mesas (nombre, estado, capacidad, area) VALUES
+('Mesa 1', 'libre', 4, 'General'),
+('Mesa 2', 'ocupada', 4, 'General'),
+('Mesa 3', 'reservada', 6, 'Terraza');
 
 -- PRODUCTOS
 INSERT INTO productos (nombre, precio, descripcion, existencia) VALUES
