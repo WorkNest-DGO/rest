@@ -1,6 +1,27 @@
 let catalogoInsumos = [];
 let catalogoProductos = [];
 
+function mostrarImagenProducto(id) {
+    const img = document.getElementById('imgProducto');
+    const nom = document.getElementById('nombreProducto');
+    if (!id) {
+        img.style.display = 'none';
+        img.src = '';
+        nom.textContent = '';
+        return;
+    }
+    const prod = catalogoProductos.find(p => p.id == id);
+    if (!prod) return;
+    nom.textContent = prod.nombre;
+    if (prod.imagen) {
+        img.src = `../../uploads/productos/${prod.imagen}`;
+        img.style.display = 'block';
+    } else {
+        img.style.display = 'none';
+        img.src = '';
+    }
+}
+
 async function cargarProductos() {
     try {
         const resp = await fetch('../../api/inventario/listar_productos.php');
@@ -63,15 +84,26 @@ function mostrarUnidad(select) {
     validarDuplicados();
 }
 
-function agregarFila() {
-    const tbody = document.querySelector('#tablaReceta tbody');
-    const base = tbody.querySelector('tr');
-    const nueva = base.cloneNode(true);
-    nueva.querySelectorAll('input').forEach(i => i.value = '');
-    nueva.querySelectorAll('.unidad').forEach(c => c.textContent = '');
-    tbody.appendChild(nueva);
-    nueva.querySelector('.eliminar').addEventListener('click', () => nueva.remove());
+function crearFila(insumoId = '', cantidad = '') {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td><select class="insumo"></select></td>
+        <td><input type="number" step="0.01" class="cantidad"></td>
+        <td class="unidad"></td>
+        <td><button type="button" class="eliminar">Eliminar</button></td>
+    `;
+    document.querySelector('#tablaReceta tbody').appendChild(tr);
     actualizarSelects();
+    tr.querySelector('.eliminar').addEventListener('click', () => tr.remove());
+    if (insumoId) {
+        tr.querySelector('.insumo').value = insumoId;
+        tr.querySelector('.cantidad').value = cantidad;
+        mostrarUnidad(tr.querySelector('.insumo'));
+    }
+}
+
+function agregarFila() {
+    crearFila();
 }
 
 function validarDuplicados() {
@@ -97,17 +129,10 @@ function validarDuplicados() {
 async function cargarReceta(id) {
     const tbody = document.querySelector('#tablaReceta tbody');
     tbody.innerHTML = '';
-    const base = document.createElement('tr');
-    base.innerHTML = `
-        <td><select class="insumo"></select></td>
-        <td><input type="number" step="0.01" class="cantidad"></td>
-        <td class="unidad"></td>
-        <td><button type="button" class="eliminar">Eliminar</button></td>
-    `;
-    tbody.appendChild(base);
-    actualizarSelects();
-    base.querySelector('.eliminar').addEventListener('click', () => base.remove());
-    if (!id) return;
+    if (!id) {
+        crearFila();
+        return;
+    }
     try {
         const resp = await fetch('../../api/recetas/listar_receta.php', {
             method: 'POST',
@@ -116,17 +141,11 @@ async function cargarReceta(id) {
         });
         const data = await resp.json();
         if (data.success) {
-            tbody.innerHTML = '';
-            data.resultado.forEach(r => {
-                const tr = base.cloneNode(true);
-                tr.querySelector('.cantidad').value = r.cantidad;
-                tbody.appendChild(tr);
-                actualizarSelects();
-                tr.querySelector('.insumo').value = r.insumo_id;
-                mostrarUnidad(tr.querySelector('.insumo'));
-                tr.querySelector('.eliminar').addEventListener('click', () => tr.remove());
-            });
-            if (data.resultado.length === 0) tbody.appendChild(base);
+            if (data.resultado.length === 0) {
+                crearFila();
+            } else {
+                data.resultado.forEach(r => crearFila(r.insumo_id, r.cantidad));
+            }
         } else {
             alert(data.mensaje);
         }
@@ -175,6 +194,56 @@ async function guardarReceta() {
     }
 }
 
+async function copiarReceta(origenId) {
+    try {
+        const resp = await fetch('../../api/recetas/listar_receta.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ producto_id: origenId })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            const tbody = document.querySelector('#tablaReceta tbody');
+            tbody.innerHTML = '';
+            if (data.resultado.length === 0) {
+                crearFila();
+            } else {
+                data.resultado.forEach(r => crearFila(r.insumo_id, r.cantidad));
+            }
+            alert('Receta copiada, guarda para aplicar los cambios');
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al copiar receta');
+    }
+}
+
+function abrirModalCopiar() {
+    const modal = document.getElementById('modal-copiar');
+    let html = '<h3>Copiar receta</h3>';
+    html += '<select id="producto_copiar"><option value="">--Selecciona--</option>';
+    catalogoProductos.forEach(p => {
+        html += `<option value="${p.id}">${p.nombre}</option>`;
+    });
+    html += '</select> ';
+    html += '<button id="btnCopiarAhora">Copiar</button> ';
+    html += '<button id="cerrarCopiar">Cerrar</button>';
+    modal.innerHTML = html;
+    modal.style.display = 'block';
+    document.getElementById('btnCopiarAhora').addEventListener('click', () => {
+        const id = parseInt(document.getElementById('producto_copiar').value);
+        if (!isNaN(id)) {
+            copiarReceta(id);
+            modal.style.display = 'none';
+        }
+    });
+    document.getElementById('cerrarCopiar').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     cargarProductos();
     cargarInsumos();
@@ -182,6 +251,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('guardarReceta').addEventListener('click', guardarReceta);
     document.getElementById('producto_id').addEventListener('change', (e) => {
         const id = parseInt(e.target.value);
-        if (!isNaN(id)) cargarReceta(id); else cargarReceta(null);
+        if (!isNaN(id)) {
+            mostrarImagenProducto(id);
+            cargarReceta(id);
+        } else {
+            mostrarImagenProducto(null);
+            cargarReceta(null);
+        }
     });
+    document.getElementById('copiarReceta').addEventListener('click', abrirModalCopiar);
 });
