@@ -366,6 +366,9 @@ async function verDetalles(id) {
                         `<td>${btn}</td></tr>`;
             });
             html += `</tbody></table>`;
+            if (info.foto_entrega) {
+                html += `<p>Evidencia:<br><img src="../../uploads/evidencias/${info.foto_entrega}" width="300"></p>`;
+            }
             html += `<h4>Agregar producto</h4>`;
             html += `<select id="detalle_producto"></select>`;
             html += `<input type="number" id="detalle_cantidad" value="1" min="1">`;

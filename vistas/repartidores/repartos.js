@@ -132,7 +132,11 @@ function mostrarDetalle(info) {
         const sub = p.cantidad * p.precio_unitario;
         html += `<li>${p.nombre} - ${p.cantidad} x ${p.precio_unitario} = ${sub}</li>`;
     });
-    html += `</ul><p>Total: ${info.total}</p><button id="cerrarDetalle">Cerrar</button>`;
+    html += '</ul>';
+    if (info.foto_entrega) {
+        html += `<p>Evidencia:<br><img src="../../uploads/evidencias/${info.foto_entrega}" width="300"></p>`;
+    }
+    html += `<p>Total: ${info.total}</p><button id="cerrarDetalle">Cerrar</button>`;
     contenedor.innerHTML = html;
     contenedor.style.display = 'block';
     document.getElementById('cerrarDetalle').addEventListener('click', () => {
