@@ -5,7 +5,6 @@ async function cargarMesas() {
         const tablero = document.getElementById('tablero');
         if (data.success) {
             tablero.innerHTML = '';
-            // Calcular mesas unidas
             const uniones = {};
             data.resultado.forEach(m => {
                 if (m.mesa_principal_id) {
@@ -14,34 +13,65 @@ async function cargarMesas() {
                 }
             });
 
+            const areas = {};
             data.resultado.forEach(m => {
-                const card = document.createElement('div');
-                card.className = 'mesa';
+                const area = m.area || 'Sin área';
+                if (!areas[area]) areas[area] = [];
+                areas[area].push(m);
+            });
 
-                const unidas = uniones[m.id] || [];
-                let unionTxt = '';
-                if (m.mesa_principal_id) {
-                    unionTxt = `Unida a ${m.mesa_principal_id}`;
-                } else if (unidas.length) {
-                    unionTxt = `Principal de: ${unidas.join(', ')}`;
-                }
+            Object.keys(areas).forEach(areaNombre => {
+                const seccion = document.createElement('section');
+                const h2 = document.createElement('h2');
+                h2.textContent = areaNombre;
+                seccion.appendChild(h2);
+                const cont = document.createElement('div');
+                seccion.appendChild(cont);
+                tablero.appendChild(seccion);
 
-                const ventaTxt = m.venta_activa ? `Venta activa: ${m.venta_id}` : 'Sin venta';
-    const meseroTxt = m.mesero_nombre ? `Mesero: ${m.mesero_nombre}` : 'Sin mesero asignado';
+                areas[areaNombre].forEach(m => {
+                    const card = document.createElement('div');
+                    card.className = 'mesa';
 
-                card.innerHTML = `
-                    <input type="checkbox" class="seleccionar" data-id="${m.id}">
-                    <h3>${m.nombre}</h3>
-                    <p>Estado: ${m.estado}</p>
-                    <p>${ventaTxt}</p>
-                    <p>${meseroTxt}</p>
-                    <p>${unionTxt}</p>
-                    <button class="detalles" data-venta="${m.venta_id || ''}" data-mesa="${m.id}" data-nombre="${m.nombre}" data-estado="${m.estado}" data-mesero="${m.mesero_id || ''}">Detalles</button>
-                    <button class="dividir" data-id="${m.id}">Dividir</button>
-                    <button class="cambiar" data-id="${m.id}">Cambiar estado</button>
-                    <button class="ticket" data-mesa="${m.id}" data-nombre="${m.nombre}" data-venta="${m.venta_id || ''}">Solicitar ticket</button>
-                `;
-                tablero.appendChild(card);
+                    const unidas = uniones[m.id] || [];
+                    let unionTxt = '';
+                    if (m.mesa_principal_id) {
+                        unionTxt = `Unida a ${m.mesa_principal_id}`;
+                    } else if (unidas.length) {
+                        unionTxt = `Principal de: ${unidas.join(', ')}`;
+                    }
+
+                    const ventaTxt = m.venta_activa ? `Venta activa: ${m.venta_id}` : 'Sin venta';
+                    const meseroTxt = m.mesero_nombre ? `Mesero: ${m.mesero_nombre}` : 'Sin mesero asignado';
+                    const reservaTxt = m.estado_reserva === 'reservada' ? `Reservada: ${m.nombre_reserva} (${m.fecha_reserva})` : '';
+                    let ocupacionTxt = '';
+                    if (m.tiempo_ocupacion_inicio) {
+                        const inicio = new Date(m.tiempo_ocupacion_inicio.replace(' ', 'T'));
+                        const diff = Math.floor((Date.now() - inicio.getTime()) / 60000);
+                        ocupacionTxt = `Ocupada hace ${diff} min`;
+                    }
+
+                    card.innerHTML = `
+                        <input type="checkbox" class="seleccionar" data-id="${m.id}">
+                        <h3>${m.nombre}</h3>
+                        <p>Estado: ${m.estado}</p>
+                        <p>${ventaTxt}</p>
+                        <p>${meseroTxt}</p>
+                        <p>${unionTxt}</p>
+                        <p>${reservaTxt}</p>
+                        <p>${ocupacionTxt}</p>
+                        <button class="detalles" data-venta="${m.venta_id || ''}" data-mesa="${m.id}" data-nombre="${m.nombre}" data-estado="${m.estado}" data-mesero="${m.mesero_id || ''}">Detalles</button>
+                        <button class="dividir" data-id="${m.id}">Dividir</button>
+                        <button class="cambiar" data-id="${m.id}">Cambiar estado</button>
+                        <button class="ticket" data-mesa="${m.id}" data-nombre="${m.nombre}" data-venta="${m.venta_id || ''}">Solicitar ticket</button>
+                    `;
+
+                    if (m.estado === 'libre' && m.estado_reserva === 'ninguna') {
+                        card.addEventListener('click', () => reservarMesa(m.id));
+                    }
+
+                    cont.appendChild(card);
+                });
             });
 
             tablero.querySelectorAll('button.cambiar').forEach(btn => {
@@ -442,3 +472,31 @@ async function agregarProductoVenta(ventaId, mesaId, estado) {
 }
 
 document.getElementById('btn-unir').addEventListener('click', unirSeleccionadas);
+
+async function reservarMesa(id) {
+    const nombre = prompt('Nombre para la reserva:');
+    if (!nombre) return;
+    const fecha = prompt('Fecha y hora (YYYY-MM-DD HH:MM):');
+    if (!fecha) return;
+    try {
+        const resp = await fetch('../../api/mesas/cambiar_estado.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                mesa_id: parseInt(id),
+                nuevo_estado: 'reservada',
+                nombre_reserva: nombre,
+                fecha_reserva: fecha
+            })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            cargarMesas();
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al reservar mesa');
+    }
+}

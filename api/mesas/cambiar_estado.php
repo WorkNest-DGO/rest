@@ -13,17 +13,35 @@ if (!$input || !isset($input['mesa_id']) || !isset($input['nuevo_estado'])) {
 
 $mesa_id = (int)$input['mesa_id'];
 $nuevo_estado = $input['nuevo_estado'];
+$nombre_reserva = $input['nombre_reserva'] ?? null;
+$fecha_reserva  = $input['fecha_reserva'] ?? null;
 
 $estados = ['libre', 'ocupada', 'reservada'];
 if (!in_array($nuevo_estado, $estados, true)) {
     error('Estado no válido');
 }
 
-$stmt = $conn->prepare('UPDATE mesas SET estado = ? WHERE id = ?');
-if (!$stmt) {
-    error('Error al preparar consulta: ' . $conn->error);
+if ($nuevo_estado === 'ocupada') {
+    $stmt = $conn->prepare("UPDATE mesas SET estado = 'ocupada', tiempo_ocupacion_inicio = IF(tiempo_ocupacion_inicio IS NULL, NOW(), tiempo_ocupacion_inicio) WHERE id = ?");
+    if (!$stmt) {
+        error('Error al preparar consulta: ' . $conn->error);
+    }
+    $stmt->bind_param('i', $mesa_id);
+} elseif ($nuevo_estado === 'libre') {
+    $stmt = $conn->prepare("UPDATE mesas SET estado = 'libre', tiempo_ocupacion_inicio = NULL, estado_reserva = 'ninguna', nombre_reserva = NULL, fecha_reserva = NULL, usuario_id = NULL WHERE id = ?");
+    if (!$stmt) {
+        error('Error al preparar consulta: ' . $conn->error);
+    }
+    $stmt->bind_param('i', $mesa_id);
+} elseif ($nuevo_estado === 'reservada') {
+    $stmt = $conn->prepare("UPDATE mesas SET estado = 'reservada', estado_reserva = 'reservada', nombre_reserva = ?, fecha_reserva = ? WHERE id = ?");
+    if (!$stmt) {
+        error('Error al preparar consulta: ' . $conn->error);
+    }
+    $stmt->bind_param('ssi', $nombre_reserva, $fecha_reserva, $mesa_id);
+} else {
+    error('Estado no válido');
 }
-$stmt->bind_param('si', $nuevo_estado, $mesa_id);
 if (!$stmt->execute()) {
     $stmt->close();
     error('Error al actualizar mesa: ' . $stmt->error);
