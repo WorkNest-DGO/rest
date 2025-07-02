@@ -433,3 +433,10 @@ ADD COLUMN fecha_inicio DATETIME DEFAULT NULL,
 ADD COLUMN fecha_entrega DATETIME DEFAULT NULL,
 ADD COLUMN seudonimo_entrega VARCHAR(100) DEFAULT NULL,
 ADD COLUMN foto_entrega VARCHAR(255) DEFAULT NULL;
+
+
+-- mas pinshis cambios de BD 
+ALTER TABLE venta_detalles
+ADD COLUMN estado_producto ENUM('pendiente','en_preparacion','listo','entregado') DEFAULT 'pendiente',
+ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN observaciones TEXT;
