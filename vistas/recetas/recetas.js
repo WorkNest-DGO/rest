@@ -4,10 +4,12 @@ let catalogoProductos = [];
 function mostrarImagenProducto(id) {
     const img = document.getElementById('imgProducto');
     const nom = document.getElementById('nombreProducto');
+    const frm = document.getElementById('formImagen');
     if (!id) {
         img.style.display = 'none';
         img.src = '';
         nom.textContent = '';
+        frm.style.display = 'none';
         return;
     }
     const prod = catalogoProductos.find(p => p.id == id);
@@ -20,6 +22,7 @@ function mostrarImagenProducto(id) {
         img.style.display = 'none';
         img.src = '';
     }
+    frm.style.display = 'block';
 }
 
 async function cargarProductos() {
@@ -61,17 +64,21 @@ async function cargarInsumos() {
     }
 }
 
+function llenarSelectInsumos(sel) {
+    sel.innerHTML = '<option value="">--Selecciona--</option>';
+    catalogoInsumos.forEach(i => {
+        const opt = document.createElement('option');
+        opt.value = i.id;
+        opt.textContent = i.nombre;
+        opt.dataset.unidad = i.unidad;
+        sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => mostrarUnidad(sel));
+}
+
 function actualizarSelects() {
     document.querySelectorAll('select.insumo').forEach(sel => {
-        sel.innerHTML = '<option value="">--Selecciona--</option>';
-        catalogoInsumos.forEach(i => {
-            const opt = document.createElement('option');
-            opt.value = i.id;
-            opt.textContent = i.nombre;
-            opt.dataset.unidad = i.unidad;
-            sel.appendChild(opt);
-        });
-        sel.addEventListener('change', () => mostrarUnidad(sel));
+        llenarSelectInsumos(sel);
     });
 }
 
@@ -93,12 +100,13 @@ function crearFila(insumoId = '', cantidad = '') {
         <td><button type="button" class="eliminar">Eliminar</button></td>
     `;
     document.querySelector('#tablaReceta tbody').appendChild(tr);
-    actualizarSelects();
+    const sel = tr.querySelector('.insumo');
+    llenarSelectInsumos(sel);
     tr.querySelector('.eliminar').addEventListener('click', () => tr.remove());
     if (insumoId) {
-        tr.querySelector('.insumo').value = insumoId;
+        sel.value = insumoId;
         tr.querySelector('.cantidad').value = cantidad;
-        mostrarUnidad(tr.querySelector('.insumo'));
+        mostrarUnidad(sel);
     }
 }
 
@@ -220,6 +228,36 @@ async function copiarReceta(origenId) {
     }
 }
 
+async function subirImagenProducto() {
+    const producto_id = parseInt(document.getElementById('producto_id').value);
+    const file = document.getElementById('imagenProducto').files[0];
+    if (isNaN(producto_id) || !file) {
+        alert('Selecciona un producto e imagen');
+        return;
+    }
+    const fd = new FormData();
+    fd.append('producto_id', producto_id);
+    fd.append('imagen', file);
+    try {
+        const resp = await fetch('../../api/inventario/actualizar_imagen.php', {
+            method: 'POST',
+            body: fd
+        });
+        const data = await resp.json();
+        if (data.success) {
+            alert('Imagen actualizada');
+            const prod = catalogoProductos.find(p => p.id == producto_id);
+            if (prod) prod.imagen = data.resultado.imagen;
+            mostrarImagenProducto(producto_id);
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al subir imagen');
+    }
+}
+
 function abrirModalCopiar() {
     const modal = document.getElementById('modal-copiar');
     let html = '<h3>Copiar receta</h3>';
@@ -249,6 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarInsumos();
     document.getElementById('agregarFila').addEventListener('click', agregarFila);
     document.getElementById('guardarReceta').addEventListener('click', guardarReceta);
+    document.getElementById('subirImagen').addEventListener('click', subirImagenProducto);
     document.getElementById('producto_id').addEventListener('change', (e) => {
         const id = parseInt(e.target.value);
         if (!isNaN(id)) {
