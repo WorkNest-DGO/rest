@@ -14,26 +14,13 @@ CREATE TABLE IF NOT EXISTS usuarios (
     activo TINYINT(1) DEFAULT 1
 );
 
--- Catálogo de áreas para las mesas
-CREATE TABLE IF NOT EXISTS catalogo_areas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL
-);
-
 -- Tabla de mesas del restaurante
 CREATE TABLE IF NOT EXISTS mesas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,
     estado ENUM('libre','ocupada','reservada') DEFAULT 'libre',
     capacidad INT DEFAULT 4,
-    mesa_principal_id INT DEFAULT NULL,
-    area VARCHAR(50),
-    tiempo_ocupacion_inicio DATETIME DEFAULT NULL,
-    estado_reserva ENUM('ninguna','reservada') DEFAULT 'ninguna',
-    nombre_reserva VARCHAR(100),
-    fecha_reserva DATETIME,
-    usuario_id INT,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    mesa_principal_id INT DEFAULT NULL
 );
 
 -- Tabla de repartidores para ventas a domicilio
@@ -82,19 +69,6 @@ CREATE TABLE IF NOT EXISTS venta_detalles (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (venta_id) REFERENCES ventas(id),
     FOREIGN KEY (producto_id) REFERENCES productos(id)
-);
-
--- Historial de uso de mesas
-CREATE TABLE log_mesas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    mesa_id INT NOT NULL,
-    venta_id INT,
-    usuario_id INT,
-    fecha_inicio DATETIME,
-    fecha_fin DATETIME,
-    FOREIGN KEY (mesa_id) REFERENCES mesas(id),
-    FOREIGN KEY (venta_id) REFERENCES ventas(id),
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 
 -- Tabla de corte de caja por usuario
@@ -204,21 +178,11 @@ INSERT INTO repartidores (nombre, telefono) VALUES
 ('Pedro Repartidor', '555-000-1111'),
 ('Ana Repartidora', '555-999-2222');
 
--- ÁREAS DE MESAS
-INSERT INTO catalogo_areas (nombre) VALUES
-('Ala izquierda'),
-('Ala derecha'),
-('Terraza');
-
-ALTER TABLE mesas
-ADD COLUMN area_id INT DEFAULT NULL,
-ADD CONSTRAINT fk_mesa_area FOREIGN KEY (area_id) REFERENCES catalogo_areas(id);
-
 -- MESAS
-INSERT INTO mesas (nombre, estado, capacidad, area, area_id) VALUES
-('Mesa 1', 'libre', 4, 'Ala izquierda', 1),
-('Mesa 2', 'ocupada', 4, 'Ala derecha', 2),
-('Mesa 3', 'reservada', 6, 'Terraza', 3);
+INSERT INTO mesas (nombre, estado, capacidad) VALUES
+('Mesa 1', 'libre', 4),
+('Mesa 2', 'ocupada', 4),
+('Mesa 3', 'reservada', 6);
 
 -- PRODUCTOS
 INSERT INTO productos (nombre, precio, descripcion, existencia) VALUES
@@ -371,7 +335,7 @@ ALTER TABLE entradas_insumo
 ADD COLUMN usuario_id INT AFTER proveedor_id,
 ADD CONSTRAINT fk_entrada_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id);
 
--- trigger pa recalcular con el sp de recetas cada q se cambia uno
+ -- trigger pa recalcular con el sp de recetas cada q se cambia uno
 
 DELIMITER //
 
@@ -424,3 +388,27 @@ END;
 //
 
 DELIMITER ;
+
+-- metimos esta wea hasta aca pero ejecutenla antes xd
+
+CREATE TABLE catalogo_areas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(50) NOT NULL
+);
+INSERT INTO catalogo_areas (nombre) VALUES 
+('Ala izquierda'), 
+('ala derecha'), 
+('terraza');
+
+ALTER TABLE mesas
+ADD COLUMN area_id INT DEFAULT NULL,
+ADD COLUMN usuario_id INT DEFAULT NULL,
+ADD COLUMN estado_reserva ENUM('ninguna', 'reservada') DEFAULT 'ninguna',
+ADD COLUMN nombre_reserva VARCHAR(100) DEFAULT NULL,
+ADD COLUMN fecha_reserva DATETIME DEFAULT NULL,
+ADD COLUMN tiempo_ocupacion_inicio DATETIME DEFAULT NULL;
+
+ALTER TABLE mesas
+
+ADD CONSTRAINT fk_mesa_area FOREIGN KEY (area_id) REFERENCES catalogo_areas(id),
+ADD CONSTRAINT fk_mesa_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id);
