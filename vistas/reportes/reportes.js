@@ -1,10 +1,33 @@
 const usuarioId = 1; // En producción usar id de sesión
 
+async function cargarUsuarios() {
+    const sel = document.getElementById('filtroUsuario');
+    if (!sel) return;
+    const r = await fetch('../../api/usuarios/listar_usuarios.php');
+    const d = await r.json();
+    sel.innerHTML = '<option value="">--Todos--</option>';
+    if (d.success) {
+        d.resultado.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.id;
+            opt.textContent = u.nombre;
+            sel.appendChild(opt);
+        });
+    }
+}
+
 async function cargarHistorial() {
     const tbody = document.querySelector('#tablaCortes tbody');
-    tbody.innerHTML = '<tr><td colspan="7">Cargando...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11">Cargando...</td></tr>';
     try {
-        const resp = await fetch('../../api/corte_caja/listar_cortes.php');
+        const params = new URLSearchParams();
+        const u = document.getElementById('filtroUsuario').value;
+        const i = document.getElementById('filtroInicio').value;
+        const f = document.getElementById('filtroFin').value;
+        if (u) params.append('usuario_id', u);
+        if (i) params.append('inicio', i);
+        if (f) params.append('fin', f);
+        const resp = await fetch('../../api/corte_caja/listar_cortes.php?' + params.toString());
         const data = await resp.json();
         if (data.success) {
             tbody.innerHTML = '';
@@ -16,6 +39,10 @@ async function cargarHistorial() {
                     <td>${c.fecha_inicio}</td>
                     <td>${c.fecha_fin || ''}</td>
                     <td>${c.total !== null ? c.total : ''}</td>
+                    <td>${c.efectivo || ''}</td>
+                    <td>${c.boucher || ''}</td>
+                    <td>${c.cheque || ''}</td>
+                    <td>${c.fondo_inicial || ''}</td>
                     <td>${c.observaciones || ''}</td>
                     <td><button class="detalle" data-id="${c.id}">Ver detalle</button></td>
                 `;
@@ -96,6 +123,11 @@ async function resumenActual() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    cargarUsuarios();
     cargarHistorial();
     document.getElementById('btnResumen').addEventListener('click', resumenActual);
+    const btn = document.getElementById('aplicarFiltros');
+    if (btn) btn.addEventListener('click', cargarHistorial);
+    const imp = document.getElementById('btnImprimir');
+    if (imp) imp.addEventListener('click', () => window.print());
 });

@@ -12,8 +12,29 @@ $fondo_inicial = isset($input['fondo_inicial']) ? (float)$input['fondo_inicial']
 if (!$usuario_id) {
     error('usuario_id requerido');
 }
+// Si no se envía fondo_inicial, obtenerlo de la tabla fondo
 if ($fondo_inicial === null) {
-    error('fondo_inicial requerido');
+    $stmt = $conn->prepare('SELECT monto FROM fondo WHERE usuario_id = ?');
+    if ($stmt) {
+        $stmt->bind_param('i', $usuario_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        if ($row = $res->fetch_assoc()) {
+            $fondo_inicial = (float)$row['monto'];
+        }
+        $stmt->close();
+    }
+    if ($fondo_inicial === null) {
+        error('fondo_inicial requerido');
+    }
+} else {
+    // Guardar fondo para futuros cortes
+    $g = $conn->prepare('INSERT INTO fondo (usuario_id, monto) VALUES (?, ?) ON DUPLICATE KEY UPDATE monto = VALUES(monto)');
+    if ($g) {
+        $g->bind_param('id', $usuario_id, $fondo_inicial);
+        $g->execute();
+        $g->close();
+    }
 }
 
 $stmt = $conn->prepare('SELECT id FROM corte_caja WHERE usuario_id = ? AND fecha_fin IS NULL');

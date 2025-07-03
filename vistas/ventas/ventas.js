@@ -95,16 +95,25 @@ fetch('../../api/corte_caja/verificar_corte_abierto.php', {
 }
 
 async function abrirCaja() {
-    const monto = prompt('Indica fondo de caja:');
-    if (monto === null || monto === '') {
+    let fondoData = await fetch('../../api/corte_caja/consultar_fondo.php?usuario_id=' + usuarioId)
+        .then(r => r.json());
+    let monto = fondoData.existe ? fondoData.monto : prompt('Indica fondo de caja:');
+    if (monto === null || monto === '' || isNaN(parseFloat(monto))) {
         alert('Debes indicar un monto');
         return;
+    }
+    if (!fondoData.existe) {
+        await fetch('../../api/corte_caja/guardar_fondo.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario_id: usuarioId, monto: parseFloat(monto) })
+        });
     }
     try {
         const resp = await fetch('../../api/corte_caja/iniciar_corte.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ usuario_id: usuarioId, fondo_inicial: parseFloat(monto) })
+            body: JSON.stringify({ usuario_id: usuarioId })
         });
         const data = await resp.json();
         if (data.success) {
@@ -122,6 +131,68 @@ async function abrirCaja() {
 async function cerrarCaja() {
     try {
         deshabilitarCobro();
+        const r = await fetch('../../api/corte_caja/resumen_corte_actual.php?usuario_id=' + usuarioId);
+        const resumen = await r.json();
+        if (!resumen.success || !resumen.resultado.abierto) {
+            alert('No hay corte abierto');
+            habilitarCobro();
+            return;
+        }
+        mostrarModalDesglose(parseFloat(resumen.resultado.total));
+    } catch (err) {
+        console.error(err);
+        alert('Error al obtener resumen');
+    }
+}
+
+function mostrarModalDesglose(totalEsperado) {
+    const modal = document.getElementById('modalDesglose');
+    let html = '<div style="background:#fff;border:1px solid #333;padding:10px;">';
+    html += '<h3>Arqueo de caja</h3>';
+    const denoms = [1000,500,200,100,50,20,20,10,5,2,1,0.5];
+    denoms.forEach((d,i)=>{
+        html += `${d} <input type="number" id="den_${i}" value="0"><br>`;
+    });
+    html += 'Boucher: <input type="number" id="inpBoucher" value="0"><br>';
+    html += 'Cheque: <input type="number" id="inpCheque" value="0"><br>';
+    html += '<button id="btnSaveDesglose">Guardar</button> <button id="btnCancelDesglose">Cancelar</button>';
+    html += '</div>';
+    modal.innerHTML = html;
+    modal.style.display = 'block';
+    document.getElementById('btnCancelDesglose').addEventListener('click', ()=>{
+        modal.style.display='none';
+        habilitarCobro();
+    });
+    document.getElementById('btnSaveDesglose').addEventListener('click', ()=>guardarArqueo(totalEsperado, denoms));
+}
+
+async function guardarArqueo(totalEsperado, denoms) {
+    const modal = document.getElementById('modalDesglose');
+    const desg = {};
+    let total = 0;
+    denoms.forEach((d,i)=>{
+        const cant = parseInt(document.getElementById('den_'+i).value)||0;
+        if(cant>0){desg[d]=cant; total += d*cant;}
+    });
+    const boucher = parseFloat(document.getElementById('inpBoucher').value)||0;
+    const cheque  = parseFloat(document.getElementById('inpCheque').value)||0;
+    total += boucher + cheque;
+    if(Math.abs(total - totalEsperado) > 5){
+        if(!confirm('Hay diferencia con el total. ¿Continuar?')) return;
+    }
+    const resp = await fetch('../../api/corte_caja/guardar_desglose.php', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ corte_id: corteIdActual, desglose: desg, boucher, cheque })
+    });
+    const data = await resp.json();
+    if(!data.success){ alert(data.mensaje); habilitarCobro(); return; }
+    modal.style.display='none';
+    finalizarCorte();
+}
+
+async function finalizarCorte() {
+    try {
         const resp = await fetch('../../api/corte_caja/cerrar_corte.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -137,7 +208,7 @@ async function cerrarCaja() {
         }
     } catch (err) {
         console.error(err);
-        alert('Error al cerrar caja');
+        alert('Error al cerrar corte');
     }
 }
 

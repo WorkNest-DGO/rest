@@ -8,3 +8,9 @@ CREATE TABLE desglose_corte (
   tipo_pago ENUM('efectivo','boucher','cheque') DEFAULT 'efectivo',
   FOREIGN KEY (corte_id) REFERENCES corte_caja(id)
 );
+
+CREATE TABLE fondo (
+  usuario_id INT PRIMARY KEY,
+  monto DECIMAL(10,2) NOT NULL,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
