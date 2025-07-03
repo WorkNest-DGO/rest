@@ -45,7 +45,7 @@ async function cargarHistorial() {
     }
 }
 
-const usuarioId = window.usuarioId || 0;// ID del usuario desde sesión
+const usuarioId = 1; // ID del cajero, reemplazar por sesión en producción
 let corteIdActual = null;
 let catalogo = [];
 let productos = [];
@@ -347,7 +347,7 @@ async function registrarVenta() {
     const tipo = document.getElementById('tipo_entrega').value;
     const mesa_id = parseInt(document.getElementById('mesa_id').value);
     const repartidor_id = parseInt(document.getElementById('repartidor_id').value);
-    const mesero_id = parseInt(document.getElementById('usuario_id').value);
+    const usuario_id = parseInt(document.getElementById('usuario_id').value);
     const filas = document.querySelectorAll('#productos tbody tr');
     const productos = [];
 
@@ -383,7 +383,7 @@ async function registrarVenta() {
         tipo,
         mesa_id: tipo === 'mesa' ? mesa_id : null,
         repartidor_id: tipo === 'domicilio' ? repartidor_id : null,
-        usuario_id: usuarioId, mesero_id,
+        usuario_id,
         productos,
         corte_id: corteIdActual
     };
