@@ -8,8 +8,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $input = json_decode(file_get_contents('php://input'), true);
 $usuario_id = $input['usuario_id'] ?? null;
+$fondo_inicial = isset($input['fondo_inicial']) ? (float)$input['fondo_inicial'] : null;
 if (!$usuario_id) {
     error('usuario_id requerido');
+}
+if ($fondo_inicial === null) {
+    error('fondo_inicial requerido');
 }
 
 $stmt = $conn->prepare('SELECT id FROM corte_caja WHERE usuario_id = ? AND fecha_fin IS NULL');
@@ -25,11 +29,11 @@ if ($stmt->num_rows > 0) {
 }
 $stmt->close();
 
-$stmt = $conn->prepare('INSERT INTO corte_caja (usuario_id, fecha_inicio) VALUES (?, NOW())');
+$stmt = $conn->prepare('INSERT INTO corte_caja (usuario_id, fecha_inicio, fondo_inicial) VALUES (?, NOW(), ?)');
 if (!$stmt) {
     error('Error al preparar inserción: ' . $conn->error);
 }
-$stmt->bind_param('i', $usuario_id);
+$stmt->bind_param('id', $usuario_id, $fondo_inicial);
 if (!$stmt->execute()) {
     $stmt->close();
     error('Error al crear corte: ' . $stmt->error);

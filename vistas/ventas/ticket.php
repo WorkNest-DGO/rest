@@ -23,6 +23,7 @@ ob_start();
     <button id="agregarSub">Agregar subcuenta</button>
     <button id="guardarSub">Guardar Tickets</button>
     <div id="subcuentas"></div>
+    <div id="teclado" style="margin-top:10px;"></div>
 </div>
 
 <div id="imprimir" style="display:none;">
@@ -190,7 +191,16 @@ function renderSubcuentas() {
         });
         html += '</tbody></table>';
         html += `Serie: <select id="serie${i}" class="serie"></select>`;
-        html += ` Propina: <input type="number" step="0.01" id="propina${i}" value="0"><div id="tot${i}"></div>`;
+        html += ` Propina: <input type="number" step="0.01" id="propina${i}" value="0">`;
+        html += ` <select id="pago${i}" class="pago">
+                        <option value="">Pago</option>
+                        <option value="efectivo">Efectivo</option>
+                        <option value="boucher">Tarjeta</option>
+                        <option value="cheque">Cheque</option>
+                    </select>`;
+        html += ` <input type="number" step="0.01" id="recibido${i}" class="recibido" placeholder="Recibido">`;
+        html += ` Cambio: <span id="cambio${i}">0</span>`;
+        html += `<div id="tot${i}"></div>`;
         div.innerHTML = html;
         cont.appendChild(div);
         const sel = div.querySelector('select.serie');
@@ -206,6 +216,9 @@ function renderSubcuentas() {
         sel.addEventListener('change', () => {
             seleccionSeries[i] = parseInt(sel.value);
         });
+        div.querySelector('#propina' + i).addEventListener('input', mostrarTotal);
+        div.querySelector('#pago' + i).addEventListener('change', mostrarTotal);
+        div.querySelector('#recibido' + i).addEventListener('input', mostrarTotal);
     }
     mostrarTotal();
 }
@@ -217,8 +230,49 @@ function mostrarTotal() {
         const prop = parseFloat(document.getElementById('propina' + i).value || 0);
         total += prop;
         document.getElementById('tot' + i).textContent = 'Total: ' + total.toFixed(2);
+        const tipo = document.getElementById('pago' + i).value;
+        const inp = document.getElementById('recibido' + i);
+        if (tipo !== 'efectivo') {
+            inp.disabled = true;
+            document.getElementById('cambio' + i).textContent = '0.00';
+        } else {
+            inp.disabled = false;
+            const rec = parseFloat(inp.value || 0);
+            const cambio = rec - total;
+            document.getElementById('cambio' + i).textContent = cambio >= 0 ? cambio.toFixed(2) : '0.00';
+            if (rec < total) {
+                inp.style.background = '#fdd';
+            } else {
+                inp.style.background = '';
+            }
+        }
     }
 }
+
+function crearTeclado(input) {
+    const cont = document.getElementById('teclado');
+    cont.innerHTML = '';
+    const teclas = ['7','8','9','4','5','6','1','2','3','0','.','Borrar'];
+    teclas.forEach(t => {
+        const b = document.createElement('button');
+        b.textContent = t;
+        b.addEventListener('click', () => {
+            if (t === 'Borrar') {
+                input.value = input.value.slice(0, -1);
+            } else {
+                input.value += t;
+            }
+            input.dispatchEvent(new Event('input'));
+        });
+        cont.appendChild(b);
+    });
+}
+
+document.addEventListener('focusin', e => {
+    if (e.target.classList.contains('recibido')) {
+        crearTeclado(e.target);
+    }
+});
 
         function guardarSubcuentas() {
             const info = JSON.parse(localStorage.getItem('ticketData'));
@@ -241,7 +295,12 @@ function mostrarTotal() {
                 const prop = parseFloat(document.getElementById('propina' + i).value || 0);
                 const serieSel = document.getElementById('serie' + i);
                 const serie = serieSel ? parseInt(serieSel.value) : null;
-                payload.subcuentas.push({ productos: prods, propina: prop, serie_id: serie });
+                const tipo = document.getElementById('pago' + i).value;
+                const recibido = parseFloat(document.getElementById('recibido' + i).value || 0);
+                const total = prods.reduce((s,p)=>s+p.cantidad*p.precio_unitario,0)+prop;
+                if (!tipo) { alert('Selecciona tipo de pago en subcuenta '+i); return; }
+                if (tipo === 'efectivo' && recibido < total) { alert('Monto insuficiente en subcuenta '+i); return; }
+                payload.subcuentas.push({ productos: prods, propina: prop, serie_id: serie, tipo_pago: tipo, monto_recibido: recibido });
             }
             console.log(JSON.stringify(payload));
             fetch('../../api/tickets/guardar_ticket.php', {

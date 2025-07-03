@@ -95,11 +95,16 @@ fetch('../../api/corte_caja/verificar_corte_abierto.php', {
 }
 
 async function abrirCaja() {
+    const monto = prompt('Indica fondo de caja:');
+    if (monto === null || monto === '') {
+        alert('Debes indicar un monto');
+        return;
+    }
     try {
         const resp = await fetch('../../api/corte_caja/iniciar_corte.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ usuario_id: usuarioId })
+            body: JSON.stringify({ usuario_id: usuarioId, fondo_inicial: parseFloat(monto) })
         });
         const data = await resp.json();
         if (data.success) {

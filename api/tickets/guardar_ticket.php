@@ -17,7 +17,7 @@ $subcuentas = $input['subcuentas'];
 
 $conn->begin_transaction();
 
-$insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, total, propina, usuario_id) VALUES (?, ?, ?, ?, ?)');
+$insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, total, propina, usuario_id, tipo_pago, monto_recibido) VALUES (?, ?, ?, ?, ?, ?, ?)');
 $insDetalle = $conn->prepare('INSERT INTO ticket_detalles (ticket_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)');
 if (!$insTicket || !$insDetalle) {
     $conn->rollback();
@@ -68,7 +68,13 @@ foreach ($subcuentas as $sub) {
     }
     $total += $propina;
 
-    $insTicket->bind_param('iiddi', $venta_id, $folio_actual, $total, $propina, $usuario_id);
+    $tipo_pago = $sub['tipo_pago'] ?? null;
+    $monto_recibido = isset($sub['monto_recibido']) ? (float)$sub['monto_recibido'] : null;
+    if (!$tipo_pago || $monto_recibido === null) {
+        $conn->rollback();
+        error('Tipo de pago o monto recibido faltante');
+    }
+    $insTicket->bind_param('iiddisd', $venta_id, $folio_actual, $total, $propina, $usuario_id, $tipo_pago, $monto_recibido);
     if (!$insTicket->execute()) {
         $conn->rollback();
         error('Error al guardar ticket: ' . $insTicket->error);
