@@ -172,6 +172,8 @@ CREATE TABLE IF NOT EXISTS tickets (
     folio INT NOT NULL,
     total DECIMAL(10,2) NOT NULL,
     propina DECIMAL(10,2) DEFAULT 0,
+    monto_recibido DECIMAL(10,2) DEFAULT 0,
+    tipo_pago ENUM('efectivo','boucher','cheque') DEFAULT 'efectivo',
     fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
     usuario_id INT,
     FOREIGN KEY (venta_id) REFERENCES ventas(id),
