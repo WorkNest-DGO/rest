@@ -442,6 +442,31 @@ function agregarFilaProducto() {
     });
 }
 
+async function validarMesaLibre(id) {
+    try {
+        const resp = await fetch('../../api/mesas/listar_mesas.php');
+        const data = await resp.json();
+        if (!data.success) {
+            alert(data.mensaje);
+            return false;
+        }
+        const mesa = data.resultado.find(m => parseInt(m.id) === parseInt(id));
+        if (!mesa) {
+            alert('Mesa no encontrada');
+            return false;
+        }
+        if (mesa.estado !== 'libre') {
+            alert('La mesa seleccionada no está libre');
+            return false;
+        }
+        return true;
+    } catch (err) {
+        console.error(err);
+        alert('Error al verificar mesa');
+        return false;
+    }
+}
+
 async function registrarVenta() {
     const tipo = document.getElementById('tipo_entrega').value;
     const mesa_id = parseInt(document.getElementById('mesa_id').value);
@@ -469,6 +494,10 @@ async function registrarVenta() {
     if (tipo === 'mesa') {
         if (isNaN(mesa_id) || !mesa_id) {
             alert('Selecciona una mesa válida');
+            return;
+        }
+        const libre = await validarMesaLibre(mesa_id);
+        if (!libre) {
             return;
         }
     } else {
