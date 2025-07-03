@@ -91,6 +91,10 @@ ob_start();
 
     <div id="modal-detalles" style="display:none;"></div>
 
+    <script>
+        // ID de usuario proveniente de la sesión para operaciones en JS
+        window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;
+    </script>
     <script src="ventas.js"></script>
 </body>
 </html>
