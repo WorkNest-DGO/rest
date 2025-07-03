@@ -25,7 +25,7 @@ if (!isset($_SESSION['usuario_id'])) {
     <nav>
         <ul>
             <li><a href="<?= BASE_URL ?>cocina/cocina.php">Cocina</a></li>
-            <li><a href="<?= BASE_URL ?>corte_caja/corte.php">Cocina</a></li>
+            <li><a href="<?= BASE_URL ?>corte_caja/corte.php">Corte</a></li>
             <li><a href="<?= BASE_URL ?>insumos/insumos.php">Insumos</a></li>
             <li><a href="<?= BASE_URL ?>inventario/inventario.php">Inventario</a></li>
             <li><a href="<?= BASE_URL ?>mesas/mesas.php">Mesas</a></li>

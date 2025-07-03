@@ -72,27 +72,26 @@ function habilitarCobro() {
 }
 
 async function verificarCorte() {
-    try {
-        const resp = await fetch('../../api/corte_caja/verificar_corte_abierto.php?usuario_id=' + usuarioId);
-        const data = await resp.json();
-        const cont = document.getElementById('controlCaja');
-        cont.innerHTML = '';
-        if (data.success && data.abierto) {
-            corteIdActual = data.corte_id;
-            cont.innerHTML = `<button id="btnCerrarCaja">Cerrar caja</button>`;
-            document.getElementById('btnCerrarCaja').addEventListener('click', cerrarCaja);
-            habilitarCobro();
-        } else {
-            corteIdActual = null;
-            cont.innerHTML = `<button id="btnAbrirCaja">Abrir caja</button>`;
-            document.getElementById('btnAbrirCaja').addEventListener('click', abrirCaja);
-            deshabilitarCobro();
-            alert('Debes abrir caja antes de registrar ventas');
-        }
-    } catch (err) {
-        console.error(err);
-        alert('Error al verificar corte de caja');
+fetch('../../api/corte_caja/verificar_corte_abierto.php', {
+  credentials: 'include'
+})
+  .then(resp => resp.json())
+  .then(data => {
+    const cont = document.getElementById('controlCaja');
+    cont.innerHTML = '';
+
+    if (data.success && data.resultado.abierto) {
+      corteIdActual = data.resultado.corte_id;
+      cont.innerHTML = `<button id="btnCerrarCaja">Cerrar caja</button>`;
+      document.getElementById('btnCerrarCaja').addEventListener('click', cerrarCaja);
+      habilitarCobro();
+    } else {
+      cont.innerHTML = `<button id="btnAbrirCaja">Abrir caja</button>`;
+      document.getElementById('btnAbrirCaja').addEventListener('click', abrirCaja);
+      deshabilitarCobro();
     }
+  });
+
 }
 
 async function abrirCaja() {
@@ -504,7 +503,7 @@ async function verDetalles(id) {
                 };
                 localStorage.setItem('ticketData', JSON.stringify(payload));
                 const mesaParam = venta.mesa_id ? `&mesa=${venta.mesa_id}` : '';
-                window.open(`ticket.html?venta=${id}${mesaParam}`, '_blank');
+                window.open(`ticket.php?venta=${id}${mesaParam}`, '_blank');
             });
         } else {
             alert(data.mensaje);
@@ -609,7 +608,7 @@ async function imprimirSolicitud(mesaId, ventaId) {
                 total
             };
             localStorage.setItem('ticketData', JSON.stringify(payload));
-            const w = window.open(`ticket.html?venta=${ventaId}&mesa=${mesaId}`, '_blank');
+            const w = window.open(`ticket.php?venta=${ventaId}&mesa=${mesaId}`, '_blank');
             if (w) w.focus();
         } else {
             alert(data.mensaje);

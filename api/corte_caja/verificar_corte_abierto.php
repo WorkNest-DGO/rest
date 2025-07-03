@@ -1,39 +1,46 @@
 <?php
+
+
+session_start();
+
+header('Content-Type: application/json');
+
+if (!isset($_SESSION['usuario_id'])) {
+    echo json_encode([
+        'success' => false,
+        'mensaje' => 'Sesión no iniciada'
+    ]);
+    exit;
+}
+
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
-$usuario_id = null;
-if (isset($_GET['usuario_id'])) {
-    $usuario_id = (int)$_GET['usuario_id'];
-} else {
-    $input = json_decode(file_get_contents('php://input'), true);
-    if ($input && isset($input['usuario_id'])) {
-        $usuario_id = (int)$input['usuario_id'];
-    }
+$usuario_id = $_SESSION['usuario_id'];
+
+$sql = "SELECT id FROM corte_caja 
+        WHERE usuario_id = ? AND fecha_fin IS NULL 
+        ORDER BY fecha_inicio DESC 
+        LIMIT 1";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $usuario_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+$respuesta = [
+    'success' => true,
+    'resultado' => [
+        'abierto' => $result->num_rows > 0
+    ]
+];
+
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $respuesta['resultado']['corte_id'] = $row['id'];
 }
 
-if (!$usuario_id) {
-    error('usuario_id requerido');
-}
-
-$stmt = $conn->prepare('SELECT id, fecha_inicio FROM corte_caja WHERE usuario_id = ? AND fecha_fin IS NULL ORDER BY id DESC LIMIT 1');
-if (!$stmt) {
-    error('Error al preparar consulta: ' . $conn->error);
-}
-$stmt->bind_param('i', $usuario_id);
-if (!$stmt->execute()) {
-    $stmt->close();
-    error('Error al ejecutar consulta: ' . $stmt->error);
-}
-$res = $stmt->get_result();
-if ($row = $res->fetch_assoc()) {
-    $fechaInicio = $row['fecha_inicio'];
-    $soloFecha = substr($fechaInicio, 0, 10);
-    if ($soloFecha === date('Y-m-d')) {
-        success(['abierto' => true, 'corte_id' => (int)$row['id'], 'fecha_inicio' => $fechaInicio]);
-    }
-}
-$stmt->close();
-
-success(['abierto' => false]);
+echo json_encode($respuesta);
 ?>
+
+

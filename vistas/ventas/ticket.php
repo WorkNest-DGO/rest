@@ -220,35 +220,103 @@ function mostrarTotal() {
     }
 }
 
-function guardarSubcuentas() {
-    const info = JSON.parse(localStorage.getItem('ticketData'));
-    const payload = { venta_id: info.venta_id, usuario_id: info.usuario_id || 1, subcuentas: [] };
-    for (let i = 1; i <= numSub; i++) {
-        const prods = productos
-            .filter(p => p.subcuenta === i)
-            .map(p => {
-                if (!p.producto_id) {
-                    alert('Producto sin ID en subcuenta ' + i);
-                    throw new Error('Producto sin id');
-                }
-                return {
-                    producto_id: p.producto_id,
-                    cantidad: p.cantidad,
-                    precio_unitario: p.precio_unitario,
-                    subcuenta: i,
-                    propina: parseFloat(document.getElementById('propina' + i).value || 0),
-                    serie_id: parseInt(document.getElementById('serie' + i).value)
-                };
-            });
-        payload.subcuentas.push({ numero: i, productos: prods });
-    }
-    localStorage.setItem('subTickets', JSON.stringify(payload));
-    window.open(`ticket.html?venta=${info.venta_id}&print=1`, '_blank');
-}
+        function guardarSubcuentas() {
+            const info = JSON.parse(localStorage.getItem('ticketData'));
+            const payload = { venta_id: info.venta_id, usuario_id: info.usuario_id || 1, subcuentas: [] };
+            for (let i = 1; i <= numSub; i++) {
+                const prods = productos
+                    .filter(p => p.subcuenta === i)
+                    .map(p => {
+                        if (!p.producto_id) {
+                            alert('Producto sin ID en subcuenta ' + i);
+                            throw new Error('Producto sin id');
+                        }
+                        return {
+                            producto_id: Number(p.producto_id),
+                            cantidad: p.cantidad,
+                            precio_unitario: p.precio_unitario
+                        };
+                    });
+                if (prods.length === 0) continue;
+                const prop = parseFloat(document.getElementById('propina' + i).value || 0);
+                const serieSel = document.getElementById('serie' + i);
+                const serie = serieSel ? parseInt(serieSel.value) : null;
+                payload.subcuentas.push({ productos: prods, propina: prop, serie_id: serie });
+            }
+            console.log(JSON.stringify(payload));
+            fetch('../../api/tickets/guardar_ticket.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        ticketsGuardados = d.resultado.tickets || [];
+                        alert('Tickets guardados');
+                        mostrarBotonesImprimir(payload, true);
+                    } else {
+                        alert(d.mensaje);
+                    }
+                })
+                .catch(() => alert('Error al guardar'));
+        }
 
-function liberarMesa(ventaId) {
-    // Placeholder
-}
+        function mostrarBotonesImprimir(payload, auto) {
+            const params = new URLSearchParams(window.location.search);
+            const mesaId = params.get('mesa');
+            ticketsGuardados.forEach((t, i) => {
+                const prods = productos.filter(p => p.subcuenta === i + 1);
+                const data = {
+                    venta_id: payload.venta_id,
+                    folio: t.folio,
+                    fecha: new Date().toLocaleString(),
+                    productos: prods,
+                    propina: t.propina,
+                    total: t.total
+                };
+                const url = mesaId ? `ticket.php?print=1&mesa=${mesaId}` : 'ticket.php?print=1';
+                const imprimir = () => {
+                    localStorage.setItem('ticketData', JSON.stringify(data));
+                    window.open(url, '_blank');
+                };
+                const div = document.getElementById('sub' + (i + 1));
+                if (div) {
+                    const btn = document.createElement('button');
+                    btn.textContent = 'Imprimir Ticket';
+                    btn.addEventListener('click', imprimir);
+                    div.appendChild(btn);
+                }
+                if (auto) imprimir();
+            });
+        }
+
+        async function liberarMesa(ventaId) {
+            if (!ventaId) return;
+            try {
+                await fetch('../../api/mesas/liberar_mesa_de_venta.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ venta_id: parseInt(ventaId) })
+                });
+            } catch (e) {
+                console.error('Error al liberar mesa');
+            }
+        }
+
+        window.ticketPrinted = function (mesaId) {
+            if (window.opener && window.opener.ticketPrinted) {
+                window.opener.ticketPrinted(mesaId);
+            }
+        };
+
+        window.addEventListener('beforeunload', () => {
+            const params = new URLSearchParams(window.location.search);
+            const mesaId = params.get('mesa');
+            if (window.opener && window.opener.ticketPrinted && mesaId) {
+                window.opener.ticketPrinted(parseInt(mesaId));
+            }
+        });
 </script>
 <?php
 $content = ob_get_clean();

@@ -5,7 +5,7 @@ if (!isset($_SESSION['usuario_id'])) {
     header('Location: ../../login.html');
     exit;
 }
-$title = 'Ticket';
+$title = 'Ventas';
 ob_start();
 ?>
 <!DOCTYPE html>
@@ -98,3 +98,7 @@ ob_start();
     <script src="ventas.js"></script>
 </body>
 </html>
+<?php
+$content = ob_get_clean();
+include __DIR__ . '/../nav.php';
+?>
