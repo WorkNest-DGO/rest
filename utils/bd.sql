@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS ventas (
     repartidor_id INT DEFAULT NULL,
     tipo_entrega ENUM('mesa','domicilio') DEFAULT 'mesa',
     usuario_id INT,
+    cajero_id INT DEFAULT NULL,
     total DECIMAL(10,2) DEFAULT 0.00,
     corte_id INT DEFAULT NULL,
     estatus ENUM('activa','cerrada','cancelada') DEFAULT 'activa',
@@ -68,6 +69,7 @@ CREATE TABLE IF NOT EXISTS ventas (
     FOREIGN KEY (mesa_id) REFERENCES mesas(id),
     FOREIGN KEY (repartidor_id) REFERENCES repartidores(id),
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    FOREIGN KEY (cajero_id) REFERENCES usuarios(id),
     FOREIGN KEY (corte_id) REFERENCES corte_caja(id)
 );
 
@@ -473,6 +475,8 @@ ADD COLUMN observaciones TEXT;
 
 ALTER TABLE ventas ADD COLUMN corte_id INT DEFAULT NULL;
 ALTER TABLE ventas ADD CONSTRAINT fk_corte FOREIGN KEY (corte_id) REFERENCES corte_caja(id);
+ALTER TABLE ventas ADD COLUMN cajero_id INT DEFAULT NULL;
+ALTER TABLE ventas ADD CONSTRAINT fk_cajero FOREIGN KEY (cajero_id) REFERENCES usuarios(id);
 -- Agrega campo de observaciones al corte en reportes
 ALTER TABLE corte_caja
 ADD COLUMN observaciones TEXT;
