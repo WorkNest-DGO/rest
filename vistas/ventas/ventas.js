@@ -45,11 +45,97 @@ async function cargarHistorial() {
     }
 }
 
+const usuarioId = 1; // ID del cajero, reemplazar por sesión en producción
+let corteIdActual = null;
 let catalogo = [];
 let productos = [];
 let ventasData = {};
 let repartidores = [];
 let ticketRequests = [];
+
+function deshabilitarCobro() {
+    document.querySelectorAll('#formVenta input, #formVenta select, #formVenta button')
+        .forEach(el => {
+            if (!el.closest('#controlCaja')) {
+                el.disabled = true;
+            }
+        });
+}
+
+function habilitarCobro() {
+    document.querySelectorAll('#formVenta input, #formVenta select, #formVenta button')
+        .forEach(el => {
+            if (!el.closest('#controlCaja')) {
+                el.disabled = false;
+            }
+        });
+}
+
+async function verificarCorte() {
+    try {
+        const resp = await fetch('../../api/corte_caja/verificar_corte_abierto.php?usuario_id=' + usuarioId);
+        const data = await resp.json();
+        const cont = document.getElementById('controlCaja');
+        cont.innerHTML = '';
+        if (data.success && data.abierto) {
+            corteIdActual = data.corte_id;
+            cont.innerHTML = `<button id="btnCerrarCaja">Cerrar caja</button>`;
+            document.getElementById('btnCerrarCaja').addEventListener('click', cerrarCaja);
+            habilitarCobro();
+        } else {
+            corteIdActual = null;
+            cont.innerHTML = `<button id="btnAbrirCaja">Abrir caja</button>`;
+            document.getElementById('btnAbrirCaja').addEventListener('click', abrirCaja);
+            deshabilitarCobro();
+            alert('Debes abrir caja antes de registrar ventas');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al verificar corte de caja');
+    }
+}
+
+async function abrirCaja() {
+    try {
+        const resp = await fetch('../../api/corte_caja/iniciar_corte.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario_id: usuarioId })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            corteIdActual = data.resultado ? data.resultado.corte_id : data.corte_id;
+            await verificarCorte();
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al abrir caja');
+    }
+}
+
+async function cerrarCaja() {
+    try {
+        deshabilitarCobro();
+        const resp = await fetch('../../api/corte_caja/cerrar_corte.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ corte_id: corteIdActual, usuario_id: usuarioId, observaciones: '' })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            corteIdActual = null;
+            alert('Caja cerrada correctamente');
+            await verificarCorte();
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al cerrar caja');
+    }
+}
 
 async function cargarRepartidores() {
     try {
@@ -298,7 +384,8 @@ async function registrarVenta() {
         mesa_id: tipo === 'mesa' ? mesa_id : null,
         repartidor_id: tipo === 'domicilio' ? repartidor_id : null,
         usuario_id,
-        productos
+        productos,
+        corte_id: corteIdActual
     };
 
     try {
@@ -549,6 +636,7 @@ document.addEventListener("change", function (e) {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+    verificarCorte();
     cargarMeseros();
     cargarProductos();
     cargarRepartidores();
