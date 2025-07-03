@@ -17,7 +17,7 @@ if (!$input || !isset($input['detalle_id'])) {
 
 $detalle_id = (int)$input['detalle_id'];
 
-$info = $conn->prepare('SELECT producto_id, cantidad, estatus_preparacion, insumos_descargados FROM venta_detalles WHERE id = ?');
+$info = $conn->prepare('SELECT producto_id, cantidad, estado_producto, insumos_descargados FROM venta_detalles WHERE id = ?');
 if (!$info) {
     error('Error al preparar consulta: ' . $conn->error);
 }
@@ -34,7 +34,7 @@ if (!$detalle) {
     error('Detalle no encontrado');
 }
 
-$upd = $conn->prepare("UPDATE venta_detalles SET estatus_preparacion = 'entregado' WHERE id = ?");
+$upd = $conn->prepare("UPDATE venta_detalles SET estado_producto = 'entregado' WHERE id = ?");
 if (!$upd) {
     error('Error al preparar actualización: ' . $conn->error);
 }
@@ -84,7 +84,7 @@ if ((int)$detalle['insumos_descargados'] === 0) {
 }
 
 // Descontar existencia del producto si no estaba listo previamente
-if (!in_array($detalle['estatus_preparacion'], ['listo', 'entregado'], true)) {
+if (!in_array($detalle['estado_producto'], ['listo', 'entregado'], true)) {
     $upProd = $conn->prepare('UPDATE productos SET existencia = existencia - ? WHERE id = ?');
     if ($upProd) {
         $cant = (int)$detalle['cantidad'];
