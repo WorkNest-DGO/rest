@@ -36,10 +36,16 @@ if ($fin) {
 }
 $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
 
-$query = "SELECT v.corte_id AS id, v.fecha_inicio, v.fecha_fin, v.total, v.cajero AS usuario, cc.observaciones
+$query = "SELECT v.corte_id AS id, v.fecha_inicio, v.fecha_fin, v.total, v.cajero AS usuario,
+                 cc.observaciones, cc.fondo_inicial,
+                 SUM(CASE WHEN dc.tipo_pago='efectivo' THEN dc.denominacion*dc.cantidad ELSE 0 END) AS efectivo,
+                 SUM(CASE WHEN dc.tipo_pago='boucher' THEN dc.denominacion*dc.cantidad ELSE 0 END) AS boucher,
+                 SUM(CASE WHEN dc.tipo_pago='cheque' THEN dc.denominacion*dc.cantidad ELSE 0 END) AS cheque
           FROM vw_corte_resumen v
           JOIN corte_caja cc ON cc.id = v.corte_id
+          LEFT JOIN desglose_corte dc ON dc.corte_id = v.corte_id
           $where
+          GROUP BY v.corte_id
           ORDER BY v.fecha_inicio DESC"; // Lógica reemplazada por base de datos: ver bd.sql (Vista)
 
 $stmt = $conn->prepare($query);
@@ -62,6 +68,10 @@ while ($row = $res->fetch_assoc()) {
         'fecha_fin' => $row['fecha_fin'],
         'total' => $row['total'] !== null ? (float)$row['total'] : null,
         'usuario' => $row['usuario'],
+        'efectivo' => $row['efectivo'] !== null ? (float)$row['efectivo'] : null,
+        'boucher' => $row['boucher'] !== null ? (float)$row['boucher'] : null,
+        'cheque' => $row['cheque'] !== null ? (float)$row['cheque'] : null,
+        'fondo_inicial' => $row['fondo_inicial'] !== null ? (float)$row['fondo_inicial'] : null,
         'observaciones' => $row['observaciones'] ?? ''
     ];
 }

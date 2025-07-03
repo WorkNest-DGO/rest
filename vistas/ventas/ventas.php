@@ -90,6 +90,7 @@ ob_start();
     </table>
 
     <div id="modal-detalles" style="display:none;"></div>
+    <div id="modalDesglose" style="display:none;"></div>
 
     <script>
         // ID de usuario proveniente de la sesión para operaciones en JS

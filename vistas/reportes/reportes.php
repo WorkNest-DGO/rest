@@ -8,6 +8,13 @@ $title = 'Reportes';
 ob_start();
 ?>
 <h1>Reportes de Cortes</h1>
+<div>
+    Usuario: <select id="filtroUsuario"></select>
+    Inicio: <input type="date" id="filtroInicio">
+    Fin: <input type="date" id="filtroFin">
+    <button id="aplicarFiltros">Buscar</button>
+    <button id="btnImprimir">Imprimir</button>
+</div>
 <button id="btnResumen">Resumen de corte actual</button>
 <div id="modal" style="display:none;"></div>
 <h2>Historial de Cortes</h2>
@@ -19,6 +26,10 @@ ob_start();
             <th>Fecha inicio</th>
             <th>Fecha cierre</th>
             <th>Total</th>
+            <th>Efectivo</th>
+            <th>Tarjeta</th>
+            <th>Cheque</th>
+            <th>Fondo</th>
             <th>Observaciones</th>
             <th>Detalle</th>
         </tr>
