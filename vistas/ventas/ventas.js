@@ -45,7 +45,7 @@ async function cargarHistorial() {
     }
 }
 
-const usuarioId = 1; // ID del cajero, reemplazar por sesión en producción
+const usuarioId = window.usuarioId || 1; // ID del cajero proveniente de la sesión
 let corteIdActual = null;
 let catalogo = [];
 let productos = [];
