@@ -1,0 +1,31 @@
+<?php
+session_start();
+if (!isset($_SESSION['usuario_id'])) {
+    header('Location: ../../login.html');
+    exit;
+}
+$title = 'Reportes';
+ob_start();
+?>
+<h1>Reportes de Cortes</h1>
+<button id="btnResumen">Resumen de corte actual</button>
+<div id="modal" style="display:none;"></div>
+<h2>Historial de Cortes</h2>
+<table id="tablaCortes" border="1">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Usuario</th>
+            <th>Fecha inicio</th>
+            <th>Fecha cierre</th>
+            <th>Total</th>
+            <th>Observaciones</th>
+            <th>Detalle</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+<script src="reportes.js"></script>
+<?php
+$content = ob_get_clean();
+include __DIR__ . '/../nav.php';
