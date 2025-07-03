@@ -16,7 +16,7 @@ if (!$usuario_id) {
     error('usuario_id requerido');
 }
 
-$stmt = $conn->prepare('SELECT id, fecha_inicio FROM corte_caja WHERE usuario_id = ? AND fecha_fin IS NULL');
+$stmt = $conn->prepare('SELECT id, fecha_inicio FROM corte_caja WHERE usuario_id = ? AND fecha_fin IS NULL ORDER BY id DESC LIMIT 1');
 if (!$stmt) {
     error('Error al preparar consulta: ' . $conn->error);
 }
@@ -27,7 +27,11 @@ if (!$stmt->execute()) {
 }
 $res = $stmt->get_result();
 if ($row = $res->fetch_assoc()) {
-    success(['abierto' => true, 'corte_id' => (int)$row['id'], 'fecha_inicio' => $row['fecha_inicio']]);
+    $fechaInicio = $row['fecha_inicio'];
+    $soloFecha = substr($fechaInicio, 0, 10);
+    if ($soloFecha === date('Y-m-d')) {
+        success(['abierto' => true, 'corte_id' => (int)$row['id'], 'fecha_inicio' => $fechaInicio]);
+    }
 }
 $stmt->close();
 
