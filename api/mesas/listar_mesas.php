@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../utils/response.php';
 
 // Obtener mesas y, en su caso, la venta activa asociada
 $query = "SELECT m.id, m.nombre, m.estado, m.capacidad, m.mesa_principal_id,
-                m.area_id, COALESCE(ca.nombre, m.area) AS area_nombre,
+                m.area_id, m.ticket_enviado, COALESCE(ca.nombre, m.area) AS area_nombre,
                 m.estado_reserva, m.nombre_reserva, m.fecha_reserva,
                 m.tiempo_ocupacion_inicio, m.usuario_id AS mesa_usuario_id,
                 v.id AS venta_id, v.usuario_id AS mesero_id, u.nombre AS mesero_nombre
@@ -29,6 +29,7 @@ while ($row = $result->fetch_assoc()) {
         'capacidad'         => (int)$row['capacidad'],
         'mesa_principal_id' => $row['mesa_principal_id'] ? (int)$row['mesa_principal_id'] : null,
         'area_id'           => $row['area_id'] !== null ? (int)$row['area_id'] : null,
+        'ticket_enviado'    => (bool)$row['ticket_enviado'],
         'area'              => $row['area_nombre'],
         'estado_reserva'    => $row['estado_reserva'],
         'nombre_reserva'    => $row['nombre_reserva'],

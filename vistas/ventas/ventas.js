@@ -706,16 +706,22 @@ async function agregarDetalle(ventaId) {
 function cargarSolicitudes() {
     const tbody = document.querySelector('#solicitudes tbody');
     if (!tbody) return;
-    ticketRequests = JSON.parse(localStorage.getItem('ticketRequests') || '[]');
-    tbody.innerHTML = '';
-    ticketRequests.forEach(req => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${req.nombre}</td><td><button class="printReq" data-mesa="${req.mesa_id}" data-venta="${req.venta_id}">Imprimir</button></td>`;
-        tbody.appendChild(tr);
-    });
-    tbody.querySelectorAll('button.printReq').forEach(btn => {
-        btn.addEventListener('click', () => imprimirSolicitud(btn.dataset.mesa, btn.dataset.venta));
-    });
+    fetch('../../api/mesas/listar_mesas.php')
+        .then(r => r.json())
+        .then(d => {
+            if (!d.success) { alert(d.mensaje); return; }
+            tbody.innerHTML = '';
+            ticketRequests = d.resultado.filter(m => m.ticket_enviado);
+            ticketRequests.forEach(req => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>⚠️ ${req.nombre}</td><td><button class="printReq" data-mesa="${req.id}" data-venta="${req.venta_id}">Imprimir</button></td>`;
+                tbody.appendChild(tr);
+            });
+            tbody.querySelectorAll('button.printReq').forEach(btn => {
+                btn.addEventListener('click', () => imprimirSolicitud(btn.dataset.mesa, btn.dataset.venta));
+            });
+        })
+        .catch(() => alert('Error al cargar solicitudes'));
 }
 
 async function imprimirSolicitud(mesaId, ventaId) {
@@ -750,10 +756,11 @@ async function imprimirSolicitud(mesaId, ventaId) {
 }
 
 function ticketPrinted(mesaId) {
-    let reqs = JSON.parse(localStorage.getItem('ticketRequests') || '[]');
-    reqs = reqs.filter(r => parseInt(r.mesa_id) !== parseInt(mesaId));
-    localStorage.setItem('ticketRequests', JSON.stringify(reqs));
-    cargarSolicitudes();
+    fetch('../../api/mesas/limpiar_ticket.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mesa_id: parseInt(mesaId) })
+    }).finally(cargarSolicitudes);
 }
 window.ticketPrinted = ticketPrinted;
 

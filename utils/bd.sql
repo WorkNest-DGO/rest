@@ -147,7 +147,8 @@ CREATE TABLE `mesas` (
   `nombre_reserva` varchar(100) DEFAULT NULL,
   `fecha_reserva` datetime DEFAULT NULL,
   `usuario_id` int(11) DEFAULT NULL,
-  `area_id` int(11) DEFAULT NULL
+  `area_id` int(11) DEFAULT NULL,
+  `ticket_enviado` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
