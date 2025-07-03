@@ -26,6 +26,24 @@ if ($tipo === 'mesa') {
     if (!$mesa_id || $repartidor_id) {
         error('Venta en mesa requiere mesa_id y sin repartidor_id');
     }
+    $estado = $conn->prepare('SELECT estado FROM mesas WHERE id = ?');
+    if (!$estado) {
+        error('Error al preparar consulta de mesa: ' . $conn->error);
+    }
+    $estado->bind_param('i', $mesa_id);
+    if (!$estado->execute()) {
+        $estado->close();
+        error('Error al obtener estado de mesa: ' . $estado->error);
+    }
+    $resEstado = $estado->get_result();
+    $rowEstado = $resEstado->fetch_assoc();
+    $estado->close();
+    if (!$rowEstado) {
+        error('Mesa no encontrada');
+    }
+    if ($rowEstado['estado'] !== 'libre') {
+        error('La mesa seleccionada no está libre');
+    }
 } elseif ($tipo === 'domicilio') {
     if (!$repartidor_id || $mesa_id) {
         error('Venta a domicilio requiere repartidor_id y sin mesa_id');
@@ -95,6 +113,14 @@ if (!isset($venta_id)) {
     $venta_id = $stmt->insert_id;
     $stmt->close();
     $nueva_venta = true;
+    if ($tipo === 'mesa') {
+        $updMesa = $conn->prepare("UPDATE mesas SET estado = 'ocupada', tiempo_ocupacion_inicio = IF(tiempo_ocupacion_inicio IS NULL, NOW(), tiempo_ocupacion_inicio) WHERE id = ?");
+        if ($updMesa) {
+            $updMesa->bind_param('i', $mesa_id);
+            $updMesa->execute();
+            $updMesa->close();
+        }
+    }
 }
 
 $detalle = $conn->prepare('INSERT INTO venta_detalles (venta_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)');
