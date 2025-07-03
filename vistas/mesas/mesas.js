@@ -258,6 +258,20 @@ async function unirSeleccionadas() {
 
 async function verVenta(ventaId, mesaId, mesaNombre, estado, meseroId) {
     if (!ventaId) {
+        try {
+            const resp = await fetch('../../api/corte_caja/verificar_corte_abierto.php', {
+                credentials: 'include'
+            });
+            const corte = await resp.json();
+            if (!corte.success || !corte.resultado.abierto) {
+                alert('Debe abrir caja antes de iniciar una venta.');
+                return;
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error al verificar caja');
+            return;
+        }
         mostrarModalDetalle({ mesa: mesaNombre, mesero: '', productos: [] }, null, mesaId, estado, meseroId);
         return;
     }
@@ -427,19 +441,27 @@ async function agregarProductoVenta(ventaId, mesaId, estado) {
     const usuarioId = parseInt(meseroSelect.value) || meseroSeleccionado[mesaId];
 
     if (!currentVentaId) {
-        if (!usuarioId) {
-            alert('Selecciona un mesero');
+        try {
+            const corteResp = await fetch('../../api/corte_caja/verificar_corte_abierto.php', {
+                credentials: 'include'
+            });
+            const corteData = await corteResp.json();
+            if (!corteData.success || !corteData.resultado.abierto) {
+                alert('Debe abrir caja antes de iniciar una venta.');
+                return;
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error al verificar caja');
             return;
         }
-        meseroSeleccionado[mesaId] = usuarioId;
+        meseroSeleccionado[mesaId] = usuarioId || null;
         const crearPayload = {
             mesa_id: parseInt(mesaId),
-            usuario_id: usuarioId,
-            tipo: 'mesa',
             productos: [{ producto_id: productoId, cantidad, precio_unitario: precio }]
         };
         try {
-            const resp = await fetch('../../api/ventas/crear_venta.php', {
+            const resp = await fetch('../../api/ventas/crear_venta_mesa.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(crearPayload)
