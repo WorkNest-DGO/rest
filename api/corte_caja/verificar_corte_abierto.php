@@ -37,6 +37,7 @@ $respuesta = [
 
 if ($result->num_rows > 0) {
     $row = $result->fetch_assoc();
+    $_SESSION['corte_id'] = (int)$row['id'];
     $respuesta['resultado']['corte_id'] = $row['id'];
 }
 

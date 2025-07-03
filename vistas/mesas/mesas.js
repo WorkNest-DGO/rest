@@ -160,6 +160,10 @@ let productos = [];
 let meseros = [];
 const meseroSeleccionado = {};
 
+function textoEstado(e) {
+    return (e || '').replace('_', ' ');
+}
+
 async function cargarMeseros() {
     try {
         const resp = await fetch('../../api/usuarios/listar_meseros.php');
@@ -313,13 +317,15 @@ function mostrarModalDetalle(datos, ventaId, mesaId, estado, meseroId) {
     let html = `<h3>Mesa ${datos.mesa} - Venta ${ventaId || ''}</h3>`;
     html += `<table border="1"><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th><th></th></tr></thead><tbody>`;
     datos.productos.forEach(p => {
-        const btnEliminar = (p.estatus_preparacion !== 'en preparación' && p.estatus_preparacion !== 'entregado')
+        const estado = p.estado_producto;
+        const btnEliminar = (estado !== 'en_preparacion' && estado !== 'entregado')
             ? `<button class="eliminar" data-id="${p.id}">Eliminar</button>`
             : '';
-        const btnEntregar = p.estatus_preparacion !== 'entregado'
-            ? `<button class="entregar" data-id="${p.id}">Marcar como entregado</button>`
+        const puedeEntregar = estado === 'listo';
+        const btnEntregar = estado !== 'entregado'
+            ? `<button class="entregar" data-id="${p.id}" ${puedeEntregar ? '' : 'disabled'}>Marcar como entregado</button>`
             : '';
-        html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${p.estatus_preparacion}</td><td>${btnEliminar}</td><td>${btnEntregar}</td></tr>`;
+        html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${textoEstado(estado)}</td><td>${btnEliminar}</td><td>${btnEntregar}</td></tr>`;
     });
     html += `</tbody></table>`;
     html += `<h4>Mesero</h4>`;

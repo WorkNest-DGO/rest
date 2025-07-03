@@ -574,10 +574,11 @@ async function verDetalles(id) {
                         <p>Tipo: ${info.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${info.mesero}</p>`;
             html += `<table border="1"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th></tr></thead><tbody>`;
             info.productos.forEach(p => {
-                const btn = p.estatus_preparacion !== 'entregado'
+                const btn = p.estado_producto !== 'entregado'
                     ? `<button class="delDetalle" data-id="${p.id}">Eliminar</button>`
                     : '';
-                html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${p.estatus_preparacion || ''}</td>` +
+                const est = (p.estado_producto || '').replace('_', ' ');
+                html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${est}</td>` +
                         `<td>${btn}</td></tr>`;
             });
             html += `</tbody></table>`;

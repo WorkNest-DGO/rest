@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
@@ -10,6 +11,12 @@ $input = json_decode(file_get_contents('php://input'), true);
 if (!$input) {
     error('JSON inválido');
 }
+
+if (!isset($_SESSION['usuario_id'])) {
+    error('Sesión no iniciada');
+}
+
+$cajero_id = (int)$_SESSION['usuario_id'];
 
 $tipo          = isset($input['tipo']) ? $input['tipo'] : null;
 $mesa_id       = isset($input['mesa_id']) ? (int) $input['mesa_id'] : null;
@@ -86,9 +93,9 @@ if ($tipo === 'mesa') {
             }
         }
         // Actualizar total acumulado y asignar corte si no tiene
-        $upTotal = $conn->prepare('UPDATE ventas SET total = total + ?, corte_id = IFNULL(corte_id, ?) WHERE id = ?');
+        $upTotal = $conn->prepare('UPDATE ventas SET total = total + ?, corte_id = IFNULL(corte_id, ?), cajero_id = IFNULL(cajero_id, ?) WHERE id = ?');
         if ($upTotal) {
-            $upTotal->bind_param('dii', $total, $corte_id, $venta_id);
+            $upTotal->bind_param('diii', $total, $corte_id, $cajero_id, $venta_id);
             $upTotal->execute();
             $upTotal->close();
         }
@@ -99,14 +106,18 @@ $nueva_venta = false;
 
 if (!isset($venta_id)) {
     if ($tipo === 'domicilio') {
-        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, corte_id, fecha_asignacion) VALUES (?, ?, ?, ?, ?, ?, NOW())');
+        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, corte_id, cajero_id, fecha_asignacion) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())');
     } else {
-        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, corte_id) VALUES (?, ?, ?, ?, ?, ?)');
+        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, corte_id, cajero_id) VALUES (?, ?, ?, ?, ?, ?, ?)');
     }
     if (!$stmt) {
         error('Error al preparar venta: ' . $conn->error);
     }
-    $stmt->bind_param('iiisdi', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $corte_id);
+    if ($tipo === 'domicilio') {
+        $stmt->bind_param('iiisdii', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $corte_id, $cajero_id);
+    } else {
+        $stmt->bind_param('iiisdii', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $corte_id, $cajero_id);
+    }
     if (!$stmt->execute()) {
         error('Error al crear venta: ' . $stmt->error);
     }
