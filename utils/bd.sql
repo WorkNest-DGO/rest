@@ -335,17 +335,35 @@ JOIN usuarios u ON c.usuario_id = u.id;
 DELIMITER //
 CREATE PROCEDURE sp_cerrar_corte(IN p_usuario_id INT)
 BEGIN
+    DECLARE v_corte_id INT;
     DECLARE total_ventas DECIMAL(10,2);
-    SELECT SUM(total) INTO total_ventas FROM ventas
-    WHERE usuario_id = p_usuario_id AND estatus = 'cerrada'
-    AND fecha >= (SELECT MAX(fecha_inicio) FROM corte_caja WHERE usuario_id = p_usuario_id);
 
+    -- Obtener el corte abierto actual
+    SELECT id INTO v_corte_id 
+    FROM corte_caja 
+    WHERE usuario_id = p_usuario_id AND fecha_fin IS NULL 
+    LIMIT 1;
+
+    -- Calcular total
+    SELECT SUM(total) INTO total_ventas 
+    FROM ventas
+    WHERE usuario_id = p_usuario_id AND estatus = 'cerrada' AND corte_id IS NULL;
+
+    -- Actualizar corte
     UPDATE corte_caja
     SET fecha_fin = NOW(), total = total_ventas
-    WHERE usuario_id = p_usuario_id AND fecha_fin IS NULL;
+    WHERE id = v_corte_id;
+
+    -- Relacionar ventas con este corte
+    UPDATE ventas
+    SET corte_id = v_corte_id
+    WHERE usuario_id = p_usuario_id 
+      AND estatus = 'cerrada'
+      AND corte_id IS NULL;
 END;
 //
 DELIMITER ;
+
 -- sp_descuento_insumos_por_detalle y trigger trg_llama_descuento_insumos eliminados; la lógica de inventario se maneja en PHP.
 
 
@@ -444,6 +462,24 @@ ADD COLUMN estado_producto ENUM('pendiente','en_preparacion','listo','entregado'
 ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 ADD COLUMN observaciones TEXT;
 
-
+-- mas cambios de recetas
 ALTER TABLE productos ADD COLUMN imagen VARCHAR(255) DEFAULT NULL;
+
+-- estos pa el corte de caja
+ALTER TABLE corte_caja
+ADD COLUMN observaciones TEXT;
+
+ALTER TABLE ventas ADD COLUMN corte_id INT DEFAULT NULL;
+ALTER TABLE ventas ADD CONSTRAINT fk_corte FOREIGN KEY (corte_id) REFERENCES corte_caja(id);
+-- Agrega campo de observaciones al corte en reportes
+ALTER TABLE corte_caja
+ADD COLUMN observaciones TEXT;
+
+-- Relaciona ventas con cortes reportes
+ALTER TABLE ventas
+ADD COLUMN corte_id INT DEFAULT NULL,
+ADD CONSTRAINT fk_venta_corte FOREIGN KEY (corte_id) REFERENCES corte_caja(id);
+
+
+
 
