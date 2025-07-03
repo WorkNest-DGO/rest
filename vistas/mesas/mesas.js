@@ -77,7 +77,7 @@ async function cargarMesas() {
                         <button class="detalles" data-venta="${m.venta_id || ''}" data-mesa="${m.id}" data-nombre="${m.nombre}" data-estado="${m.estado}" data-mesero="${m.mesero_id || ''}">Detalles</button>
                         <button class="dividir" data-id="${m.id}">Dividir</button>
                         <button class="cambiar" data-id="${m.id}">Cambiar estado</button>
-                        <button class="ticket" data-mesa="${m.id}" data-nombre="${m.nombre}" data-venta="${m.venta_id || ''}">Solicitar ticket</button>
+                        <button class="ticket" data-mesa="${m.id}" data-nombre="${m.nombre}" data-venta="${m.venta_id || ''}">Enviar ticket</button>
                     `;
 
                     if (m.estado === 'libre' && m.estado_reserva === 'ninguna') {
@@ -148,12 +148,20 @@ function solicitarTicket(mesaId, nombre, ventaId) {
         alert('La mesa no tiene venta activa');
         return;
     }
-    let reqs = JSON.parse(localStorage.getItem('ticketRequests') || '[]');
-    if (!reqs.find(r => parseInt(r.mesa_id) === parseInt(mesaId))) {
-        reqs.push({ mesa_id: parseInt(mesaId), nombre, venta_id: parseInt(ventaId) });
-        localStorage.setItem('ticketRequests', JSON.stringify(reqs));
-        alert('Ticket solicitado');
-    }
+    fetch('../../api/mesas/enviar_ticket.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mesa_id: parseInt(mesaId) })
+    })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                alert('Ticket solicitado');
+            } else {
+                alert(d.mensaje);
+            }
+        })
+        .catch(() => alert('Error al solicitar ticket'));
 }
 
 let productos = [];
