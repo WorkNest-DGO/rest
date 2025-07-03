@@ -7,7 +7,7 @@ if (!$corte_id) {
     error('corte_id requerido');
 }
 
-$query = $conn->prepare('SELECT v.id, v.fecha, SUM(t.total) AS total, u.nombre AS usuario, SUM(t.propina) AS propina
+$query = $conn->prepare('SELECT v.id, v.fecha, v.tipo_entrega, SUM(t.total) AS total, u.nombre AS usuario, SUM(t.propina) AS propina
                          FROM ventas v
                          LEFT JOIN tickets t ON t.venta_id = v.id
                          JOIN usuarios u ON v.usuario_id = u.id
@@ -23,11 +23,12 @@ $res = $query->get_result();
 $ventas = [];
 while ($row = $res->fetch_assoc()) {
     $ventas[] = [
-        'id'       => (int)$row['id'],
-        'fecha'    => $row['fecha'],
-        'total'    => (float)($row['total'] ?? 0),
-        'usuario'  => $row['usuario'],
-        'propina'  => (float)($row['propina'] ?? 0)
+        'id'          => (int)$row['id'],
+        'fecha'       => $row['fecha'],
+        'tipo_entrega'=> $row['tipo_entrega'],
+        'total'       => (float)($row['total'] ?? 0),
+        'usuario'     => $row['usuario'],
+        'propina'     => (float)($row['propina'] ?? 0)
     ];
 }
 $query->close();

@@ -36,7 +36,7 @@ if ($fin) {
 }
 $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
 
-$query = "SELECT v.corte_id AS id, v.fecha_inicio, v.fecha_fin, v.total, v.cajero AS usuario
+$query = "SELECT v.corte_id AS id, v.fecha_inicio, v.fecha_fin, v.total, v.cajero AS usuario, cc.observaciones
           FROM vw_corte_resumen v
           JOIN corte_caja cc ON cc.id = v.corte_id
           $where
@@ -61,7 +61,8 @@ while ($row = $res->fetch_assoc()) {
         'fecha_inicio' => $row['fecha_inicio'],
         'fecha_fin' => $row['fecha_fin'],
         'total' => $row['total'] !== null ? (float)$row['total'] : null,
-        'usuario' => $row['usuario']
+        'usuario' => $row['usuario'],
+        'observaciones' => $row['observaciones'] ?? ''
     ];
 }
 $stmt->close();

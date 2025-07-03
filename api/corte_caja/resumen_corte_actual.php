@@ -42,13 +42,37 @@ $queryTotal->execute();
 $info = $queryTotal->get_result()->fetch_assoc();
 $queryTotal->close();
 
+// Obtener montos por método de pago si existe la columna
+$metodos = [];
+$check = $conn->query("SHOW COLUMNS FROM tickets LIKE 'metodo_pago'");
+if ($check && $check->num_rows > 0) {
+    $metQuery = $conn->prepare('SELECT t.metodo_pago, SUM(t.total) AS total
+                                FROM tickets t
+                                JOIN ventas v ON v.id = t.venta_id
+                                WHERE v.usuario_id = ? AND v.estatus = "cerrada" AND v.fecha >= ?
+                                GROUP BY t.metodo_pago');
+    if ($metQuery) {
+        $metQuery->bind_param('is', $usuario_id, $fecha_inicio);
+        if ($metQuery->execute()) {
+            $resMet = $metQuery->get_result();
+            while ($row = $resMet->fetch_assoc()) {
+                $metodos[] = [
+                    'metodo' => $row['metodo_pago'],
+                    'total'  => (float)($row['total'] ?? 0)
+                ];
+            }
+        }
+        $metQuery->close();
+    }
+}
+
 $resultado = [
     'abierto'     => true,
     'corte_id'    => $corte_id,
     'total'       => (float)($info['total'] ?? 0),
     'num_ventas'  => (int)($info['num_ventas'] ?? 0),
     'propinas'    => (float)($info['propinas'] ?? 0),
-    'metodos_pago'=> []
+    'metodos_pago'=> $metodos
 ];
 
 success($resultado);
