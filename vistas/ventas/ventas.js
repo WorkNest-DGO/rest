@@ -149,9 +149,12 @@ function mostrarModalDesglose(totalEsperado) {
     const modal = document.getElementById('modalDesglose');
     let html = '<div style="background:#fff;border:1px solid #333;padding:10px;">';
     html += '<h3>Arqueo de caja</h3>';
+    html += `<p>Total cobrado: $${totalEsperado.toFixed(2)}</p>`;
+    html += `<p>Ingresado: $<span id="totalIngresado">0.00</span></p>`;
+    html += `<p>Diferencia: $<span id="diferenciaTotal">0.00</span></p>`;
     const denoms = [1000,500,200,100,50,20,20,10,5,2,1,0.5];
     denoms.forEach((d,i)=>{
-        html += `${d} <input type="number" id="den_${i}" value="0"><br>`;
+        html += `${d} <input type="number" id="den_${i}" value="0" min="0"><br>`;
     });
     html += 'Boucher: <input type="number" id="inpBoucher" value="0"><br>';
     html += 'Cheque: <input type="number" id="inpCheque" value="0"><br>';
@@ -159,11 +162,32 @@ function mostrarModalDesglose(totalEsperado) {
     html += '</div>';
     modal.innerHTML = html;
     modal.style.display = 'block';
+    function actualizar() {
+        const total = calcularTotalIngresado(denoms);
+        document.getElementById('totalIngresado').textContent = total.toFixed(2);
+        document.getElementById('diferenciaTotal').textContent = (total - totalEsperado).toFixed(2);
+    }
     document.getElementById('btnCancelDesglose').addEventListener('click', ()=>{
         modal.style.display='none';
         habilitarCobro();
     });
+    denoms.forEach((_,i)=>{
+        document.getElementById('den_'+i).addEventListener('input', actualizar);
+    });
+    document.getElementById('inpBoucher').addEventListener('input', actualizar);
+    document.getElementById('inpCheque').addEventListener('input', actualizar);
     document.getElementById('btnSaveDesglose').addEventListener('click', ()=>guardarArqueo(totalEsperado, denoms));
+}
+
+function calcularTotalIngresado(denoms) {
+    let total = 0;
+    denoms.forEach((d,i)=>{
+        const cant = parseFloat(document.getElementById('den_'+i).value)||0;
+        total += d*cant;
+    });
+    total += parseFloat(document.getElementById('inpBoucher').value)||0;
+    total += parseFloat(document.getElementById('inpCheque').value)||0;
+    return total;
 }
 
 async function guardarArqueo(totalEsperado, denoms) {
@@ -172,11 +196,11 @@ async function guardarArqueo(totalEsperado, denoms) {
     let total = 0;
     denoms.forEach((d,i)=>{
         const cant = parseInt(document.getElementById('den_'+i).value)||0;
-        if(cant>0){desg[d]=cant; total += d*cant;}
+        if(cant>0){desg[d]=cant;}
     });
+    total = calcularTotalIngresado(denoms);
     const boucher = parseFloat(document.getElementById('inpBoucher').value)||0;
     const cheque  = parseFloat(document.getElementById('inpCheque').value)||0;
-    total += boucher + cheque;
     if(Math.abs(total - totalEsperado) > 5){
         if(!confirm('Hay diferencia con el total. ¿Continuar?')) return;
     }
