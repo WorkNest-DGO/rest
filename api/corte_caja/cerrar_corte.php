@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
@@ -6,13 +7,21 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error('Método no permitido');
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
-$corte_id   = $input['corte_id'] ?? null;
-$usuario_id = $input['usuario_id'] ?? null;
-$observa    = $input['observaciones'] ?? '';
+if (!isset($_SESSION['usuario_id'])) {
+    error('Sesión no iniciada');
+}
 
-if (!$corte_id || !$usuario_id) {
-    error('Datos incompletos');
+$input      = json_decode(file_get_contents('php://input'), true);
+$observa    = $input['observaciones'] ?? '';
+$corte_id   = $_SESSION['corte_id'] ?? null;
+$usuario_id = $_SESSION['usuario_id'];
+
+if (!$corte_id) {
+    echo json_encode([
+        'success' => false,
+        'mensaje' => 'No hay corte abierto para cerrar'
+    ]);
+    exit;
 }
 
 $stmt = $conn->prepare('SELECT fecha_inicio FROM corte_caja WHERE id = ? AND usuario_id = ? AND fecha_fin IS NULL');
@@ -26,49 +35,46 @@ if ($res->num_rows === 0) {
     $stmt->close();
     error('Corte no encontrado o ya cerrado');
 }
+
 $row = $res->fetch_assoc();
 $fecha_inicio = $row['fecha_inicio'];
 $stmt->close();
 
+// Calcular total de ventas del periodo
+$fecha_fin = date('Y-m-d H:i:s');
+$tot = $conn->prepare("SELECT SUM(total) AS total FROM ventas WHERE usuario_id = ? AND fecha >= ? AND fecha <= ? AND estatus = 'cerrada' AND corte_id IS NULL");
+if (!$tot) {
+    error('Error al calcular total: ' . $conn->error);
+}
+$tot->bind_param('iss', $usuario_id, $fecha_inicio, $fecha_fin);
+$tot->execute();
+$resTot = $tot->get_result()->fetch_assoc();
+$totalVentas = (float)($resTot['total'] ?? 0);
+$tot->close();
 
-// Lógica reemplazada por base de datos: ver bd.sql (SP)
-$call = $conn->prepare('CALL sp_cerrar_corte(?)');
-if (!$call) {
+
+// Cerrar corte asignando fecha_fin y total calculado
+$upd = $conn->prepare('UPDATE corte_caja SET fecha_fin = ?, total = ?, observaciones = ? WHERE id = ?');
+if (!$upd) {
     error('Error al preparar cierre: ' . $conn->error);
 }
-$call->bind_param('i', $usuario_id);
-if (!$call->execute()) {
-    $call->close();
-    error('Error al cerrar corte: ' . $call->error);
+$upd->bind_param('sdsi', $fecha_fin, $totalVentas, $observa, $corte_id);
+if (!$upd->execute()) {
+    $upd->close();
+    error('Error al cerrar corte: ' . $upd->error);
 }
-$call->close();
-
-$updObs = $conn->prepare('UPDATE corte_caja SET observaciones = ? WHERE id = ?');
-if ($updObs) {
-    $updObs->bind_param('si', $observa, $corte_id);
-    $updObs->execute();
-    $updObs->close();
-}
-
-$stmt = $conn->prepare('SELECT fecha_inicio, fecha_fin, total FROM corte_caja WHERE id = ?');
-if (!$stmt) {
-    error('Error al obtener corte: ' . $conn->error);
-}
-$stmt->bind_param('i', $corte_id);
-$stmt->execute();
-$info = $stmt->get_result()->fetch_assoc();
-$stmt->close();
+$upd->close();
 
 $updVentas = $conn->prepare("UPDATE ventas SET corte_id = ? WHERE usuario_id = ? AND fecha >= ? AND fecha <= ? AND estatus = 'cerrada' AND (corte_id IS NULL)");
 if ($updVentas) {
-    $updVentas->bind_param('iiss', $corte_id, $usuario_id, $info['fecha_inicio'], $info['fecha_fin']);
+    $updVentas->bind_param('iiss', $corte_id, $usuario_id, $fecha_inicio, $fecha_fin);
     $updVentas->execute();
     $updVentas->close();
 }
 
 $stmt = $conn->prepare("SELECT COUNT(*) AS num FROM ventas WHERE usuario_id = ? AND fecha >= ? AND fecha <= ? AND estatus = 'cerrada'");
 if ($stmt) {
-    $stmt->bind_param('iss', $usuario_id, $info['fecha_inicio'], $info['fecha_fin']);
+    $stmt->bind_param('iss', $usuario_id, $fecha_inicio, $fecha_fin);
     $stmt->execute();
     $c = $stmt->get_result()->fetch_assoc();
     $numVentas = (int)($c['num'] ?? 0);
@@ -87,5 +93,5 @@ if ($log) {
     $log->close();
 }
 
-success(['ventas_realizadas' => $numVentas, 'total' => (float)$info['total']]);
+success(['ventas_realizadas' => $numVentas, 'total' => $totalVentas]);
 ?>
