@@ -64,9 +64,10 @@ async function cerrarCorte() {
         });
         const data = await resp.json();
         if (data.success) {
+            const id = corteActual;
             alert(`Ventas: ${data.resultado.ventas_realizadas}\nTotal: $${data.resultado.total}`);
             corteActual = null;
-            await verificarCorte();
+            abrirModalDesglose(id);
             await cargarHistorial();
         } else {
             alert(data.mensaje);
@@ -123,6 +124,65 @@ async function verDetalle(corteId) {
         console.error(err);
         alert('Error al obtener detalle');
     }
+}
+
+function abrirModalDesglose(corteId) {
+    const modal = document.getElementById('modalDesglose');
+    let html = '<div style="background:#fff;border:1px solid #333;padding:10px;">';
+    html += '<h3>Desglose de efectivo</h3>';
+    html += '<table id="tablaDesglose" border="1"><thead><tr><th>Denominación</th><th>Cantidad</th><th>Tipo</th><th></th></tr></thead><tbody></tbody></table>';
+    html += '<button id="addFila">Agregar fila</button> <button id="guardarDesglose">Guardar desglose</button> <button id="cancelarDesglose">Cancelar</button>';
+    html += '</div>';
+    modal.innerHTML = html;
+    modal.style.display = 'block';
+
+    const tbody = modal.querySelector('#tablaDesglose tbody');
+
+    function agregarFila() {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><input type="number" step="0.01" class="denominacion"></td>`+
+            `<td><input type="number" min="0" class="cantidad" value="0"></td>`+
+            `<td><select class="tipo"><option value="efectivo">efectivo</option><option value="cheque">cheque</option><option value="boucher">boucher</option></select></td>`+
+            `<td><button class="delFila">X</button></td>`;
+        tbody.appendChild(tr);
+        tr.querySelector('.delFila').addEventListener('click', () => tr.remove());
+    }
+
+    modal.querySelector('#addFila').addEventListener('click', agregarFila);
+    agregarFila();
+
+    modal.querySelector('#cancelarDesglose').addEventListener('click', () => {
+        modal.style.display = 'none';
+        verificarCorte();
+    });
+
+    modal.querySelector('#guardarDesglose').addEventListener('click', async () => {
+        const filas = Array.from(tbody.querySelectorAll('tr'));
+        const detalle = filas.map(tr => ({
+            denominacion: parseFloat(tr.querySelector('.denominacion').value) || 0,
+            cantidad: parseInt(tr.querySelector('.cantidad').value) || 0,
+            tipo_pago: tr.querySelector('.tipo').value
+        })).filter(d => d.cantidad > 0 || d.tipo_pago !== 'efectivo');
+
+        try {
+            const resp = await fetch('../../api/corte_caja/guardar_desglose.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ corte_id: corteId, detalle })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                alert('Desglose guardado');
+                modal.style.display = 'none';
+                verificarCorte();
+            } else {
+                alert(data.mensaje || 'Error al guardar desglose');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error al guardar desglose');
+        }
+    });
 }
 
 async function cargarHistorial() {

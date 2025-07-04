@@ -12,6 +12,7 @@ ob_start();
     <button id="btnIniciar">Iniciar Corte</button>
 </div>
 <div id="resumenModal" style="display:none;"></div>
+<div id="modalDesglose" style="display:none;"></div>
 <h2>Historial de Cortes</h2>
 <table id="tablaCortes" border="1">
     <thead>
