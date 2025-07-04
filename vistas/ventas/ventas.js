@@ -130,18 +130,36 @@ async function abrirCaja() {
 
 async function cerrarCaja() {
     try {
-        deshabilitarCobro();
-        const r = await fetch('../../api/corte_caja/resumen_corte_actual.php?usuario_id=' + usuarioId);
-        const resumen = await r.json();
-        if (!resumen.success || !resumen.resultado.abierto) {
-            alert('No hay corte abierto');
-            habilitarCobro();
+        const resumenResp = await fetch('../../api/corte_caja/resumen_corte_actual.php');
+        const resumen = await resumenResp.json();
+
+        // Validación corregida: se asegura que haya datos válidos
+        if (!resumen.success || !resumen.resultado || resumen.resultado.num_ventas === 0) {
+            alert("No hay ventas registradas en este corte.");
             return;
         }
-        mostrarModalDesglose(parseFloat(resumen.resultado.total));
-    } catch (err) {
-        console.error(err);
-        alert('Error al obtener resumen');
+
+        const confirmar = confirm("¿Deseas cerrar la caja con este resumen?\n" +
+            `Total: $${resumen.resultado.total}\n` +
+            `Propinas: $${resumen.resultado.propinas}\n` +
+            `Ventas: ${resumen.resultado.num_ventas}`);
+
+        if (!confirmar) return;
+
+        const cerrarResp = await fetch('../../api/corte_caja/cerrar_corte.php', {
+            method: 'POST'
+        });
+
+        const cerrarData = await cerrarResp.json();
+        if (!cerrarData.success) {
+            alert(cerrarData.mensaje || "No se pudo cerrar el corte");
+        } else {
+            alert("Corte cerrado exitosamente.");
+            location.reload();
+        }
+    } catch (error) {
+        console.error("Error al cerrar el corte:", error);
+        alert("Ocurrió un error inesperado al cerrar el corte.");
     }
 }
 
