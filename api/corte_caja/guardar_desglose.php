@@ -7,11 +7,23 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
-$corte_id = $input['corte_id'] ?? null;
-$desglose = $input['desglose'] ?? [];
-$boucher = isset($input['boucher']) ? (float)$input['boucher'] : 0;
-$cheque  = isset($input['cheque']) ? (float)$input['cheque'] : 0;
-if (!$corte_id || !is_array($desglose)) {
+$corte_id = $input['corte_id'] ?? ($_SESSION['corte_id'] ?? null);
+$detalle   = $input['detalle'] ?? null;
+
+if ($detalle === null && isset($input['desglose'])) {
+    $detalle = [];
+    foreach ($input['desglose'] as $den => $cant) {
+        $detalle[] = ['denominacion' => (float)$den, 'cantidad' => (int)$cant, 'tipo_pago' => 'efectivo'];
+    }
+    if (isset($input['boucher']) && $input['boucher'] > 0) {
+        $detalle[] = ['denominacion' => (float)$input['boucher'], 'cantidad' => 1, 'tipo_pago' => 'boucher'];
+    }
+    if (isset($input['cheque']) && $input['cheque'] > 0) {
+        $detalle[] = ['denominacion' => (float)$input['cheque'], 'cantidad' => 1, 'tipo_pago' => 'cheque'];
+    }
+}
+
+if (!$corte_id || !is_array($detalle)) {
     error('Datos incompletos');
 }
 
@@ -29,12 +41,15 @@ if (!$info) {
 }
 $corte_total = (float)$info['total'];
 
-$total_calc = $boucher + $cheque;
-foreach ($desglose as $denom => $cant) {
-    $total_calc += ((float)$denom) * ((int)$cant);
-}
-if (abs($total_calc - $corte_total) > 5) {
-    error('El total del desglose no coincide con el corte');
+$total_calc = 0;
+foreach ($detalle as $fila) {
+    $d = (float)($fila['denominacion'] ?? 0);
+    $c = (int)($fila['cantidad'] ?? 0);
+    if ($fila['tipo_pago'] === 'efectivo') {
+        $total_calc += $d * $c;
+    } else {
+        $total_calc += $d;
+    }
 }
 
 $conn->begin_transaction();
@@ -43,35 +58,15 @@ if (!$ins) {
     $conn->rollback();
     error('Error al preparar inserción: ' . $conn->error);
 }
-foreach ($desglose as $denom => $cant) {
-    $tipo = 'efectivo';
-    $d = (float)$denom;
-    $c = (int)$cant;
-    if ($c <= 0) continue;
+foreach ($detalle as $fila) {
+    $d = (float)($fila['denominacion'] ?? 0);
+    $c = (int)($fila['cantidad'] ?? 0);
+    $tipo = $fila['tipo_pago'] ?? 'efectivo';
+    if ($tipo === 'efectivo' && $c <= 0) continue;
     $ins->bind_param('idis', $corte_id, $d, $c, $tipo);
     if (!$ins->execute()) {
         $conn->rollback();
         error('Error al guardar desglose: ' . $ins->error);
-    }
-}
-if ($boucher > 0) {
-    $tipo = 'boucher';
-    $d = $boucher;
-    $c = 1;
-    $ins->bind_param('idis', $corte_id, $d, $c, $tipo);
-    if (!$ins->execute()) {
-        $conn->rollback();
-        error('Error al guardar boucher');
-    }
-}
-if ($cheque > 0) {
-    $tipo = 'cheque';
-    $d = $cheque;
-    $c = 1;
-    $ins->bind_param('idis', $corte_id, $d, $c, $tipo);
-    if (!$ins->execute()) {
-        $conn->rollback();
-        error('Error al guardar cheque');
     }
 }
 $ins->close();
