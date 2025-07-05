@@ -100,31 +100,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         llenarTicket(datos);
         liberarMesa(datos.venta_id);
     } else {
-        await cargarSeries();
+        serieActual = await obtenerSerieActual();
         inicializarDividir(datos);
     }
 });
 
-let series = [];
-async function cargarSeries() {
+
+let serieActual = null;
+async function obtenerSerieActual() {
     try {
-        const resp = await fetch('../../api/tickets/listar_series.php');
+        const resp = await fetch('../../api/horarios/serie_actual.php');
         const data = await resp.json();
-        if (data.success) {
-            series = data.resultado;
-        } else {
-            alert(data.mensaje);
-        }
+        if (data.success) return data.resultado;
+        alert(data.mensaje);
     } catch (err) {
         console.error(err);
-        alert('Error al cargar series');
+        alert('Error al obtener serie');
     }
+    return null;
 }
 
 let productos = [];
 let numSub = 1;
 let ticketsGuardados = [];
-const seleccionSeries = {};
 
 function inicializarDividir(data) {
     document.getElementById('dividir').style.display = 'block';
@@ -190,7 +188,8 @@ function renderSubcuentas() {
             html += `<tr><td>${p.nombre}</td><td>${p.cantidad} x ${p.precio_unitario}</td></tr>`;
         });
         html += '</tbody></table>';
-        html += `Serie: <select id="serie${i}" class="serie"></select>`;
+        const serieDesc = serieActual ? serieActual.descripcion : '';
+        html += `Serie: <span class="serie">${serieDesc}</span>`;
         html += ` Propina: <input type="number" step="0.01" id="propina${i}" value="0">`;
         html += ` <select id="pago${i}" class="pago">
                         <option value="">Pago</option>
@@ -203,19 +202,6 @@ function renderSubcuentas() {
         html += `<div id="tot${i}"></div>`;
         div.innerHTML = html;
         cont.appendChild(div);
-        const sel = div.querySelector('select.serie');
-        series.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.id;
-            opt.textContent = s.descripcion;
-            sel.appendChild(opt);
-        });
-        if (seleccionSeries[i]) {
-            sel.value = seleccionSeries[i];
-        }
-        sel.addEventListener('change', () => {
-            seleccionSeries[i] = parseInt(sel.value);
-        });
         div.querySelector('#propina' + i).addEventListener('input', mostrarTotal);
         div.querySelector('#pago' + i).addEventListener('change', mostrarTotal);
         div.querySelector('#recibido' + i).addEventListener('input', mostrarTotal);
@@ -274,7 +260,7 @@ document.addEventListener('focusin', e => {
     }
 });
 
-        function guardarSubcuentas() {
+async function guardarSubcuentas() {
             const info = JSON.parse(localStorage.getItem('ticketData'));
             const payload = { venta_id: info.venta_id, usuario_id: info.usuario_id || 1, subcuentas: [] };
             for (let i = 1; i <= numSub; i++) {
@@ -293,8 +279,11 @@ document.addEventListener('focusin', e => {
                     });
                 if (prods.length === 0) continue;
                 const prop = parseFloat(document.getElementById('propina' + i).value || 0);
-                const serieSel = document.getElementById('serie' + i);
-                const serie = serieSel ? parseInt(serieSel.value) : null;
+                if (!serieActual) {
+                    serieActual = await obtenerSerieActual();
+                    if (!serieActual) return;
+                }
+                const serie = serieActual.id;
                 const tipo = document.getElementById('pago' + i).value;
                 const recibido = parseFloat(document.getElementById('recibido' + i).value || 0);
                 const total = prods.reduce((s,p)=>s+p.cantidad*p.precio_unitario,0)+prop;
