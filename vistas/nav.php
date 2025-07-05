@@ -33,6 +33,7 @@ if (!isset($_SESSION['usuario_id'])) {
             <li><a href="<?= BASE_URL ?>repartidores/repartos.php">Repartos</a></li>
             <li><a href="<?= BASE_URL ?>reportes/reportes.php">Reportes</a></li>
             <li><a href="<?= BASE_URL ?>ventas/ventas.php">Ventas</a></li>
+            <li><a href="<?= BASE_URL ?>horarios/horarios.php">Horarios</a></li>
             <li><a href="<?= BASE_URL ?>ventas/ticket.php">ticket</a></li>
         </ul>
     </nav>
