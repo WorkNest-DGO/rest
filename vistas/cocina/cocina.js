@@ -12,14 +12,17 @@ function colorPorTiempo(min) {
     return '#f8d7da';
 }
 
-function botonPorEstado(estado, id) {
+function botonPorEstado(estado, id, tipo) {
     switch (estado) {
         case 'pendiente':
             return `<button class="cambiar" data-id="${id}" data-sig="en_preparacion">Iniciar</button>`;
         case 'en_preparacion':
             return `<button class="cambiar" data-id="${id}" data-sig="listo">Listo</button>`;
         case 'listo':
-            return `<button class="cambiar" data-id="${id}" data-sig="entregado">Entregar</button>`;
+            if (tipo === 'domicilio') {
+                return `<button class="cambiar" data-id="${id}" data-sig="entregado">Entregar</button>`;
+            }
+            return '';
         default:
             return '';
     }
@@ -48,7 +51,7 @@ async function cargarPendientes() {
                     <td>${p.cantidad}</td>
                     <td>${t.texto}</td>
                     <td>${p.estado}</td>
-                    <td>${botonPorEstado(p.estado, p.detalle_id)}</td>`;
+                    <td>${botonPorEstado(p.estado, p.detalle_id, p.tipo)}</td>`;
                 tr.style.backgroundColor = colorPorTiempo(t.minutos);
                 tbody.appendChild(tr);
             });
