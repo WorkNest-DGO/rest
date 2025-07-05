@@ -13,18 +13,52 @@ if (!$input || !isset($input['venta_id'])) {
 
 $venta_id = (int) $input['venta_id'];
 
+// Verificar estatus actual de la venta
+$info = $conn->prepare('SELECT estatus FROM ventas WHERE id = ?');
+if (!$info) {
+    error('Error al preparar consulta: ' . $conn->error);
+}
+$info->bind_param('i', $venta_id);
+if (!$info->execute()) {
+    $info->close();
+    error('Error al ejecutar consulta: ' . $info->error);
+}
+$res = $info->get_result();
+if ($res->num_rows === 0) {
+    $info->close();
+    error('Venta no encontrada');
+}
+$venta = $res->fetch_assoc();
+$info->close();
+
+if ($venta['estatus'] !== 'activa') {
+    error('No se puede cancelar esta venta');
+}
+
+// Verificar que ningún producto haya sido preparado o entregado
+$check = $conn->prepare("SELECT COUNT(*) AS num FROM venta_detalles WHERE venta_id = ? AND (estado_producto <> 'pendiente' OR estatus_preparacion <> 'pendiente')");
+if (!$check) {
+    error('Error al preparar verificación: ' . $conn->error);
+}
+$check->bind_param('i', $venta_id);
+if (!$check->execute()) {
+    $check->close();
+    error('Error al ejecutar verificación: ' . $check->error);
+}
+$row = $check->get_result()->fetch_assoc();
+$check->close();
+if ($row && (int)$row['num'] > 0) {
+    error('La venta contiene productos ya preparados o entregados');
+}
+
 $stmt = $conn->prepare("UPDATE ventas SET estatus = 'cancelada' WHERE id = ?");
 if (!$stmt) {
     error('Error al preparar actualización: ' . $conn->error);
 }
 $stmt->bind_param('i', $venta_id);
 if (!$stmt->execute()) {
-    error('Error al cancelar venta: ' . $stmt->error);
-}
-
-if ($stmt->affected_rows === 0) {
     $stmt->close();
-    error('Venta no encontrada');
+    error('Error al cancelar venta: ' . $stmt->error);
 }
 $stmt->close();
 
