@@ -1,27 +1,28 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
 session_start();
+header('Content-Type: application/json');
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'mensaje' => 'Método no permitido']);
+
+$input = json_decode(file_get_contents("php://input"), true);
+$usuario = $input['usuario'] ?? '';
+$contrasena = $input['contrasena'] ?? '';
+
+if (empty($usuario) || empty($contrasena)) {
+    echo json_encode(['success' => false, 'mensaje' => 'Faltan datos']);
     exit;
 }
 
-$usuario = $_POST['usuario'] ?? '';
-$contrasena = $_POST['contrasena'] ?? '';
-
-$stmt = $conn->prepare('SELECT id FROM usuarios WHERE usuario = ? AND contrasena = ? AND activo = 1');
-if (!$stmt) {
-    echo json_encode(['success' => false, 'mensaje' => 'Error de servidor']);
-    exit;
-}
-$stmt->bind_param('ss', $usuario, $contrasena);
+$stmt = $conn->prepare("SELECT id, usuario FROM usuarios WHERE usuario = ? AND contrasena = ?");
+$stmt->bind_param("ss", $usuario, $contrasena);
 $stmt->execute();
 $result = $stmt->get_result();
-if ($row = $result->fetch_assoc()) {
-    $_SESSION['usuario_id'] = (int)$row['id'];
+$usuario = $result->fetch_assoc();
+
+if ($usuario) {
+    $_SESSION['usuario_id'] = $usuario['id'];
     echo json_encode(['success' => true]);
 } else {
-    echo json_encode(['success' => false, 'mensaje' => 'Credenciales inválidas']);
+    echo json_encode(['success' => false, 'mensaje' => 'Credenciales incorrectas']);
 }
-$stmt->close();
+?>
