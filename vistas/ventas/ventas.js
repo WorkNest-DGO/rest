@@ -133,104 +133,101 @@ async function cerrarCaja() {
         const resumenResp = await fetch('../../api/corte_caja/resumen_corte_actual.php');
         const resumen = await resumenResp.json();
 
-        // Validación corregida: se asegura que haya datos válidos
         if (!resumen.success || !resumen.resultado || resumen.resultado.num_ventas === 0) {
             alert("No hay ventas registradas en este corte.");
             return;
         }
 
-        const confirmar = confirm("¿Deseas cerrar la caja con este resumen?\n" +
-            `Total: $${resumen.resultado.total}\n` +
-            `Propinas: $${resumen.resultado.propinas}\n` +
-            `Ventas: ${resumen.resultado.num_ventas}`);
-
-        if (!confirmar) return;
-
-        const cerrarResp = await fetch('../../api/corte_caja/cerrar_corte.php', {
-            method: 'POST'
-        });
-
-        const cerrarData = await cerrarResp.json();
-        if (!cerrarData.success) {
-            alert(cerrarData.mensaje || "No se pudo cerrar el corte");
-        } else {
-            alert("Corte cerrado exitosamente.");
-            location.reload();
-        }
+        mostrarModalDesglose(resumen.resultado.total);
     } catch (error) {
-        console.error("Error al cerrar el corte:", error);
-        alert("Ocurrió un error inesperado al cerrar el corte.");
+        console.error("Error al obtener resumen:", error);
+        alert("Ocurrió un error inesperado al consultar el corte.");
     }
 }
 
 function mostrarModalDesglose(totalEsperado) {
     const modal = document.getElementById('modalDesglose');
     let html = '<div style="background:#fff;border:1px solid #333;padding:10px;">';
-    html += '<h3>Arqueo de caja</h3>';
-    html += `<p>Total cobrado: $${totalEsperado.toFixed(2)}</p>`;
-    html += `<p>Ingresado: $<span id="totalIngresado">0.00</span></p>`;
-    html += `<p>Diferencia: $<span id="diferenciaTotal">0.00</span></p>`;
-    const denoms = [1000,500,200,100,50,20,20,10,5,2,1,0.5];
-    denoms.forEach((d,i)=>{
-        html += `${d} <input type="number" id="den_${i}" value="0" min="0"><br>`;
-    });
-    html += 'Boucher: <input type="number" id="inpBoucher" value="0"><br>';
-    html += 'Cheque: <input type="number" id="inpCheque" value="0"><br>';
-    html += '<button id="btnSaveDesglose">Guardar</button> <button id="btnCancelDesglose">Cancelar</button>';
+    html += '<h3>Desglose de caja</h3>';
+    html += `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>`;
+    html += '<p>Total ingresado: $<span id="totalIngresado">0.00</span> | Dif.: $<span id="difIngresado">0.00</span></p>';
+    html += '<table id="tablaDesglose" border="1"><thead><tr><th>Denominación</th><th>Cantidad</th><th>Tipo</th><th></th></tr></thead><tbody></tbody></table>';
+    html += '<button id="addFila">Agregar fila</button> <button id="guardarDesglose">Guardar desglose</button> <button id="cancelarDesglose">Cancelar</button>';
     html += '</div>';
     modal.innerHTML = html;
     modal.style.display = 'block';
-    function actualizar() {
-        const total = calcularTotalIngresado(denoms);
-        document.getElementById('totalIngresado').textContent = total.toFixed(2);
-        document.getElementById('diferenciaTotal').textContent = (total - totalEsperado).toFixed(2);
+
+    const tbody = modal.querySelector('#tablaDesglose tbody');
+
+    function agregarFila() {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><input type="number" step="0.01" class="denominacion"></td>`+
+            `<td><input type="number" min="0" class="cantidad" value="0"></td>`+
+            `<td><select class="tipo"><option value="efectivo">efectivo</option><option value="cheque">cheque</option><option value="boucher">boucher</option></select></td>`+
+            `<td><button class="delFila">X</button></td>`;
+        tbody.appendChild(tr);
+        tr.querySelector('.delFila').addEventListener('click', () => { tr.remove(); calcular(); });
+        tr.querySelectorAll('input,select').forEach(el => el.addEventListener('input', calcular));
     }
-    document.getElementById('btnCancelDesglose').addEventListener('click', ()=>{
-        modal.style.display='none';
+
+    function calcular() {
+        const filas = Array.from(tbody.querySelectorAll('tr'));
+        let total = 0;
+        filas.forEach(f => {
+            const d = parseFloat(f.querySelector('.denominacion').value) || 0;
+            const c = parseInt(f.querySelector('.cantidad').value) || 0;
+            const t = f.querySelector('.tipo').value;
+            if (t === 'efectivo') {
+                total += d * c;
+            } else {
+                total += d;
+            }
+        });
+        modal.querySelector('#totalIngresado').textContent = total.toFixed(2);
+        modal.querySelector('#difIngresado').textContent = (total - totalEsperado).toFixed(2);
+    }
+
+    modal.querySelector('#addFila').addEventListener('click', agregarFila);
+    agregarFila();
+
+    modal.querySelector('#cancelarDesglose').addEventListener('click', () => {
+        modal.style.display = 'none';
         habilitarCobro();
     });
-    denoms.forEach((_,i)=>{
-        document.getElementById('den_'+i).addEventListener('input', actualizar);
-    });
-    document.getElementById('inpBoucher').addEventListener('input', actualizar);
-    document.getElementById('inpCheque').addEventListener('input', actualizar);
-    document.getElementById('btnSaveDesglose').addEventListener('click', ()=>guardarArqueo(totalEsperado, denoms));
-}
 
-function calcularTotalIngresado(denoms) {
-    let total = 0;
-    denoms.forEach((d,i)=>{
-        const cant = parseFloat(document.getElementById('den_'+i).value)||0;
-        total += d*cant;
-    });
-    total += parseFloat(document.getElementById('inpBoucher').value)||0;
-    total += parseFloat(document.getElementById('inpCheque').value)||0;
-    return total;
-}
+    modal.querySelector('#guardarDesglose').addEventListener('click', async () => {
+        const filas = Array.from(tbody.querySelectorAll('tr'));
+        const detalle = filas.map(tr => ({
+            denominacion: parseFloat(tr.querySelector('.denominacion').value) || 0,
+            cantidad: parseInt(tr.querySelector('.cantidad').value) || 0,
+            tipo_pago: tr.querySelector('.tipo').value
+        })).filter(d => d.cantidad > 0 || d.tipo_pago !== 'efectivo');
 
-async function guardarArqueo(totalEsperado, denoms) {
-    const modal = document.getElementById('modalDesglose');
-    const desg = {};
-    let total = 0;
-    denoms.forEach((d,i)=>{
-        const cant = parseInt(document.getElementById('den_'+i).value)||0;
-        if(cant>0){desg[d]=cant;}
+        if (detalle.length === 0) {
+            alert('Agrega al menos una fila válida');
+            return;
+        }
+
+        try {
+            const resp = await fetch('../../api/corte_caja/guardar_desglose.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ corte_id: corteIdActual, detalle })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                modal.style.display = 'none';
+                await finalizarCorte();
+            } else {
+                alert(data.mensaje || 'Error al guardar desglose');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error al guardar desglose');
+        }
     });
-    total = calcularTotalIngresado(denoms);
-    const boucher = parseFloat(document.getElementById('inpBoucher').value)||0;
-    const cheque  = parseFloat(document.getElementById('inpCheque').value)||0;
-    if(Math.abs(total - totalEsperado) > 5){
-        if(!confirm('Hay diferencia con el total. ¿Continuar?')) return;
-    }
-    const resp = await fetch('../../api/corte_caja/guardar_desglose.php', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ corte_id: corteIdActual, desglose: desg, boucher, cheque })
-    });
-    const data = await resp.json();
-    if(!data.success){ alert(data.mensaje); habilitarCobro(); return; }
-    modal.style.display='none';
-    finalizarCorte();
+
+    calcular();
 }
 
 async function finalizarCorte() {
