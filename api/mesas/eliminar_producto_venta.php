@@ -13,7 +13,7 @@ if (!$input || !isset($input['detalle_id'])) {
 
 $detalle_id = (int) $input['detalle_id'];
 
-$info = $conn->prepare('SELECT venta_id, cantidad, precio_unitario, estatus_preparacion FROM venta_detalles WHERE id = ?');
+$info = $conn->prepare('SELECT venta_id, cantidad, precio_unitario, estado_preparacion FROM venta_detalles WHERE id = ?');
 if (!$info) {
     error('Error al preparar consulta: ' . $conn->error);
 }
@@ -29,7 +29,7 @@ if (!$detalle) {
     error('Detalle no encontrado');
 }
 
-if ($detalle['estatus_preparacion'] === 'entregado') {
+if ($detalle['estado_preparacion'] === 'entregado') {
     error('No se puede eliminar el producto');
 }
 

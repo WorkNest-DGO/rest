@@ -37,7 +37,7 @@ if ($accion === 'en_camino') {
 }
 
 // verificar que todos los productos estén listos
-$check = $conn->prepare("SELECT COUNT(*) AS faltan FROM venta_detalles WHERE venta_id = ? AND estatus_preparacion <> 'listo'");
+$check = $conn->prepare("SELECT COUNT(*) AS faltan FROM venta_detalles WHERE venta_id = ? AND estado_producto <> 'entregado'");
 if (!$check) {
     error('Error al preparar verificación: ' . $conn->error);
 }
