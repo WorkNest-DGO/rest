@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
+date_default_timezone_set('America/Mexico_City'); // O tu zona correspondiente
 
 $dias = ['Lunes','Martes','Miercoles','Jueves','Viernes','Sabado','Domingo'];
 $dia = $dias[(int)date('N') - 1];
@@ -20,5 +21,7 @@ if ($row = $res->fetch_assoc()) {
     success(['id' => (int)$row['serie_id'], 'descripcion' => $row['descripcion']]);
 }
 $stmt->close();
+file_put_contents("debug_serie.log", "Dia actual: $dia - Hora actual: $hora\n", FILE_APPEND);
+
 error('No hay serie configurada para este horario');
 ?>
