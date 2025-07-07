@@ -1,5 +1,7 @@
 let catalogo = [];
 const usuarioId = 1; // En entorno real se obtendría de la sesión
+const itemsPorPagina = 12;
+let paginaActual = 1;
 
 async function cargarProveedores() {
     try {
@@ -30,7 +32,7 @@ async function cargarInsumos() {
         if (data.success) {
             catalogo = data.resultado;
             actualizarSelectsProducto();
-            mostrarCatalogo();
+            mostrarCatalogo(1);
         } else {
             alert(data.mensaje);
         }
@@ -124,15 +126,19 @@ function agregarFila() {
     actualizarSelectsProducto();
 }
 
-function mostrarCatalogo() {
+function mostrarCatalogo(pagina = paginaActual) {
     const tbody = document.querySelector('#listaInsumos tbody');
     if (tbody) {
         tbody.innerHTML = '';
     }
     const cont = document.getElementById('catalogoInsumos');
     if (cont) cont.innerHTML = '';
-    catalogo.forEach(i => {
 
+    paginaActual = pagina;
+    const inicio = (pagina - 1) * itemsPorPagina;
+    const fin = inicio + itemsPorPagina;
+
+    catalogo.slice(inicio, fin).forEach(i => {
         if (cont) {
             const col = document.createElement('div');
             col.className = 'col-md-3';
@@ -150,18 +156,72 @@ function mostrarCatalogo() {
                             <a class="btn custom-btn eliminar"  data-id="${i.id}">Eliminar</a>
                             </div>
                         </div>
-                    
+
                     </div>
                 </div>`;
             cont.appendChild(col);
         }
     });
-            cont.querySelectorAll('a.editar').forEach(btn => {
-        btn.addEventListener('click', () => editarInsumo(btn.dataset.id));
+
+    if (cont) {
+        cont.querySelectorAll('a.editar').forEach(btn => {
+            btn.addEventListener('click', () => editarInsumo(btn.dataset.id));
+        });
+        cont.querySelectorAll('a.eliminar').forEach(btn => {
+            btn.addEventListener('click', () => eliminarInsumo(btn.dataset.id));
+        });
+    }
+
+    renderPaginador();
+}
+
+function renderPaginador() {
+    const pag = document.getElementById('paginador');
+    if (!pag) return;
+    pag.innerHTML = '';
+
+    const totalPaginas = Math.ceil(catalogo.length / itemsPorPagina) || 1;
+
+    const prevLi = document.createElement('li');
+    prevLi.className = 'page-item' + (paginaActual === 1 ? ' disabled' : '');
+    const prevLink = document.createElement('a');
+    prevLink.className = 'page-link';
+    prevLink.href = '#';
+    prevLink.textContent = 'Previous';
+    prevLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (paginaActual > 1) mostrarCatalogo(paginaActual - 1);
     });
-    cont.querySelectorAll('a.eliminar').forEach(btn => {
-        btn.addEventListener('click', () => eliminarInsumo(btn.dataset.id));
+    prevLi.appendChild(prevLink);
+    pag.appendChild(prevLi);
+
+    for (let i = 1; i <= totalPaginas; i++) {
+        const li = document.createElement('li');
+        li.className = 'page-item' + (i === paginaActual ? ' active' : '');
+        const a = document.createElement('a');
+        a.className = 'page-link';
+        a.href = '#';
+        a.textContent = i;
+        a.addEventListener('click', (e) => {
+            e.preventDefault();
+            mostrarCatalogo(i);
+        });
+        li.appendChild(a);
+        pag.appendChild(li);
+    }
+
+    const nextLi = document.createElement('li');
+    nextLi.className = 'page-item' + (paginaActual === totalPaginas ? ' disabled' : '');
+    const nextLink = document.createElement('a');
+    nextLink.className = 'page-link';
+    nextLink.href = '#';
+    nextLink.textContent = 'Next';
+    nextLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (paginaActual < totalPaginas) mostrarCatalogo(paginaActual + 1);
     });
+    nextLi.appendChild(nextLink);
+    pag.appendChild(nextLi);
 }
 
 async function cargarBajoStock() {
