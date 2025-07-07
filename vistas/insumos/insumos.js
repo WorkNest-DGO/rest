@@ -444,3 +444,5 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.precio').forEach(i => i.addEventListener('input', calcularTotal));
     calcularTotal();
 });
+
+

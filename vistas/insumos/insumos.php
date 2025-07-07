@@ -71,6 +71,8 @@ ob_start();
             </div>
         </div>
         <!-- Blog End -->
+
+       <!-- insumo -->  
  <form id="formEntrada">
    <div class="container mt-5">
     <h2 class="text-white">Registrar entrada de productos</h2>
@@ -113,30 +115,45 @@ ob_start();
     </form>
 </div>
  </form>
- <h2>Insumos con bajo stock</h2>
- <table id="bajoStock" border="1">
-     <thead>
-         <tr>
-             <th>ID</th>
-             <th>Nombre</th>
-             <th>Unidad</th>
-             <th>Existencia</th>
-         </tr>
-     </thead>
-     <tbody></tbody>
- </table>
- <h2>Historial de Entradas por Proveedor</h2>
- <table id="historial" border="1">
-     <thead>
-         <tr>
-             <th>Proveedor</th>
-             <th>Fecha</th>
-             <th>Total</th>
-             <th>Producto</th>
-         </tr>
-     </thead>
-     <tbody></tbody>
- </table>
+ <!-- insumo End -->
+ 
+  <!-- alerta stock-->
+ <div class="container mt-5">
+  <h2 class="text-white">Insumos con bajo stock</h2>
+  <div class="table-responsive">
+    <table id="bajoStock" class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Unidad</th>
+          <th>Existencia</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+<!-- alerta stock end -->
+
+<div class="container mt-5">
+  <h2 class="text-white">Historial de Entradas por Proveedor</h2>
+  <div class="table-responsive">
+    <table id="historial" class="table">
+      <thead>
+        <tr>
+          <th>Proveedor</th>
+          <th>Fecha</th>
+          <th>Total</th>
+          <th>Producto</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+
 
 
 

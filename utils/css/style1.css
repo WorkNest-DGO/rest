@@ -889,7 +889,7 @@ a:focus {
 
 .menu .menu-tab .nav.nav-pills .nav-link:hover,
 .menu .menu-tab .nav.nav-pills .nav-link.active {
-    color: #ffffff;
+    color: #1a1a1a;
     background: #fff;
 }
 
@@ -937,7 +937,7 @@ a:focus {
     height: 0;
     top: 13px;
     left: 0;
-    border-top: 2px dotted #cccccc;
+    border-top: 2px dotted #1a1a1a;
     z-index: -1;
 }
 
@@ -945,7 +945,7 @@ a:focus {
     display: inline-block;
     float: left;
     padding-right: 5px;
-    background: #ffffff;
+    background: #1a1a1a;
 }
 
 .menu .menu-text h3 strong {
@@ -953,7 +953,7 @@ a:focus {
     float: right;
     padding-left: 5px;
     color: #b80000;
-    background: #ffffff;
+    background: #1a1a1a;
 }
 
 .menu .menu-text p {
@@ -1964,3 +1964,69 @@ a:focus {
 .footer .copyright p a:hover {
     color: #fff;
 }
+
+
+#bajoStock {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+    background-color: #111;
+    color: #fff;
+    border: 1px solid #cc0000;
+    font-family: 'Arial', sans-serif;
+}
+
+#bajoStock th {
+    background-color: #cc0000;
+    color: #fff;
+    padding: 10px;
+    text-align: left;
+    border-bottom: 2px solid #fff;
+}
+
+#bajoStock td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #333;
+}
+
+#bajoStock tr:hover {
+    background-color: #222;
+    cursor: pointer;
+}
+
+#bajoStock caption {
+    caption-side: top;
+    text-align: left;
+    font-size: 1.2em;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+#historial {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+    background-color: #111;
+    color: #fff;
+    border: 1px solid #cc0000;
+    font-family: 'Arial', sans-serif;
+}
+
+#historial th {
+    background-color: #cc0000;
+    color: #fff;
+    padding: 10px;
+    text-align: left;
+    border-bottom: 2px solid #fff;
+}
+
+#historial td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #333;
+}
+
+#historial tr:hover {
+    background-color: #222;
+    cursor: default;
+}
+
