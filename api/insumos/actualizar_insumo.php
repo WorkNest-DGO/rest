@@ -6,26 +6,52 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error('Método no permitido');
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
-if (!$input || !isset($input['id'])) {
-    error('Datos inválidos');
-}
+$id        = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+$nombre    = isset($_POST['nombre']) ? trim($_POST['nombre']) : '';
+$unidad    = isset($_POST['unidad']) ? trim($_POST['unidad']) : '';
+$existencia = isset($_POST['existencia']) ? (float)$_POST['existencia'] : 0;
+$tipo      = isset($_POST['tipo_control']) ? trim($_POST['tipo_control']) : '';
 
-$id        = (int)$input['id'];
-$nombre    = isset($input['nombre']) ? trim($input['nombre']) : '';
-$unidad    = isset($input['unidad']) ? trim($input['unidad']) : '';
-$existencia = isset($input['existencia']) ? (float)$input['existencia'] : 0;
-$tipo      = isset($input['tipo_control']) ? trim($input['tipo_control']) : '';
-
-if ($nombre === '' || $unidad === '' || $tipo === '') {
+if ($id <= 0 || $nombre === '' || $unidad === '' || $tipo === '') {
     error('Datos incompletos');
 }
 
-$stmt = $conn->prepare('UPDATE insumos SET nombre = ?, unidad = ?, existencia = ?, tipo_control = ? WHERE id = ?');
+// obtener imagen actual
+$sel = $conn->prepare('SELECT imagen FROM insumos WHERE id = ?');
+if (!$sel) {
+    error('Error al preparar consulta: ' . $conn->error);
+}
+$sel->bind_param('i', $id);
+$sel->execute();
+$res = $sel->get_result();
+if (!$res || $res->num_rows === 0) {
+    $sel->close();
+    error('Insumo no encontrado');
+}
+$actual = $res->fetch_assoc()['imagen'];
+$sel->close();
+
+$aliasImagen = $actual;
+if (!empty($_FILES['imagen']['name'])) {
+    $dir = __DIR__ . '/../../uploads/';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0777, true);
+    }
+    $ext = pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION);
+    $aliasImagen = uniqid('ins_') . ($ext ? ".{$ext}" : '');
+    if (!move_uploaded_file($_FILES['imagen']['tmp_name'], $dir . $aliasImagen)) {
+        error('Error al subir imagen');
+    }
+    if ($actual && file_exists($dir . $actual)) {
+        @unlink($dir . $actual);
+    }
+}
+
+$stmt = $conn->prepare('UPDATE insumos SET nombre = ?, unidad = ?, existencia = ?, tipo_control = ?, imagen = ? WHERE id = ?');
 if (!$stmt) {
     error('Error al preparar actualización: ' . $conn->error);
 }
-$stmt->bind_param('ssdsi', $nombre, $unidad, $existencia, $tipo, $id);
+$stmt->bind_param('ssdssi', $nombre, $unidad, $existencia, $tipo, $aliasImagen, $id);
 if (!$stmt->execute()) {
     $stmt->close();
     error('Error al actualizar insumo: ' . $stmt->error);

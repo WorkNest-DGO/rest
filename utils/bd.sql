@@ -89,17 +89,18 @@ CREATE TABLE `insumos` (
   `nombre` varchar(100) DEFAULT NULL,
   `unidad` varchar(20) DEFAULT NULL,
   `existencia` decimal(10,2) DEFAULT NULL,
-  `tipo_control` enum('por_receta','unidad_completa','uso_general','no_controlado','desempaquetado') DEFAULT 'por_receta'
+  `tipo_control` enum('por_receta','unidad_completa','uso_general','no_controlado','desempaquetado') DEFAULT 'por_receta',
+  `imagen` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
 
-INSERT INTO `insumos` (`id`, `nombre`, `unidad`, `existencia`, `tipo_control`) VALUES
-(1, 'Arroz para sushi', 'gramos', 8800.00, 'por_receta'),
-(2, 'Alga Nori', 'piezas', 192.00, 'por_receta'),
-(3, 'Salmón fresco', 'gramos', 4600.00, 'por_receta'),
-(4, 'Refresco en lata', 'piezas', 19.00, 'unidad_completa'),
-(5, 'Salsa Soya', 'ml', 5000.00, 'uso_general');
+INSERT INTO `insumos` (`id`, `nombre`, `unidad`, `existencia`, `tipo_control`, `imagen`) VALUES
+(1, 'Arroz para sushi', 'gramos', 8800.00, 'por_receta', ''),
+(2, 'Alga Nori', 'piezas', 192.00, 'por_receta', ''),
+(3, 'Salmón fresco', 'gramos', 4600.00, 'por_receta', ''),
+(4, 'Refresco en lata', 'piezas', 19.00, 'unidad_completa', ''),
+(5, 'Salsa Soya', 'ml', 5000.00, 'uso_general', '');
 
 
 DELIMITER $$

@@ -126,26 +126,46 @@ function agregarFila() {
 
 function mostrarCatalogo() {
     const tbody = document.querySelector('#listaInsumos tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+    if (tbody) {
+        tbody.innerHTML = '';
+    }
+    const cont = document.getElementById('catalogoInsumos');
+    if (cont) cont.innerHTML = '';
     catalogo.forEach(i => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${i.nombre}</td>
-            <td>${i.unidad}</td>
-            <td>${i.existencia}</td>
-            <td>${i.tipo_control}</td>
-            <td>
-                <button class="editar" data-id="${i.id}">Editar</button>
-                <button class="eliminar" data-id="${i.id}">Eliminar</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
+        if (tbody) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${i.nombre}</td>
+                <td>${i.unidad}</td>
+                <td>${i.existencia}</td>
+                <td>${i.tipo_control}</td>
+                <td>
+                    <button class="editar" data-id="${i.id}">Editar</button>
+                    <button class="eliminar" data-id="${i.id}">Eliminar</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+        if (cont) {
+            const col = document.createElement('div');
+            col.className = 'col-md-3';
+            col.innerHTML = `
+                <div class="card">
+                  <img src="/uploads/${i.imagen}" class="card-img-top" style="height:150px;object-fit:cover;">
+                  <div class="card-body">
+                    <h5 class="card-title">${i.nombre}</h5>
+                    <p class="card-text">Unidad: ${i.unidad}<br>Existencia: ${i.existencia}</p>
+                    <button class="btn btn-primary btn-sm btnEditar" data-id="${i.id}">Editar</button>
+                    <button class="btn btn-danger btn-sm btnEliminar" data-id="${i.id}">Eliminar</button>
+                  </div>
+                </div>`;
+            cont.appendChild(col);
+        }
     });
-    tbody.querySelectorAll('button.editar').forEach(btn => {
-        btn.addEventListener('click', () => editarInsumo(btn.dataset.id));
+    document.querySelectorAll('.btnEditar').forEach(btn => {
+        btn.addEventListener('click', () => abrirFormulario(btn.dataset.id));
     });
-    tbody.querySelectorAll('button.eliminar').forEach(btn => {
+    document.querySelectorAll('.btnEliminar').forEach(btn => {
         btn.addEventListener('click', () => eliminarInsumo(btn.dataset.id));
     });
 }
@@ -201,59 +221,12 @@ async function nuevoProveedor() {
     }
 }
 
-async function nuevoInsumo() {
-    const nombre = prompt('Nombre del insumo:');
-    if (!nombre) return;
-    const unidad = prompt('Unidad:');
-    if (!unidad) return;
-    const existencia = parseFloat(prompt('Existencia inicial:', '0')) || 0;
-    const tipo = prompt('Tipo de control (por_receta, unidad_completa, uso_general, no_controlado, desempaquetado):', 'por_receta');
-    if (!tipo) return;
-    try {
-        const resp = await fetch('../../api/insumos/agregar_insumo.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nombre, unidad, existencia, tipo_control: tipo })
-        });
-        const data = await resp.json();
-        if (data.success) {
-            alert('Insumo agregado');
-            cargarInsumos();
-        } else {
-            alert(data.mensaje);
-        }
-    } catch (err) {
-        console.error(err);
-        alert('Error al agregar insumo');
-    }
+function nuevoInsumo() {
+    abrirFormulario(null);
 }
 
-async function editarInsumo(id) {
-    const ins = catalogo.find(i => i.id == id);
-    if (!ins) return;
-    const nombre = prompt('Nombre del insumo:', ins.nombre);
-    if (!nombre) return;
-    const unidad = prompt('Unidad:', ins.unidad);
-    if (!unidad) return;
-    const existencia = parseFloat(prompt('Existencia:', ins.existencia)) || 0;
-    const tipo = prompt('Tipo de control:', ins.tipo_control);
-    if (!tipo) return;
-    try {
-        const resp = await fetch('../../api/insumos/actualizar_insumo.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: parseInt(id), nombre, unidad, existencia, tipo_control: tipo })
-        });
-        const data = await resp.json();
-        if (data.success) {
-            cargarInsumos();
-        } else {
-            alert(data.mensaje);
-        }
-    } catch (err) {
-        console.error(err);
-        alert('Error al actualizar');
-    }
+function editarInsumo(id) {
+    abrirFormulario(id);
 }
 
 async function eliminarInsumo(id) {
@@ -273,6 +246,54 @@ async function eliminarInsumo(id) {
     } catch (err) {
         console.error(err);
         alert('Error al eliminar');
+    }
+}
+
+function abrirFormulario(id) {
+    const form = document.getElementById('formInsumo');
+    form.style.display = 'block';
+    document.getElementById('insumoId').value = id || '';
+    if (id) {
+        const ins = catalogo.find(i => i.id == id);
+        if (!ins) return;
+        document.getElementById('nombre').value = ins.nombre;
+        document.getElementById('unidad').value = ins.unidad;
+        document.getElementById('existencia').value = ins.existencia;
+        document.getElementById('tipo_control').value = ins.tipo_control;
+    } else {
+        form.reset();
+        document.getElementById('existencia').value = 0;
+    }
+}
+
+function cerrarFormulario() {
+    document.getElementById('formInsumo').style.display = 'none';
+}
+
+async function guardarInsumo(ev) {
+    ev.preventDefault();
+    const id = document.getElementById('insumoId').value;
+    const fd = new FormData();
+    fd.append('nombre', document.getElementById('nombre').value);
+    fd.append('unidad', document.getElementById('unidad').value);
+    fd.append('existencia', document.getElementById('existencia').value);
+    fd.append('tipo_control', document.getElementById('tipo_control').value);
+    const img = document.getElementById('imagen').files[0];
+    if (img) fd.append('imagen', img);
+    if (id) fd.append('id', id);
+    const url = id ? '../../api/insumos/actualizar_insumo.php' : '../../api/insumos/agregar_insumo.php';
+    try {
+        const resp = await fetch(url, { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (data.success) {
+            cerrarFormulario();
+            cargarInsumos();
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al guardar');
     }
 }
 
@@ -359,6 +380,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnNuevoInsumo = document.getElementById('btnNuevoInsumo');
     if (btnNuevoInsumo) {
         btnNuevoInsumo.addEventListener('click', nuevoInsumo);
+    }
+    const form = document.getElementById('formInsumo');
+    if (form) {
+        form.addEventListener('submit', guardarInsumo);
+        document.getElementById('cancelarInsumo').addEventListener('click', cerrarFormulario);
     }
     document.querySelectorAll('.cantidad').forEach(i => i.addEventListener('input', calcularTotal));
     document.querySelectorAll('.precio').forEach(i => i.addEventListener('input', calcularTotal));
