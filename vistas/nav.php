@@ -27,7 +27,7 @@ if (!isset($_SESSION['usuario_id'])) {
   <link href="<?= BASE_URL ?>../utils/css/all.min.css" rel="stylesheet">
   <link href="<?= BASE_URL ?>../utils/lib/animate/animate.min.css" rel="stylesheet">
   <link href="<?= BASE_URL ?>../utils/lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
-  <link href="<?= BASE_URL ?>../utils/lib/flaticon/font/flaticon.css" rel="stylesheet">
+  <link href="<?= BASE_URL ?>../utils/fontawesome/css/all.min.css" rel="stylesheet">
   <link href="<?= BASE_URL ?>../utils/lib/tempusdominus/css/tempusdominus-bootstrap-4.min.css" rel="stylesheet">
   <link rel="icon" href="<?= BASE_URL ?>../utils/logo.png" type="image/png">
   <link href="<?= BASE_URL ?>../utils/css/style1.css" rel="stylesheet">

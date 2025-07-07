@@ -32,7 +32,7 @@ singUp.addEventListener("click", function () {
       .then(data => {
         console.log("Respuesta:", data);
         if (data.success) {
-          window.location.href = "vistas/nav.php";
+          window.location.href = "vistas/index.php";
         } else {
           mensaje.textContent = data.mensaje || "Credenciales incorrectas";
         }

@@ -27,6 +27,56 @@ ob_start();
         <!-- Page Header End -->
         
  
+
+
+        <!-- Blog Start -->
+        <div class="blog">
+            <div class="container">
+                <div class="section-header text-center">
+                    <p>Insumos</p>
+                    <h2>Recuerda validar los datos antes de guardar altas</h2>
+                     <button type="button" id="btnNuevoInsumo">Nuevo insumo</button>
+                </div>
+                <div class="row" id="catalogoInsumos"></div>
+                
+                <form id="formInsumo" style="display:none;margin-top:20px;">
+                    <input type="hidden" id="insumoId">
+                    <div>
+                        <label>Nombre:</label>
+                        <input type="text" id="nombre">
+                        <label>Unidad:</label>
+                        <input type="text" id="unidad">
+                        <label>Existencia:</label>
+                        <input type="number" step="0.01" id="existencia" value="0">
+                        <label>Tipo:</label>
+                        <select id="tipo_control">
+                            <option value="por_receta">por_receta</option>
+                            <option value="unidad_completa">unidad_completa</option>
+                            <option value="uso_general">uso_general</option>
+                            <option value="no_controlado">no_controlado</option>
+                            <option value="desempaquetado">desempaquetado</option>
+                        </select>
+                        <input type="file" id="imagen">
+                        <button type="submit">Guardar</button>
+                        <button type="button" id="cancelarInsumo">Cancelar</button>
+                    </div>
+                </form>
+
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                            <li class="page-item"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item active"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                        </ul> 
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Blog End -->
  <form id="formEntrada">
      <h2>Productos</h2>
      <label for="proveedor">Proveedor:</label>
@@ -80,56 +130,6 @@ ob_start();
      </thead>
      <tbody></tbody>
  </table>
-
-        <!-- Blog Start -->
-        <div class="blog">
-            <div class="container">
-                <div class="section-header text-center">
-                    <p>Insumos</p>
-                    <h2>Recuerda validar los datos antes de guardar altas</h2>
-                     <button type="button" id="btnNuevoInsumo">Nuevo insumo</button>
-                </div>
-                <div class="row" id="catalogoInsumos"></div>
-                
-                <form id="formInsumo" style="display:none;margin-top:20px;">
-                    <input type="hidden" id="insumoId">
-                    <div>
-                        <label>Nombre:</label>
-                        <input type="text" id="nombre">
-                        <label>Unidad:</label>
-                        <input type="text" id="unidad">
-                        <label>Existencia:</label>
-                        <input type="number" step="0.01" id="existencia" value="0">
-                        <label>Tipo:</label>
-                        <select id="tipo_control">
-                            <option value="por_receta">por_receta</option>
-                            <option value="unidad_completa">unidad_completa</option>
-                            <option value="uso_general">uso_general</option>
-                            <option value="no_controlado">no_controlado</option>
-                            <option value="desempaquetado">desempaquetado</option>
-                        </select>
-                        <input type="file" id="imagen">
-                        <button type="submit">Guardar</button>
-                        <button type="button" id="cancelarInsumo">Cancelar</button>
-                    </div>
-                </form>
-
-                </div>
-                <div class="row">
-                    <div class="col-12">
-                        <ul class="pagination justify-content-center">
-                            <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
-                            <li class="page-item"><a class="page-link" href="#">1</a></li>
-                            <li class="page-item active"><a class="page-link" href="#">2</a></li>
-                            <li class="page-item"><a class="page-link" href="#">3</a></li>
-                            <li class="page-item"><a class="page-link" href="#">Next</a></li>
-                        </ul> 
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Blog End -->
-
 
 
 

@@ -7,14 +7,13 @@
   <meta name="description" content="Sistema de punto de venta de Tokyo Sushi para control de cobros y operaciones.">
   <meta name="author" content="Tokyo Sushi">
 
-        <!-- Google Font -->
-        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400|Nunito:600,700" rel="stylesheet"> 
         
         <!-- CSS Libraries -->
         <link href="../utils/css/bootstrap.min.css" rel="stylesheet">
         <link href="../utils/css/all.min.css" rel="stylesheet">
         <link href="../utils/lib/animate/animate.min.css" rel="stylesheet">
         <link href="../utils/lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+        
         <link href="../utils/lib/flaticon/font/flaticon.css" rel="stylesheet">
         <link href="../utils/lib/tempusdominus/css/tempusdominus-bootstrap-4.min.css" rel="stylesheet" />
         <link rel="icon" href="../utils/logo.png" type="image/png">
