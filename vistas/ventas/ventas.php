@@ -92,6 +92,7 @@ ob_start();
     <div id="modal-detalles" style="display:none;"></div>
     <div id="modalDesglose" style="display:none;"></div>
 
+    <?php require_once __DIR__ . '/../footer.php'; ?>
     <script>
         // ID de usuario proveniente de la sesión para operaciones en JS
         window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;

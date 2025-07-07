@@ -27,7 +27,10 @@ ob_start();
     </thead>
     <tbody></tbody>
 </table>
+<?php require_once __DIR__ . '/../footer.php'; ?>
 <script src="corte.js"></script>
+    </body>
+</html>
 <?php
 $content = ob_get_clean();
 include __DIR__ . '/../nav.php';

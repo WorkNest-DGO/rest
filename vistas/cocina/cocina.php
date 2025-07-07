@@ -36,7 +36,10 @@ ob_start();
         <tbody></tbody>
     </table>
 </div>
+<?php require_once __DIR__ . '/../footer.php'; ?>
 <script src="cocina.js"></script>
+    </body>
+</html>
 <?php
 $content = ob_get_clean();
 include __DIR__ . '/../nav.php';

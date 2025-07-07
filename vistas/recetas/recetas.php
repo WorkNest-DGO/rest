@@ -41,7 +41,10 @@ ob_start();
 <button type="button" id="guardarReceta">Guardar receta</button>
 <button type="button" id="copiarReceta">Copiar receta de otro producto</button>
 <div id="modal-copiar" style="display:none;"></div>
+<?php require_once __DIR__ . '/../footer.php'; ?>
 <script src="recetas.js"></script>
+    </body>
+</html>
 <?php
 $content = ob_get_clean();
 include __DIR__ . '/../nav.php';

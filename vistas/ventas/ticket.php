@@ -39,6 +39,8 @@ ob_start();
     <p>Gracias por su compra</p>
     <button id="btnImprimir" onclick="window.print()">Imprimir</button>
 </div>
+<?php require_once __DIR__ . '/../footer.php'; ?>
+
 <style>
         body {
             width: 58mm;
@@ -366,6 +368,8 @@ async function guardarSubcuentas() {
             }
         });
 </script>
+    </body>
+</html>
 <?php
 $content = ob_get_clean();
 include __DIR__ . '/../nav.php';

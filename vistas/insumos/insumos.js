@@ -187,7 +187,7 @@ function renderPaginador() {
     const prevLink = document.createElement('a');
     prevLink.className = 'page-link';
     prevLink.href = '#';
-    prevLink.textContent = 'Previous';
+    prevLink.textContent = 'Anterior';
     prevLink.addEventListener('click', (e) => {
         e.preventDefault();
         if (paginaActual > 1) mostrarCatalogo(paginaActual - 1);
@@ -215,7 +215,7 @@ function renderPaginador() {
     const nextLink = document.createElement('a');
     nextLink.className = 'page-link';
     nextLink.href = '#';
-    nextLink.textContent = 'Next';
+    nextLink.textContent = 'Siguiente';
     nextLink.addEventListener('click', (e) => {
         e.preventDefault();
         if (paginaActual < totalPaginas) mostrarCatalogo(paginaActual + 1);
