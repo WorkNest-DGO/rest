@@ -132,40 +132,34 @@ function mostrarCatalogo() {
     const cont = document.getElementById('catalogoInsumos');
     if (cont) cont.innerHTML = '';
     catalogo.forEach(i => {
-        if (tbody) {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${i.nombre}</td>
-                <td>${i.unidad}</td>
-                <td>${i.existencia}</td>
-                <td>${i.tipo_control}</td>
-                <td>
-                    <button class="editar" data-id="${i.id}">Editar</button>
-                    <button class="eliminar" data-id="${i.id}">Eliminar</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        }
+
         if (cont) {
             const col = document.createElement('div');
             col.className = 'col-md-3';
             col.innerHTML = `
-                <div class="card">
-                  <img src="/uploads/${i.imagen}" class="card-img-top" style="height:150px;object-fit:cover;">
-                  <div class="card-body">
-                    <h5 class="card-title">${i.nombre}</h5>
-                    <p class="card-text">Unidad: ${i.unidad}<br>Existencia: ${i.existencia}</p>
-                    <button class="btn btn-primary btn-sm btnEditar" data-id="${i.id}">Editar</button>
-                    <button class="btn btn-danger btn-sm btnEliminar" data-id="${i.id}">Eliminar</button>
-                  </div>
+                <div class="blog-item">
+                    <div class="blog-img">
+                    <img src="/uploads/${i.imagen}" >
+                    </div>
+                    <div class="blog-content">
+                        <h2 style="color: black;" class="blog-title">${i.nombre}</h2>
+                        <div class="blog-meta">
+                            <p class="card-text">Unidad: ${i.unidad}<br>Existencia: ${i.existencia}</p>
+                            <div>
+                            <a class="btn custom-btn editar"   data-id="${i.id}">Editar</a>
+                            <a class="btn custom-btn eliminar"  data-id="${i.id}">Eliminar</a>
+                            </div>
+                        </div>
+                    
+                    </div>
                 </div>`;
             cont.appendChild(col);
         }
     });
-    document.querySelectorAll('.btnEditar').forEach(btn => {
-        btn.addEventListener('click', () => abrirFormulario(btn.dataset.id));
+            cont.querySelectorAll('a.editar').forEach(btn => {
+        btn.addEventListener('click', () => editarInsumo(btn.dataset.id));
     });
-    document.querySelectorAll('.btnEliminar').forEach(btn => {
+    cont.querySelectorAll('a.eliminar').forEach(btn => {
         btn.addEventListener('click', () => eliminarInsumo(btn.dataset.id));
     });
 }

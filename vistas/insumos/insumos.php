@@ -130,23 +130,7 @@ ob_start();
         </div>
         <!-- Blog End -->
 
-        <!-- seccion de datos inicio-->
-               <h1>Entradas de Insumos</h1>
- <h2>Crear Insumos</h2>
 
- <table id="listaInsumos" border="1">
-     <thead>
-         <tr>
-             <th>Nombre</th>
-             <th>Unidad</th>
-             <th>Existencia</th>
-             <th>Tipo de control</th>
-             <th>Acciones</th>
-         </tr>
-     </thead>
-     <tbody></tbody>
- </table>
-<!-- seccion de datos fin  -->
 
 
 <?php require_once __DIR__ . '/../footer.php'; ?>
