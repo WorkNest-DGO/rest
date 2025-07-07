@@ -89,32 +89,30 @@ ob_start();
                     <h2>Recuerda validar los datos antes de guardar altas</h2>
                      <button type="button" id="btnNuevoInsumo">Nuevo insumo</button>
                 </div>
-                <div class="row">
-
-                <!-- aqui deben ir insumos -->
-                    <div class="col-md-3">
-                        <div class="blog-item">
-                            <div class="blog-img">
-                                <img src="../../utils/img/blog-1.jpg" alt="Blog">
-                            </div>
-                            <div class="blog-content">
-                                <h2 class="blog-title">Lorem ipsum dolor sit amet</h2>
-                                <div class="blog-meta">
-                                    <p><i class="far fa-user"></i>Admin</p>
-                                    <p><i class="far fa-list-alt"></i>Food</p>
-                                    <p><i class="far fa-calendar-alt"></i>01-Jan-2045</p>
-                                    <p><i class="far fa-comments"></i>10</p>
-                                </div>
-                                <div class="blog-text">
-                                    <p>
-                                        Lorem ipsum dolor sit amet elit. Neca pretim miura bitur facili ornare velit non vulpte liqum metus tortor. Lorem ipsum dolor sit amet elit. Neca pretim miura bitur facili ornare velit non vulpte
-                                    </p>
-                                    <a class="btn custom-btn" href="">Read More</a>
-                                </div>
-                            </div>
-                        </div>
+                <div class="row" id="catalogoInsumos"></div>
+                
+                <form id="formInsumo" style="display:none;margin-top:20px;">
+                    <input type="hidden" id="insumoId">
+                    <div>
+                        <label>Nombre:</label>
+                        <input type="text" id="nombre">
+                        <label>Unidad:</label>
+                        <input type="text" id="unidad">
+                        <label>Existencia:</label>
+                        <input type="number" step="0.01" id="existencia" value="0">
+                        <label>Tipo:</label>
+                        <select id="tipo_control">
+                            <option value="por_receta">por_receta</option>
+                            <option value="unidad_completa">unidad_completa</option>
+                            <option value="uso_general">uso_general</option>
+                            <option value="no_controlado">no_controlado</option>
+                            <option value="desempaquetado">desempaquetado</option>
+                        </select>
+                        <input type="file" id="imagen">
+                        <button type="submit">Guardar</button>
+                        <button type="button" id="cancelarInsumo">Cancelar</button>
                     </div>
-               <!-- aqui termina donde van insumos -->
+                </form>
 
                 </div>
                 <div class="row">
