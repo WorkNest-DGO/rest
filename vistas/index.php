@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
     <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,7 +26,11 @@
         <!-- Nav Bar Start -->
 <div class="navbar navbar-expand-lg bg-light navbar-light">
     <div class="container-fluid">
-        <a href="index.php" class="navbar-brand">Tokyo <span>Sushi</span></a>
+        <a href="index.php" class="navbar-brand">Tokyo <span style=" text-shadow: 
+       -1px -1px 0 #000, 
+        1px -1px 0 #000, 
+       -1px  1px 0 #000, 
+        1px  1px 0 #000; ">Sushi</span></a>
         <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
             <span class="navbar-toggler-icon"></span>
         </button>

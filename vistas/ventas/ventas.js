@@ -149,7 +149,20 @@ function mostrarModalDesglose(totalEsperado) {
     const modal = document.getElementById('modalDesglose');
     let html = '<div style="background:#fff;border:1px solid #333;padding:10px;">';
     html += '<h3>Desglose de caja</h3>';
-    html += `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>`;
+
+    let totalGeneral = 0;
+    let detalleTotales = '';
+
+    for (const tipo in totalEsperado) {
+        const pago = totalEsperado[tipo];
+        const subtotal = (parseFloat(pago.total) || 0) + (parseFloat(pago.propina) || 0);
+        totalGeneral += subtotal;
+        detalleTotales += `<p><strong>${tipo}</strong>: $${subtotal.toFixed(2)} (Total: $${parseFloat(pago.total).toFixed(2)} + Propina: $${parseFloat(pago.propina).toFixed(2)})</p>`;
+    }
+
+    html += `<h4>Total esperado: $${totalGeneral.toFixed(2)}</h4>`;
+    html += detalleTotales;
+
     html += '<p>Total ingresado: $<span id="totalIngresado">0.00</span> | Dif.: $<span id="difIngresado">0.00</span></p>';
     html += '<table id="tablaDesglose" border="1"><thead><tr><th>Denominación</th><th>Cantidad</th><th>Tipo</th><th></th></tr></thead><tbody></tbody></table>';
     html += '<button id="addFila">Agregar fila</button> <button id="guardarDesglose">Guardar desglose</button> <button id="cancelarDesglose">Cancelar</button>';
@@ -184,7 +197,7 @@ function mostrarModalDesglose(totalEsperado) {
             }
         });
         modal.querySelector('#totalIngresado').textContent = total.toFixed(2);
-        modal.querySelector('#difIngresado').textContent = (total - totalEsperado).toFixed(2);
+        modal.querySelector('#difIngresado').textContent = (total - totalGeneral).toFixed(2);
     }
 
     modal.querySelector('#addFila').addEventListener('click', agregarFila);
@@ -209,7 +222,7 @@ function mostrarModalDesglose(totalEsperado) {
         }
 
         try {
-            const resp = await fetch('../../api/corte_caja/guardar_desglose.php', {
+            const resp = await fetch('../api/corte_caja/guardar_desglose.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ corte_id: corteIdActual, detalle })
@@ -229,6 +242,7 @@ function mostrarModalDesglose(totalEsperado) {
 
     calcular();
 }
+
 
 async function finalizarCorte() {
     try {

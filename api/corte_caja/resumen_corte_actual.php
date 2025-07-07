@@ -22,25 +22,33 @@ if (!isset($_SESSION['corte_id'])) {
 
 $corte_id = $_SESSION['corte_id'];
 
-// Obtener resumen de ventas relacionadas al corte_id (sin filtrar por usuario)
+// Obtener resumen de ventas agrupado por tipo de pago
 $sqlResumen = "SELECT 
-    SUM(t.total) AS total, 
-    SUM(t.propina) AS propinas, 
-    COUNT(DISTINCT v.id) AS num_ventas
+    t.tipo_pago,
+    SUM(t.total) AS total,
+    SUM(t.propina) AS propina
 FROM ventas v
 JOIN tickets t ON t.venta_id = v.id
 WHERE v.estatus = 'cerrada'
-  AND v.corte_id = ?";
+  AND v.corte_id = ?
+GROUP BY t.tipo_pago";
 
 $stmtResumen = $conn->prepare($sqlResumen);
 $stmtResumen->bind_param("i", $corte_id);
 $stmtResumen->execute();
 $resultResumen = $stmtResumen->get_result();
-$dataResumen = $resultResumen->fetch_assoc();
+
+$resumen = [];
+while ($row = $resultResumen->fetch_assoc()) {
+    $resumen[$row['tipo_pago']] = [
+        'total' => (float)$row['total'],
+        'propina' => (float)$row['propina']
+    ];
+}
 
 echo json_encode([
     'success' => true,
-    'resultado' => $dataResumen,
+    'resultado' => $resumen,
     'corte_id' => $corte_id
 ]);
 ?>

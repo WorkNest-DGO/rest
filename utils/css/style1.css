@@ -1219,10 +1219,11 @@ a:focus {
 
 .blog .blog-content {
     position: relative;
-    width: calc(100% - 60px);
-    top: -60px;
-    left: 30px;
-    padding: 25px 30px 30px 30px;
+    height: 350px;
+    width: 250px;
+    top: -30px;
+    left: 15px;
+    padding: 1px 1px 1px 20px;
     background: #ffffff;
     box-shadow: 0 0 30px rgba(0, 0, 0, .08);
     border-radius: 15px;
