@@ -69,7 +69,7 @@ async function cargarPendientes() {
                                 <span>${p.destino}</span>
                                 <strong style="background-color:${colorPorTiempo(t.minutos)}">${p.estado}</strong>
                             </h3>
-                            <p>${p.cantidad} unidades - ${t.texto}</p>
+                            <p>${p.producto} Total de: ${p.cantidad} unidades - ${t.texto}</p>
                         </div>
                     </div>`;
                 contCards.appendChild(card);
