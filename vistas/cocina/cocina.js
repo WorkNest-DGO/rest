@@ -34,7 +34,9 @@ async function cargarPendientes() {
         const data = await resp.json();
         if (data.success) {
             const tbody = document.querySelector('#tabla-pendientes tbody');
+            const contCards = document.getElementById('pendientes-cards');
             tbody.innerHTML = '';
+            contCards.innerHTML = '';
             let grupo = '';
             data.resultado.forEach(p => {
                 if (p.destino !== grupo) {
@@ -54,6 +56,23 @@ async function cargarPendientes() {
                     <td>${botonPorEstado(p.estado, p.detalle_id, p.tipo)}</td>`;
                 tr.style.backgroundColor = colorPorTiempo(t.minutos);
                 tbody.appendChild(tr);
+
+                const card = document.createElement('div');
+                card.className = 'col-lg-7 col-md-12';
+                card.innerHTML = `
+                    <div class="menu-item">
+                        <div class="menu-img">
+                            <img src="../../utils/img/menu-burger.jpg" alt="Image">
+                        </div>
+                        <div class="menu-text">
+                            <h3>
+                                <span>${p.destino}</span>
+                                <strong style="background-color:${colorPorTiempo(t.minutos)}">${p.estado}</strong>
+                            </h3>
+                            <p>${p.cantidad} unidades - ${t.texto}</p>
+                        </div>
+                    </div>`;
+                contCards.appendChild(card);
             });
             tbody.querySelectorAll('button.cambiar').forEach(btn => {
                 btn.addEventListener('click', () => cambiarEstado(btn.dataset.id, btn.dataset.sig));

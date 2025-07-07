@@ -81,20 +81,8 @@ ob_start();
                     <div class="tab-content">
                         <div id="Pendientes" class="container tab-pane active">
                             <div class="row">
-<!-- pendientes aqui -->
-                                <div class="col-lg-7 col-md-12">
-                                    <div class="menu-item">
-                                        <div class="menu-img">
-                                            <img src="../../utils/img/menu-burger.jpg"  alt="Image"> <!-- imagen generica q se repite en todos -->
-                                        </div>
-                                        <div class="menu-text">
-                                            <h3><span>Mini cheese Burger</span> <strong>$9.00</strong></h3> <!-- primero nombre de la mesa luego entre strong el estado del pedido, el estado debe ser del color referente al timpo de entrega (revisar validacion existente) -->
-                                            <!-- aqui metemos como texto la cantidad y tiempo  -->
-                                            <p>Lorem ipsum dolor sit amet elit. Phasel nec preti facil</p> <!-- el boton de estado lo ponemos aqui en vez de p -->
-                                        </div>
-                                    </div>
-
-                                </div>
+                                <!-- pendientes aqui -->
+                                <div id="pendientes-cards" class="col-lg-7 col-md-12"></div>
                                 <div class="col-lg-5 d-none d-lg-block">
                                     <img src="../../utils/img/menu-burger-img.jpg" alt="Image">
                                 </div>
