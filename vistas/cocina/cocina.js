@@ -92,7 +92,9 @@ async function cargarEntregados() {
         const data = await resp.json();
         if (data.success) {
             const tbody = document.querySelector('#tabla-entregados tbody');
+            const contCards = document.getElementById('entregados-cards');
             tbody.innerHTML = '';
+            contCards.innerHTML = '';
             let grupo = '';
             data.resultado.forEach(p => {
                 if (p.destino !== grupo) {
@@ -104,6 +106,24 @@ async function cargarEntregados() {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td>${p.producto}</td><td>${p.cantidad}</td><td>${p.hora}</td>`;
                 tbody.appendChild(tr);
+
+                const t = tiempoTranscurrido(p.hora);
+                const card = document.createElement('div');
+                card.className = 'col-lg-7 col-md-12';
+                card.innerHTML = `
+                    <div class="menu-item">
+                        <div class="menu-img">
+                            <img src="../../utils/img/menu-burger.jpg" alt="Image">
+                        </div>
+                        <div class="menu-text">
+                            <h3>
+                                <span>${p.destino}</span>
+                                <strong style="background-color:${colorPorTiempo(t.minutos)}">${p.estado}</strong>
+                            </h3>
+                            <p>${p.cantidad} unidades - ${t.texto}</p>
+                        </div>
+                    </div>`;
+                contCards.appendChild(card);
             });
         }
     } catch (err) {
