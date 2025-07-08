@@ -158,9 +158,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('seccion-entregados').style.display = 'none';
         cargarPendientes();
     });
-    document.getElementById('btn-entregados').addEventListener('click', () => {
+document.querySelector('a[href="#Entregados"]').addEventListener('click', (e) => {
+    setTimeout(() => {
         document.getElementById('seccion-pendientes').style.display = 'none';
         document.getElementById('seccion-entregados').style.display = 'block';
         cargarEntregados();
-    });
+    }, 10); // pequeño delay por comportamiento del tab
+});
 });
