@@ -27,39 +27,7 @@ ob_start();
         
         
 
-<!-- pendientes -->
- <button id="btn-pendientes">Pendientes</button>
-<button id="btn-entregados">Entregados hoy</button>
-<div id="seccion-pendientes">
-    <table id="tabla-pendientes" border="1">
-        <thead>
-            <tr>
-                <th>Producto</th>
-                <th>Cantidad</th>
-                <th>Tiempo</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-</div>       
-<!-- Pendientes -->
 
-<!-- entregados -->
-<div id="seccion-entregados" style="display:none;">
-    <table id="tabla-entregados" border="1">
-        <thead>
-            <tr>
-                <th>Producto</th>
-                <th>Cantidad</th>
-                <th>Hora</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-</div>
-<!-- entregados -->
 
         <!-- Menu Start -->
         <div class="menu">
