@@ -8,13 +8,21 @@ if (!isset($_SESSION['usuario_id'])) {
 $title = 'Ventas';
 ob_start();
 ?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Ventas</title>
-</head>
-<body>
+  <!-- Page Header Start -->
+        <div class="page-header mb-0">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12">
+                        <h2>Modulo de Ventas</h2>
+                    </div>
+                    <div class="col-12">
+                        <a href="">Inicio</a>
+                        <a href="">Ventas</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Page Header End -->
     <h1>Registro de Venta</h1>
     <div id="controlCaja"></div>
     <form id="formVenta">
