@@ -44,7 +44,7 @@ async function cargarHistorial() {
                     <td>${c.cheque || ''}</td>
                     <td>${c.fondo_inicial || ''}</td>
                     <td>${c.observaciones || ''}</td>
-                    <td><button class="detalle" data-id="${c.id}">Ver detalle</button></td>
+                    <td><button class="btn custom-btn" data-id="${c.id}">Ver detalle</button></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -73,7 +73,7 @@ async function verDetalle(corteId) {
             data.resultado.forEach(v => {
                 html += `<tr><td>${v.id}</td><td>${v.fecha}</td><td>${v.total}</td><td>${v.propina}</td><td>${v.tipo_entrega}</td></tr>`;
             });
-            html += '</tbody></table><button id="cerrarModal">Cerrar</button>';
+            html += '</tbody></table><button class="btn custom-btn" id="cerrarModal">Cerrar</button>';
             modal.innerHTML = html;
             document.getElementById('cerrarModal').addEventListener('click', () => {
                 modal.style.display = 'none';
@@ -111,7 +111,7 @@ async function resumenActual() {
             });
             html += '</ul>';
         }
-        html += '<button id="cerrarModal">Cerrar</button>';
+        html += '<button class="btn custom-btn" id="cerrarModal">Cerrar</button>';
         modal.innerHTML = html;
         document.getElementById('cerrarModal').addEventListener('click', () => {
             modal.style.display = 'none';

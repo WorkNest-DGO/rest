@@ -7,17 +7,24 @@ async function cargarProductos() {
             tbody.innerHTML = '';
             data.resultado.forEach(p => {
                 const tr = document.createElement('tr');
+                tr.classList.add('table-row'); // Clase opcional para filas si deseas estilizar más
                 tr.innerHTML = `
-                    <td>${p.id}</td>
+                    <td class="text-center">${p.id}</td>
                     <td>${p.nombre}</td>
-                    <td>${p.precio}</td>
-                    <td><input type="number" class="existencia" data-id="${p.id}" value="${p.existencia}"></td>
+                    <td>$${parseFloat(p.precio).toFixed(2)}</td>
+                    <td>
+                        <input type="number" class="existencia form-control" data-id="${p.id}" value="${p.existencia}" style="max-width:80px;">
+                    </td>
                     <td>${p.descripcion || ''}</td>
-                    <td>${p.activo == 1 ? 'Sí' : 'No'}</td>
-                    <td><button class="actualizar" data-id="${p.id}">Editar existencia</button></td>
+                    <td>${p.activo == 1 ? '<span class="badge bg-success">Sí</span>' : '<span class="badge bg-danger">No</span>'}</td>
+                    <td>
+                        <button class="actualizar btn custom-btn btn-sm" data-id="${p.id}">Editar existencia</button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
+
+            // Vincular evento a botones
             tbody.querySelectorAll('button.actualizar').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const input = btn.closest('tr').querySelector('.existencia');
@@ -33,6 +40,7 @@ async function cargarProductos() {
     }
 }
 
+
 async function actualizarExistencia(id, valor) {
     try {
         const resp = await fetch('../../api/inventario/actualizar_existencia.php', {
@@ -42,20 +50,31 @@ async function actualizarExistencia(id, valor) {
         });
         const data = await resp.json();
         if (!data.success) {
-            alert(data.mensaje);
+            mostrarModal('Error', data.mensaje || 'No se pudo actualizar');
+        } else {
+            mostrarModal('Éxito', 'Existencia actualizada correctamente');
         }
     } catch (err) {
         console.error(err);
-        alert('Error al actualizar');
+        mostrarModal('Error', 'Error al conectar con el servidor');
     }
 }
 
-async function agregarProducto() {
-    const nombre = prompt('Nombre del producto:');
-    if (!nombre) return;
-    const precio = parseFloat(prompt('Precio:', '0')) || 0;
-    const descripcion = prompt('Descripción:', '');
-    const existencia = parseInt(prompt('Existencia:', '0')) || 0;
+
+function abrirModalAgregar() {
+    document.getElementById('modalAgregar').style.display = 'flex';
+}
+function cerrarModal() {
+    document.getElementById('modalAgregar').style.display = 'none';
+    document.getElementById('formAgregar').reset();
+}
+
+document.getElementById('formAgregar').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nombre = document.getElementById('nombreProducto').value;
+    const precio = parseFloat(document.getElementById('precioProducto').value);
+    const descripcion = document.getElementById('descripcionProducto').value;
+    const existencia = parseInt(document.getElementById('existenciaProducto').value);
 
     const payload = { nombre, precio, descripcion, existencia };
     try {
@@ -66,7 +85,8 @@ async function agregarProducto() {
         });
         const data = await resp.json();
         if (data.success) {
-            alert(data.resultado ? data.resultado.mensaje : 'Producto agregado');
+            alert(data.resultado?.mensaje || 'Producto agregado');
+            cerrarModal();
             cargarProductos();
         } else {
             alert(data.mensaje);
@@ -75,7 +95,22 @@ async function agregarProducto() {
         console.error(err);
         alert('Error al agregar producto');
     }
+});
+
+
+
+function mostrarModal(titulo, mensaje) {
+    const modal = document.getElementById('modalAlerta');
+    const mensajeEl = document.getElementById('mensajeModal');
+
+    mensajeEl.innerText = mensaje;
+    modal.style.display = 'flex';
+
+    document.getElementById('cerrarModal').onclick = () => {
+        modal.style.display = 'none';
+    };
 }
+
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarProductos();

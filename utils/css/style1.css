@@ -1825,11 +1825,38 @@ a:focus {
     list-style-type: none;
 }
 
+/*repartos*/
+ .styled-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #111;
+  color: #fff;
+  font-family: 'Arial', sans-serif;
+  border: 1px solid #cc0000;
+}
+
+.styled-table th {
+  background-color: #cc0000;
+  color: #fff;
+  padding: 10px;
+  border-bottom: 2px solid #fff;
+  text-align: left;
+}
+
+.styled-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #333;
+}
+
+.styled-table tr:hover {
+  background-color: #222;
+}
 
 /*******************************/
 /********* Footer CSS **********/
 /*******************************/
 .footer {
+
     position: relative;
     margin-top: 45px;
     padding-top: 90px;
@@ -1986,7 +2013,7 @@ a:focus {
 
 #bajoStock td {
     padding: 8px 12px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid #fff;
 }
 
 #bajoStock tr:hover {
@@ -2030,3 +2057,324 @@ a:focus {
     cursor: default;
 }
 
+.custom-modal2 {
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 20px;
+  max-width: 600px;
+  margin: 40px auto;
+  box-shadow: 0 0 10px rgba(0,0,0,0.25);
+  z-index: 999;
+}
+
+#tablaHorarios {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+  background-color: #111;
+  color: #fff;
+  border: 1px solid #cc0000;
+  font-family: 'Arial', sans-serif;
+}
+
+#tablaHorarios th {
+  background-color: #cc0000;
+  color: #fff;
+  padding: 10px;
+  text-align: left;
+  border-bottom: 2px solid #fff;
+}
+
+#tablaHorarios td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #333;
+}
+
+#tablaHorarios tr:hover {
+  background-color: #222;
+  cursor: default;
+}
+
+.filtros-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  background-color: #111;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.filtros-container label {
+  color: #fff;
+  font-weight: bold;
+}
+
+.form-control-sm {
+  padding: 5px;
+  background-color: #222;
+  border: 1px solid #cc0000;
+  color: #fff;
+  border-radius: 3px;
+}
+
+.btn.custom-btn-sm {
+  background-color: #cc0000;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 3px;
+  transition: background 0.3s;
+}
+
+.btn.custom-btn-sm:hover {
+  background-color: #a30000;
+}
+
+.acciones-corte {
+  text-align: center;
+}
+
+.custom-modal {
+  background: #222;
+  color: white;
+  border: 2px solid #cc0000;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+#tablaCortes {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+  background-color: #111;
+  color: #fff;
+  border: 1px solid #cc0000;
+  font-family: 'Arial', sans-serif;
+}
+
+#tablaCortes th {
+  background-color: #cc0000;
+  color: #fff;
+  padding: 10px;
+  text-align: left;
+  border-bottom: 2px solid #fff;
+}
+
+#tablaCortes td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #333;
+}
+
+#tablaCortes tr:hover {
+  background-color: #222;
+  cursor: default;
+}
+
+/*recetas*/
+.section-header {
+  color: #cc0000;
+  font-weight: bold;
+  text-shadow: 1px 1px #000;
+  margin-bottom: 20px;
+}
+
+.product-view {
+  background-color: #1a1a1a;
+  border: 1px solid #cc0000;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 15px;
+  color: #fff;
+}
+
+.product-name {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.product-image {
+  display: block;
+  max-width: 200px;
+  border: 2px solid #cc0000;
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+.custom-btn {
+  background-color: #cc0000;
+  color: #fff;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.custom-btn:hover {
+  background-color: #ff1a1a;
+}
+
+/*ingredientes */
+.section-subheader {
+  color: #fff;
+  background-color: #cc0000;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 1.3em;
+  margin-bottom: 20px;
+  text-align: center;
+  text-shadow: 1px 1px #000;
+}
+
+.table {
+  background-color: #fff;
+  color: #000;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.table th,
+.table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.table th {
+  background-color: #cc0000;
+  color: white;
+  text-align: center;
+}
+
+.btn.custom-btn {
+  background-color: #cc0000;
+  color: #fff;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  margin-right: 5px;
+  cursor: pointer;
+}
+
+.btn.custom-btn:hover {
+  background-color: #e60000;
+}
+/*platillos*/
+.section-header {
+  background-color: #1a1a1a;
+  color: #fff;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 1.8em;
+  text-shadow: 1px 1px #cc0000;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+  color: #000;
+}
+
+.table th {
+  background-color: #cc0000;
+  color: #fff;
+  text-align: center;
+  padding: 10px;
+}
+
+.table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+.btn.custom-btn {
+  background-color: #cc0000;
+  color: #fff;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn.custom-btn:hover {
+  background-color: #a80000;
+}
+/*platillos*/
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.9em;
+}
+
+.bg-success {
+  background-color: #28a745;
+}
+
+.bg-danger {
+  background-color: #dc3545;
+}
+
+.form-control {
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+ .modal-style {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content-style {
+  background: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+#modalAlerta h3 {
+  margin-bottom: 10px;
+  font-size: 20px;
+  color: #dc3545;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  width: 500px;
+}
+.modal-buttons {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+}

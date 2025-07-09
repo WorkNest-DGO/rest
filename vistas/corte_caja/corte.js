@@ -9,12 +9,12 @@ async function verificarCorte() {
         cont.innerHTML = '';
         if (data.success && data.abierto) {
             corteActual = data.corte_id;
-            cont.innerHTML = `<p>Inicio: ${data.fecha_inicio}</p><button id="btnCerrar">Cerrar Corte</button> <button id="btnImprimir">Imprimir</button>`;
+            cont.innerHTML = `<p>Inicio: ${data.fecha_inicio}</p><button class="btn custom-btn" id="btnCerrar">Cerrar Corte</button> <button id="btnImprimir">Imprimir</button>`;
             document.getElementById('btnCerrar').addEventListener('click', cerrarCorte);
             document.getElementById('btnImprimir').addEventListener('click', imprimirResumen);
         } else {
             corteActual = null;
-            cont.innerHTML = '<button id="btnIniciar">Iniciar Corte</button>';
+            cont.innerHTML = '<button class="btn custom-btn" id="btnIniciar">Iniciar Corte</button>';
             document.getElementById('btnIniciar').addEventListener('click', iniciarCorte);
         }
     } catch (err) {
@@ -93,7 +93,7 @@ async function verDetalle(corteId) {
             data.resultado.forEach(v => {
                 html += `<tr><td>${v.id}</td><td>${v.fecha}</td><td>${v.total}</td><td>${v.usuario}</td><td>${v.propina}</td></tr>`;
             });
-            html += '</tbody></table><button id="cerrarDetalle">Cerrar</button>';
+            html += '</tbody></table><button class="btn custom-btn" id="cerrarDetalle">Cerrar</button>';
             modal.innerHTML = html;
             modal.style.display = 'block';
             document.getElementById('cerrarDetalle').addEventListener('click', () => {
@@ -116,7 +116,7 @@ function abrirModalDesglose(corteId, resumen) {
     html += `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>`;
     html += '<p>Total ingresado: $<span id="totalDesglose">0.00</span> | Dif.: $<span id="difDesglose">0.00</span></p>';
     html += '<table id="tablaDesglose" border="1"><thead><tr><th>Denominación</th><th>Cantidad</th><th>Tipo</th><th></th></tr></thead><tbody></tbody></table>';
-    html += '<button id="addFila">Agregar fila</button> <button id="guardarDesglose">Guardar desglose</button> <button id="cancelarDesglose">Cancelar</button>';
+    html += '<button class="btn custom-btn" id="addFila">Agregar fila</button> <button class="btn custom-btn" id="guardarDesglose">Guardar desglose</button> <button id="cancelarDesglose">Cancelar</button>';
     html += '</div>';
     modal.innerHTML = html;
     modal.style.display = 'block';
@@ -128,7 +128,7 @@ function abrirModalDesglose(corteId, resumen) {
         tr.innerHTML = `<td><input type="number" step="0.01" class="denominacion"></td>`+
             `<td><input type="number" min="0" class="cantidad" value="0"></td>`+
             `<td><select class="tipo"><option value="efectivo">efectivo</option><option value="cheque">cheque</option><option value="boucher">boucher</option></select></td>`+
-            `<td><button class="delFila">X</button></td>`;
+            `<td><button class="btn custom-btn" >X</button></td>`;
         tbody.appendChild(tr);
         tr.querySelector('.delFila').addEventListener('click', () => { tr.remove(); calcular(); });
         tr.querySelectorAll('input,select').forEach(el => el.addEventListener('input', calcular));
@@ -222,7 +222,7 @@ async function cargarHistorial() {
                     <td>${c.fecha_inicio}</td>
                     <td>${c.fecha_fin || ''}</td>
                     <td>${c.total !== null ? c.total : ''}</td>
-                    <td><button class="detalle" data-id="${c.id}">Ver detalle</button> <a href="../../api/corte_caja/exportar_corte_csv.php?corte_id=${c.id}">Exportar</a></td>
+                    <td><button class="btn custom-btn" data-id="${c.id}">Ver detalle</button> <a class="btn custom-btn" href="../../api/corte_caja/exportar_corte_csv.php?corte_id=${c.id}">Exportar</a></td>
                 `;
                 tbody.appendChild(tr);
             });

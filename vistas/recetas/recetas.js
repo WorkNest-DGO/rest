@@ -97,7 +97,7 @@ function crearFila(insumoId = '', cantidad = '') {
         <td><select class="insumo"></select></td>
         <td><input type="number" step="0.01" class="cantidad"></td>
         <td class="unidad"></td>
-        <td><button type="button" class="eliminar">Eliminar</button></td>
+        <td><button type="button" class="btn custom-btn">Eliminar</button></td>
     `;
     document.querySelector('#tablaReceta tbody').appendChild(tr);
     const sel = tr.querySelector('.insumo');
@@ -266,8 +266,8 @@ function abrirModalCopiar() {
         html += `<option value="${p.id}">${p.nombre}</option>`;
     });
     html += '</select> ';
-    html += '<button id="btnCopiarAhora">Copiar</button> ';
-    html += '<button id="cerrarCopiar">Cerrar</button>';
+    html += '<button class="btn custom-btn" id="btnCopiarAhora">Copiar</button> ';
+    html += '<button class="btn custom-btn" id="cerrarCopiar">Cerrar</button>';
     modal.innerHTML = html;
     modal.style.display = 'block';
     document.getElementById('btnCopiarAhora').addEventListener('click', () => {

@@ -7,40 +7,78 @@ if (!isset($_SESSION['usuario_id'])) {
 $title = 'Recetas';
 ob_start();
 ?>
-<h1>Recetas de Productos</h1>
-<label for="producto_id">Producto:</label>
-<select id="producto_id"></select>
-<div id="vistaProducto">
-    <p id="nombreProducto"></p>
-    <img id="imgProducto" style="max-width:200px;display:none;">
-    <form id="formImagen" style="display:none;">
-        <input type="file" id="imagenProducto" accept="image/*">
-        <button type="button" id="subirImagen">Subir imagen</button>
-    </form>
+<!-- Page Header Start -->
+<div class="page-header mb-0">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h2>Modulo de Recetas</h2>
+            </div>
+            <div class="col-12">
+                <a href="">Inicio</a>
+                <a href="">Catálogo de Recetas</a>
+            </div>
+        </div>
+    </div>
 </div>
-<h2>Ingredientes</h2>
-<table id="tablaReceta" border="1">
-    <thead>
+<!-- Page Header End -->
+
+<div class="container mt-5 mb-5">
+    <h1 class="section-header">Recetas de Platillos</h1>
+
+    <div class="form-group">
+        <label for="producto_id">Platillo:</label>
+        <select id="producto_id" class="form-control"></select>
+    </div>
+
+    <div id="vistaProducto" class="product-view">
+        <p id="nombreProducto" class="product-name"></p>
+        <img id="imgProducto" class="product-image" alt="Imagen del producto">
+
+        <form id="formImagen" style="display:none;" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="imagenProducto">Subir nueva imagen:</label>
+                <input type="file" id="imagenProducto" accept="image/*" class="form-control-file">
+            </div>
+            <button type="button" id="subirImagen" class="btn custom-btn">Subir imagen</button>
+        </form>
+    </div>
+</div>
+
+<div class="container mt-5 mb-5">
+  <h2 class="section-subheader">Ingredientes</h2>
+  
+  <div class="table-responsive">
+    <table id="tablaReceta" class="table">
+      <thead>
         <tr>
-            <th>Insumo</th>
-            <th>Cantidad</th>
-            <th>Unidad</th>
-            <th>Acción</th>
+          <th>Ingrediente</th>
+          <th>Cantidad</th>
+          <th>Unidad</th>
+          <th>Acción</th>
         </tr>
-    </thead>
-    <tbody>
+      </thead>
+      <tbody>
         <tr>
-            <td><select class="insumo"></select></td>
-            <td><input type="number" step="0.01" class="cantidad"></td>
-            <td class="unidad"></td>
-            <td><button type="button" class="eliminar">Eliminar</button></td>
+          <td><select class="form-control insumo"></select></td>
+          <td><input type="number" step="0.01" class="form-control cantidad"></td>
+          <td class="unidad">—</td>
+          <td><button type="button" class="btn btn-sm btn-danger eliminar">Eliminar</button></td>
         </tr>
-    </tbody>
-</table>
-<button type="button" id="agregarFila">Agregar insumo</button>
-<button type="button" id="guardarReceta">Guardar receta</button>
-<button type="button" id="copiarReceta">Copiar receta de otro producto</button>
-<div id="modal-copiar" style="display:none;"></div>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mb-3">
+    <button type="button" id="agregarFila" class="btn custom-btn">Agregar insumo</button>
+    <button type="button" id="guardarReceta" class="btn custom-btn">Guardar receta</button>
+    <button type="button" id="copiarReceta" class="btn btn-secondary">Copiar receta de otro producto</button>
+  </div>
+
+  <div id="modal-copiar" style="display:none;"></div>
+</div>
+
+
 <?php require_once __DIR__ . '/../footer.php'; ?>
 <script src="recetas.js"></script>
     </body>

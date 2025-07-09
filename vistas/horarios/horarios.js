@@ -26,9 +26,11 @@ async function listarHorarios() {
             tr.innerHTML = `<td>${h.dia_semana}</td><td>${h.hora_inicio}</td><td>${h.hora_fin}</td><td>${h.serie}</td>`;
             const acc = document.createElement('td');
             const e = document.createElement('button');
+            e.className='btn custom-btn';
             e.textContent = 'Editar';
             e.onclick = () => editar(h);
             const d = document.createElement('button');
+            d.className='btn custom-btn';
             d.textContent = 'Eliminar';
             d.onclick = () => eliminar(h.id);
             acc.appendChild(e);

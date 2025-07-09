@@ -1,4 +1,5 @@
         <!-- Footer Start -->
+ <hr style="border-color:#fff;">     
 <div class="footer">
     <div class="container">
         <div class="row">

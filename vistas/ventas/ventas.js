@@ -11,7 +11,7 @@ async function cargarHistorial() {
                 ventasData[id] = v;
                 const row = document.createElement('tr');
                 const accion = v.estatus !== 'cancelada'
-                    ? `<button class="cancelar" data-id="${id}">Cancelar</button>`
+                    ? `<button class="btn custom-btn" data-id="${id}">Cancelar</button>`
                     : '';
                 const destino = v.tipo_entrega === 'mesa' ? v.mesa : v.repartidor;
                 const entregado = v.tipo_entrega === 'domicilio'
@@ -25,7 +25,7 @@ async function cargarHistorial() {
                     <td>${destino || ''}</td>
                     <td>${v.estatus}</td>
                     <td>${entregado}</td>
-                    <td><button class="detalles" data-id="${id}">Ver detalles</button></td>
+                    <td><button class="btn custom-btn" data-id="${id}">Ver detalles</button></td>
                     <td>${accion}</td>
                 `;
                 tbody.appendChild(row);
@@ -82,11 +82,11 @@ fetch('../../api/corte_caja/verificar_corte_abierto.php', {
 
     if (data.success && data.resultado.abierto) {
       corteIdActual = data.resultado.corte_id;
-      cont.innerHTML = `<button id="btnCerrarCaja">Cerrar caja</button>`;
+      cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCaja">Cerrar caja</button>`;
       document.getElementById('btnCerrarCaja').addEventListener('click', cerrarCaja);
       habilitarCobro();
     } else {
-      cont.innerHTML = `<button id="btnAbrirCaja">Abrir caja</button>`;
+      cont.innerHTML = `<button class="btn custom-btn" id="btnAbrirCaja">Abrir caja</button>`;
       document.getElementById('btnAbrirCaja').addEventListener('click', abrirCaja);
       deshabilitarCobro();
     }
@@ -165,7 +165,7 @@ function mostrarModalDesglose(totalEsperado) {
 
     html += '<p>Total ingresado: $<span id="totalIngresado">0.00</span> | Dif.: $<span id="difIngresado">0.00</span></p>';
     html += '<table id="tablaDesglose" border="1"><thead><tr><th>Denominación</th><th>Cantidad</th><th>Tipo</th><th></th></tr></thead><tbody></tbody></table>';
-    html += '<button id="addFila">Agregar fila</button> <button id="guardarDesglose">Guardar desglose</button> <button id="cancelarDesglose">Cancelar</button>';
+    html += '<button class="btn custom-btn" id="addFila">Agregar fila</button> <button id="guardarDesglose">Guardar desglose</button> <button id="cancelarDesglose">Cancelar</button>';
     html += '</div>';
     modal.innerHTML = html;
     modal.style.display = 'block';
@@ -177,7 +177,7 @@ function mostrarModalDesglose(totalEsperado) {
         tr.innerHTML = `<td><input type="number" step="0.01" class="denominacion"></td>`+
             `<td><input type="number" min="0" class="cantidad" value="0"></td>`+
             `<td><select class="tipo"><option value="efectivo">efectivo</option><option value="cheque">cheque</option><option value="boucher">boucher</option></select></td>`+
-            `<td><button class="delFila">X</button></td>`;
+            `<td><button class="btn custom-btn">X</button></td>`;
         tbody.appendChild(tr);
         tr.querySelector('.delFila').addEventListener('click', () => { tr.remove(); calcular(); });
         tr.querySelectorAll('input,select').forEach(el => el.addEventListener('input', calcular));
@@ -604,7 +604,7 @@ async function verDetalles(id) {
             html += `<table border="1"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th></tr></thead><tbody>`;
             info.productos.forEach(p => {
                 const btn = p.estado_producto !== 'entregado'
-                    ? `<button class="delDetalle" data-id="${p.id}">Eliminar</button>`
+                    ? `<button class="btn custom-btn" data-id="${p.id}">Eliminar</button>`
                     : '';
                 const est = (p.estado_producto || '').replace('_', ' ');
                 html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${est}</td>` +
@@ -617,8 +617,8 @@ async function verDetalles(id) {
             html += `<h4>Agregar producto</h4>`;
             html += `<select id="detalle_producto"></select>`;
             html += `<input type="number" id="detalle_cantidad" value="1" min="1">`;
-            html += `<button id="addDetalle">Agregar</button>`;
-            html += ` <button id="imprimirTicket">Imprimir ticket</button> <button id="cerrarDetalle">Cerrar</button>`;
+            html += `<button class="btn custom-btn" id="addDetalle">Agregar</button>`;
+            html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button id="cerrarDetalle">Cerrar</button>`;
 
             contenedor.innerHTML = html;
             contenedor.style.display = 'block';
@@ -743,7 +743,7 @@ function cargarSolicitudes() {
             ticketRequests = d.resultado.filter(m => m.ticket_enviado);
             ticketRequests.forEach(req => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>⚠️ ${req.nombre}</td><td><button class="printReq" data-mesa="${req.id}" data-venta="${req.venta_id}">Imprimir</button></td>`;
+                tr.innerHTML = `<td>⚠️ ${req.nombre}</td><td><button class="btn custom-btn" data-mesa="${req.id}" data-venta="${req.venta_id}">Imprimir</button></td>`;
                 tbody.appendChild(tr);
             });
             tbody.querySelectorAll('button.printReq').forEach(btn => {
@@ -799,6 +799,34 @@ document.addEventListener("change", function (e) {
         validarInventario();
     }
 });
+function verificarActivacionProductos() {
+  const mesa = document.getElementById('mesa_id').value;
+  const repartidor = document.getElementById('repartidor_id').value;
+  const tipoEntrega = document.getElementById('tipo_entrega').value;
+  const seccionProductos = document.getElementById('seccionProductos');
+
+  // Mostrar si hay alguno seleccionado según tipo de entrega
+  if (
+    (tipoEntrega === 'mesa' && mesa) ||
+    (tipoEntrega === 'domicilio' && repartidor)
+  ) {
+    seccionProductos.style.display = 'block';
+  } else {
+    seccionProductos.style.display = 'none';
+  }
+}
+
+// Detecta cambio de tipo de entrega para mostrar campo correspondiente
+document.getElementById('tipo_entrega').addEventListener('change', function () {
+  const tipo = this.value;
+  document.getElementById('campoMesa').style.display = tipo === 'mesa' ? 'block' : 'none';
+  document.getElementById('campoRepartidor').style.display = tipo === 'domicilio' ? 'block' : 'none';
+  verificarActivacionProductos();
+});
+
+// Detecta cambios en mesa o repartidor
+document.getElementById('mesa_id').addEventListener('change', verificarActivacionProductos);
+document.getElementById('repartidor_id').addEventListener('change', verificarActivacionProductos);
 
 document.addEventListener('DOMContentLoaded', () => {
     verificarCorte();

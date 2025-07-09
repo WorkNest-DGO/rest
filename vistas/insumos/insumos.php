@@ -19,7 +19,7 @@ ob_start();
                     </div>
                     <div class="col-12">
                         <a href="../../index.php">Inicio</a>
-                        <a href="">Blog</a>
+                        <a href="">Inventario de ingredientes</a>
                     </div>
                 </div>
             </div>

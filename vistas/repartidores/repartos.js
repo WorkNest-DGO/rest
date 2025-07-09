@@ -43,6 +43,7 @@ async function cargarEntregas() {
 
                 if (v.estado_entrega === 'pendiente') {
                     const btn = document.createElement('button');
+                    btn.className='btn custom-btn';
                     btn.textContent = 'En camino';
                     btn.addEventListener('click', () => marcarEnCamino(v.id));
                     const accionTd = document.createElement('td');
@@ -51,6 +52,7 @@ async function cargarEntregas() {
                     pendientesBody.appendChild(row);
                 } else if (v.estado_entrega === 'en_camino') {
                     const btn = document.createElement('button');
+                    btn.className='btn custom-btn';
                     btn.textContent = 'Marcar entregado';
                     btn.addEventListener('click', () => marcarEntregada(v.id));
                     const accionTd = document.createElement('td');
@@ -59,6 +61,7 @@ async function cargarEntregas() {
                     pendientesBody.appendChild(row);
                 } else {
                     const btn = document.createElement('button');
+                    btn.className='btn custom-btn';
                     btn.textContent = 'Ver detalle';
                     btn.addEventListener('click', () => mostrarDetalle(v));
                     const detTd = document.createElement('td');
@@ -127,21 +130,40 @@ async function marcarEnCamino(id) {
 
 function mostrarDetalle(info) {
     const contenedor = document.getElementById('modal-detalles');
-    let html = '<h3>Productos entregados</h3><ul>';
+    let html = `
+        <div class="container mt-5 mb-5 custom-modal">
+            <h3 style="color:#b80000;">Productos entregados</h3>
+            <ul style="list-style-type: none; padding: 0;">`;
+    
     info.productos.forEach(p => {
         const sub = p.cantidad * p.precio_unitario;
-        html += `<li>${p.nombre} - ${p.cantidad} x ${p.precio_unitario} = ${sub}</li>`;
+        html += `<li style="padding: 5px 0; border-bottom: 1px solid #ccc; ">
+                    <strong >${p.nombre}</strong> - ${p.cantidad} x $${p.precio_unitario.toFixed(2)} = $${sub.toFixed(2)}
+                 </li>`;
     });
-    html += '</ul>';
+
+    html += `</ul>`;
+
     if (info.foto_entrega) {
-        html += `<p>Evidencia:<br><img src="../../uploads/evidencias/${info.foto_entrega}" width="300"></p>`;
+        html += `<div style="margin-top: 15px;">
+                    <p >Evidencia:</p>
+                    <img src="../../uploads/evidencias/${info.foto_entrega}" alt="Evidencia" style="max-width: 100%; height: auto; border: 1px solid #ccc;">
+                 </div>`;
     }
-    html += `<p>Total: ${info.total}</p><button id="cerrarDetalle">Cerrar</button>`;
+
+    html += `<p style="margin-top: 15px; "><strong >Total:</strong> $${info.total.toFixed(2)}</p>
+             <div style="text-align: right; margin-top: 20px;">
+                 <button class="btn custom-btn" id="cerrarDetalle">Cerrar</button>
+             </div>
+        </div>`;
+
     contenedor.innerHTML = html;
     contenedor.style.display = 'block';
+
     document.getElementById('cerrarDetalle').addEventListener('click', () => {
         contenedor.style.display = 'none';
     });
 }
+
 
 document.addEventListener('DOMContentLoaded', cargarEntregas);
