@@ -53,13 +53,13 @@ ob_start();
     <h2>Agregar Producto</h2>
     <form id="formAgregar">
       <label>Nombre:</label>
-      <input type="text" id="nombreProducto" required>
+      <input type="text" id="nombreProducto" required><br>
       <label>Precio:</label>
-      <input type="number" step="0.01" id="precioProducto" required>
+      <input type="number" step="0.01" id="precioProducto" required><br>
       <label>Descripción:</label>
-      <textarea id="descripcionProducto"></textarea>
+      <textarea id="descripcionProducto"></textarea><br>
       <label>Existencia:</label>
-      <input type="number" id="existenciaProducto" required>
+      <input type="number" id="existenciaProducto" required><br>
       <div class="modal-buttons">
         <button class="btn custom-btn" type="submit">Guardar</button>
         <button class="btn custom-btn" type="button" onclick="cerrarModal()">Cancelar</button>
