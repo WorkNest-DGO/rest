@@ -61,7 +61,7 @@
         <a href="#" class="back-to-top"><i class="fa fa-chevron-up"></i></a>
 
         <!-- JavaScript Libraries -->
-        <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+        <script src="<?php echo $base_url; ?>/utils/js/jquery-3.7.js"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
         <script src="<?php echo $base_url; ?>/utils/lib/easing/easing.min.js"></script>
         <script src="<?php echo $base_url; ?>/utils/lib/owlcarousel/owl.carousel.min.js"></script>

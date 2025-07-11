@@ -80,8 +80,8 @@ ob_start();
             </tbody>
           </table>
           <div class="text-center">
-            <a type="button" class="btn custom-btn" id="agregarProducto">Agregar Producto</a>
-            <a type="button" class="btn custom-btn" id="registrarVenta">Registrar Venta</a>
+            <button type="button" class="btn custom-btn" id="agregarProducto">Agregar Producto</button>
+            <button type="button" class="btn custom-btn" id="registrarVenta">Registrar Venta</button>
           </div>
         </div>
       </form>
