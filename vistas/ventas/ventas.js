@@ -11,7 +11,7 @@ async function cargarHistorial() {
                 ventasData[id] = v;
                 const row = document.createElement('tr');
                 const accion = v.estatus !== 'cancelada'
-                    ? `<button class="btn custom-btn" data-id="${id}">Cancelar</button>`
+                    ? `<button class="btn custom-btn btn-cancelar" data-id="${id}">Cancelar</button>`
                     : '';
                 const destino = v.tipo_entrega === 'mesa' ? v.mesa : v.repartidor;
                 const entregado = v.tipo_entrega === 'domicilio'
@@ -25,16 +25,10 @@ async function cargarHistorial() {
                     <td>${destino || ''}</td>
                     <td>${v.estatus}</td>
                     <td>${entregado}</td>
-                    <td><button class="btn custom-btn" data-id="${id}">Ver detalles</button></td>
+                    <td><button class="btn custom-btn btn-detalle" data-id="${id}">Ver detalles</button></td>
                     <td>${accion}</td>
                 `;
                 tbody.appendChild(row);
-            });
-            tbody.querySelectorAll('button.cancelar').forEach(btn => {
-                btn.addEventListener('click', () => cancelarVenta(btn.dataset.id));
-            });
-            tbody.querySelectorAll('button.detalles').forEach(btn => {
-                btn.addEventListener('click', () => verDetalles(btn.dataset.id));
             });
         } else {
             alert(data.mensaje);
@@ -597,7 +591,7 @@ async function verDetalles(id) {
         const data = await resp.json();
         if (data.success) {
             const info = data.resultado || data;
-            const contenedor = document.getElementById('modal-detalles');
+            const contenedor = document.getElementById('detalleContenido');
             const destino = info.tipo_entrega === 'mesa' ? info.mesa : info.repartidor;
             let html = `<h3>Detalle de venta</h3>
                         <p>Tipo: ${info.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${info.mesero}</p>`;
@@ -621,7 +615,7 @@ async function verDetalles(id) {
             html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button id="cerrarDetalle">Cerrar</button>`;
 
             contenedor.innerHTML = html;
-            contenedor.style.display = 'block';
+            document.getElementById('modalDetalle').style.display = 'block';
 
             const selectProd = document.getElementById('detalle_producto');
             selectProd.innerHTML = '<option value="">--Selecciona--</option>';
@@ -648,7 +642,7 @@ async function verDetalles(id) {
             });
             document.getElementById('addDetalle').addEventListener('click', () => agregarDetalle(id));
             document.getElementById('cerrarDetalle').addEventListener('click', () => {
-                contenedor.style.display = 'none';
+                document.getElementById('modalDetalle').style.display = 'none';
             });
             document.getElementById('imprimirTicket').addEventListener('click', () => {
                 const venta = ventasData[id] || {};
@@ -841,5 +835,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const tipo = document.getElementById('tipo_entrega').value;
         document.getElementById('campoMesa').style.display = tipo === 'mesa' ? 'block' : 'none';
         document.getElementById('campoRepartidor').style.display = tipo === 'domicilio' ? 'block' : 'none';
+    });
+
+    // Delegación de eventos con jQuery para botones dinámicos
+    $(document).on('click', '.btn-detalle', function () {
+        const id = $(this).data('id');
+        verDetalles(id);
+    });
+
+    $(document).on('click', '.btn-cancelar', function () {
+        const id = $(this).data('id');
+        if (!confirm('¿Seguro de cancelar la venta?')) return;
+        $.ajax({
+            url: '../../api/ventas/cancelar_venta.php',
+            method: 'POST',
+            contentType: 'application/json',
+            dataType: 'json',
+            data: JSON.stringify({ venta_id: parseInt(id) })
+        }).done(function (resp) {
+            alert(resp.mensaje || (resp.success ? 'Venta cancelada' : 'Error'));
+            location.reload();
+        }).fail(function () {
+            alert('Error al cancelar la venta');
+        });
     });
 });

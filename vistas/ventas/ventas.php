@@ -133,7 +133,9 @@ ob_start();
 </div>
 
 <!-- Modales -->
-<div id="modal-detalles" class="custom-modal" style="display:none;"></div>
+<div id="modalDetalle" class="custom-modal" style="display:none;">
+  <div id="detalleContenido"></div>
+</div>
 <div id="modalDesglose" class="custom-modal" style="display:none;"></div>
 
 
