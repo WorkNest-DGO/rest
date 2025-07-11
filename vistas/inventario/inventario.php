@@ -77,6 +77,20 @@ ob_start();
   </div>
 </div>
 
+<!-- Modal Bootstrap para confirmación -->
+<div class="modal fade" id="modalConfirmacion" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content custom-modal">
+      <div class="modal-body text-center">
+        <p class="mensaje mb-0">¡Cambiado exitosamente!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn custom-btn" data-dismiss="modal">Aceptar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <script src="inventario.js"></script>
 <?php
