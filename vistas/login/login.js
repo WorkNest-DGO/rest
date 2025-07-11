@@ -1,20 +1,21 @@
-const formLogin = document.getElementById("sign-in");
+document.addEventListener('DOMContentLoaded', function () {
+  const formLogin = document.getElementById("sign-in");
 
-const slideBoard = document.querySelector(".sliding-board");
-const singUp = document.querySelector(".singUp");
-const singIn = document.querySelector(".singIn");
+  const slideBoard = document.querySelector(".sliding-board");
+  const singUp = document.querySelector(".singUp");
+  const singIn = document.querySelector(".singIn");
 
-const slidingState = document.querySelector(".main");
+  const slidingState = document.querySelector(".main");
 
-singIn.addEventListener("click", function () {
-  slideBoard.classList.add("sliding");
-  slidingState.classList.replace("sing-up", "sing-in");
-});
+  singIn.addEventListener("click", function () {
+    slideBoard.classList.add("sliding");
+    slidingState.classList.replace("sing-up", "sing-in");
+  });
 
-singUp.addEventListener("click", function () {
-  slideBoard.classList.remove("sliding");
-  slidingState.classList.replace("sing-in", "sing-up");
-});
+  singUp.addEventListener("click", function () {
+    slideBoard.classList.remove("sliding");
+    slidingState.classList.replace("sing-in", "sing-up");
+  });
 
   formLogin?.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -43,3 +44,4 @@ singUp.addEventListener("click", function () {
       });
   });
 
+});
