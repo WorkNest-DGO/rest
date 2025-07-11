@@ -48,11 +48,13 @@ async function actualizarExistencia(id, valor) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ producto_id: parseInt(id), nueva_existencia: parseInt(valor) })
         });
+        if (!resp.ok) throw new Error('Respuesta no válida');
         const data = await resp.json();
-        if (!data.success) {
-            mostrarModal('Error', data.mensaje || 'No se pudo actualizar');
+        if (data && data.success) {
+            mostrarConfirmacion('¡Cambiado exitosamente!');
+            cargarProductos();
         } else {
-            mostrarModal('Éxito', 'Existencia actualizada correctamente');
+            mostrarModal('Error', (data && data.mensaje) || 'No se pudo actualizar');
         }
     } catch (err) {
         console.error(err);
@@ -109,6 +111,12 @@ function mostrarModal(titulo, mensaje) {
     document.getElementById('cerrarModal').onclick = () => {
         modal.style.display = 'none';
     };
+}
+
+function mostrarConfirmacion(mensaje) {
+    const $modal = $('#modalConfirmacion');
+    $modal.find('.mensaje').text(mensaje);
+    $modal.modal('show');
 }
 
 
