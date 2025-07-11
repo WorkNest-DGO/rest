@@ -91,21 +91,53 @@ function mostrarUnidad(select) {
     validarDuplicados();
 }
 
-function crearFila(insumoId = '', cantidad = '') {
+function crearFila(detalle) {
+    if (detalle === undefined && arguments.length > 0) {
+        console.error('crearFila: objeto de receta indefinido');
+        return;
+    }
+
+    const insumoId = detalle && detalle.insumo_id ? detalle.insumo_id : '';
+    const cantidad = detalle && detalle.cantidad ? detalle.cantidad : '';
+
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-        <td><select class="insumo"></select></td>
-        <td><input type="number" step="0.01" class="cantidad"></td>
-        <td class="unidad"></td>
-        <td><button type="button" class="btn custom-btn">Eliminar</button></td>
-    `;
+
+    const tdInsumo = document.createElement('td');
+    const sel = document.createElement('select');
+    sel.className = 'insumo';
+    tdInsumo.appendChild(sel);
+
+    const tdCantidad = document.createElement('td');
+    const inputCant = document.createElement('input');
+    inputCant.type = 'number';
+    inputCant.step = '0.01';
+    inputCant.className = 'cantidad';
+    tdCantidad.appendChild(inputCant);
+
+    const tdUnidad = document.createElement('td');
+    tdUnidad.className = 'unidad';
+
+    const tdAccion = document.createElement('td');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn custom-btn btnEliminar';
+    btn.textContent = 'Eliminar';
+    tdAccion.appendChild(btn);
+
+    tr.appendChild(tdInsumo);
+    tr.appendChild(tdCantidad);
+    tr.appendChild(tdUnidad);
+    tr.appendChild(tdAccion);
+
     document.querySelector('#tablaReceta tbody').appendChild(tr);
-    const sel = tr.querySelector('.insumo');
+
     llenarSelectInsumos(sel);
-    tr.querySelector('.eliminar').addEventListener('click', () => tr.remove());
+
+    btn.addEventListener('click', () => tr.remove());
+
     if (insumoId) {
         sel.value = insumoId;
-        tr.querySelector('.cantidad').value = cantidad;
+        inputCant.value = cantidad;
         mostrarUnidad(sel);
     }
 }
@@ -152,7 +184,7 @@ async function cargarReceta(id) {
             if (data.resultado.length === 0) {
                 crearFila();
             } else {
-                data.resultado.forEach(r => crearFila(r.insumo_id, r.cantidad));
+                data.resultado.forEach(r => crearFila(r));
             }
         } else {
             alert(data.mensaje);
@@ -216,7 +248,7 @@ async function copiarReceta(origenId) {
             if (data.resultado.length === 0) {
                 crearFila();
             } else {
-                data.resultado.forEach(r => crearFila(r.insumo_id, r.cantidad));
+                data.resultado.forEach(r => crearFila(r));
             }
             alert('Receta copiada, guarda para aplicar los cambios');
         } else {
