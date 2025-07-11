@@ -62,7 +62,7 @@
 
         <!-- JavaScript Libraries -->
         <script src="<?php echo $base_url; ?>/utils/js/jquery-3.7.js"></script>
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+        <script src="<?php echo $base_url; ?>/utils/js/bootstrap.min.js"></script>
         <script src="<?php echo $base_url; ?>/utils/lib/easing/easing.min.js"></script>
         <script src="<?php echo $base_url; ?>/utils/lib/owlcarousel/owl.carousel.min.js"></script>
         <script src="<?php echo $base_url; ?>/utils/lib/tempusdominus/js/moment.min.js"></script>

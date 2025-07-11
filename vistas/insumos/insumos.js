@@ -145,7 +145,7 @@ function mostrarCatalogo(pagina = paginaActual) {
             col.innerHTML = `
                 <div class="blog-item">
                     <div class="blog-img">
-                    <img src="/uploads/${i.imagen}" >
+                    <img src="../../uploads/${i.imagen}" >
                     </div>
                     <div class="blog-content">
                         <h2 style="color: black;" class="blog-title">${i.nombre}</h2>
