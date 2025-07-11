@@ -89,9 +89,10 @@ async function verDetalle(corteId) {
         if (data.success) {
             const modal = document.getElementById('resumenModal');
             let html = `<h3>Ventas del corte ${corteId}</h3>`;
-            html += '<table border="1"><thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Usuario</th><th>Propina</th></tr></thead><tbody>';
+            html += '<table class="table"><thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Usuario</th><th>Propina</th><th></th></tr></thead><tbody>';
             data.resultado.forEach(v => {
-                html += `<tr><td>${v.id}</td><td>${v.fecha}</td><td>${v.total}</td><td>${v.usuario}</td><td>${v.propina}</td></tr>`;
+                html += `<tr><td>${v.id}</td><td>${v.fecha}</td><td>${v.total}</td><td>${v.usuario}</td><td>${v.propina}</td>` +
+                        `<td><button class="btn btn-primary verDetalle" data-id="${v.id}">Ver</button></td></tr>`;
             });
             html += '</tbody></table><button class="btn custom-btn" id="cerrarDetalle">Cerrar</button>';
             modal.innerHTML = html;
@@ -222,12 +223,9 @@ async function cargarHistorial() {
                     <td>${c.fecha_inicio}</td>
                     <td>${c.fecha_fin || ''}</td>
                     <td>${c.total !== null ? c.total : ''}</td>
-                    <td><button class="btn custom-btn" data-id="${c.id}">Ver detalle</button> <a class="btn custom-btn" href="../../api/corte_caja/exportar_corte_csv.php?corte_id=${c.id}">Exportar</a></td>
+                    <td><button class="btn custom-btn verDetalle" data-id="${c.id}">Ver detalle</button> <a class="btn custom-btn" href="../../api/corte_caja/exportar_corte_csv.php?corte_id=${c.id}">Exportar</a></td>
                 `;
                 tbody.appendChild(tr);
-            });
-            tbody.querySelectorAll('.detalle').forEach(btn => {
-                btn.addEventListener('click', () => verDetalle(btn.dataset.id));
             });
         } else {
             alert(data.mensaje);
@@ -241,4 +239,45 @@ async function cargarHistorial() {
 document.addEventListener('DOMContentLoaded', () => {
     verificarCorte();
     cargarHistorial();
+
+    // Delegación de eventos para botones generados dinámicamente
+    $(document).on('click', '.verDetalle', function () {
+        const ventaId = $(this).data('id');
+        if (!ventaId) {
+            console.error('ID de venta no especificado');
+            return;
+        }
+
+        $.ajax({
+            url: '../../api/ventas/detalle_venta.php',
+            method: 'POST',
+            contentType: 'application/json',
+            dataType: 'json',
+            data: JSON.stringify({ venta_id: parseInt(ventaId) })
+        }).done(function (resp) {
+            if (resp.success) {
+                const info = resp.resultado || resp;
+                const destino = info.tipo_entrega === 'mesa' ? info.mesa : info.repartidor;
+                let html = `<h5>Detalle de venta</h5>`;
+                html += `<p>Tipo: ${info.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${info.mesero}</p>`;
+                html += '<table class="table table-sm"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th></tr></thead><tbody>';
+                if (Array.isArray(info.productos)) {
+                    info.productos.forEach(p => {
+                        const est = (p.estado_producto || '').replace('_', ' ');
+                        html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${est}</td></tr>`;
+                    });
+                }
+                html += '</tbody></table>';
+                if (info.foto_entrega) {
+                    html += `<p><img src="../../uploads/evidencias/${info.foto_entrega}" class="img-fluid" alt="evidencia"></p>`;
+                }
+                $('#modalDetalleContenido').html(html);
+                $('#modalDetalle').modal('show');
+            } else {
+                alert(resp.mensaje || 'Error al obtener detalle');
+            }
+        }).fail(function () {
+            alert('Error al obtener detalle');
+        });
+    });
 });
