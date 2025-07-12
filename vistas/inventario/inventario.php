@@ -31,7 +31,7 @@ ob_start();
   </div>
 
   <div class="table-responsive">
-    <table id="tablaProductos" class="table">
+    <table id="tablaProductos" class="styled-table">
       <thead>
         <tr>
           <th>ID</th>

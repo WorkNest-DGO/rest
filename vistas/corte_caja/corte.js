@@ -281,3 +281,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+$(document).on('click', '.verDetalle', function () {
+    const idVenta = $(this).data('id');
+    $.post('detalle_venta.php', { id: idVenta }, function (respuesta) {
+        $('#modalDetalleContenido').html(respuesta);
+        $('#modalDetalle').modal('show');
+    });
+});

@@ -84,7 +84,7 @@ ob_start();
         </div>
 
         <div class="table-responsive">
-            <table id="tablaProductos" class="table table-bordered table-dark text-white">
+            <table id="tablaProductos" class="styled-table">
                 <thead>
                     <tr>
                         <th>Producto</th>
@@ -121,7 +121,7 @@ ob_start();
  <div class="container mt-5">
   <h2 class="text-white">Insumos con bajo stock</h2>
   <div class="table-responsive">
-    <table id="bajoStock" class="table">
+    <table id="bajoStock" class="styled-table">
       <thead>
         <tr>
           <th>ID</th>
@@ -139,7 +139,7 @@ ob_start();
 <div class="container mt-5">
   <h2 class="text-white">Historial de Entradas por Proveedor</h2>
   <div class="table-responsive">
-    <table id="historial" class="table">
+    <table id="historial" class="styled-table">
       <thead>
         <tr>
           <th>Proveedor</th>

@@ -118,7 +118,7 @@ ob_start();
 <div class="container mt-5">
   <h2 class="section-header">Solicitudes de Ticket</h2>
   <div class="table-responsive">
-    <table id="solicitudes" class="table">
+    <table id="solicitudes" class="styled-table">
       <thead>
         <tr>
           <th style="color:#fff">Mesa</th>
@@ -133,9 +133,7 @@ ob_start();
 </div>
 
 <!-- Modales -->
-<div id="modalDetalle" class="custom-modal" style="display:none;">
-  <div id="detalleContenido"></div>
-</div>
+<div id="modal-detalles" class="custom-modal" style="display:none;"></div>
 <div id="modalDesglose" class="custom-modal" style="display:none;"></div>
 
 
