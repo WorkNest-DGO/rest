@@ -91,7 +91,7 @@ ob_start();
   </div>
 </div>
 
-
+<?php require_once __DIR__ . '/../footer.php'; ?>
 <script src="inventario.js"></script>
 <?php
 $content = ob_get_clean();

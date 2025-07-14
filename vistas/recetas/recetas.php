@@ -49,7 +49,7 @@ ob_start();
   <h2 class="section-subheader">Ingredientes</h2>
   
   <div class="table-responsive">
-    <table id="tablaReceta" class="table">
+    <table id="tablaReceta" class="styled-table">
       <thead>
         <tr>
           <th>Ingrediente</th>
@@ -68,7 +68,7 @@ ob_start();
       </tbody>
     </table>
   </div>
-
+<br><br>
   <div class="mb-3">
     <button type="button" id="agregarFila" class="btn custom-btn">Agregar insumo</button>
     <button type="button" id="guardarReceta" class="btn custom-btn">Guardar receta</button>
