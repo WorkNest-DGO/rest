@@ -19,6 +19,7 @@ async function cargarProductos() {
                     <td>${p.activo == 1 ? '<span class="badge bg-success">Sí</span>' : '<span class="badge bg-danger">No</span>'}</td>
                     <td>
                         <button class="actualizar btn custom-btn btn-sm" data-id="${p.id}">Editar existencia</button>
+                        <button class="eliminar btn custom-btn btn-sm ms-2" data-id="${p.id}">Eliminar</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -30,6 +31,9 @@ async function cargarProductos() {
                     const input = btn.closest('tr').querySelector('.existencia');
                     actualizarExistencia(btn.dataset.id, input.value);
                 });
+            });
+            tbody.querySelectorAll('button.eliminar').forEach(btn => {
+                btn.addEventListener('click', () => eliminarProducto(btn.dataset.id));
             });
         } else {
             alert(data.mensaje);
@@ -62,9 +66,33 @@ async function actualizarExistencia(id, valor) {
     }
 }
 
+async function eliminarProducto(id) {
+    if (!confirm('¿Eliminar producto?')) return;
+    try {
+        const resp = await fetch('../../api/inventario/eliminar_producto.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: parseInt(id) })
+        });
+        const data = await resp.json();
+        if (data && data.success) {
+            mostrarConfirmacion('Producto eliminado');
+            cargarProductos();
+        } else {
+            mostrarModal('Error', (data && data.mensaje) || 'No se pudo eliminar');
+        }
+    } catch (err) {
+        console.error(err);
+        mostrarModal('Error', 'Error al conectar con el servidor');
+    }
+}
+
 
 function abrirModalAgregar() {
     document.getElementById('modalAgregar').style.display = 'flex';
+}
+function agregarProducto() {
+    abrirModalAgregar();
 }
 function cerrarModal() {
     document.getElementById('modalAgregar').style.display = 'none';
