@@ -35,11 +35,14 @@ ob_start();
                 <div class="section-header text-center">
                     <p>Insumos</p>
                     <h2>Recuerda validar los datos antes de guardar altas</h2>
-                     <a class="btn custom-btn type="button" id="btnNuevoInsumo">Nuevo insumo</a>
+                    <div class="d-flex justify-content-center mb-3">
+                        <a class="btn custom-btn me-2" type="button" id="btnNuevoInsumo">Nuevo insumo</a>
+                        <input type="text" id="buscarInsumo" class="form-control" placeholder="Buscar" style="max-width:200px;">
+                    </div>
                 </div>
                 <div class="row" id="catalogoInsumos"></div>
                 
-                <form id="formInsumo" style="display:none;margin-top:20px;">
+                <form id="formInsumo" class="custom-modal" style="display:none;">
                     <input type="hidden" id="insumoId">
                     <div>
                         <label>Nombre:</label>

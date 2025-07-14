@@ -1,4 +1,5 @@
 let catalogo = [];
+let filtrado = [];
 const usuarioId = 1; // En entorno real se obtendría de la sesión
 const itemsPorPagina = 12;
 let paginaActual = 1;
@@ -31,6 +32,7 @@ async function cargarInsumos() {
         const data = await resp.json();
         if (data.success) {
             catalogo = data.resultado;
+            filtrado = catalogo;
             actualizarSelectsProducto();
             mostrarCatalogo(1);
         } else {
@@ -54,6 +56,12 @@ function actualizarSelectsProducto() {
         });
         sel.addEventListener('change', () => mostrarTipoEnFila(sel));
     });
+}
+
+function filtrarCatalogo() {
+    const termino = document.getElementById('buscarInsumo').value.toLowerCase();
+    filtrado = catalogo.filter(i => i.nombre.toLowerCase().includes(termino));
+    mostrarCatalogo(1);
 }
 
 function mostrarTipoEnFila(select) {
@@ -138,7 +146,7 @@ function mostrarCatalogo(pagina = paginaActual) {
     const inicio = (pagina - 1) * itemsPorPagina;
     const fin = inicio + itemsPorPagina;
 
-    catalogo.slice(inicio, fin).forEach(i => {
+    filtrado.slice(inicio, fin).forEach(i => {
         if (cont) {
             const col = document.createElement('div');
             col.className = 'col-md-3';
@@ -180,7 +188,7 @@ function renderPaginador() {
     if (!pag) return;
     pag.innerHTML = '';
 
-    const totalPaginas = Math.ceil(catalogo.length / itemsPorPagina) || 1;
+    const totalPaginas = Math.ceil(filtrado.length / itemsPorPagina) || 1;
 
     const prevLi = document.createElement('li');
     prevLi.className = 'page-item' + (paginaActual === 1 ? ' disabled' : '');
@@ -439,6 +447,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (form) {
         form.addEventListener('submit', guardarInsumo);
         document.getElementById('cancelarInsumo').addEventListener('click', cerrarFormulario);
+    }
+    const buscador = document.getElementById('buscarInsumo');
+    if (buscador) {
+        buscador.addEventListener('input', filtrarCatalogo);
     }
     document.querySelectorAll('.cantidad').forEach(i => i.addEventListener('input', calcularTotal));
     document.querySelectorAll('.precio').forEach(i => i.addEventListener('input', calcularTotal));
