@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
+require_once __DIR__ . '/../../utils/imagen.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error('Método no permitido');
@@ -34,13 +35,9 @@ $sel->close();
 $aliasImagen = $actual;
 if (!empty($_FILES['imagen']['name'])) {
     $dir = __DIR__ . '/../../uploads/';
-    if (!is_dir($dir)) {
-        mkdir($dir, 0777, true);
-    }
-    $ext = pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION);
-    $aliasImagen = uniqid('ins_') . ($ext ? ".{$ext}" : '');
-    if (!move_uploaded_file($_FILES['imagen']['tmp_name'], $dir . $aliasImagen)) {
-        error('Error al subir imagen');
+    $aliasImagen = procesarImagenInsumo($_FILES['imagen'], $dir);
+    if (!$aliasImagen) {
+        error('Error al procesar imagen');
     }
     if ($actual && file_exists($dir . $actual)) {
         @unlink($dir . $actual);
