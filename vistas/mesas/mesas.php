@@ -7,21 +7,6 @@ if (!isset($_SESSION['usuario_id'])) {
 $title = 'Mesas';
 ob_start();
 ?>
-<!-- Page Header Start -->
-<div class="page-header mb-0">
-    <div class="container">
-        <div class="row">
-            <div class="col-12">
-                <h2>Modulo de Meseros</h2>
-            </div>
-            <div class="col-12">
-                <a href="">Inicio</a>
-                <a href="">Catálogo de Mesas</a>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Page Header End -->
 <h1>Mesas</h1>
 <div>
     <button id="btn-unir">Unir mesas</button>
