@@ -1,5 +1,6 @@
 let catalogoInsumos = [];
 let catalogoProductos = [];
+const imagenDefault = '../../utils/img/default.jpg';
 
 function mostrarImagenProducto(id) {
     const img = document.getElementById('imgProducto');
@@ -17,11 +18,10 @@ function mostrarImagenProducto(id) {
     nom.textContent = prod.nombre;
     if (prod.imagen) {
         img.src = `../../uploads/productos/${prod.imagen}`;
-        img.style.display = 'block';
     } else {
-        img.style.display = 'none';
-        img.src = '';
+        img.src = imagenDefault;
     }
+    img.style.display = 'block';
     frm.style.display = 'block';
 }
 
@@ -271,7 +271,7 @@ async function subirImagenProducto() {
     fd.append('producto_id', producto_id);
     fd.append('imagen', file);
     try {
-        const resp = await fetch('../../api/inventario/actualizar_imagen.php', {
+        const resp = await fetch('../../api/inventario/subir_imagen_producto.php', {
             method: 'POST',
             body: fd
         });
@@ -279,7 +279,7 @@ async function subirImagenProducto() {
         if (data.success) {
             alert('Imagen actualizada');
             const prod = catalogoProductos.find(p => p.id == producto_id);
-            if (prod) prod.imagen = data.resultado.imagen;
+            if (prod) prod.imagen = data.resultado.ruta.split('/').pop();
             mostrarImagenProducto(producto_id);
         } else {
             alert(data.mensaje);
