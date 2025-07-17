@@ -81,10 +81,11 @@ document.getElementById('btnGenerar').addEventListener('click', async function(e
         const data = await resp.json();
         if(data.success){
             const url = data.resultado.url;
-            const pdf = '../../' + data.resultado.pdf;
+            const pdf = '../../' + data.resultado.ruta_pdf;
+            const img = '../../' + data.resultado.ruta_qr;
             document.getElementById('resultado').innerHTML =
                 '<p class="text-white">Escanea el código para recibir:</p>'+
-                '<img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl='+encodeURIComponent(url)+'" alt="QR">'+
+                '<img src="'+img+'" alt="QR" width="200" height="200">'+
                 '<p class="mt-2"><a class="btn custom-btn" href="'+pdf+'" target="_blank">Ver PDF</a></p>';
         } else {
             alert(data.mensaje || 'Error');

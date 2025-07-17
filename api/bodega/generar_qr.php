@@ -66,12 +66,22 @@ $dirTmp = __DIR__ . '/../../archivos/bodega/qr';
 if (!is_dir($dirTmp)) {
     mkdir($dirTmp, 0777, true);
 }
+$dirQrPublic = __DIR__ . '/../../archivos/qr';
+if (!is_dir($dirQrPublic)) {
+    mkdir($dirQrPublic, 0777, true);
+}
 
 $pdf_rel = 'archivos/bodega/pdfs/qr_' . $token . '.pdf';
 $pdf_path = __DIR__ . '/../../' . $pdf_rel;
 $tmp_qr = $dirTmp . '/temp_' . $token . '.png';
+$public_qr_rel = 'archivos/qr/qr_' . $token . '.png';
+$public_qr_path = __DIR__ . '/../../' . $public_qr_rel;
 
 QRcode::png($token, $tmp_qr);
+if (!file_exists($tmp_qr)) {
+    error('No se pudo generar el código QR');
+}
+copy($tmp_qr, $public_qr_path);
 
 $lineas = [];
 $lineas[] = 'Fecha: ' . date('Y-m-d H:i');
@@ -80,8 +90,10 @@ foreach ($seleccionados as $s) {
     $lineas[] = $s['nombre'] . ' - ' . $s['cantidad'] . ' ' . $s['unidad'];
 }
 
-generar_pdf_con_imagen($pdf_path, 'Salida de insumos', $lineas, $tmp_qr);
-unlink($tmp_qr);
+generar_pdf_con_imagen($pdf_path, 'Salida de insumos', $lineas, $tmp_qr, 150, 10, 40, 40);
+if (file_exists($tmp_qr)) {
+    unlink($tmp_qr);
+}
 
 $up = $conn->prepare('UPDATE qrs_insumo SET pdf_envio = ? WHERE id = ?');
 $up->bind_param('si', $pdf_rel, $idqr);
@@ -107,6 +119,6 @@ if ($log) {
 $base_url = defined('BASE_URL') ? BASE_URL : '/rest';
 $url = $base_url . '/vistas/bodega/recepcion_qr.php?token=' . $token;
 
-success(['pdf' => $pdf_rel, 'url' => $url]);
+success(['ruta_pdf' => $pdf_rel, 'ruta_qr' => $public_qr_rel, 'url' => $url]);
 ?>
 

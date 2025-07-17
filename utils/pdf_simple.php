@@ -37,7 +37,7 @@ function generar_pdf_simple($archivo, $titulo, array $lineas) {
 }
 
 
-function generar_pdf_con_imagen($archivo, $titulo, array $lineas, $imagen) {
+function generar_pdf_con_imagen($archivo, $titulo, array $lineas, $imagen, $x = 150, $y_img = 10, $w = 40, $h = 40) {
     $y = 760;
     $contenido = "BT\n/F1 16 Tf\n50 $y Td\n(" . pdf_simple_escape($titulo) . ") Tj\nET\n";
     $y -= 30;
@@ -47,7 +47,7 @@ function generar_pdf_con_imagen($archivo, $titulo, array $lineas, $imagen) {
         $y -= 14;
     }
     if (file_exists($imagen)) {
-        $contenido .= "q\n150 0 0 150 400 400 cm\n/Im1 Do\nQ\n";
+        $contenido .= "q\n$w 0 0 $h $x $y_img cm\n/Im1 Do\nQ\n";
     }
 
     $objs = [];
@@ -62,13 +62,13 @@ function generar_pdf_con_imagen($archivo, $titulo, array $lineas, $imagen) {
     $objs[] = "<< /Length " . strlen($contenido) . " >>\nstream\n" . $contenido . "endstream";
     $objs[] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
     if (file_exists($imagen)) {
-        list($w, $h) = getimagesize($imagen);
+        list($imgW, $imgH) = getimagesize($imagen);
         $img = imagecreatefrompng($imagen);
         ob_start();
         imagejpeg($img);
         $imgData = ob_get_clean();
         imagedestroy($img);
-        $objs[] = "<< /Type /XObject /Subtype /Image /Width $w /Height $h /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " . strlen($imgData) . " >>\nstream\n" . $imgData . "endstream";
+        $objs[] = "<< /Type /XObject /Subtype /Image /Width $imgW /Height $imgH /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " . strlen($imgData) . " >>\nstream\n" . $imgData . "endstream";
     }
 
     $pdf = "%PDF-1.4\n";
