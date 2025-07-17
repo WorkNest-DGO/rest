@@ -34,6 +34,7 @@ async function cargarEntregas() {
                     <td>${v.total}</td>
                     <td>${v.repartidor}</td>
                     <td>${productos}</td>
+                    <td>${v.observacion || ''}</td>
                     <td>${asign}</td>
                     <td>${inicio}</td>
                     <td>${entrega}</td>
@@ -143,6 +144,9 @@ function mostrarDetalle(info) {
     });
 
     html += `</ul>`;
+    if (info.observacion) {
+        html += `<p style="margin-top:10px;"><strong>Observación:</strong> ${info.observacion}</p>`;
+    }
 
     if (info.foto_entrega) {
         html += `<div style="margin-top: 15px;">

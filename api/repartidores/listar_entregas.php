@@ -17,7 +17,7 @@ if (isset($_GET['repartidor_id'])) {
 
 if ($repartidor_id) {
     $stmt = $conn->prepare(
-        "SELECT v.id, v.fecha, v.total, v.estatus, v.entregado, v.estado_entrega, v.fecha_asignacion, v.fecha_inicio, v.fecha_entrega, v.seudonimo_entrega, v.foto_entrega, r.nombre AS repartidor FROM ventas v JOIN repartidores r ON v.repartidor_id = r.id WHERE v.repartidor_id = ? AND v.estatus IN ('activa','cerrada') ORDER BY v.fecha DESC"
+        "SELECT v.id, v.fecha, v.total, v.estatus, v.entregado, v.estado_entrega, v.fecha_asignacion, v.fecha_inicio, v.fecha_entrega, v.seudonimo_entrega, v.foto_entrega, v.observacion, r.nombre AS repartidor FROM ventas v JOIN repartidores r ON v.repartidor_id = r.id WHERE v.repartidor_id = ? AND v.estatus IN ('activa','cerrada') ORDER BY v.fecha DESC"
     );
     if (!$stmt) {
         error('Error al preparar consulta: ' . $conn->error);
@@ -25,7 +25,7 @@ if ($repartidor_id) {
     $stmt->bind_param('i', $repartidor_id);
 } else {
     $stmt = $conn->prepare(
-        "SELECT v.id, v.fecha, v.total, v.estatus, v.entregado, v.estado_entrega, v.fecha_asignacion, v.fecha_inicio, v.fecha_entrega, v.seudonimo_entrega, v.foto_entrega, r.nombre AS repartidor FROM ventas v JOIN repartidores r ON v.repartidor_id = r.id WHERE v.tipo_entrega = 'domicilio' AND v.estatus IN ('activa','cerrada') ORDER BY v.fecha DESC"
+        "SELECT v.id, v.fecha, v.total, v.estatus, v.entregado, v.estado_entrega, v.fecha_asignacion, v.fecha_inicio, v.fecha_entrega, v.seudonimo_entrega, v.foto_entrega, v.observacion, r.nombre AS repartidor FROM ventas v JOIN repartidores r ON v.repartidor_id = r.id WHERE v.tipo_entrega = 'domicilio' AND v.estatus IN ('activa','cerrada') ORDER BY v.fecha DESC"
     );
     if (!$stmt) {
         error('Error al preparar consulta: ' . $conn->error);
@@ -50,6 +50,7 @@ while ($row = $res->fetch_assoc()) {
         'fecha_entrega'    => $row['fecha_entrega'],
         'seudonimo_entrega'=> $row['seudonimo_entrega'],
         'foto_entrega'     => $row['foto_entrega'],
+        'observacion'      => $row['observacion'] ?? '',
         'repartidor'       => $row['repartidor'] ?? '',
         'productos' => []
     ];

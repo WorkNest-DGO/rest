@@ -38,6 +38,7 @@ ob_start();
                     <th>Total</th>
                     <th>Repartidor</th>
                     <th>Productos</th>
+                    <th>Observación</th>
                     <th>Asignado</th>
                     <th>Inicio</th>
                     <th>Entrega</th>
@@ -66,6 +67,7 @@ ob_start();
                     <th>Total</th>
                     <th>Repartidor</th>
                     <th>Productos</th>
+                    <th>Observación</th>
                     <th>Asignado</th>
                     <th>Inicio</th>
                     <th>Entrega</th>

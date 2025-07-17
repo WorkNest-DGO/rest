@@ -24,6 +24,7 @@ $repartidor_id = isset($input['repartidor_id']) ? (int) $input['repartidor_id'] 
 $usuario_id    = isset($input['usuario_id']) ? (int) $input['usuario_id'] : null;
 $corte_id      = isset($input['corte_id']) ? (int) $input['corte_id'] : null;
 $productos     = isset($input['productos']) && is_array($input['productos']) ? $input['productos'] : null;
+$observacion   = isset($input['observacion']) ? $input['observacion'] : null;
 
 if (!$tipo || !$usuario_id || !$productos) {
     error('Datos incompletos para crear la venta');
@@ -106,17 +107,17 @@ $nueva_venta = false;
 
 if (!isset($venta_id)) {
     if ($tipo === 'domicilio') {
-        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, corte_id, cajero_id, fecha_asignacion) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())');
+        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, observacion, corte_id, cajero_id, fecha_asignacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())');
     } else {
-        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, corte_id, cajero_id) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, observacion, corte_id, cajero_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
     }
     if (!$stmt) {
         error('Error al preparar venta: ' . $conn->error);
     }
     if ($tipo === 'domicilio') {
-        $stmt->bind_param('iiisdii', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $corte_id, $cajero_id);
+        $stmt->bind_param('iiisdsii', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $observacion, $corte_id, $cajero_id);
     } else {
-        $stmt->bind_param('iiisdii', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $corte_id, $cajero_id);
+        $stmt->bind_param('iiisdsii', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $observacion, $corte_id, $cajero_id);
     }
     if (!$stmt->execute()) {
         error('Error al crear venta: ' . $stmt->error);
