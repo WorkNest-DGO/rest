@@ -4,53 +4,39 @@ if (!defined('BASE_URL')) {
 }
 $base_url = BASE_URL;
 
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
+require_once __DIR__ . '/../utils/cargar_permisos.php';
 
-if (!isset($_SESSION['usuario_id'])) {
-    header('Location: ../login.html');
-    exit;
-}
-
-// Conexión a la base de datos
-require_once __DIR__ . '/../config/db.php';
-
-$usuario_id = $_SESSION['usuario_id'];
-
-// Obtener rutas permitidas para el usuario
-$sql = "SELECT r.id, r.nombre, r.path, r.tipo, r.grupo, r.orden
-        FROM usuario_ruta ur
-        INNER JOIN rutas r ON ur.ruta_id = r.id
-        WHERE ur.usuario_id = ?
-        ORDER BY r.orden ASC";
-
-$stmt = $conn->prepare($sql);
-$stmt->bind_param('i', $usuario_id);
-$stmt->execute();
-$result = $stmt->get_result();
-
+$rutas_permitidas = $_SESSION['rutas_permitidas'];
 $rutas = [];
-$_SESSION['rutas_permitidas'] = [];
-
-while ($row = $result->fetch_assoc()) {
-    $rutas[] = $row;
-    $_SESSION['rutas_permitidas'][] = $row['path'];
+if ($rutas_permitidas) {
+    $placeholders = implode(',', array_fill(0, count($rutas_permitidas), '?'));
+    $types = str_repeat('s', count($rutas_permitidas));
+    $sql = "SELECT nombre, path, tipo, grupo, orden FROM rutas WHERE path IN ($placeholders) ORDER BY orden ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param($types, ...$rutas_permitidas);
+    $stmt->execute();
+    $rutas = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
 
-// Agrupar por tipo
-$enlaces = [];
+$links = [];
 $dropdowns = [];
-
 foreach ($rutas as $ruta) {
     if ($ruta['tipo'] === 'link') {
-        $enlaces[] = $ruta;
+        $links[] = $ruta;
     } elseif ($ruta['tipo'] === 'dropdown') {
-        $dropdowns[$ruta['grupo']] = [
-            'label' => $ruta['nombre'],
-            'items' => []
-        ];
+        if (!isset($dropdowns[$ruta['grupo']])) {
+            $dropdowns[$ruta['grupo']] = [
+                'label' => $ruta['nombre'],
+                'items' => []
+            ];
+        }
     } elseif ($ruta['tipo'] === 'dropdown-item') {
+        if (!isset($dropdowns[$ruta['grupo']])) {
+            $dropdowns[$ruta['grupo']] = [
+                'label' => $ruta['grupo'],
+                'items' => []
+            ];
+        }
         $dropdowns[$ruta['grupo']]['items'][] = $ruta;
     }
 }
@@ -84,7 +70,7 @@ foreach ($rutas as $ruta) {
 
         <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
             <div class="navbar-nav ml-auto">
-                <?php foreach ($enlaces as $link): ?>
+                <?php foreach ($links as $link): ?>
                     <a href="<?= $base_url . $link['path'] ?>" class="nav-item nav-link"><?= htmlspecialchars($link['nombre']) ?></a>
                 <?php endforeach; ?>
 
@@ -101,7 +87,6 @@ foreach ($rutas as $ruta) {
                     <?php endif; ?>
                 <?php endforeach; ?>
 
-                <!-- Logout siempre disponible -->
                 <a href="<?= $base_url ?>/vistas/logout.php" class="nav-item nav-link">Cerrar sesión</a>
             </div>
         </div>

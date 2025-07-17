@@ -1,21 +1,9 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Si no está la lista de rutas permitidas, se asume sesión inválida o mal inicializada
-if (!isset($_SESSION['rutas_permitidas']) || !is_array($_SESSION['rutas_permitidas'])) {
-    http_response_code(403);
-    echo 'Acceso no autorizado (sesión o permisos no definidos).';
-    exit;
-}
-
-// Normalizamos ruta actual quitando '/rest' o cualquier base_path
+require_once __DIR__ . '/../utils/cargar_permisos.php';
 $path_actual = str_replace('/rest', '', $_SERVER['PHP_SELF']);
-
 if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
     http_response_code(403);
-    echo 'Acceso no autorizado (ruta no permitida).';
+    echo 'Acceso no autorizado';
     exit;
 }
 ?>

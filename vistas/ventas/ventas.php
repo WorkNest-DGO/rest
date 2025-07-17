@@ -1,18 +1,10 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-if (!isset($_SESSION['rutas_permitidas']) || !in_array($_SERVER['PHP_SELF'], array_map(function ($ruta) {
-    return '/rest' . $ruta;
-}, $_SESSION['rutas_permitidas']))) {
+require_once __DIR__ . '/../../utils/cargar_permisos.php';
+$path_actual = str_replace('/rest', '', $_SERVER['PHP_SELF']);
+if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
     http_response_code(403);
     echo 'Acceso no autorizado';
     exit;
-}
-if (!isset($_SESSION['usuario_id'])) {
-  header('Location: ../../login.html');
-  exit;
 }
 $title = 'Ventas';
 ob_start();
