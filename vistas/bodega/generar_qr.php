@@ -81,8 +81,8 @@ document.getElementById('btnGenerar').addEventListener('click', async function(e
         const data = await resp.json();
         if(data.success){
             const url = data.resultado.url;
-            const pdf = '../../' + data.resultado.ruta_pdf;
-            const img = '../../' + data.resultado.ruta_qr;
+            const pdf = '../../' + data.resultado.pdf_url;
+            const img = '../../' + data.resultado.qr_url;
             document.getElementById('resultado').innerHTML =
                 '<p class="text-white">Escanea el código para recibir:</p>'+
                 '<img src="'+img+'" alt="QR" width="200" height="200">'+
