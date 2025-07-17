@@ -37,6 +37,7 @@ ob_start();
           <select id="tipo_entrega" name="tipo_entrega" class="form-control">
             <option value="mesa">En restaurante</option>
             <option value="domicilio">A domicilio</option>
+            <option value="rapido">Rapido</option>
           </select>
         </div>
 
