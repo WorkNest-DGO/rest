@@ -10,6 +10,40 @@ if (!isset($_SESSION['usuario_id'])) {
     header('Location: ../login.html');
     exit;
 }
+
+require_once __DIR__ . '/../config/db.php';
+
+$usuarioId = $_SESSION['usuario_id'];
+$sql = "SELECT r.id, r.nombre, r.ruta, r.tipo, r.padre_id, r.orden
+        FROM rutas r
+        INNER JOIN usuario_ruta ur ON r.id = ur.ruta_id
+        WHERE ur.usuario_id = ?
+        ORDER BY r.orden";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('i', $usuarioId);
+$stmt->execute();
+$result = $stmt->get_result();
+$rutasPermitidas = [];
+while ($row = $result->fetch_assoc()) {
+    $rutasPermitidas[] = $row;
+}
+$stmt->close();
+
+$dropdownItems = [];
+$menuRoutes = [];
+foreach ($rutasPermitidas as $ruta) {
+    if ($ruta['tipo'] === 'dropdown-item') {
+        $dropdownItems[$ruta['padre_id']][] = $ruta;
+        continue;
+    }
+    $menuRoutes[] = $ruta;
+}
+
+foreach ($dropdownItems as &$items) {
+    usort($items, function ($a, $b) {
+        return $a['orden'] <=> $b['orden'];
+    });
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -46,29 +80,22 @@ if (!isset($_SESSION['usuario_id'])) {
             <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
                 <div class="navbar-nav ml-auto">
                     <a href="<?= $base_url ?>/vistas/index.php" class="nav-item nav-link active">Inicio</a>
-                                        <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Productos</a>
-                        <div class="dropdown-menu">
-                            <a href="<?= $base_url ?>/vistas/insumos/insumos.php" class="dropdown-item">Insumos</a>
-                            <a href="<?= $base_url ?>/vistas/inventario/inventario.php" class="dropdown-item">Inventario</a>
-                            <a href="<?= $base_url ?>/vistas/recetas/recetas.php" class="dropdown-item">Recetas</a>
-                        </div>
-                    </div>
-                    <a href="<?= $base_url ?>/vistas/cocina/cocina.php" class="nav-item nav-link">Cocina</a>
-                    <a href="<?= $base_url ?>/vistas/ventas/ventas.php" class="nav-item nav-link">Ventas</a>
-                    <a href="<?= $base_url ?>/vistas/corte_caja/corte.php" class="nav-item nav-link">Cortes</a>
-                    <a href="<?= $base_url ?>/vistas/repartidores/repartos.php" class="nav-item nav-link">Repartos</a>
-
-                    <a href="<?= $base_url ?>/vistas/mesas/mesas.php" class="nav-item nav-link">Mesas</a>
+<?php foreach ($menuRoutes as $ruta): ?>
+    <?php if ($ruta['tipo'] === 'link'): ?>
+                    <a href="<?= $base_url . '/' . $ruta['ruta'] ?>" class="nav-item nav-link"><?= $ruta['nombre'] ?></a>
+    <?php elseif ($ruta['tipo'] === 'dropdown'): ?>
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Más</a>
+                        <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown"><?= $ruta['nombre'] ?></a>
                         <div class="dropdown-menu">
-                            <a href="<?= $base_url ?>/vistas/horarios/horarios.php" class="dropdown-item">Horarios</a>
-                            <a href="<?= $base_url ?>/vistas/ventas/ticket.php" class="dropdown-item">ticket</a>
-                            <a href="<?= $base_url ?>/vistas/reportes/reportes.php" class="dropdown-item">Reportes</a>
+        <?php if (!empty($dropdownItems[$ruta['id']])): ?>
+            <?php foreach ($dropdownItems[$ruta['id']] as $item): ?>
+                            <a href="<?= $base_url . '/' . $item['ruta'] ?>" class="dropdown-item"><?= $item['nombre'] ?></a>
+            <?php endforeach; ?>
+        <?php endif; ?>
                         </div>
                     </div>
-                    <a href="<?= $base_url ?>/vistas/ayuda.php" class="nav-item nav-link">Ayuda</a>
+    <?php endif; ?>
+<?php endforeach; ?>
                     <a href="<?= $base_url ?>/vistas/logout.php" class="nav-item nav-link">Cerrar sesión</a>
                 </div>
             </div>
