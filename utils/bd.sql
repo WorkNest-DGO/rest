@@ -355,6 +355,40 @@ DROP TABLE IF EXISTS `vw_ventas_detalladas`;
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_ventas_detalladas`  AS SELECT `v`.`id` AS `venta_id`, `v`.`fecha` AS `fecha`, `v`.`total` AS `total`, `v`.`estatus` AS `estatus`, `u`.`nombre` AS `usuario`, `m`.`nombre` AS `mesa`, `r`.`nombre` AS `repartidor` FROM (((`ventas` `v` left join `usuarios` `u` on(`v`.`usuario_id` = `u`.`id`)) left join `mesas` `m` on(`v`.`mesa_id` = `m`.`id`)) left join `repartidores` `r` on(`v`.`repartidor_id` = `r`.`id`)) ;
 
 
+CREATE TABLE `insumo_bodega` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(100) DEFAULT NULL,
+  `unidad` varchar(20) DEFAULT NULL,
+  `existencia` decimal(10,2) DEFAULT NULL,
+  `tipo_control` enum('por_receta','unidad_completa','uso_general','no_controlado','desempaquetado') DEFAULT 'por_receta',
+  `imagen` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `qrs_insumo` (
+  `id` int(11) NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `json_data` text,
+  `estado` enum('pendiente','confirmado','anulado') DEFAULT 'pendiente',
+  `creado_por` int(11) DEFAULT NULL,
+  `creado_en` datetime DEFAULT CURRENT_TIMESTAMP,
+  `expiracion` datetime DEFAULT NULL,
+  `pdf_envio` varchar(255) DEFAULT NULL,
+  `pdf_recepcion` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `movimientos_insumos` (
+  `id` int(11) NOT NULL,
+  `tipo` enum('entrada','salida','ajuste','traspaso') DEFAULT 'entrada',
+  `usuario_id` int(11) DEFAULT NULL,
+  `usuario_destino_id` int(11) DEFAULT NULL,
+  `insumo_id` int(11) DEFAULT NULL,
+  `cantidad` decimal(10,2) DEFAULT NULL,
+  `observacion` text,
+  `fecha` datetime DEFAULT CURRENT_TIMESTAMP,
+  `qr_token` varchar(64) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
 ALTER TABLE `catalogo_areas`
   ADD PRIMARY KEY (`id`);
 
@@ -441,6 +475,21 @@ ALTER TABLE `venta_detalles`
   ADD KEY `venta_id` (`venta_id`),
   ADD KEY `producto_id` (`producto_id`);
 
+ALTER TABLE `insumo_bodega`
+  ADD PRIMARY KEY (`id`);
+
+ALTER TABLE `qrs_insumo`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `token` (`token`),
+  ADD KEY `creado_por` (`creado_por`);
+
+ALTER TABLE `movimientos_insumos`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `usuario_id` (`usuario_id`),
+  ADD KEY `usuario_destino_id` (`usuario_destino_id`),
+  ADD KEY `insumo_id` (`insumo_id`),
+  ADD KEY `qr_token` (`qr_token`);
+
 
 ALTER TABLE `catalogo_areas`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
@@ -460,6 +509,15 @@ ALTER TABLE `entradas_detalle`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `entradas_insumo`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `insumo_bodega`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `qrs_insumo`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `movimientos_insumos`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `insumos`
@@ -550,6 +608,15 @@ ALTER TABLE `ventas`
 ALTER TABLE `venta_detalles`
   ADD CONSTRAINT `venta_detalles_ibfk_1` FOREIGN KEY (`venta_id`) REFERENCES `ventas` (`id`),
   ADD CONSTRAINT `venta_detalles_ibfk_2` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`);
+
+ALTER TABLE `qrs_insumo`
+  ADD CONSTRAINT `fk_qr_creado_por` FOREIGN KEY (`creado_por`) REFERENCES `usuarios` (`id`);
+
+ALTER TABLE `movimientos_insumos`
+  ADD CONSTRAINT `fk_mov_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`),
+  ADD CONSTRAINT `fk_mov_usuario_destino` FOREIGN KEY (`usuario_destino_id`) REFERENCES `usuarios` (`id`),
+  ADD CONSTRAINT `fk_mov_insumo` FOREIGN KEY (`insumo_id`) REFERENCES `insumos` (`id`),
+  ADD CONSTRAINT `fk_mov_qr` FOREIGN KEY (`qr_token`) REFERENCES `qrs_insumo` (`token`);
 COMMIT;
 DELIMITER $$
 
