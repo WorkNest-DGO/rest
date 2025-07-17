@@ -88,7 +88,22 @@ $insumos = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 $title = 'Generar QR';
 ob_start();
 ?>
+<!-- Page Header Start -->
 
+
+<div class="page-header mb-0">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h2>Modulo de CDI</h2>
+            </div>
+            <div class="col-12">
+                <a href="">Inicio</a>
+                <a href="">Catálogo de almacen CDIs</a>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="container mt-4">
     <h2 class="text-white">Generar QR para salida de insumos</h2>
     <?php if ($mensaje): ?>
