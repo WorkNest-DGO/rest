@@ -289,7 +289,8 @@ CREATE TABLE `ventas` (
   `seudonimo_entrega` varchar(100) DEFAULT NULL,
   `foto_entrega` varchar(255) DEFAULT NULL,
   `corte_id` int(11) DEFAULT NULL,
-  `cajero_id` int(11) DEFAULT NULL
+  `cajero_id` int(11) DEFAULT NULL,
+  `observacion` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 

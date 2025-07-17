@@ -495,6 +495,7 @@ async function registrarVenta() {
     const mesa_id = parseInt(document.getElementById('mesa_id').value);
     const repartidor_id = parseInt(document.getElementById('repartidor_id').value);
     const usuario_id = parseInt(document.getElementById('usuario_id').value);
+    const observacion = document.getElementById('observacion').value.trim();
     const filas = document.querySelectorAll('#productos tbody tr');
     const productos = [];
 
@@ -535,6 +536,7 @@ async function registrarVenta() {
         mesa_id: tipo === 'mesa' ? mesa_id : null,
         repartidor_id: tipo === 'domicilio' ? repartidor_id : null,
         usuario_id,
+        observacion: (tipo === 'domicilio' || tipo === 'rapido') ? observacion : '',
         productos,
         corte_id: corteIdActual
     };
@@ -815,6 +817,10 @@ document.getElementById('tipo_entrega').addEventListener('change', function () {
   const tipo = this.value;
   document.getElementById('campoMesa').style.display = tipo === 'mesa' ? 'block' : 'none';
   document.getElementById('campoRepartidor').style.display = tipo === 'domicilio' ? 'block' : 'none';
+  document.getElementById('campoObservacion').style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
+  if (tipo === 'mesa') {
+    document.getElementById('observacion').value = '';
+  }
   verificarActivacionProductos();
 });
 
@@ -835,6 +841,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const tipo = document.getElementById('tipo_entrega').value;
         document.getElementById('campoMesa').style.display = tipo === 'mesa' ? 'block' : 'none';
         document.getElementById('campoRepartidor').style.display = tipo === 'domicilio' ? 'block' : 'none';
+        document.getElementById('campoObservacion').style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
+        if (tipo === 'mesa') {
+            document.getElementById('observacion').value = '';
+        }
     });
 
     // Delegación de eventos con jQuery para botones dinámicos
