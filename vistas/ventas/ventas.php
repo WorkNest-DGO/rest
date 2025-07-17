@@ -40,6 +40,11 @@ ob_start();
           </select>
         </div>
 
+        <div id="campoObservacion" class="form-group" style="display:none;">
+          <label for="observacion" class="text-white">Observación:</label>
+          <textarea id="observacion" name="observacion" class="form-control"></textarea>
+        </div>
+
         <div id="campoMesa" class="form-group">
           <label for="mesa_id" class="text-white">Mesa:</label>
           <select id="mesa_id" name="mesa_id" class="form-control">
