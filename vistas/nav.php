@@ -3,62 +3,67 @@ if (!defined('BASE_URL')) {
     define('BASE_URL', '/rest');
 }
 $base_url = BASE_URL;
-if (session_status() === PHP_SESSION_NONE) {
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
+
 if (!isset($_SESSION['usuario_id'])) {
     header('Location: ../login.html');
     exit;
 }
 
+// Conexión a la base de datos
 require_once __DIR__ . '/../config/db.php';
 
-$usuarioId = $_SESSION['usuario_id'];
-$sql = "SELECT r.id, r.nombre, r.ruta, r.tipo, r.padre_id, r.orden
-        FROM rutas r
-        INNER JOIN usuario_ruta ur ON r.id = ur.ruta_id
+$usuario_id = $_SESSION['usuario_id'];
+
+// Obtener rutas permitidas para el usuario
+$sql = "SELECT r.id, r.nombre, r.path, r.tipo, r.grupo, r.orden
+        FROM usuario_ruta ur
+        INNER JOIN rutas r ON ur.ruta_id = r.id
         WHERE ur.usuario_id = ?
-        ORDER BY r.orden";
+        ORDER BY r.orden ASC";
+
 $stmt = $conn->prepare($sql);
-$stmt->bind_param('i', $usuarioId);
+$stmt->bind_param('i', $usuario_id);
 $stmt->execute();
 $result = $stmt->get_result();
-$rutasPermitidas = [];
+
+$rutas = [];
+$_SESSION['rutas_permitidas'] = [];
+
 while ($row = $result->fetch_assoc()) {
-    $rutasPermitidas[] = $row;
+    $rutas[] = $row;
+    $_SESSION['rutas_permitidas'][] = $row['path'];
 }
-$stmt->close();
 
-$dropdownItems = [];
-$menuRoutes = [];
-foreach ($rutasPermitidas as $ruta) {
-    if ($ruta['tipo'] === 'dropdown-item') {
-        $dropdownItems[$ruta['padre_id']][] = $ruta;
-        continue;
+// Agrupar por tipo
+$enlaces = [];
+$dropdowns = [];
+
+foreach ($rutas as $ruta) {
+    if ($ruta['tipo'] === 'link') {
+        $enlaces[] = $ruta;
+    } elseif ($ruta['tipo'] === 'dropdown') {
+        $dropdowns[$ruta['grupo']] = [
+            'label' => $ruta['nombre'],
+            'items' => []
+        ];
+    } elseif ($ruta['tipo'] === 'dropdown-item') {
+        $dropdowns[$ruta['grupo']]['items'][] = $ruta;
     }
-    $menuRoutes[] = $ruta;
-}
-
-foreach ($dropdownItems as &$items) {
-    usort($items, function ($a, $b) {
-        return $a['orden'] <=> $b['orden'];
-    });
 }
 ?>
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tokyo Sushi POS <?php echo $title ?? 'Sistema'; ?></title>
+    <title>Tokyo Sushi POS <?= $title ?? 'Sistema'; ?></title>
     <meta name="description" content="Sistema de punto de venta de Tokyo Sushi para control de cobros y operaciones.">
     <meta name="author" content="Tokyo Sushi">
-
-    <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400|Nunito:600,700" rel="stylesheet">
-
-    <!-- CSS Libraries -->
     <link href="<?= $base_url ?>/utils/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?= $base_url ?>/utils/css/all.min.css" rel="stylesheet">
     <link href="<?= $base_url ?>/utils/lib/animate/animate.min.css" rel="stylesheet">
@@ -70,35 +75,37 @@ foreach ($dropdownItems as &$items) {
 </head>
 
 <body>
-    <div class="navbar navbar-expand-lg bg-light navbar-light">
-        <div class="container-fluid">
-            <a href="<?= $base_url ?>/vistas/index.php" class="navbar-brand">Tokyo <span style="text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;">Sushi</span></a>
-            <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+<div class="navbar navbar-expand-lg bg-light navbar-light">
+    <div class="container-fluid">
+        <a href="<?= $base_url ?>/vistas/index.php" class="navbar-brand">Tokyo <span style="text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;">Sushi</span></a>
+        <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-            <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
-                <div class="navbar-nav ml-auto">
-                    <a href="<?= $base_url ?>/vistas/index.php" class="nav-item nav-link active">Inicio</a>
-<?php foreach ($menuRoutes as $ruta): ?>
-    <?php if ($ruta['tipo'] === 'link'): ?>
-                    <a href="<?= $base_url . '/' . $ruta['ruta'] ?>" class="nav-item nav-link"><?= $ruta['nombre'] ?></a>
-    <?php elseif ($ruta['tipo'] === 'dropdown'): ?>
-                    <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown"><?= $ruta['nombre'] ?></a>
-                        <div class="dropdown-menu">
-        <?php if (!empty($dropdownItems[$ruta['id']])): ?>
-            <?php foreach ($dropdownItems[$ruta['id']] as $item): ?>
-                            <a href="<?= $base_url . '/' . $item['ruta'] ?>" class="dropdown-item"><?= $item['nombre'] ?></a>
-            <?php endforeach; ?>
-        <?php endif; ?>
+        <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
+            <div class="navbar-nav ml-auto">
+                <?php foreach ($enlaces as $link): ?>
+                    <a href="<?= $base_url . $link['path'] ?>" class="nav-item nav-link"><?= htmlspecialchars($link['nombre']) ?></a>
+                <?php endforeach; ?>
+
+                <?php foreach ($dropdowns as $grupo): ?>
+                    <?php if (count($grupo['items']) > 0): ?>
+                        <div class="nav-item dropdown">
+                            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown"><?= htmlspecialchars($grupo['label']) ?></a>
+                            <div class="dropdown-menu">
+                                <?php foreach ($grupo['items'] as $item): ?>
+                                    <a href="<?= $base_url . $item['path'] ?>" class="dropdown-item"><?= htmlspecialchars($item['nombre']) ?></a>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
-                    </div>
-    <?php endif; ?>
-<?php endforeach; ?>
-                    <a href="<?= $base_url ?>/vistas/logout.php" class="nav-item nav-link">Cerrar sesión</a>
-                </div>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+
+                <!-- Logout siempre disponible -->
+                <a href="<?= $base_url ?>/vistas/logout.php" class="nav-item nav-link">Cerrar sesión</a>
             </div>
         </div>
     </div>
-    <?php echo $content ?? ''; ?>
+</div>
+
+<?php echo $content ?? ''; ?>
