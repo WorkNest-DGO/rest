@@ -1,69 +1,12 @@
-<?php $base_url = '/rest'; ?>
-<!DOCTYPE html>
-<html lang="es">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tokyo Sushi POS</title>
-    <meta name="description" content="Sistema de punto de venta de Tokyo Sushi para control de cobros y operaciones.">
-    <meta name="author" content="Tokyo Sushi">
-
-
-    <!-- CSS Libraries -->
-    <link href="../utils/css/bootstrap.min.css" rel="stylesheet">
-    <link href="../utils/css/all.min.css" rel="stylesheet">
-    <link href="../utils/lib/animate/animate.min.css" rel="stylesheet">
-    <link href="../utils/lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
-    <link href="../utils/lib/flaticon/font/flaticon.css" rel="stylesheet">
-    <link href="../utils/lib/tempusdominus/css/tempusdominus-bootstrap-4.min.css" rel="stylesheet" />
-    <link rel="icon" href="../utils/logo.png" type="image/png">
-    <!-- Template Stylesheet -->
-    <link href="../utils/css/style1.css" rel="stylesheet">
-</head>
-
-<body>
-    <!-- Nav Bar Start -->
-    <div class="navbar navbar-expand-lg bg-light navbar-light">
-        <div class="container-fluid">
-            <a href="index.php" class="navbar-brand">Tokyo <span style="text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;">Sushi</span></a>
-            <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
-                <div class="navbar-nav ml-auto">
-                    <a href="index.php" class="nav-item nav-link active">Inicio</a>
-                                        <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Productos</a>
-                        <div class="dropdown-menu">
-                            <a href="insumos/insumos.php" class="dropdown-item">Insumos</a>
-                            <a href="inventario/inventario.php" class="dropdown-item">Inventario</a>
-                            <a href="recetas/recetas.php" class="dropdown-item">Recetas</a>
-                        </div>
-                    </div>  
-                    <a href="cocina/cocina.php" class="nav-item nav-link">Cocina</a>
-                    <a href="ventas/ventas.php" class="nav-item nav-link">Ventas</a>
-                    <a href="corte_caja/corte.php" class="nav-item nav-link">Cortes</a>
-                    <a href="repartidores/repartos.php" class="nav-item nav-link">Repartos</a>
-
-                    <a href="mesas/mesas.php" class="nav-item nav-link">Mesas</a>
-                    <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Más</a>
-                        <div class="dropdown-menu">
-                            <a href="horarios/horarios.php" class="dropdown-item">Horarios</a>
-                            <a href="ventas/ticket.php" class="dropdown-item">ticket</a>
-                            <a href="reportes/reportes.php" class="dropdown-item">Reportes</a>
-                        </div>
-                    </div>
-                    <a href="ayuda.php" class="nav-item nav-link">Ayuda</a>
-                    <a href="logout.php" class="nav-item nav-link">Cerrar sesión</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Nav Bar End -->
+<?php
+session_start();
+if (!isset($_SESSION['usuario_id'])) {
+    header('Location: ../login.html');
+    exit;
+}
+$title = 'Inicio';
+ob_start();
+?>
 
 
     <!-- Carousel Start -->
@@ -321,7 +264,11 @@
     <!-- Food End -->
 
 
-    <?php include 'footer.php'; ?>
+    <?php require_once __DIR__ . '/footer.php'; ?>
 </body>
 
 </html>
+<?php
+$content = ob_get_clean();
+include __DIR__ . '/nav.php';
+?>
