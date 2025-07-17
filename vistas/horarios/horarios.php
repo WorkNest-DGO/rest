@@ -1,5 +1,15 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (!isset($_SESSION['rutas_permitidas']) || !in_array($_SERVER['PHP_SELF'], array_map(function ($ruta) {
+    return '/rest' . $ruta;
+}, $_SESSION['rutas_permitidas']))) {
+    http_response_code(403);
+    echo 'Acceso no autorizado';
+    exit;
+}
 if (!isset($_SESSION['usuario_id'])) {
     header('Location: ../../login.html');
     exit;
