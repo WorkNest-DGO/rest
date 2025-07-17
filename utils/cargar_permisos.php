@@ -1,4 +1,5 @@
 <?php
+  require_once __DIR__ . '/../config/db.php';
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
@@ -9,7 +10,7 @@ if (!isset($_SESSION['usuario_id'])) {
 }
 
 if (!isset($_SESSION['rutas_permitidas'])) {
-    require_once __DIR__ . '/../config/db.php';
+  
 
     $usuario_id = $_SESSION['usuario_id'];
     $sql = "SELECT r.path FROM usuario_ruta ur INNER JOIN rutas r ON ur.ruta_id = r.id WHERE ur.usuario_id = ?";
