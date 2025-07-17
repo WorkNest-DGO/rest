@@ -5,6 +5,22 @@ require_once __DIR__ . '/../../utils/response.php';
 require_once __DIR__ . '/../../utils/pdf_simple.php';
 require_once __DIR__ . '/../../utils/qrlib.php';
 
+// Base de la URL donde se alojará el sistema para los códigos QR
+if (!defined('URL_BASE_QR')) {
+    define('URL_BASE_QR', 'http://127.0.0.1:80');
+}
+
+// Constante utilizada por la librería de QR
+if (!defined('QR_ECLEVEL_H')) {
+    define('QR_ECLEVEL_H', 'H');
+}
+
+if (!function_exists('generarToken')) {
+    function generarToken() {
+        return bin2hex(random_bytes(16));
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error('Método no permitido');
 }
@@ -47,7 +63,8 @@ $stmtU->bind_result($usuario_nombre);
 $stmtU->fetch();
 $stmtU->close();
 
-$token = bin2hex(random_bytes(16));
+$token = generarToken();
+$urlQR = URL_BASE_QR . '/rest/vistas/bodega/recepcion_qr.php?token=' . $token;
 $json = json_encode($seleccionados, JSON_UNESCAPED_UNICODE);
 $ins = $conn->prepare('INSERT INTO qrs_insumo (token, json_data, creado_por) VALUES (?, ?, ?)');
 $ins->bind_param('ssi', $token, $json, $usuario_id);
@@ -62,26 +79,21 @@ $dirPdf = __DIR__ . '/../../archivos/bodega/pdfs';
 if (!is_dir($dirPdf)) {
     mkdir($dirPdf, 0777, true);
 }
-$dirTmp = __DIR__ . '/../../archivos/bodega/qr';
-if (!is_dir($dirTmp)) {
-    mkdir($dirTmp, 0777, true);
-}
 $dirQrPublic = __DIR__ . '/../../archivos/qr';
 if (!is_dir($dirQrPublic)) {
     mkdir($dirQrPublic, 0777, true);
 }
 
+
 $pdf_rel = 'archivos/bodega/pdfs/qr_' . $token . '.pdf';
 $pdf_path = __DIR__ . '/../../' . $pdf_rel;
-$tmp_qr = $dirTmp . '/temp_' . $token . '.png';
-$public_qr_rel = 'archivos/qr/qr_' . $token . '.png';
+$public_qr_rel = 'archivos/qr/' . $token . '.png';
 $public_qr_path = __DIR__ . '/../../' . $public_qr_rel;
 
-QRcode::png($token, $tmp_qr);
-if (!file_exists($tmp_qr)) {
+QRcode::png($urlQR, $public_qr_path, QR_ECLEVEL_H, 8, 2);
+if (!file_exists($public_qr_path)) {
     error('No se pudo generar el código QR');
 }
-copy($tmp_qr, $public_qr_path);
 
 $lineas = [];
 $lineas[] = 'Fecha: ' . date('Y-m-d H:i');
@@ -90,10 +102,7 @@ foreach ($seleccionados as $s) {
     $lineas[] = $s['nombre'] . ' - ' . $s['cantidad'] . ' ' . $s['unidad'];
 }
 
-generar_pdf_con_imagen($pdf_path, 'Salida de insumos', $lineas, $tmp_qr, 150, 10, 40, 40);
-if (file_exists($tmp_qr)) {
-    unlink($tmp_qr);
-}
+generar_pdf_con_imagen($pdf_path, 'Salida de insumos', $lineas, $public_qr_path, 150, 10, 40, 40);
 
 $up = $conn->prepare('UPDATE qrs_insumo SET pdf_envio = ? WHERE id = ?');
 $up->bind_param('si', $pdf_rel, $idqr);
@@ -119,6 +128,10 @@ if ($log) {
 $base_url = defined('BASE_URL') ? BASE_URL : '/rest';
 $url = $base_url . '/vistas/bodega/recepcion_qr.php?token=' . $token;
 
-success(['ruta_pdf' => $pdf_rel, 'ruta_qr' => $public_qr_rel, 'url' => $url]);
+success([
+    'pdf_url' => $pdf_rel,
+    'qr_url'  => $public_qr_rel,
+    'url'     => $url
+]);
 ?>
 
