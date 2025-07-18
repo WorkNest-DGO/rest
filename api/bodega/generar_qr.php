@@ -3,11 +3,11 @@ session_start();
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 require_once __DIR__ . '/../../utils/pdf_simple.php';
-require_once __DIR__ . '/../../utils/qrlib.php';
+require_once __DIR__ . '/../../utils/phpqrcode/qrlib.php';
 
 // Base de la URL donde se alojará el sistema para los códigos QR
 if (!defined('URL_BASE_QR')) {
-    define('URL_BASE_QR', 'http://127.0.0.1:80');
+    define('URL_BASE_QR', 'http://192.168.100.48:80');
 }
 
 // Constante utilizada por la librería de QR

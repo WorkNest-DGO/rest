@@ -99,6 +99,20 @@ $title = 'Recepción QR';
 ob_start();
 ?>
 
+<!-- Page Header Start -->
+<div class="page-header mb-0">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h2>Modulo de CDI</h2>
+            </div>
+            <div class="col-12">
+                <a href="">Inicio</a>
+                <a href="">Catálogo de recepción en tienda</a>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="container mt-4">
     <h2 class="text-white">Recepción de insumos</h2>
     <?php if ($mensaje): ?>
