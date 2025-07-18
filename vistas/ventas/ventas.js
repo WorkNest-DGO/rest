@@ -593,7 +593,7 @@ async function verDetalles(id) {
         const data = await resp.json();
         if (data.success) {
             const info = data.resultado || data;
-            const contenedor = document.getElementById('detalleContenido');
+            const contenedor = document.getElementById('modal-detalles');
             const destino = info.tipo_entrega === 'mesa' ? info.mesa : info.repartidor;
             let html = `<h3>Detalle de venta</h3>
                         <p>Tipo: ${info.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${info.mesero}</p>`;
@@ -617,7 +617,7 @@ async function verDetalles(id) {
             html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button id="cerrarDetalle">Cerrar</button>`;
 
             contenedor.innerHTML = html;
-            document.getElementById('modalDetalle').style.display = 'block';
+            contenedor.style.display = 'block';
 
             const selectProd = document.getElementById('detalle_producto');
             selectProd.innerHTML = '<option value="">--Selecciona--</option>';
@@ -644,7 +644,7 @@ async function verDetalles(id) {
             });
             document.getElementById('addDetalle').addEventListener('click', () => agregarDetalle(id));
             document.getElementById('cerrarDetalle').addEventListener('click', () => {
-                document.getElementById('modalDetalle').style.display = 'none';
+                contenedor.style.display = 'none';
             });
             document.getElementById('imprimirTicket').addEventListener('click', () => {
                 const venta = ventasData[id] || {};
