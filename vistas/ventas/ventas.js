@@ -168,13 +168,25 @@ function mostrarModalDesglose(totalEsperado) {
 
     function agregarFila() {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td><input type="number" step="0.01" class="denominacion"></td>`+
-            `<td><input type="number" min="0" class="cantidad" value="0"></td>`+
-            `<td><select class="tipo"><option value="efectivo">efectivo</option><option value="cheque">cheque</option><option value="boucher">boucher</option></select></td>`+
-            `<td><button class="btn custom-btn">X</button></td>`;
+        tr.innerHTML =
+            `<td><input type="number" step="0.01" class="denominacion"></td>` +
+            `<td><input type="number" min="0" class="cantidad" value="0"></td>` +
+            `<td><select class="tipo"><option value="efectivo">efectivo</option><option value="cheque">cheque</option><option value="boucher">boucher</option></select></td>` +
+            `<td><button class="btn custom-btn btn-eliminar">X</button></td>`;
         tbody.appendChild(tr);
-        tr.querySelector('.delFila').addEventListener('click', () => { tr.remove(); calcular(); });
-        tr.querySelectorAll('input,select').forEach(el => el.addEventListener('input', calcular));
+
+        const btnEliminar = tr.querySelector('.btn-eliminar');
+        if (btnEliminar) {
+            btnEliminar.addEventListener('click', () => {
+                tr.remove();
+                calcular();
+            });
+        } else {
+            console.warn('Botón de eliminar no encontrado en la fila:', tr);
+        }
+
+        tr.querySelectorAll('input,select').forEach(el =>
+            el.addEventListener('input', calcular));
     }
 
     function calcular() {
