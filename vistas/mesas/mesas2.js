@@ -1,65 +1,33 @@
-document.addEventListener('DOMContentLoaded', (event) => {
-
-  var dragSrcEl = null;
-  
-  function handleDragStart(e) {
-    this.style.opacity = '0.1';
-    this.style.border = '3px dashed #c4cad3';
-    
-    dragSrcEl = this;
-
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', this.innerHTML);
-  }
-
-  function handleDragOver(e) {
-    if (e.preventDefault) {
-      e.preventDefault();
+async function cargarTablero() {
+    const resp = await fetch('../../api/mesas/mesas.php');
+    const data = await resp.json();
+    if (!data.success) {
+        alert('Error al obtener mesas');
+        return;
     }
-
-    e.dataTransfer.dropEffect = 'move';
-    
-    return false;
-  }
-
-  function handleDragEnter(e) {
-    this.classList.add('task-hover');
-  }
-
-  function handleDragLeave(e) {
-    this.classList.remove('task-hover');
-  }
-
-  function handleDrop(e) {
-    if (e.stopPropagation) {
-      e.stopPropagation(); // stops the browser from redirecting.
-    }
-    
-    if (dragSrcEl != this) {
-      dragSrcEl.innerHTML = this.innerHTML;
-      this.innerHTML = e.dataTransfer.getData('text/html');
-    }
-    
-    return false;
-  }
-
-  function handleDragEnd(e) {
-    this.style.opacity = '1';
-    this.style.border = 0;
-    
-    items.forEach(function (item) {
-      item.classList.remove('task-hover');
+    const grupos = {};
+    data.resultado.forEach(m => {
+        const nom = m.mesero_nombre || 'Sin mesero';
+        if (!grupos[nom]) grupos[nom] = [];
+        grupos[nom].push(m);
     });
-  }
-  
-  
-  let items = document.querySelectorAll('.task'); 
-  items.forEach(function(item) {
-    item.addEventListener('dragstart', handleDragStart, false);
-    item.addEventListener('dragenter', handleDragEnter, false);
-    item.addEventListener('dragover', handleDragOver, false);
-    item.addEventListener('dragleave', handleDragLeave, false);
-    item.addEventListener('drop', handleDrop, false);
-    item.addEventListener('dragend', handleDragEnd, false);
-  });
-});
+    const cont = document.getElementById('tablero-meseros');
+    cont.innerHTML = '';
+    Object.entries(grupos).forEach(([mesero, mesas]) => {
+        const col = document.createElement('div');
+        col.className = 'project-column';
+        const head = document.createElement('div');
+        head.className = 'project-column-heading';
+        head.innerHTML = `<h2 class='project-column-heading__title'>${mesero}</h2>`;
+        col.appendChild(head);
+        mesas.forEach(m => {
+            const div = document.createElement('div');
+            div.className = 'task';
+            div.textContent = m.nombre;
+            col.appendChild(div);
+        });
+        cont.appendChild(col);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', cargarTablero);
