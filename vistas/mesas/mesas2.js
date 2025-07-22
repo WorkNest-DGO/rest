@@ -164,27 +164,31 @@ function solicitarTicket(mesaId, nombre, ventaId) {
         .catch(() => alert('Error al solicitar ticket'));
 }
 
-let productos = [];
-let meseros = [];
 const meseroSeleccionado = {};
 
-function textoEstado(e) {
-    return (e || '').replace('_', ' ');
-}
-
-async function cargarMeseros() {
+async function fetchMeseros() {
     try {
         const resp = await fetch('../../api/usuarios/listar_meseros.php');
         const data = await resp.json();
-        if (data.success) {
-            meseros = data.resultado;
-        }
+        return data.success ? data.resultado : [];
     } catch (err) {
         console.error(err);
+        return [];
     }
 }
 
-function renderSelectMeseros(select, seleccionado) {
+async function fetchCatalogo() {
+    try {
+        const resp = await fetch('../../api/inventario/listar_productos.php');
+        const data = await resp.json();
+        return data.success ? data.resultado : [];
+    } catch (err) {
+        console.error(err);
+        return [];
+    }
+}
+
+function renderSelectMeseros(select, meseros, seleccionado) {
     select.innerHTML = '<option value="">Sin mesero asignado</option>';
     meseros.forEach(m => {
         const opt = document.createElement('option');
@@ -197,21 +201,11 @@ function renderSelectMeseros(select, seleccionado) {
     });
 }
 
-async function cargarCatalogo() {
-    try {
-        const resp = await fetch('../../api/inventario/listar_productos.php');
-        const data = await resp.json();
-        if (data.success) {
-            productos = data.resultado;
-        }
-    } catch (err) {
-        console.error(err);
-    }
+function textoEstado(e) {
+    return (e || '').replace('_', ' ');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    cargarCatalogo();
-    cargarMeseros();
     cargarMesas();
     document.getElementById('filtro-area').addEventListener('change', e => {
         areaFiltro = e.target.value;
@@ -284,7 +278,7 @@ async function verVenta(ventaId, mesaId, mesaNombre, estado, meseroId) {
             alert('Error al verificar caja');
             return;
         }
-        mostrarModalDetalle({ mesa: mesaNombre, mesero: '', productos: [] }, null, mesaId, estado, meseroId);
+        await mostrarModalDetalle({ mesa: mesaNombre, mesero: '', productos: [] }, null, mesaId, estado, meseroId);
         return;
     }
     try {
@@ -295,7 +289,7 @@ async function verVenta(ventaId, mesaId, mesaNombre, estado, meseroId) {
         });
         const data = await resp.json();
         if (data.success) {
-            mostrarModalDetalle(data.resultado, ventaId, mesaId, estado, meseroId);
+            await mostrarModalDetalle(data.resultado, ventaId, mesaId, estado, meseroId);
         } else {
             alert(data.mensaje);
         }
@@ -309,7 +303,7 @@ function cerrarModal() {
     document.getElementById('modal-detalle').style.display = 'none';
 }
 
-function renderSelectProductos(select) {
+function renderSelectProductos(select, productos) {
     select.innerHTML = '<option value="">--Selecciona--</option>';
     productos.forEach(p => {
         const opt = document.createElement('option');
@@ -320,7 +314,7 @@ function renderSelectProductos(select) {
     });
 }
 
-function mostrarModalDetalle(datos, ventaId, mesaId, estado, meseroId) {
+async function mostrarModalDetalle(datos, ventaId, mesaId, estado, meseroId) {
     const modal = document.getElementById('modal-detalle');
     let html = `<h3>Mesa ${datos.mesa} - Venta ${ventaId || ''}</h3>`;
     html += `<table border="1"><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th><th></th></tr></thead><tbody>`;
@@ -350,8 +344,17 @@ function mostrarModalDetalle(datos, ventaId, mesaId, estado, meseroId) {
     modal.innerHTML = html;
     modal.style.display = 'block';
 
-    renderSelectMeseros(document.getElementById('select_mesero'), meseroSeleccionado[mesaId] || meseroId);
-    renderSelectProductos(document.getElementById('nuevo_producto'));
+    const [meseros, productos] = await Promise.all([fetchMeseros(), fetchCatalogo()]);
+
+    renderSelectMeseros(
+        document.getElementById('select_mesero'),
+        meseros,
+        meseroSeleccionado[mesaId] || meseroId
+    );
+    renderSelectProductos(
+        document.getElementById('nuevo_producto'),
+        productos
+    );
 
     modal.querySelectorAll('.eliminar').forEach(btn => {
         btn.addEventListener('click', () => eliminarProducto(btn.dataset.id, ventaId));
