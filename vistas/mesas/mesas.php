@@ -59,6 +59,7 @@ ob_start();
 </div>
 <div id="tablero"></div>
 <div id="modal-detalle" style="display:none;"></div>
+
 <?php require_once __DIR__ . '/../footer.php'; ?>
 <script src="mesas.js"></script>
     </body>

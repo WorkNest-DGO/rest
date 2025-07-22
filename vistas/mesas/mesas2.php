@@ -1,5 +1,11 @@
 <?php
 require_once __DIR__ . '/../../utils/cargar_permisos.php';
+/*$path_actual = str_replace('/rest', '', $_SERVER['PHP_SELF']);
+if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
+    http_response_code(403);
+    echo 'Acceso no autorizado';
+    exit;
+}*/
 $title = 'Mesas';
 ob_start();
 ?>
@@ -17,14 +23,16 @@ ob_start();
         </div>
     </div>
 </div>
-<div class='app'>
-    <main class='project'>
-        <div class='project-info'>
-            <h1>Asignación actual</h1>
-        </div>
-        <div id='tablero-meseros' class='project-tasks'></div>
-    </main>
+
+<h1>Mesas</h1>
+<div>
+    <button id="btn-unir">Unir mesas</button>
+    <select id="filtro-area"></select>
 </div>
+<div id="tablero"></div>
+<div id="modal-detalle" style="display:none;"></div>
+
+
 <?php require_once __DIR__ . '/../footer.php'; ?>
 <script src="mesas2.js"></script>
 </body>

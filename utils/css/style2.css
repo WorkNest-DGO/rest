@@ -95,11 +95,11 @@
 
 .task {
   cursor: move;
-  background-color: var(--white);
+  background-color: #5f5f63;
   padding: 1rem;
   border-radius: 8px;
-  width: 100%;
-  box-shadow: rgba(99, 99, 99, 0.1) 0px 2px 8px 0px;
+  width: 220px;
+  box-shadow: rgba(190, 188, 188, 0.1) 0px 2px 8px 0px;
   margin-bottom: 1rem;
   border: 3px dashed transparent;
 }
