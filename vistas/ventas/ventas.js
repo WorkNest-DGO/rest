@@ -228,7 +228,7 @@ function mostrarModalDesglose(totalEsperado) {
         }
 
         try {
-            const resp = await fetch('../api/corte_caja/guardar_desglose.php', {
+            const resp = await fetch('../../api/corte_caja/guardar_desglose.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ corte_id: corteIdActual, detalle })
