@@ -74,6 +74,20 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
+-- Disparadores `mesas`
+--
+DELIMITER $$
+CREATE TRIGGER `trg_log_asignacion_mesa` AFTER UPDATE ON `mesas` FOR EACH ROW BEGIN
+    IF NEW.usuario_id <> OLD.usuario_id THEN
+        INSERT INTO log_asignaciones_mesas (mesa_id, mesero_anterior_id, mesero_nuevo_id, fecha_cambio, usuario_que_asigna_id)
+        VALUES (NEW.id, OLD.usuario_id, NEW.usuario_id, NOW(), @usuario_asignador_id);
+    END IF;
+END$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `alineacion`
 --
 
@@ -308,6 +322,21 @@ CREATE TABLE `log_mesas` (
   `usuario_id` int(11) DEFAULT NULL,
   `fecha_inicio` datetime DEFAULT NULL,
   `fecha_fin` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `log_asignaciones_mesas`
+--
+
+CREATE TABLE `log_asignaciones_mesas` (
+  `id` int(11) NOT NULL,
+  `mesa_id` int(11) NOT NULL,
+  `mesero_anterior_id` int(11) DEFAULT NULL,
+  `mesero_nuevo_id` int(11) DEFAULT NULL,
+  `fecha_cambio` datetime DEFAULT CURRENT_TIMESTAMP,
+  `usuario_que_asigna_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -821,6 +850,16 @@ ALTER TABLE `log_mesas`
   ADD KEY `usuario_id` (`usuario_id`);
 
 --
+-- Indices de la tabla `log_asignaciones_mesas`
+--
+ALTER TABLE `log_asignaciones_mesas`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `mesa_id` (`mesa_id`),
+  ADD KEY `mesero_anterior_id` (`mesero_anterior_id`),
+  ADD KEY `mesero_nuevo_id` (`mesero_nuevo_id`),
+  ADD KEY `usuario_que_asigna_id` (`usuario_que_asigna_id`);
+
+--
 -- Indices de la tabla `mesas`
 --
 ALTER TABLE `mesas`
@@ -982,6 +1021,12 @@ ALTER TABLE `log_mesas`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
 
 --
+-- AUTO_INCREMENT de la tabla `log_asignaciones_mesas`
+--
+ALTER TABLE `log_asignaciones_mesas`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+
+--
 -- AUTO_INCREMENT de la tabla `mesas`
 --
 ALTER TABLE `mesas`
@@ -1102,6 +1147,15 @@ ALTER TABLE `log_mesas`
   ADD CONSTRAINT `log_mesas_ibfk_1` FOREIGN KEY (`mesa_id`) REFERENCES `mesas` (`id`),
   ADD CONSTRAINT `log_mesas_ibfk_2` FOREIGN KEY (`venta_id`) REFERENCES `ventas` (`id`),
   ADD CONSTRAINT `log_mesas_ibfk_3` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
+
+--
+-- Filtros para la tabla `log_asignaciones_mesas`
+--
+ALTER TABLE `log_asignaciones_mesas`
+  ADD CONSTRAINT `log_asignaciones_mesas_ibfk_1` FOREIGN KEY (`mesa_id`) REFERENCES `mesas` (`id`),
+  ADD CONSTRAINT `log_asignaciones_mesas_ibfk_2` FOREIGN KEY (`mesero_anterior_id`) REFERENCES `usuarios` (`id`),
+  ADD CONSTRAINT `log_asignaciones_mesas_ibfk_3` FOREIGN KEY (`mesero_nuevo_id`) REFERENCES `usuarios` (`id`),
+  ADD CONSTRAINT `log_asignaciones_mesas_ibfk_4` FOREIGN KEY (`usuario_que_asigna_id`) REFERENCES `usuarios` (`id`);
 
 --
 -- Filtros para la tabla `mesas`
