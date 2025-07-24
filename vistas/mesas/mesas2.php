@@ -55,7 +55,9 @@ ob_start();
 
 
 <?php require_once __DIR__ . '/../footer.php'; ?>
+
 <script src="kanban.js"></script>
+<script src="mesas2.js"></script>
 </body>
 </html>
 <?php
