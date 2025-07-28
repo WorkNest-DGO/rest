@@ -37,26 +37,57 @@ function renderKanban(mesas) {
         }
     });
 
-    const grupos = {};
+    const creadas = new Set();
+
+    // Crear columnas para meseros obtenidos del API
+    if (Array.isArray(meseros)) {
+        meseros.forEach(me => {
+            const li = document.createElement('li');
+            li.className = 'drag-column drag-column-on-hold';
+            const header = document.createElement('span');
+            header.className = 'drag-column-header';
+            header.innerHTML = `<h2>${me.nombre}</h2>`;
+            li.appendChild(header);
+            const ul = document.createElement('ul');
+            ul.className = 'drag-inner-list';
+            ul.id = `mesero_${me.id}`;
+            li.appendChild(ul);
+            cont.appendChild(li);
+            creadas.add(String(me.id));
+        });
+    }
+
+    // Columna para mesas sin mesero asignado
+    const liSin = document.createElement('li');
+    liSin.className = 'drag-column drag-column-on-hold';
+    const headerSin = document.createElement('span');
+    headerSin.className = 'drag-column-header';
+    headerSin.innerHTML = '<h2>Sin Mesero</h2>';
+    liSin.appendChild(headerSin);
+    const ulSin = document.createElement('ul');
+    ulSin.className = 'drag-inner-list';
+    ulSin.id = 'mesero_sin';
+    liSin.appendChild(ulSin);
+    cont.appendChild(liSin);
+
+    // Crear columnas para meseros presentes en las mesas pero no en la lista
     mesas.forEach(m => {
         const key = m.mesero_id !== null ? String(m.mesero_id) : 'sin';
-        const nombre = m.mesero_nombre || 'Sin mesero';
-        if (!grupos[key]) grupos[key] = { nombre, mesas: [] };
-        grupos[key].mesas.push(m);
-    });
-
-    Object.entries(grupos).forEach(([key, info]) => {
-        const li = document.createElement('li');
-        li.className = 'drag-column drag-column-on-hold';
-        const header = document.createElement('span');
-        header.className = 'drag-column-header';
-        header.innerHTML = `<h2>${info.nombre}</h2>`;
-        li.appendChild(header);
-        const ul = document.createElement('ul');
-        ul.className = 'drag-inner-list';
-        ul.id = `mesero_${key}`;
-        li.appendChild(ul);
-        cont.appendChild(li);
+        if (key !== 'sin' && !creadas.has(key)) {
+            const li = document.createElement('li');
+            li.className = 'drag-column drag-column-on-hold';
+            const header = document.createElement('span');
+            header.className = 'drag-column-header';
+            const nombre = m.mesero_nombre || `Mesero ${key}`;
+            header.innerHTML = `<h2>${nombre}</h2>`;
+            li.appendChild(header);
+            const ul = document.createElement('ul');
+            ul.className = 'drag-inner-list';
+            ul.id = `mesero_${key}`;
+            li.appendChild(ul);
+            cont.appendChild(li);
+            creadas.add(key);
+        }
     });
 
     mesas.forEach(m => {
@@ -562,8 +593,12 @@ async function reservarMesa(id) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    cargarCatalogo();
-    cargarMeseros();
-    fetchMesas();
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await cargarCatalogo();
+        await cargarMeseros();
+        await fetchMesas();
+    } catch (err) {
+        console.error(err);
+    }
 });
