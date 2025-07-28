@@ -20,6 +20,40 @@ async function fetchMesas() {
     }
 }
 
+function crearColumnas(container) {
+    if (!container) return;
+    if (!Array.isArray(meseros)) return;
+
+    meseros.forEach(me => {
+        const li = document.createElement('li');
+        li.className = 'drag-column drag-column-on-hold';
+        li.dataset.meseroId = me.id;
+
+        const header = document.createElement('span');
+        header.className = 'drag-column-header';
+        header.innerHTML = `<h2>${me.nombre}</h2>`;
+        li.appendChild(header);
+
+        const ul = document.createElement('ul');
+        ul.className = 'drag-inner-list';
+        li.appendChild(ul);
+
+        container.appendChild(li);
+    });
+
+    const liSin = document.createElement('li');
+    liSin.className = 'drag-column drag-column-on-hold';
+    liSin.dataset.meseroId = 'sin';
+    const headerSin = document.createElement('span');
+    headerSin.className = 'drag-column-header';
+    headerSin.innerHTML = '<h2>Sin Mesero</h2>';
+    liSin.appendChild(headerSin);
+    const ulSin = document.createElement('ul');
+    ulSin.className = 'drag-inner-list';
+    liSin.appendChild(ulSin);
+    container.appendChild(liSin);
+}
+
 /** Crea las columnas por mesero y agrega las tarjetas de mesas */
 function renderKanban(mesas) {
     const cont = document.getElementById('kanban-list');
@@ -28,6 +62,7 @@ function renderKanban(mesas) {
         return;
     }
     cont.innerHTML = '';
+    crearColumnas(cont);
 
     const uniones = {};
     mesas.forEach(m => {
@@ -37,61 +72,18 @@ function renderKanban(mesas) {
         }
     });
 
-    const creadas = new Set();
+    const mapaMeseros = meseros.reduce((acc, me) => {
+        acc[String(me.id)] = me.nombre;
+        return acc;
+    }, {});
 
-    // Crear columnas para meseros obtenidos del API
-    if (Array.isArray(meseros)) {
-        meseros.forEach(me => {
-            const li = document.createElement('li');
-            li.className = 'drag-column drag-column-on-hold';
-            const header = document.createElement('span');
-            header.className = 'drag-column-header';
-            header.innerHTML = `<h2>${me.nombre}</h2>`;
-            li.appendChild(header);
-            const ul = document.createElement('ul');
-            ul.className = 'drag-inner-list';
-            ul.id = `mesero_${me.id}`;
-            li.appendChild(ul);
-            cont.appendChild(li);
-            creadas.add(String(me.id));
-        });
-    }
+    // Asignar mesas a columnas
 
-    // Columna para mesas sin mesero asignado
-    const liSin = document.createElement('li');
-    liSin.className = 'drag-column drag-column-on-hold';
-    const headerSin = document.createElement('span');
-    headerSin.className = 'drag-column-header';
-    headerSin.innerHTML = '<h2>Sin Mesero</h2>';
-    liSin.appendChild(headerSin);
-    const ulSin = document.createElement('ul');
-    ulSin.className = 'drag-inner-list';
-    ulSin.id = 'mesero_sin';
-    liSin.appendChild(ulSin);
-    cont.appendChild(liSin);
-
-    // Crear columnas para meseros presentes en las mesas pero no en la lista
     mesas.forEach(m => {
-        const key = m.mesero_id !== null ? String(m.mesero_id) : 'sin';
-        if (key !== 'sin' && !creadas.has(key)) {
-            const li = document.createElement('li');
-            li.className = 'drag-column drag-column-on-hold';
-            const header = document.createElement('span');
-            header.className = 'drag-column-header';
-            const nombre = m.mesero_nombre || `Mesero ${key}`;
-            header.innerHTML = `<h2>${nombre}</h2>`;
-            li.appendChild(header);
-            const ul = document.createElement('ul');
-            ul.className = 'drag-inner-list';
-            ul.id = `mesero_${key}`;
-            li.appendChild(ul);
-            cont.appendChild(li);
-            creadas.add(key);
+        let col = cont.querySelector(`li[data-mesero-id="${m.mesero_id}"] .drag-inner-list`);
+        if (!col) {
+            col = cont.querySelector('li[data-mesero-id="sin"] .drag-inner-list');
         }
-    });
-
-    mesas.forEach(m => {
-        const col = document.getElementById(`mesero_${m.mesero_id !== null ? m.mesero_id : 'sin'}`);
         if (!col) return;
         const card = document.createElement('li');
         card.className = 'drag-item mesa';
@@ -109,7 +101,8 @@ function renderKanban(mesas) {
         }
 
         const ventaTxt = m.venta_activa ? `Venta activa: ${m.venta_id}` : 'Sin venta';
-        const meseroTxt = m.mesero_nombre ? `Mesero: ${m.mesero_nombre}` : 'Sin mesero asignado';
+        const meseroNombre = mapaMeseros[String(m.mesero_id)] || null;
+        const meseroTxt = meseroNombre ? `Mesero: ${meseroNombre}` : 'Sin mesero asignado';
         const reservaTxt = m.estado_reserva === 'reservada' ? `Reservada: ${m.nombre_reserva} (${m.fecha_reserva})` : '';
         let ocupacionTxt = '';
         if (m.tiempo_ocupacion_inicio) {
