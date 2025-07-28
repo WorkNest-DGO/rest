@@ -32,6 +32,7 @@ ob_start();
 <div class="container mt-4">
     <h2 class="text-white">Generar QR para salida de insumos</h2>
     <div id="resultado" class="mb-3"></div>
+    <div id="resultado2" class="mb-3"></div>
     <form id="formQR">
         <div class="table-responsive">
             <table class="styled-table">
@@ -86,7 +87,9 @@ document.getElementById('btnGenerar').addEventListener('click', async function(e
             document.getElementById('resultado').innerHTML =
                 '<p class="text-white">Escanea el código para recibir:</p>'+
                 '<img src="'+img+'" alt="QR" width="200" height="200">'+
-                '<p class="mt-2"><a class="btn custom-btn" href="'+pdf+'" target="_blank">Ver PDF</a></p>';
+                '<p class="mt-2"><a class="btn custom-btn" href="'+pdf+'" target="_blank">Ver PDF</a></p>'+
+                '<p class="mt-2"><a class="btn custom-btn" href="../../api/bodega/imprimir_qr.php?qrName='+img+'"  target="_blank">Imprimirs PDF</a></p>';
+           
         } else {
             alert(data.mensaje || 'Error');
         }
