@@ -9,11 +9,10 @@ if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
 $title = 'Mesas';
 ob_start();
 ?>
-<!-- Dragula CSS -->
-<link rel="stylesheet" href="https://unpkg.com/dragula@3.7.2/dist/dragula.min.css">
+<!-- Dragula -->
+<link rel="stylesheet" href="../../utils/css/dragula.min.css">
 
-<!-- Dragula JS -->
-<script src="https://unpkg.com/dragula@3.7.2/dist/dragula.min.js"></script>
+<script src="../../utils/js/dragula.min.js"></script>
 
 <link href="../../utils/css/style2.css" rel="stylesheet">
 <div class="page-header mb-0">
