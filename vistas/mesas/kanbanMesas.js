@@ -4,13 +4,27 @@ let productos = [];
 let meseros = [];
 const meseroSeleccionado = {};
 
-/** Obtiene las mesas del backend y renderiza el kanban */
-async function fetchMesas() {
+async function cargarMeseros() {
+    try {
+        const resp = await fetch('../../api/usuarios/listar_meseros.php');
+        const data = await resp.json();
+        if (data.success) {
+            meseros = data.resultado;
+        } else {
+            meseros = [];
+        }
+    } catch (err) {
+        console.error(err);
+        meseros = [];
+    }
+}
+
+async function cargarMesas() {
     try {
         const resp = await fetch('../../api/mesas/listar_mesas.php');
         const data = await resp.json();
         if (data.success) {
-            renderKanban(data.resultado);
+            renderKanban(meseros, data.resultado);
         } else {
             alert(data.mensaje);
         }
@@ -20,11 +34,12 @@ async function fetchMesas() {
     }
 }
 
-function crearColumnas(container) {
-    if (!container) return;
-    if (!Array.isArray(meseros)) return;
 
-    meseros.forEach(me => {
+function crearColumnas(container, listaMeseros) {
+    if (!container) return;
+    if (!Array.isArray(listaMeseros)) return;
+
+    listaMeseros.forEach(me => {
         const li = document.createElement('li');
         li.className = 'drag-column drag-column-on-hold';
         li.dataset.meseroId = me.id;
@@ -55,14 +70,14 @@ function crearColumnas(container) {
 }
 
 /** Crea las columnas por mesero y agrega las tarjetas de mesas */
-function renderKanban(mesas) {
+function renderKanban(listaMeseros, mesas) {
     const cont = document.getElementById('kanban-list');
     if (!cont) {
         console.error('Contenedor #kanban-list no encontrado');
         return;
     }
     cont.innerHTML = '';
-    crearColumnas(cont);
+    crearColumnas(cont, listaMeseros);
 
     const uniones = {};
     mesas.forEach(m => {
@@ -72,7 +87,7 @@ function renderKanban(mesas) {
         }
     });
 
-    const mapaMeseros = meseros.reduce((acc, me) => {
+    const mapaMeseros = listaMeseros.reduce((acc, me) => {
         acc[String(me.id)] = me.nombre;
         return acc;
     }, {});
@@ -178,7 +193,7 @@ async function cambiarEstado(id, estado) {
         });
         const data = await resp.json();
         if (data.success) {
-            await fetchMesas();
+            await cargarMesas();
         } else {
             alert(data.mensaje);
         }
@@ -213,17 +228,6 @@ function textoEstado(e) {
     return (e || '').replace('_', ' ');
 }
 
-async function cargarMeseros() {
-    try {
-        const resp = await fetch('../../api/usuarios/listar_meseros.php');
-        const data = await resp.json();
-        if (data.success) {
-            meseros = data.resultado;
-        }
-    } catch (err) {
-        console.error(err);
-    }
-}
 
 function renderSelectMeseros(select, seleccionado) {
     select.innerHTML = '<option value="">Sin mesero asignado</option>';
@@ -467,7 +471,7 @@ async function agregarProductoVenta(ventaId, mesaId, estado) {
     }
 
     verVenta(currentVentaId, mesaId, '', estado, meseroSeleccionado[mesaId]);
-    await fetchMesas();
+    await cargarMesas();
 }
 
 async function verVenta(ventaId, mesaId, mesaNombre, estado, meseroId) {
@@ -516,7 +520,7 @@ async function dividirMesa(id) {
         });
         const data = await resp.json();
         if (data.success) {
-            await fetchMesas();
+            await cargarMesas();
         } else {
             alert(data.mensaje);
         }
@@ -546,7 +550,7 @@ async function unirSeleccionadas() {
         });
         const data = await resp.json();
         if (data.success) {
-            await fetchMesas();
+            await cargarMesas();
         } else {
             alert(data.mensaje);
         }
@@ -576,7 +580,7 @@ async function reservarMesa(id) {
         });
         const data = await resp.json();
         if (data.success) {
-            fetchMesas();
+            cargarMesas();
         } else {
             alert(data.mensaje);
         }
@@ -590,7 +594,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         await cargarCatalogo();
         await cargarMeseros();
-        await fetchMesas();
+        await cargarMesas();
     } catch (err) {
         console.error(err);
     }
