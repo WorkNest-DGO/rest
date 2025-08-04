@@ -1,12 +1,10 @@
-// Kanban Mesas - combina kanban.js y mesas2.js con utilidades de mesas.js
-
 let productos = [];
 let meseros = [];
 const meseroSeleccionado = {};
 
 async function cargarMesas() {
     try {
-        const resp = await fetch('../../api/mesas/mesa.php');
+        const resp = await fetch('../../api/mesas/mesas.php');
         const data = await resp.json();
         if (data.success) {
             const mesas = data.resultado;
@@ -423,7 +421,7 @@ async function agregarProductoVenta(ventaId, mesaId, estado) {
             productos: [{ producto_id: productoId, cantidad, precio_unitario: precio }]
         };
         try {
-            const resp = await fetch('../../api/ventas/crear_venta_mesa.php', {
+            const resp = await fetch('../../api/ventas/crear_venta_mesas.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(crearPayload)

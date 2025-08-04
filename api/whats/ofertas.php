@@ -7,7 +7,7 @@ if ($conn->connect_error) {
     exit;
 }
 
-$query = "SELECT descripcion FROM ofertas_dia WHERE vigente = 1 AND fecha = CURDATE()";
+$query = "SELECT descripcion FROM ofertas_dia WHERE vigente = 1 ";
 $resultado = $conn->query($query);
 
 $ofertas = [];

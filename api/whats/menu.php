@@ -7,7 +7,7 @@ if ($conn->connect_error) {
     exit;
 }
 
-$query = "SELECT nombre, precio FROM menu_dia WHERE fecha = CURDATE()";
+$query = "SELECT nombre, precio FROM menu_dia ";
 $resultado = $conn->query($query);
 
 $menu = [];
