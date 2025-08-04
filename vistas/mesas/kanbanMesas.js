@@ -6,11 +6,12 @@ const meseroSeleccionado = {};
 
 async function cargarMesas() {
     try {
-        const resp = await fetch('../../api/mesas/listar_mesas.php');
+        const resp = await fetch('../../api/mesas/mesa.php');
         const data = await resp.json();
         if (data.success) {
             const mesas = data.resultado;
             const mapa = {};
+
             mesas.forEach(m => {
                 const uid = parseInt(m.usuario_id);
                 if (uid) {
@@ -19,8 +20,10 @@ async function cargarMesas() {
                     }
                 }
             });
-            meseros = Object.values(mapa);
-            renderKanban(meseros, mesas);
+
+            const meserosUnicos = Object.values(mapa).sort((a, b) => a.nombre.localeCompare(b.nombre));
+            meseros = meserosUnicos;
+            renderKanban(meserosUnicos, mesas);
         } else {
             alert(data.mensaje);
         }
