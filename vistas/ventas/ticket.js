@@ -1,10 +1,17 @@
  function llenarTicket(data) {
         document.getElementById('ventaId').textContent = data.venta_id;
-        document.getElementById('fechaHora').textContent = data.fecha;
+        document.getElementById('fechaHora').textContent = data.fecha_fin || data.fecha || '';
         document.getElementById('folio').textContent = data.folio || '';
-        if (data.restaurante) {
-            document.getElementById('nombreRestaurante').textContent = data.restaurante;
-        }
+        document.getElementById('nombreRestaurante').textContent = data.nombre_negocio || data.restaurante || '';
+        document.getElementById('direccionNegocio').textContent = data.direccion_negocio || '';
+        document.getElementById('rfcNegocio').textContent = data.rfc_negocio || '';
+        document.getElementById('telefonoNegocio').textContent = data.telefono_negocio || '';
+        document.getElementById('sedeId').textContent = data.sede_id || '';
+        document.getElementById('mesaNombre').textContent = data.mesa_nombre || '';
+        document.getElementById('meseroNombre').textContent = data.mesero_nombre || '';
+        document.getElementById('horaInicio').textContent = data.fecha_inicio ? new Date(data.fecha_inicio).toLocaleString() : '';
+        document.getElementById('horaFin').textContent = data.fecha_fin ? new Date(data.fecha_fin).toLocaleString() : '';
+        document.getElementById('tiempoServicio').textContent = data.tiempo_servicio ? data.tiempo_servicio + ' min' : '';
         const tbody = document.querySelector('#productos tbody');
         tbody.innerHTML = '';
         data.productos.forEach(p => {
@@ -14,7 +21,7 @@
             tbody.appendChild(tr);
         });
         if (typeof data.propina !== 'undefined') {
-            document.getElementById('propina').textContent = 'Propina: $' + data.propina.toFixed(2);
+            document.getElementById('propina').textContent = 'Propina: $' + parseFloat(data.propina).toFixed(2);
         }
         document.getElementById('totalVenta').textContent = 'Total: $' + data.total;
     }
@@ -197,6 +204,7 @@
         const payload = {
             venta_id: info.venta_id,
             usuario_id: info.usuario_id || 1,
+            sede_id: info.sede_id || null,
             subcuentas: []
         };
         for (let i = 1; i <= numSub; i++) {
@@ -239,43 +247,48 @@
                 monto_recibido: recibido
             });
         }
-        console.log(JSON.stringify(payload));
-        fetch('../../api/tickets/guardar_ticket.php', {
+        try {
+            const resp = await fetch('../../api/tickets/guardar_ticket.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(payload)
-            })
-            .then(r => r.json())
-            .then(d => {
-                if (d.success) {
-                    ticketsGuardados = d.resultado.tickets || [];
-                    alert('Tickets guardados');
-                    mostrarBotonesImprimir(payload, true);
-                } else {
-                    alert(d.mensaje);
-                }
-            })
-            .catch(() => alert('Error al guardar'));
+            });
+            const d = await resp.json();
+            if (d.success) {
+                ticketsGuardados = d.resultado.tickets || [];
+                alert('Tickets guardados');
+                await mostrarBotonesImprimir(payload, true);
+            } else {
+                alert(d.mensaje);
+            }
+        } catch (e) {
+            alert('Error al guardar');
+        }
     }
 
-    function mostrarBotonesImprimir(payload, auto) {
+    async function mostrarBotonesImprimir(payload, auto) {
         const params = new URLSearchParams(window.location.search);
         const mesaId = params.get('mesa');
-        ticketsGuardados.forEach((t, i) => {
-            const prods = productos.filter(p => p.subcuenta === i + 1);
-            const data = {
-                venta_id: payload.venta_id,
-                folio: t.folio,
-                fecha: new Date().toLocaleString(),
-                productos: prods,
-                propina: t.propina,
-                total: t.total
-            };
+        for (let i = 0; i < ticketsGuardados.length; i++) {
+            const t = ticketsGuardados[i];
+            let ticketInfo = null;
+            try {
+                const r = await fetch('../../api/tickets/reimprimir_ticket.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ folio: t.folio })
+                });
+                const jd = await r.json();
+                if (jd.success && jd.resultado.tickets && jd.resultado.tickets.length) {
+                    ticketInfo = jd.resultado.tickets[0];
+                }
+            } catch (e) {}
+            if (!ticketInfo) continue;
             const url = mesaId ? `ticket.php?print=1&mesa=${mesaId}` : 'ticket.php?print=1';
             const imprimir = () => {
-                localStorage.setItem('ticketData', JSON.stringify(data));
+                localStorage.setItem('ticketData', JSON.stringify(ticketInfo));
                 window.open(url, '_blank');
             };
             const div = document.getElementById('sub' + (i + 1));
@@ -286,7 +299,7 @@
                 div.appendChild(btn);
             }
             if (auto) imprimir();
-        });
+        }
     }
 
     async function liberarMesa(ventaId) {

@@ -40,6 +40,7 @@ async function cargarHistorial() {
 }
 
 const usuarioId = window.usuarioId || 1; // ID del cajero proveniente de la sesión
+const sedeId = window.sedeId || 1;
 let corteIdActual = null;
 let catalogo = [];
 let productos = [];
@@ -550,7 +551,8 @@ async function registrarVenta() {
         usuario_id,
         observacion: (tipo === 'domicilio' || tipo === 'rapido') ? observacion : '',
         productos,
-        corte_id: corteIdActual
+        corte_id: corteIdActual,
+        sede_id: sedeId
     };
 
     try {
@@ -661,12 +663,18 @@ async function verDetalles(id) {
             document.getElementById('imprimirTicket').addEventListener('click', () => {
                 const venta = ventasData[id] || {};
                 const total = venta.total || info.productos.reduce((s, p) => s + parseFloat(p.subtotal), 0);
+                let sede = venta.sede_id || sedeId;
+                if (!venta.sede_id) {
+                    const entrada = prompt('Indica sede', sedeId);
+                    if (entrada) sede = parseInt(entrada) || sede;
+                }
                 const payload = {
                     venta_id: parseInt(id),
                     usuario_id: venta.usuario_id || 1,
                     fecha: venta.fecha || '',
                     productos: info.productos,
-                    total
+                    total,
+                    sede_id: sede
                 };
                 localStorage.setItem('ticketData', JSON.stringify(payload));
                 const mesaParam = venta.mesa_id ? `&mesa=${venta.mesa_id}` : '';
@@ -773,12 +781,18 @@ async function imprimirSolicitud(mesaId, ventaId) {
             const info = data.resultado || data;
             const venta = ventasData[ventaId] || {};
             const total = venta.total || info.productos.reduce((s, p) => s + parseFloat(p.subtotal), 0);
+            let sede = venta.sede_id || sedeId;
+            if (!venta.sede_id) {
+                const entrada = prompt('Indica sede', sedeId);
+                if (entrada) sede = parseInt(entrada) || sede;
+            }
             const payload = {
                 venta_id: parseInt(ventaId),
                 usuario_id: venta.usuario_id || 1,
                 fecha: venta.fecha || '',
                 productos: info.productos,
-                total
+                total,
+                sede_id: sede
             };
             localStorage.setItem('ticketData', JSON.stringify(payload));
             const w = window.open(`ticket.php?venta=${ventaId}&mesa=${mesaId}`, '_blank');
