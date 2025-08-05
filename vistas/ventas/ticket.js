@@ -1,4 +1,5 @@
  function llenarTicket(data) {
+        document.getElementById('logoSede').src = data.logo || '';
         document.getElementById('ventaId').textContent = data.venta_id;
         document.getElementById('fechaHora').textContent = data.fecha_fin || data.fecha || '';
         document.getElementById('folio').textContent = data.folio || '';
@@ -9,9 +10,11 @@
         document.getElementById('sedeId').textContent = data.sede_id || '';
         document.getElementById('mesaNombre').textContent = data.mesa_nombre || '';
         document.getElementById('meseroNombre').textContent = data.mesero_nombre || '';
-        document.getElementById('horaInicio').textContent = data.fecha_inicio ? new Date(data.fecha_inicio).toLocaleString() : '';
-        document.getElementById('horaFin').textContent = data.fecha_fin ? new Date(data.fecha_fin).toLocaleString() : '';
-        document.getElementById('tiempoServicio').textContent = data.tiempo_servicio ? data.tiempo_servicio + ' min' : '';
+        document.getElementById('tipoEntrega').textContent = data.tipo_entrega || 'N/A';
+        document.getElementById('tipoPago').textContent = data.tipo_pago || 'N/A';
+        document.getElementById('horaInicio').textContent = (data.fecha_inicio && data.fecha_inicio !== 'N/A') ? new Date(data.fecha_inicio).toLocaleString() : (data.fecha_inicio || 'N/A');
+        document.getElementById('horaFin').textContent = (data.fecha_fin && data.fecha_fin !== 'N/A') ? new Date(data.fecha_fin).toLocaleString() : (data.fecha_fin || 'N/A');
+        document.getElementById('tiempoServicio').textContent = data.tiempo_servicio ? data.tiempo_servicio + ' min' : 'N/A';
         const tbody = document.querySelector('#productos tbody');
         tbody.innerHTML = '';
         data.productos.forEach(p => {
@@ -20,10 +23,10 @@
             tr.innerHTML = `<td>${p.nombre}</td><td>${p.cantidad} x ${p.precio_unitario} = ${subtotal}</td>`;
             tbody.appendChild(tr);
         });
-        if (typeof data.propina !== 'undefined') {
-            document.getElementById('propina').textContent = 'Propina: $' + parseFloat(data.propina).toFixed(2);
-        }
-        document.getElementById('totalVenta').textContent = 'Total: $' + data.total;
+        document.getElementById('propina').textContent = '$' + parseFloat(data.propina || 0).toFixed(2);
+        document.getElementById('cambio').textContent = '$' + parseFloat(data.cambio || 0).toFixed(2);
+        document.getElementById('totalVenta').textContent = 'Total: $' + parseFloat(data.total).toFixed(2);
+        document.getElementById('totalLetras').textContent = data.total_letras || '';
     }
 
     document.addEventListener('DOMContentLoaded', async () => {

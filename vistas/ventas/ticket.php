@@ -46,6 +46,7 @@ ob_start();
 </div>
 
 <div id="imprimir" style="display:none;" class="custom-modal2">
+    <img id="logoSede" style="max-width:100px;" alt="logo" />
     <h2 id="nombreRestaurante" class="section-header">Mi Restaurante</h2>
     <div id="direccionNegocio"></div>
     <div id="rfcNegocio"></div>
@@ -56,14 +57,18 @@ ob_start();
     <div><strong>Sede:</strong> <span id="sedeId"></span></div>
     <div><strong>Mesa:</strong> <span id="mesaNombre"></span></div>
     <div><strong>Mesero:</strong> <span id="meseroNombre"></span></div>
+    <div><strong>Tipo entrega:</strong> <span id="tipoEntrega"></span></div>
+    <div><strong>Tipo pago:</strong> <span id="tipoPago"></span></div>
     <div><strong>Inicio:</strong> <span id="horaInicio"></span></div>
     <div><strong>Fin:</strong> <span id="horaFin"></span></div>
     <div><strong>Tiempo:</strong> <span id="tiempoServicio"></span></div>
     <table id="productos" class="styled-table" style="margin-top: 10px;">
         <tbody></tbody>
     </table>
-    <div id="propina" class="mt-2"></div>
+    <div class="mt-2"><strong>Propina:</strong> <span id="propina"></span></div>
+    <div class="mt-2"><strong>Cambio:</strong> <span id="cambio"></span></div>
     <div id="totalVenta" class="mt-2 mb-2"></div>
+    <div id="totalLetras"></div>
     <p>Gracias por su compra</p>
     <button id="btnImprimir" class="btn custom-btn" onclick="window.print()">Imprimir</button>
 </div>
