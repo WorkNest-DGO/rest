@@ -30,7 +30,7 @@ ob_start();
 <h1 class="section-header">Corte de Caja</h1>
 
 <div id="corteActual" class="mb-3">
-  <button class="btn custom-btn" id="btnIniciar" class="btn btn-primary">Iniciar Corte</button>
+  <button class="btn custom-btn btn-primary" id="btnIniciar">Iniciar Corte</button>
 </div>
 
 <!-- Modales -->
