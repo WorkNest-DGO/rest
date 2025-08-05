@@ -49,7 +49,7 @@ async function cerrarCorte() {
     try {
         const resResumen = await fetch('../../api/corte_caja/resumen_corte_actual.php?usuario_id=' + usuarioId);
         const resumen = await resResumen.json();
-        if (!resumen.success || !resumen.resultado.abierto) {
+        if (!resumen.success || !resumen.resultado) {
             alert('No hay resumen disponible');
             return;
         }
@@ -64,15 +64,22 @@ async function imprimirResumen() {
     try {
         const resp = await fetch('../../api/corte_caja/resumen_corte_actual.php?usuario_id=' + usuarioId);
         const data = await resp.json();
-        if (!data.success || !data.resultado.abierto) {
+        if (!data.success || !data.resultado) {
             alert('No hay corte abierto');
             return;
         }
-        const r = data.resultado;
-        let html = `<h3>Resumen de corte</h3>`;
-        html += `<p>Total: $${r.total}</p>`;
-        html += `<p>Ventas: ${r.num_ventas}</p>`;
-        html += `<p>Propinas: $${r.propinas}</p>`;
+        const resumen = data.resultado;
+        let totalGeneral = 0;
+        let html = `<h3>Resumen de corte</h3><ul>`;
+        for (const metodo in resumen) {
+            if (Object.prototype.hasOwnProperty.call(resumen, metodo)) {
+                const info = resumen[metodo] || {};
+                const subtotal = (parseFloat(info.total) || 0) + (parseFloat(info.propina) || 0);
+                totalGeneral += subtotal;
+                html += `<li>${metodo}: $${subtotal.toFixed(2)}</li>`;
+            }
+        }
+        html += `</ul><p>Total esperado: $${totalGeneral.toFixed(2)}</p>`;
         const w = window.open('', 'print');
         w.document.write(html);
         w.print();
@@ -110,10 +117,18 @@ async function verDetalle(corteId) {
 }
 
 function abrirModalDesglose(corteId, resumen) {
-    const totalEsperado = resumen ? parseFloat(resumen.total) : 0;
+    let totalEsperado = 0;
+    if (resumen && typeof resumen === 'object') {
+        for (const metodo in resumen) {
+            if (Object.prototype.hasOwnProperty.call(resumen, metodo)) {
+                const info = resumen[metodo] || {};
+                totalEsperado += (parseFloat(info.total) || 0) + (parseFloat(info.propina) || 0);
+            }
+        }
+    }
     const modal = document.getElementById('modalDesglose');
     let html = '<div style="background:#fff;border:1px solid #333;padding:10px;">';
-    html += '<h3>Desglose de efectivo</h3>';
+    html += '<h3>Desglose de caja</h3>';
     html += `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>`;
     html += '<p>Total ingresado: $<span id="totalDesglose">0.00</span> | Dif.: $<span id="difDesglose">0.00</span></p>';
     html += '<table id="tablaDesglose" border="1"><thead><tr><th>Denominación</th><th>Cantidad</th><th>Tipo</th><th></th></tr></thead><tbody></tbody></table>';
@@ -129,7 +144,7 @@ function abrirModalDesglose(corteId, resumen) {
         tr.innerHTML = `<td><input type="number" step="0.01" class="denominacion"></td>`+
             `<td><input type="number" min="0" class="cantidad" value="0"></td>`+
             `<td><select class="tipo"><option value="efectivo">efectivo</option><option value="cheque">cheque</option><option value="boucher">boucher</option></select></td>`+
-            `<td><button class="btn custom-btn" >X</button></td>`;
+            `<td><button class="btn custom-btn delFila">X</button></td>`;
         tbody.appendChild(tr);
         tr.querySelector('.delFila').addEventListener('click', () => { tr.remove(); calcular(); });
         tr.querySelectorAll('input,select').forEach(el => el.addEventListener('input', calcular));
