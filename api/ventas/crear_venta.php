@@ -25,9 +25,9 @@ $usuario_id    = isset($input['usuario_id']) ? (int) $input['usuario_id'] : null
 $corte_id      = isset($input['corte_id']) ? (int) $input['corte_id'] : null;
 $productos     = isset($input['productos']) && is_array($input['productos']) ? $input['productos'] : null;
 $observacion   = isset($input['observacion']) ? $input['observacion'] : null;
-$sede_id       = isset($input['sede_id']) ? (int)$input['sede_id'] : null;
+$sede_id       = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$input['sede_id'] : 1;
 
-if (!$tipo || !$usuario_id || !$productos || !$sede_id) {
+if (!$tipo || !$usuario_id || !$productos) {
     error('Datos incompletos para crear la venta');
 }
 
