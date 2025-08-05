@@ -1,10 +1,11 @@
 let productos = [];
 let meseros = [];
 const meseroSeleccionado = {};
+const usuarioActual = window.usuarioActual || { id: null, rol: '' };
 
 async function cargarMesas() {
     try {
-        const resp = await fetch('../../api/mesas/mesas.php');
+        const resp = await fetch('../../api/mesas/listar_mesas.php');
         const data = await resp.json();
         if (data.success) {
             const mesas = data.resultado;
@@ -99,6 +100,7 @@ function renderKanban(listaMeseros, mesas) {
         if (!col) return;
         const card = document.createElement('li');
         card.className = 'drag-item mesa';
+        card.classList.add(`estado-${m.estado}`);
         card.dataset.mesa = m.id;
         card.dataset.venta = m.venta_id || '';
         card.dataset.estado = m.estado;
@@ -138,32 +140,34 @@ function renderKanban(listaMeseros, mesas) {
             <button class="ticket" data-mesa="${m.id}" data-nombre="${m.nombre}" data-venta="${m.venta_id || ''}">Enviar ticket</button>
         `;
 
-        if (m.estado === 'libre' && m.estado_reserva === 'ninguna') {
-            card.addEventListener('click', () => reservarMesa(m.id));
+        const puedeEditar = usuarioActual.rol === 'admin' || (m.usuario_id && parseInt(m.usuario_id) === usuarioActual.id);
+        const btnCambiar = card.querySelector('button.cambiar');
+        const btnDividir = card.querySelector('button.dividir');
+
+        if (puedeEditar) {
+            if (m.estado === 'libre' && m.estado_reserva === 'ninguna') {
+                card.addEventListener('click', () => reservarMesa(m.id));
+            }
+            btnCambiar.addEventListener('click', ev => { ev.stopPropagation(); mostrarMenu(btnCambiar.dataset.id); });
+            btnDividir.addEventListener('click', ev => { ev.stopPropagation(); dividirMesa(btnDividir.dataset.id); });
+        } else {
+            btnCambiar.disabled = true;
+            btnDividir.disabled = true;
         }
 
-        col.appendChild(card);
-    });
-
-    cont.querySelectorAll('button.cambiar').forEach(btn => {
-        btn.addEventListener('click', ev => { ev.stopPropagation(); mostrarMenu(btn.dataset.id); });
-    });
-    cont.querySelectorAll('button.dividir').forEach(btn => {
-        btn.addEventListener('click', ev => { ev.stopPropagation(); dividirMesa(btn.dataset.id); });
-    });
-    cont.querySelectorAll('button.detalles').forEach(btn => {
-        btn.addEventListener('click', ev => {
+        const btnDetalles = card.querySelector('button.detalles');
+        btnDetalles.addEventListener('click', ev => {
             ev.stopPropagation();
-            const card = btn.closest('.mesa');
             verVenta(card.dataset.venta, card.dataset.mesa, card.querySelector('h3').textContent, card.dataset.estado, card.dataset.mesero);
         });
-    });
-    cont.querySelectorAll('button.ticket').forEach(btn => {
-        btn.addEventListener('click', ev => {
+
+        const btnTicket = card.querySelector('button.ticket');
+        btnTicket.addEventListener('click', ev => {
             ev.stopPropagation();
-            const card = btn.closest('.mesa');
             solicitarTicket(card.dataset.mesa, card.querySelector('h3').textContent, card.dataset.venta);
         });
+
+        col.appendChild(card);
     });
 
     activarDrag();
@@ -171,7 +175,12 @@ function renderKanban(listaMeseros, mesas) {
 
 function activarDrag() {
     const lists = Array.from(document.querySelectorAll('.drag-inner-list'));
-    dragula(lists);
+    dragula(lists, {
+        moves: (el) => {
+            const mesaUsuarioId = parseInt(el.dataset.mesero) || null;
+            return usuarioActual.rol === 'admin' || mesaUsuarioId === usuarioActual.id;
+        }
+    });
 }
 
 function mostrarMenu(id) {

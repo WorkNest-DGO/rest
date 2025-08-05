@@ -55,6 +55,12 @@ ob_start();
 
 <?php require_once __DIR__ . '/../footer.php'; ?>
 
+<script>
+window.usuarioActual = {
+    id: <?= (int)($_SESSION['usuario_id'] ?? 0); ?>,
+    rol: <?= json_encode($_SESSION['rol'] ?? ''); ?>
+};
+</script>
 <script src="kanbanMesas.js"></script>
 </body>
 </html>

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
+session_start();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error('Método no permitido');
@@ -9,17 +10,33 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = json_decode(file_get_contents('php://input'), true);
 $mesa_id = $input['mesa_id'] ?? null;
 $usuario_id = $input['usuario_id'] ?? null;
-$asignador_id = $input['usuario_asignador_id'] ?? null;
 
-if (!$mesa_id || !$asignador_id) {
+if (!$mesa_id) {
     error('Datos inválidos');
 }
 
 $mesa_id = (int)$mesa_id;
-$asignador_id = (int)$asignador_id;
 $usuario_id = $usuario_id !== null ? (int)$usuario_id : null;
 
-$conn->query('SET @usuario_asignador_id = ' . $asignador_id);
+$usuarioActualId = $_SESSION['usuario_id'] ?? null;
+$rol = $_SESSION['rol'] ?? '';
+if (!$usuarioActualId) {
+    error('No autenticado');
+}
+
+if ($rol !== 'admin') {
+    $stmt = $conn->prepare('SELECT usuario_id FROM mesas WHERE id = ?');
+    if (!$stmt) {
+        error('Error al preparar consulta: ' . $conn->error);
+    }
+    $stmt->bind_param('i', $mesa_id);
+    $stmt->execute();
+    $res = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if (!$res || (int)$res['usuario_id'] !== $usuarioActualId) {
+        error('No autorizado');
+    }
+}
 
 $stmt = $conn->prepare('UPDATE mesas SET usuario_id = ? WHERE id = ?');
 if (!$stmt) {

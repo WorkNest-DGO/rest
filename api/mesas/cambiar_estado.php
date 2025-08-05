@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
+session_start();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error('Método no permitido');
@@ -15,6 +16,26 @@ $mesa_id = (int)$input['mesa_id'];
 $nuevo_estado = $input['nuevo_estado'];
 $nombre_reserva = $input['nombre_reserva'] ?? null;
 $fecha_reserva  = $input['fecha_reserva'] ?? null;
+
+$usuarioActualId = $_SESSION['usuario_id'] ?? null;
+$rol = $_SESSION['rol'] ?? '';
+if (!$usuarioActualId) {
+    error('No autenticado');
+}
+
+if ($rol !== 'admin') {
+    $stmt = $conn->prepare('SELECT usuario_id FROM mesas WHERE id = ?');
+    if (!$stmt) {
+        error('Error al preparar consulta: ' . $conn->error);
+    }
+    $stmt->bind_param('i', $mesa_id);
+    $stmt->execute();
+    $res = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if (!$res || (int)$res['usuario_id'] !== $usuarioActualId) {
+        error('No autorizado');
+    }
+}
 
 $estados = ['libre', 'ocupada', 'reservada'];
 if (!in_array($nuevo_estado, $estados, true)) {
