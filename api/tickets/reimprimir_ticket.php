@@ -134,7 +134,7 @@ while ($t = $res->fetch_assoc()) {
         'tipo_entrega'     => $tipo_entrega,
         'cambio'           => (float)$cambio,
         'total_letras'     => numeroALetras($t['total']),
-        'logo_url'         => 'utils/logo.png',
+        'logo_url'         => '../../utils/logo.png',
         'sede_id'          => isset($t['sede_id']) && !empty($t['sede_id']) ? (int)$t['sede_id'] : 1,
         'productos'        => $prods
     ];

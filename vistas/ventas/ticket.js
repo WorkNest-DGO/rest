@@ -1,5 +1,5 @@
  function llenarTicket(data) {
-        const logoSrc = data.logo_url || 'utils/logo.png';
+        const logoSrc = data.logo_url || '../../utils/logo.png';
         document.getElementById('ticketLogo').src = logoSrc;
         document.getElementById('ventaId').textContent = data.venta_id;
         document.getElementById('fechaHora').textContent = data.fecha_fin || data.fecha || '';
