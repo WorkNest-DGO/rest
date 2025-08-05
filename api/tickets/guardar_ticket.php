@@ -14,9 +14,10 @@ if (!$input || !isset($input['venta_id'], $input['usuario_id'], $input['subcuent
 $venta_id   = (int)$input['venta_id'];
 $usuario_id = (int)$input['usuario_id'];
 $subcuentas = $input['subcuentas'];
+$sede_id    = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$input['sede_id'] : 1;
 
-// Obtener datos de la venta y de la sede
-$stmtVenta = $conn->prepare('SELECT mesa_id, usuario_id AS mesero_id, fecha_inicio, sede_id, tipo_entrega FROM ventas WHERE id = ?');
+// Obtener datos de la venta
+$stmtVenta = $conn->prepare('SELECT mesa_id, usuario_id AS mesero_id, fecha_inicio, tipo_entrega FROM ventas WHERE id = ?');
 if (!$stmtVenta) {
     error('Error al preparar datos de venta: ' . $conn->error);
 }
@@ -65,7 +66,6 @@ $fecha_inicio = $venta['fecha_inicio'] ?? null;
 $fecha_fin = date('Y-m-d H:i:s');
 $tiempo_servicio = $fecha_inicio ? (int) ((strtotime($fecha_fin) - strtotime($fecha_inicio)) / 60) : 0;
 
-$sede_id = isset($venta['sede_id']) && !empty($venta['sede_id']) ? (int)$venta['sede_id'] : 1;
 $stmtSede = $conn->prepare('SELECT nombre, direccion, rfc, telefono, activo FROM sedes WHERE id = ?');
 if (!$stmtSede) {
     error('Error al preparar datos de sede: ' . $conn->error);
@@ -79,7 +79,19 @@ $resSede = $stmtSede->get_result();
 $sede = $resSede->fetch_assoc();
 $stmtSede->close();
 if (!$sede || (isset($sede['activo']) && !$sede['activo'])) {
-    error('Sede no válida o inactiva');
+    $sede_id = 1;
+    $stmtSede = $conn->prepare('SELECT nombre, direccion, rfc, telefono, activo FROM sedes WHERE id = ?');
+    if ($stmtSede) {
+        $stmtSede->bind_param('i', $sede_id);
+        if ($stmtSede->execute()) {
+            $resSede = $stmtSede->get_result();
+            $sede = $resSede->fetch_assoc();
+        }
+        $stmtSede->close();
+    }
+    if (!$sede || (isset($sede['activo']) && !$sede['activo'])) {
+        error('Sede no válida o inactiva');
+    }
 }
 $nombre_negocio    = $sede['nombre'] ?? '';
 $direccion_negocio = $sede['direccion'] ?? '';
@@ -145,7 +157,7 @@ foreach ($subcuentas as $sub) {
         $conn->rollback();
         error('Tipo de pago o monto recibido faltante');
     }
-    $insTicket->bind_param('iiddisdsssissssi', $venta_id, $folio_actual, $total, $propina, $usuario_id, $tipo_pago, $monto_recibido, $mesa_nombre, $mesero_nombre, $fecha_inicio, $fecha_fin, $tiempo_servicio, $nombre_negocio, $direccion_negocio, $rfc_negocio, $telefono_negocio, $sede_id);
+    $insTicket->bind_param('iiddisdssssissssi', $venta_id, $folio_actual, $total, $propina, $usuario_id, $tipo_pago, $monto_recibido, $mesa_nombre, $mesero_nombre, $fecha_inicio, $fecha_fin, $tiempo_servicio, $nombre_negocio, $direccion_negocio, $rfc_negocio, $telefono_negocio, $sede_id);
     if (!$insTicket->execute()) {
         $conn->rollback();
         error('Error al guardar ticket: ' . $insTicket->error);

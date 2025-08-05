@@ -73,7 +73,7 @@ while ($t = $res->fetch_assoc()) {
         'direccion_negocio'=> $t['direccion_negocio'],
         'rfc_negocio'      => $t['rfc_negocio'],
         'telefono_negocio' => $t['telefono_negocio'],
-        'sede_id'          => $t['sede_id'],
+        'sede_id'          => isset($t['sede_id']) && !empty($t['sede_id']) ? (int)$t['sede_id'] : 1,
         'productos'        => $prods
     ];
 }
