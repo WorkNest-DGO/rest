@@ -51,6 +51,7 @@ let productos = [];
 let ventasData = {};
 let repartidores = [];
 let ticketRequests = [];
+let ventaIdActual = null;
 
 function deshabilitarCobro() {
     document.querySelectorAll('#formVenta input, #formVenta select, #formVenta button')
@@ -605,6 +606,7 @@ async function cancelarVenta(id) {
 }
 
 async function verDetalles(id) {
+    ventaIdActual = id;
     try {
         const resp = await fetch('../../api/ventas/detalle_venta.php', {
             method: 'POST',
@@ -624,12 +626,15 @@ async function verDetalles(id) {
                         <p>Tipo: ${info.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${info.mesero}</p>`;
             html += `<table border="1"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th></tr></thead><tbody>`;
             info.productos.forEach(p => {
-                const btn = p.estado_producto !== 'entregado'
-                    ? `<button class="btn custom-btn" data-id="${p.id}">Eliminar</button>`
+                const btnEliminar = p.estado_producto !== 'entregado'
+                    ? `<button class="btn custom-btn delDetalle" data-id="${p.id}">Eliminar</button>`
+                    : '';
+                const btnEntregar = p.estado_producto === 'listo'
+                    ? ` <button class="btn btn-success btn-entregar" data-id="${p.id}">Entregar</button>`
                     : '';
                 const est = (p.estado_producto || '').replace('_', ' ');
                 html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${est}</td>` +
-                        `<td>${btn}</td></tr>`;
+                        `<td>${btnEliminar}${btnEntregar}</td></tr>`;
             });
             html += `</tbody></table>`;
             if (info.foto_entrega) {
@@ -887,7 +892,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Delegación de eventos con jQuery para botones dinámicos
-    $(document).on('click', '.btn-detalle', function () {
+$(document).on('click', '.btn-detalle', function () {
         const id = $(this).data('id');
         verDetalles(id);
     });
@@ -908,4 +913,29 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Error al cancelar la venta');
         });
     });
+
+});
+
+document.addEventListener('click', function (e) {
+    if (e.target.classList.contains('btn-entregar')) {
+        const id = e.target.dataset.id;
+        fetch('../../api/ventas/cambiar_estado_producto.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ detalle_id: id, estado: 'entregado' })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Producto marcado como entregado');
+                    if (ventaIdActual) {
+                        verDetalles(ventaIdActual);
+                        cargarHistorial();
+                    }
+                } else {
+                    alert(data.mensaje || 'Error al actualizar estado');
+                }
+            })
+            .catch(() => alert('Error al actualizar estado'));
+    }
 });

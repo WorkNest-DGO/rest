@@ -149,6 +149,8 @@ ob_start();
 <script>
   // ID de usuario proveniente de la sesión para operaciones en JS
   window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;
+  // ID de la venta actualmente consultada en detalle
+  window.ventaIdActual = null;
 </script>
 <script src="ventas.js"></script>
 </body>
