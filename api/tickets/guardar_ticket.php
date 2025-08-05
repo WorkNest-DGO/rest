@@ -98,9 +98,18 @@ $direccion_negocio = $sede['direccion'] ?? '';
 $rfc_negocio       = $sede['rfc'] ?? '';
 $telefono_negocio  = $sede['telefono'] ?? '';
 
+// Reemplazar nulos por "N/A"
+$mesa_nombre      = $mesa_nombre      ?? 'N/A';
+$mesero_nombre    = $mesero_nombre    ?? 'N/A';
+$nombre_negocio   = $nombre_negocio   ?: 'N/A';
+$direccion_negocio= $direccion_negocio?: 'N/A';
+$rfc_negocio      = $rfc_negocio      ?: 'N/A';
+$telefono_negocio = $telefono_negocio ?: 'N/A';
+$tipo_entrega     = $tipo_entrega     ?: 'N/A';
+
 $conn->begin_transaction();
 
-$insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, total, propina, usuario_id, tipo_pago, monto_recibido, mesa_nombre, mesero_nombre, fecha_inicio, fecha_fin, tiempo_servicio, nombre_negocio, direccion_negocio, rfc_negocio, telefono_negocio, sede_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+$insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, total, propina, usuario_id, tipo_pago, tipo_entrega, monto_recibido, mesa_nombre, mesero_nombre, fecha_inicio, fecha_fin, tiempo_servicio, nombre_negocio, direccion_negocio, rfc_negocio, telefono_negocio, sede_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 $insDetalle = $conn->prepare('INSERT INTO ticket_detalles (ticket_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)');
 if (!$insTicket || !$insDetalle) {
     $conn->rollback();
@@ -157,7 +166,7 @@ foreach ($subcuentas as $sub) {
         $conn->rollback();
         error('Tipo de pago o monto recibido faltante');
     }
-    $insTicket->bind_param('iiddisdssssissssi', $venta_id, $folio_actual, $total, $propina, $usuario_id, $tipo_pago, $monto_recibido, $mesa_nombre, $mesero_nombre, $fecha_inicio, $fecha_fin, $tiempo_servicio, $nombre_negocio, $direccion_negocio, $rfc_negocio, $telefono_negocio, $sede_id);
+    $insTicket->bind_param('iiddissdssssissssi', $venta_id, $folio_actual, $total, $propina, $usuario_id, $tipo_pago, $tipo_entrega, $monto_recibido, $mesa_nombre, $mesero_nombre, $fecha_inicio, $fecha_fin, $tiempo_servicio, $nombre_negocio, $direccion_negocio, $rfc_negocio, $telefono_negocio, $sede_id);
     if (!$insTicket->execute()) {
         $conn->rollback();
         error('Error al guardar ticket: ' . $insTicket->error);

@@ -2,6 +2,48 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
+function convertirNumero($num) {
+    $unidades = ["", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez", "once", "doce", "trece", "catorce", "quince", "dieciséis", "diecisiete", "dieciocho", "diecinueve", "veinte"];
+    $decenas = ["", "diez", "veinte", "treinta", "cuarenta", "cincuenta", "sesenta", "setenta", "ochenta", "noventa"];
+    $centenas = ["", "ciento", "doscientos", "trescientos", "cuatrocientos", "quinientos", "seiscientos", "setecientos", "ochocientos", "novecientos"];
+    if ($num == 0) return "cero";
+    if ($num == 100) return "cien";
+    $texto = "";
+    if ($num >= 1000000) {
+        $millones = floor($num / 1000000);
+        $texto .= convertirNumero($millones) . " millones ";
+        $num %= 1000000;
+    }
+    if ($num >= 1000) {
+        $miles = floor($num / 1000);
+        if ($miles == 1) $texto .= "mil ";
+        else $texto .= convertirNumero($miles) . " mil ";
+        $num %= 1000;
+    }
+    if ($num >= 100) {
+        $cent = floor($num / 100);
+        $texto .= $centenas[$cent] . " ";
+        $num %= 100;
+    }
+    if ($num > 20) {
+        $dec = floor($num / 10);
+        $texto .= $decenas[$dec];
+        $num %= 10;
+        if ($num) $texto .= " y " . $unidades[$num];
+    } elseif ($num > 0) {
+        $texto .= $unidades[$num];
+    }
+    return trim($texto);
+}
+
+function numeroALetras($numero) {
+    $entero = floor($numero);
+    $decimal = round(($numero - $entero) * 100);
+    $decimal = str_pad($decimal, 2, '0', STR_PAD_LEFT);
+    $letras = convertirNumero($entero);
+    return ucfirst(trim($letras)) . " pesos {$decimal}/100 M.N.";
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error('Método no permitido');
 }
@@ -22,8 +64,12 @@ if (isset($input['folio'])) {
 $stmt = $conn->prepare("SELECT t.id, t.folio, t.total, t.propina, t.fecha, t.venta_id,
                                t.mesa_nombre, t.mesero_nombre, t.fecha_inicio, t.fecha_fin,
                                t.tiempo_servicio, t.nombre_negocio, t.direccion_negocio,
-                               t.rfc_negocio, t.telefono_negocio, t.sede_id
-                        FROM tickets t WHERE $cond");
+                               t.rfc_negocio, t.telefono_negocio, t.sede_id,
+                               t.tipo_pago, t.monto_recibido, v.tipo_entrega, s.logo_url AS logo
+                        FROM tickets t
+                        LEFT JOIN ventas v ON t.venta_id = v.id
+                        LEFT JOIN sedes s ON t.sede_id = s.id
+                        WHERE $cond");
 if (!$stmt) {
     error('Error al preparar consulta: ' . $conn->error);
 }
@@ -57,22 +103,39 @@ while ($t = $res->fetch_assoc()) {
     }
     $det->close();
 
+    $mesa_nombre      = $t['mesa_nombre']      ?? 'N/A';
+    $mesero_nombre    = $t['mesero_nombre']    ?? 'N/A';
+    $fecha_inicio     = $t['fecha_inicio']     ?? 'N/A';
+    $fecha_fin        = $t['fecha_fin']        ?? 'N/A';
+    $tiempo_servicio  = $t['tiempo_servicio']  ?? 'N/A';
+    $nombre_negocio   = $t['nombre_negocio']   ?? 'N/A';
+    $direccion_negocio= $t['direccion_negocio']?? 'N/A';
+    $rfc_negocio      = $t['rfc_negocio']      ?? 'N/A';
+    $telefono_negocio = $t['telefono_negocio'] ?? 'N/A';
+    $tipo_pago        = $t['tipo_pago']        ?? 'N/A';
+    $tipo_entrega     = $t['tipo_entrega']     ?? 'N/A';
+    $cambio           = max(0, ($t['monto_recibido'] ?? 0) - ($t['total'] ?? 0));
     $tickets[] = [
         'ticket_id'        => (int)$t['id'],
         'folio'            => (int)$t['folio'],
-        'fecha'            => $t['fecha'],
+        'fecha'            => $t['fecha'] ?? 'N/A',
         'venta_id'         => (int)$t['venta_id'],
         'propina'          => (float)$t['propina'],
         'total'            => (float)$t['total'],
-        'mesa_nombre'      => $t['mesa_nombre'],
-        'mesero_nombre'    => $t['mesero_nombre'],
-        'fecha_inicio'     => $t['fecha_inicio'],
-        'fecha_fin'        => $t['fecha_fin'],
-        'tiempo_servicio'  => $t['tiempo_servicio'],
-        'nombre_negocio'   => $t['nombre_negocio'],
-        'direccion_negocio'=> $t['direccion_negocio'],
-        'rfc_negocio'      => $t['rfc_negocio'],
-        'telefono_negocio' => $t['telefono_negocio'],
+        'mesa_nombre'      => $mesa_nombre,
+        'mesero_nombre'    => $mesero_nombre,
+        'fecha_inicio'     => $fecha_inicio,
+        'fecha_fin'        => $fecha_fin,
+        'tiempo_servicio'  => $tiempo_servicio,
+        'nombre_negocio'   => $nombre_negocio,
+        'direccion_negocio'=> $direccion_negocio,
+        'rfc_negocio'      => $rfc_negocio,
+        'telefono_negocio' => $telefono_negocio,
+        'tipo_pago'        => $tipo_pago,
+        'tipo_entrega'     => $tipo_entrega,
+        'cambio'           => (float)$cambio,
+        'total_letras'     => numeroALetras($t['total']),
+        'logo'             => $t['logo'] ?? 'N/A',
         'sede_id'          => isset($t['sede_id']) && !empty($t['sede_id']) ? (int)$t['sede_id'] : 1,
         'productos'        => $prods
     ];
