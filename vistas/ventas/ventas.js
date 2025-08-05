@@ -13,7 +13,11 @@ async function cargarHistorial() {
                 const accion = v.estatus !== 'cancelada'
                     ? `<button class="btn custom-btn btn-cancelar" data-id="${id}">Cancelar</button>`
                     : '';
-                const destino = v.tipo_entrega === 'mesa' ? v.mesa : v.repartidor;
+                const destino = v.tipo_entrega === 'mesa'
+                    ? v.mesa
+                    : v.tipo_entrega === 'domicilio'
+                        ? v.repartidor
+                        : 'Venta rápida';
                 const entregado = v.tipo_entrega === 'domicilio'
                     ? (parseInt(v.entregado) === 1 ? 'Entregado' : 'No entregado')
                     : 'N/A';
@@ -537,11 +541,14 @@ async function registrarVenta() {
         if (!libre) {
             return;
         }
-    } else {
+    } else if (tipo === 'domicilio') {
         if (isNaN(repartidor_id) || !repartidor_id) {
             alert('Selecciona un repartidor válido');
             return;
         }
+    } else if (tipo !== 'rapido') {
+        alert('Tipo de entrega inválido');
+        return;
     }
 
     const payload = {
@@ -608,7 +615,11 @@ async function verDetalles(id) {
         if (data.success) {
             const info = data.resultado || data;
             const contenedor = document.getElementById('modal-detalles');
-            const destino = info.tipo_entrega === 'mesa' ? info.mesa : info.repartidor;
+            const destino = info.tipo_entrega === 'mesa'
+                ? info.mesa
+                : info.tipo_entrega === 'domicilio'
+                    ? info.repartidor
+                    : 'Venta rápida';
             let html = `<h3>Detalle de venta</h3>
                         <p>Tipo: ${info.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${info.mesero}</p>`;
             html += `<table border="1"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th></tr></thead><tbody>`;
@@ -830,7 +841,8 @@ function verificarActivacionProductos() {
   // Mostrar si hay alguno seleccionado según tipo de entrega
   if (
     (tipoEntrega === 'mesa' && mesa) ||
-    (tipoEntrega === 'domicilio' && repartidor)
+    (tipoEntrega === 'domicilio' && repartidor) ||
+    tipoEntrega === 'rapido'
   ) {
     seccionProductos.style.display = 'block';
   } else {
@@ -871,6 +883,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tipo === 'mesa') {
             document.getElementById('observacion').value = '';
         }
+        verificarActivacionProductos();
     });
 
     // Delegación de eventos con jQuery para botones dinámicos

@@ -16,7 +16,7 @@ $usuario_id = (int)$input['usuario_id'];
 $subcuentas = $input['subcuentas'];
 
 // Obtener datos de la venta y de la sede
-$stmtVenta = $conn->prepare('SELECT mesa_id, usuario_id AS mesero_id, fecha_inicio, sede_id FROM ventas WHERE id = ?');
+$stmtVenta = $conn->prepare('SELECT mesa_id, usuario_id AS mesero_id, fecha_inicio, sede_id, tipo_entrega FROM ventas WHERE id = ?');
 if (!$stmtVenta) {
     error('Error al preparar datos de venta: ' . $conn->error);
 }
@@ -33,7 +33,10 @@ if (!$venta) {
 }
 
 $mesa_nombre = null;
-if (!empty($venta['mesa_id'])) {
+$tipo_entrega = $venta['tipo_entrega'] ?? '';
+if ($tipo_entrega === 'rapido') {
+    $mesa_nombre = 'Venta rápida';
+} elseif (!empty($venta['mesa_id'])) {
     $m = $conn->prepare('SELECT nombre FROM mesas WHERE id = ?');
     if ($m) {
         $m->bind_param('i', $venta['mesa_id']);

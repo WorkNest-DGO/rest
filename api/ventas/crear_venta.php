@@ -57,6 +57,10 @@ if ($tipo === 'mesa') {
     if (!$repartidor_id || $mesa_id) {
         error('Venta a domicilio requiere repartidor_id y sin mesa_id');
     }
+} elseif ($tipo === 'rapido') {
+    if ($mesa_id || $repartidor_id) {
+        error('Venta rápida no debe incluir mesa ni repartidor');
+    }
 } else {
     error('Tipo de venta inválido');
 }
