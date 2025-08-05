@@ -13,7 +13,7 @@ if (empty($usuario) || empty($contrasena)) {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT id, usuario FROM usuarios WHERE usuario = ? AND contrasena = ?");
+$stmt = $conn->prepare("SELECT id, usuario, rol FROM usuarios WHERE usuario = ? AND contrasena = ?");
 $stmt->bind_param("ss", $usuario, $contrasena);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -21,6 +21,7 @@ $usuario = $result->fetch_assoc();
 
 if ($usuario) {
     $_SESSION['usuario_id'] = $usuario['id'];
+    $_SESSION['rol'] = $usuario['rol'];
     echo json_encode(['success' => true]);
 } else {
     echo json_encode(['success' => false, 'mensaje' => 'Credenciales incorrectas']);
