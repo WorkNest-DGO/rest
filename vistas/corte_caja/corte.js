@@ -1,6 +1,19 @@
 let corteActual = null;
 const usuarioId = 1; // En entorno real, este valor provendría de la sesión
 
+function calcularTotalEsperado(resumen) {
+    let total = 0;
+    if (resumen && typeof resumen === 'object') {
+        for (const metodo in resumen) {
+            if (Object.prototype.hasOwnProperty.call(resumen, metodo)) {
+                const info = resumen[metodo] || {};
+                total += (parseFloat(info.total) || 0) + (parseFloat(info.propina) || 0);
+            }
+        }
+    }
+    return total;
+}
+
 async function verificarCorte() {
     try {
         const resp = await fetch('../../api/corte_caja/verificar_corte_abierto.php?usuario_id=' + usuarioId);
@@ -69,16 +82,15 @@ async function imprimirResumen() {
             return;
         }
         const resumen = data.resultado;
-        let totalGeneral = 0;
         let html = `<h3>Resumen de corte</h3><ul>`;
         for (const metodo in resumen) {
             if (Object.prototype.hasOwnProperty.call(resumen, metodo)) {
                 const info = resumen[metodo] || {};
                 const subtotal = (parseFloat(info.total) || 0) + (parseFloat(info.propina) || 0);
-                totalGeneral += subtotal;
                 html += `<li>${metodo}: $${subtotal.toFixed(2)}</li>`;
             }
         }
+        const totalGeneral = calcularTotalEsperado(resumen);
         html += `</ul><p>Total esperado: $${totalGeneral.toFixed(2)}</p>`;
         const w = window.open('', 'print');
         w.document.write(html);
@@ -117,15 +129,7 @@ async function verDetalle(corteId) {
 }
 
 function abrirModalDesglose(corteId, resumen) {
-    let totalEsperado = 0;
-    if (resumen && typeof resumen === 'object') {
-        for (const metodo in resumen) {
-            if (Object.prototype.hasOwnProperty.call(resumen, metodo)) {
-                const info = resumen[metodo] || {};
-                totalEsperado += (parseFloat(info.total) || 0) + (parseFloat(info.propina) || 0);
-            }
-        }
-    }
+    const totalEsperado = calcularTotalEsperado(resumen);
     const modal = document.getElementById('modalDesglose');
     let html = '<div style="background:#fff;border:1px solid #333;padding:10px;">';
     html += '<h3>Desglose de caja</h3>';
