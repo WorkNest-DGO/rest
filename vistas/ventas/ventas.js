@@ -147,7 +147,7 @@ async function cerrarCaja() {
 
 function mostrarModalDesglose(totalEsperado) {
     const modal = document.getElementById('modalDesglose');
-    let html = '<div style="background:#fff;border:1px solid #333;padding:10px;">';
+    let html = '<div style="background:#000;border:1px solid #333;padding:10px;">';
     html += '<h3>Desglose de caja</h3>';
 
     let totalGeneral = 0;
@@ -164,7 +164,7 @@ function mostrarModalDesglose(totalEsperado) {
     html += detalleTotales;
 
     html += '<p>Total ingresado: $<span id="totalIngresado">0.00</span> | Dif.: $<span id="difIngresado">0.00</span></p>';
-    html += '<table id="tablaDesglose" border="1"><thead><tr><th>Denominación</th><th>Cantidad</th><th>Tipo</th><th></th></tr></thead><tbody></tbody></table>';
+    html += '<table class="styled-table" id="tablaDesglose" border="1"><thead><tr><th>Denominación</th><th>Cantidad</th><th>Tipo</th><th></th></tr></thead><tbody></tbody></table>';
     html += '<button class="btn custom-btn" id="addFila">Agregar fila</button> <button id="guardarDesglose">Guardar desglose</button> <button id="cancelarDesglose">Cancelar</button>';
     html += '</div>';
     modal.innerHTML = html;
