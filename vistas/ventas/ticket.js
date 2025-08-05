@@ -1,4 +1,4 @@
- function llenarTicket(data) {
+function llenarTicket(data) {
         const logoSrc = data.logo_url || '../../utils/logo.png';
         document.getElementById('ticketLogo').src = logoSrc;
         document.getElementById('ventaId').textContent = data.venta_id;
@@ -30,6 +30,20 @@
         document.getElementById('totalLetras').textContent = data.total_letras || '';
     }
 
+    function imprimirTicket() {
+        const ticketContainer = document.getElementById('ticketContainer');
+        if (!ticketContainer) return;
+        const ticketContent = ticketContainer.innerHTML;
+        const printWindow = window.open('', '', 'width=400,height=600');
+        printWindow.document.write('<html><head><title>Imprimir Ticket</title>');
+        printWindow.document.write('<link rel="stylesheet" href="../../utils/css/style.css">');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(ticketContent);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
         const params = new URLSearchParams(window.location.search);
         const imprimir = params.get('print') === '1';
@@ -44,6 +58,8 @@
             serieActual = await obtenerSerieActual();
             inicializarDividir(datos);
         }
+        const btnImprimir = document.getElementById('btnImprimir');
+        if (btnImprimir) btnImprimir.addEventListener('click', imprimirTicket);
     });
 
 

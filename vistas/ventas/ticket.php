@@ -46,31 +46,33 @@ ob_start();
 </div>
 
 <div id="imprimir" style="display:none;" class="custom-modal2">
-    <img id="ticketLogo" src="utils/logo.png" alt="Logo" style="max-width:100px;">
-    <h2 id="nombreRestaurante" class="section-header">Mi Restaurante</h2>
-    <div id="direccionNegocio"></div>
-    <div id="rfcNegocio"></div>
-    <div id="telefonoNegocio"></div>
-    <div id="fechaHora" style="margin-bottom:10px;"></div>
-    <div><strong>Folio:</strong> <span id="folio"></span></div>
-    <div><strong>Venta:</strong> <span id="ventaId"></span></div>
-    <div><strong>Sede:</strong> <span id="sedeId"></span></div>
-    <div><strong>Mesa:</strong> <span id="mesaNombre"></span></div>
-    <div><strong>Mesero:</strong> <span id="meseroNombre"></span></div>
-    <div><strong>Tipo entrega:</strong> <span id="tipoEntrega"></span></div>
-    <div><strong>Tipo pago:</strong> <span id="tipoPago"></span></div>
-    <div><strong>Inicio:</strong> <span id="horaInicio"></span></div>
-    <div><strong>Fin:</strong> <span id="horaFin"></span></div>
-    <div><strong>Tiempo:</strong> <span id="tiempoServicio"></span></div>
-    <table id="productos" class="styled-table" style="margin-top: 10px;">
-        <tbody></tbody>
-    </table>
-    <div class="mt-2"><strong>Propina:</strong> <span id="propina"></span></div>
-    <div class="mt-2"><strong>Cambio:</strong> <span id="cambio"></span></div>
-    <div id="totalVenta" class="mt-2 mb-2"></div>
-    <div id="totalLetras"></div>
-    <p>Gracias por su compra</p>
-    <button id="btnImprimir" class="btn custom-btn" onclick="window.print()">Imprimir</button>
+    <div id="ticketContainer">
+        <img id="ticketLogo" src="utils/logo.png" alt="Logo" style="max-width:100px;">
+        <h2 id="nombreRestaurante" class="section-header">Mi Restaurante</h2>
+        <div id="direccionNegocio"></div>
+        <div id="rfcNegocio"></div>
+        <div id="telefonoNegocio"></div>
+        <div id="fechaHora" style="margin-bottom:10px;"></div>
+        <div><strong>Folio:</strong> <span id="folio"></span></div>
+        <div><strong>Venta:</strong> <span id="ventaId"></span></div>
+        <div><strong>Sede:</strong> <span id="sedeId"></span></div>
+        <div><strong>Mesa:</strong> <span id="mesaNombre"></span></div>
+        <div><strong>Mesero:</strong> <span id="meseroNombre"></span></div>
+        <div><strong>Tipo entrega:</strong> <span id="tipoEntrega"></span></div>
+        <div><strong>Tipo pago:</strong> <span id="tipoPago"></span></div>
+        <div><strong>Inicio:</strong> <span id="horaInicio"></span></div>
+        <div><strong>Fin:</strong> <span id="horaFin"></span></div>
+        <div><strong>Tiempo:</strong> <span id="tiempoServicio"></span></div>
+        <table id="productos" class="styled-table" style="margin-top: 10px;">
+            <tbody></tbody>
+        </table>
+        <div class="mt-2"><strong>Propina:</strong> <span id="propina"></span></div>
+        <div class="mt-2"><strong>Cambio:</strong> <span id="cambio"></span></div>
+        <div id="totalVenta" class="mt-2 mb-2"></div>
+        <div id="totalLetras"></div>
+        <p>Gracias por su compra</p>
+    </div>
+    <button id="btnImprimir" class="btn custom-btn">Imprimir</button>
 </div>
 
 
