@@ -46,7 +46,7 @@ ob_start();
 </div>
 
 <div id="imprimir" style="display:none;" class="custom-modal2">
-    <img id="logoSede" style="max-width:100px;" alt="logo" />
+    <img id="ticketLogo" src="utils/logo.png" alt="Logo" style="max-width:100px;">
     <h2 id="nombreRestaurante" class="section-header">Mi Restaurante</h2>
     <div id="direccionNegocio"></div>
     <div id="rfcNegocio"></div>

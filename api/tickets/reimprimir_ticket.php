@@ -65,10 +65,9 @@ $stmt = $conn->prepare("SELECT t.id, t.folio, t.total, t.propina, t.fecha, t.ven
                                t.mesa_nombre, t.mesero_nombre, t.fecha_inicio, t.fecha_fin,
                                t.tiempo_servicio, t.nombre_negocio, t.direccion_negocio,
                                t.rfc_negocio, t.telefono_negocio, t.sede_id,
-                               t.tipo_pago, t.monto_recibido, v.tipo_entrega, s.logo_url AS logo
+                               t.tipo_pago, t.monto_recibido, v.tipo_entrega
                         FROM tickets t
                         LEFT JOIN ventas v ON t.venta_id = v.id
-                        LEFT JOIN sedes s ON t.sede_id = s.id
                         WHERE $cond");
 if (!$stmt) {
     error('Error al preparar consulta: ' . $conn->error);
@@ -135,7 +134,7 @@ while ($t = $res->fetch_assoc()) {
         'tipo_entrega'     => $tipo_entrega,
         'cambio'           => (float)$cambio,
         'total_letras'     => numeroALetras($t['total']),
-        'logo'             => $t['logo'] ?? 'N/A',
+        'logo_url'         => 'utils/logo.png',
         'sede_id'          => isset($t['sede_id']) && !empty($t['sede_id']) ? (int)$t['sede_id'] : 1,
         'productos'        => $prods
     ];
