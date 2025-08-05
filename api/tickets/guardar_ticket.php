@@ -65,10 +65,7 @@ $fecha_inicio = $venta['fecha_inicio'] ?? null;
 $fecha_fin = date('Y-m-d H:i:s');
 $tiempo_servicio = $fecha_inicio ? (int) ((strtotime($fecha_fin) - strtotime($fecha_inicio)) / 60) : 0;
 
-$sede_id = isset($venta['sede_id']) ? (int)$venta['sede_id'] : 0;
-if (!$sede_id) {
-    error('La venta no tiene sede asignada');
-}
+$sede_id = isset($venta['sede_id']) && !empty($venta['sede_id']) ? (int)$venta['sede_id'] : 1;
 $stmtSede = $conn->prepare('SELECT nombre, direccion, rfc, telefono, activo FROM sedes WHERE id = ?');
 if (!$stmtSede) {
     error('Error al preparar datos de sede: ' . $conn->error);

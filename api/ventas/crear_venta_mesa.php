@@ -18,9 +18,9 @@ if (!$input) {
 
 $mesa_id   = isset($input['mesa_id']) ? (int)$input['mesa_id'] : null;
 $productos = isset($input['productos']) && is_array($input['productos']) ? $input['productos'] : null;
-$sede_id   = isset($input['sede_id']) ? (int)$input['sede_id'] : null;
+$sede_id   = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$input['sede_id'] : 1;
 
-if (!$mesa_id || !$productos || !$sede_id) {
+if (!$mesa_id || !$productos) {
     error('Datos incompletos');
 }
 
