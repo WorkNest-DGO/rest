@@ -138,14 +138,16 @@ async function cerrarCaja() {
             return;
         }
 
-        mostrarModalDesglose(resumen.resultado.total);
+        mostrarModalDesglose(resumen);
     } catch (error) {
         console.error("Error al obtener resumen:", error);
         alert("Ocurrió un error inesperado al consultar el corte.");
     }
 }
 
-function mostrarModalDesglose(totalEsperado) {
+
+function mostrarModalDesglose(dataApi) {
+    const totalEsperadoObj = dataApi.resultado || {};
     const modal = document.getElementById('modalDesglose');
     let html = '<div style="background:#000;border:1px solid #333;padding:10px;">';
     html += '<h3>Desglose de caja</h3>';
@@ -153,17 +155,17 @@ function mostrarModalDesglose(totalEsperado) {
     let totalGeneral = 0;
     let detalleTotales = '';
 
-    for (const tipo in totalEsperado) {
-        const pago = totalEsperado[tipo];
+    for (const tipo in totalEsperadoObj) {
+        const pago = totalEsperadoObj[tipo] || {};
         const subtotal = (parseFloat(pago.total) || 0) + (parseFloat(pago.propina) || 0);
         totalGeneral += subtotal;
-        detalleTotales += `<p><strong>${tipo}</strong>: $${subtotal.toFixed(2)} (Total: $${parseFloat(pago.total).toFixed(2)} + Propina: $${parseFloat(pago.propina).toFixed(2)})</p>`;
+        detalleTotales += `<p><strong>${tipo}</strong>: $${subtotal.toFixed(2)} (Total: $${(parseFloat(pago.total) || 0).toFixed(2)} + Propina: $${(parseFloat(pago.propina) || 0).toFixed(2)})</p>`;
     }
 
     html += `<h4>Total esperado: $${totalGeneral.toFixed(2)}</h4>`;
     html += detalleTotales;
 
-    html += '<p>Total ingresado: $<span id="totalIngresado">0.00</span> | Dif.: $<span id="difIngresado">0.00</span></p>';
+    html += `<p>Total ingresado: $<span id="totalIngresado">${totalGeneral.toFixed(2)}</span> | Dif.: $<span id="difIngresado">0.00</span></p>`;
     html += '<table class="styled-table" id="tablaDesglose" border="1"><thead><tr><th>Denominación</th><th>Cantidad</th><th>Tipo</th><th></th></tr></thead><tbody></tbody></table>';
     html += '<button class="btn custom-btn" id="addFila">Agregar fila</button> <button id="guardarDesglose">Guardar desglose</button> <button id="cancelarDesglose">Cancelar</button>';
     html += '</div>';
@@ -209,7 +211,7 @@ function mostrarModalDesglose(totalEsperado) {
             }
         });
         modal.querySelector('#totalIngresado').textContent = total.toFixed(2);
-        modal.querySelector('#difIngresado').textContent = (total - totalGeneral).toFixed(2);
+        modal.querySelector('#difIngresado').textContent = (totalGeneral - total).toFixed(2);
     }
 
     modal.querySelector('#addFila').addEventListener('click', agregarFila);
@@ -251,10 +253,7 @@ function mostrarModalDesglose(totalEsperado) {
             alert('Error al guardar desglose');
         }
     });
-
-    calcular();
 }
-
 
 async function finalizarCorte() {
     try {
