@@ -297,7 +297,7 @@ function mostrarModalDetalle(datos, ventaId, mesaId, estado, meseroId) {
     html += `<select id="nuevo_producto"></select>`;
     html += `<input type="number" id="nuevo_cantidad" value="1" min="1">`;
     const disabled = !ventaId && estado !== 'ocupada' ? 'disabled' : '';
-    html += `<button id="agregarProductoVenta" data-venta="${ventaId || ''}" data-mesa="${mesaId}" data-estado="${estado}" ${disabled}>Agregar producto</button>`;
+    html += `<button id="agregarProductoVenta" data-venta="${ventaId || ''}" data-mesa="${mesaId}" data-estado="${estado}" >Agregar producto</button>`;
     if (ventaId) {
         html += ` <button id="guardarMesero" data-venta="${ventaId}">Actualizar mesero</button>`;
     }

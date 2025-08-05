@@ -27,7 +27,7 @@ ob_start();
 <div id="dividir" style="display:none;" class="container mt-5">
     <h2 class="section-subheader">Dividir venta</h2>
     <div class="table-responsive">
-        <table id="tablaProductos" class="table">
+        <table id="tablaProductos" class="styled-table">
             <thead>
                 <tr>
                     <th>Producto</th>
@@ -59,7 +59,7 @@ ob_start();
     <div><strong>Inicio:</strong> <span id="horaInicio"></span></div>
     <div><strong>Fin:</strong> <span id="horaFin"></span></div>
     <div><strong>Tiempo:</strong> <span id="tiempoServicio"></span></div>
-    <table id="productos" class="table" style="margin-top: 10px;">
+    <table id="productos" class="styled-table" style="margin-top: 10px;">
         <tbody></tbody>
     </table>
     <div id="propina" class="mt-2"></div>

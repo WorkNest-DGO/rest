@@ -51,7 +51,7 @@ ob_start();
   <h2 class="section-subheader">Ingredientes</h2>
   
   <div class="table-responsive">
-    <table id="tablaReceta" class="table">
+    <table id="tablaReceta" class="styled-table">
       <thead>
         <tr>
           <th>Ingrediente</th>

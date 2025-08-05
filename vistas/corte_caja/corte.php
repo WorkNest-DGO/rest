@@ -39,7 +39,7 @@ ob_start();
 
 <h2 class="section-header">Historial de Cortes</h2>
 <div class="table-responsive">
-  <table id="tablaCortes" class="table">
+  <table id="tablaCortes" class="styled-table">
     <thead>
       <tr>
         <th style="color:#fff">ID</th>
