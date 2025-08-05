@@ -19,7 +19,10 @@ if (isset($input['folio'])) {
     $param = (int)$input['venta_id'];
 }
 
-$stmt = $conn->prepare("SELECT t.id, t.folio, t.total, t.propina, t.fecha, t.venta_id
+$stmt = $conn->prepare("SELECT t.id, t.folio, t.total, t.propina, t.fecha, t.venta_id,
+                               t.mesa_nombre, t.mesero_nombre, t.fecha_inicio, t.fecha_fin,
+                               t.tiempo_servicio, t.nombre_negocio, t.direccion_negocio,
+                               t.rfc_negocio, t.telefono_negocio, t.sede_id
                         FROM tickets t WHERE $cond");
 if (!$stmt) {
     error('Error al preparar consulta: ' . $conn->error);
@@ -55,13 +58,23 @@ while ($t = $res->fetch_assoc()) {
     $det->close();
 
     $tickets[] = [
-        'ticket_id' => (int)$t['id'],
-        'folio'     => (int)$t['folio'],
-        'fecha'     => $t['fecha'],
-        'venta_id'  => (int)$t['venta_id'],
-        'propina'   => (float)$t['propina'],
-        'total'     => (float)$t['total'],
-        'productos' => $prods
+        'ticket_id'        => (int)$t['id'],
+        'folio'            => (int)$t['folio'],
+        'fecha'            => $t['fecha'],
+        'venta_id'         => (int)$t['venta_id'],
+        'propina'          => (float)$t['propina'],
+        'total'            => (float)$t['total'],
+        'mesa_nombre'      => $t['mesa_nombre'],
+        'mesero_nombre'    => $t['mesero_nombre'],
+        'fecha_inicio'     => $t['fecha_inicio'],
+        'fecha_fin'        => $t['fecha_fin'],
+        'tiempo_servicio'  => $t['tiempo_servicio'],
+        'nombre_negocio'   => $t['nombre_negocio'],
+        'direccion_negocio'=> $t['direccion_negocio'],
+        'rfc_negocio'      => $t['rfc_negocio'],
+        'telefono_negocio' => $t['telefono_negocio'],
+        'sede_id'          => $t['sede_id'],
+        'productos'        => $prods
     ];
 }
 $stmt->close();

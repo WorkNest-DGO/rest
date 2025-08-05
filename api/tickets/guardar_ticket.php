@@ -15,9 +15,80 @@ $venta_id   = (int)$input['venta_id'];
 $usuario_id = (int)$input['usuario_id'];
 $subcuentas = $input['subcuentas'];
 
+// Obtener datos de la venta y de la sede
+$stmtVenta = $conn->prepare('SELECT mesa_id, usuario_id AS mesero_id, fecha_inicio, sede_id FROM ventas WHERE id = ?');
+if (!$stmtVenta) {
+    error('Error al preparar datos de venta: ' . $conn->error);
+}
+$stmtVenta->bind_param('i', $venta_id);
+if (!$stmtVenta->execute()) {
+    $stmtVenta->close();
+    error('Error al obtener datos de venta: ' . $stmtVenta->error);
+}
+$resVenta = $stmtVenta->get_result();
+$venta = $resVenta->fetch_assoc();
+$stmtVenta->close();
+if (!$venta) {
+    error('Venta no encontrada');
+}
+
+$mesa_nombre = null;
+if (!empty($venta['mesa_id'])) {
+    $m = $conn->prepare('SELECT nombre FROM mesas WHERE id = ?');
+    if ($m) {
+        $m->bind_param('i', $venta['mesa_id']);
+        if ($m->execute()) {
+            $r = $m->get_result()->fetch_assoc();
+            $mesa_nombre = $r['nombre'] ?? null;
+        }
+        $m->close();
+    }
+}
+
+$mesero_nombre = null;
+if (!empty($venta['mesero_id'])) {
+    $u = $conn->prepare('SELECT nombre FROM usuarios WHERE id = ?');
+    if ($u) {
+        $u->bind_param('i', $venta['mesero_id']);
+        if ($u->execute()) {
+            $r = $u->get_result()->fetch_assoc();
+            $mesero_nombre = $r['nombre'] ?? null;
+        }
+        $u->close();
+    }
+}
+
+$fecha_inicio = $venta['fecha_inicio'] ?? null;
+$fecha_fin = date('Y-m-d H:i:s');
+$tiempo_servicio = $fecha_inicio ? (int) ((strtotime($fecha_fin) - strtotime($fecha_inicio)) / 60) : 0;
+
+$sede_id = isset($venta['sede_id']) ? (int)$venta['sede_id'] : 0;
+if (!$sede_id) {
+    error('La venta no tiene sede asignada');
+}
+$stmtSede = $conn->prepare('SELECT nombre, direccion, rfc, telefono, activo FROM sedes WHERE id = ?');
+if (!$stmtSede) {
+    error('Error al preparar datos de sede: ' . $conn->error);
+}
+$stmtSede->bind_param('i', $sede_id);
+if (!$stmtSede->execute()) {
+    $stmtSede->close();
+    error('Error al obtener datos de sede: ' . $stmtSede->error);
+}
+$resSede = $stmtSede->get_result();
+$sede = $resSede->fetch_assoc();
+$stmtSede->close();
+if (!$sede || (isset($sede['activo']) && !$sede['activo'])) {
+    error('Sede no válida o inactiva');
+}
+$nombre_negocio    = $sede['nombre'] ?? '';
+$direccion_negocio = $sede['direccion'] ?? '';
+$rfc_negocio       = $sede['rfc'] ?? '';
+$telefono_negocio  = $sede['telefono'] ?? '';
+
 $conn->begin_transaction();
 
-$insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, total, propina, usuario_id, tipo_pago, monto_recibido) VALUES (?, ?, ?, ?, ?, ?, ?)');
+$insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, total, propina, usuario_id, tipo_pago, monto_recibido, mesa_nombre, mesero_nombre, fecha_inicio, fecha_fin, tiempo_servicio, nombre_negocio, direccion_negocio, rfc_negocio, telefono_negocio, sede_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 $insDetalle = $conn->prepare('INSERT INTO ticket_detalles (ticket_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)');
 if (!$insTicket || !$insDetalle) {
     $conn->rollback();
@@ -74,7 +145,7 @@ foreach ($subcuentas as $sub) {
         $conn->rollback();
         error('Tipo de pago o monto recibido faltante');
     }
-    $insTicket->bind_param('iiddisd', $venta_id, $folio_actual, $total, $propina, $usuario_id, $tipo_pago, $monto_recibido);
+    $insTicket->bind_param('iiddisdsssissssi', $venta_id, $folio_actual, $total, $propina, $usuario_id, $tipo_pago, $monto_recibido, $mesa_nombre, $mesero_nombre, $fecha_inicio, $fecha_fin, $tiempo_servicio, $nombre_negocio, $direccion_negocio, $rfc_negocio, $telefono_negocio, $sede_id);
     if (!$insTicket->execute()) {
         $conn->rollback();
         error('Error al guardar ticket: ' . $insTicket->error);

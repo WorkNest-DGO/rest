@@ -18,8 +18,9 @@ if (!$input) {
 
 $mesa_id   = isset($input['mesa_id']) ? (int)$input['mesa_id'] : null;
 $productos = isset($input['productos']) && is_array($input['productos']) ? $input['productos'] : null;
+$sede_id   = isset($input['sede_id']) ? (int)$input['sede_id'] : null;
 
-if (!$mesa_id || !$productos) {
+if (!$mesa_id || !$productos || !$sede_id) {
     error('Datos incompletos');
 }
 
@@ -63,12 +64,12 @@ foreach ($productos as $p) {
     $total += $p['cantidad'] * $p['precio_unitario'];
 }
 
-$stmt = $conn->prepare('INSERT INTO ventas (mesa_id, tipo_entrega, total, corte_id, cajero_id) VALUES (?, ?, ?, ?, ?)');
+$stmt = $conn->prepare('INSERT INTO ventas (mesa_id, tipo_entrega, total, corte_id, cajero_id, sede_id) VALUES (?, ?, ?, ?, ?, ?)');
 if (!$stmt) {
     error('Error al preparar venta: ' . $conn->error);
 }
 $tipo = 'mesa';
-$stmt->bind_param('isdii', $mesa_id, $tipo, $total, $corte_id, $cajero_id);
+$stmt->bind_param('isdiii', $mesa_id, $tipo, $total, $corte_id, $cajero_id, $sede_id);
 if (!$stmt->execute()) {
     $stmt->close();
     error('Error al crear venta: ' . $stmt->error);
