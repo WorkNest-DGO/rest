@@ -273,20 +273,37 @@ document.addEventListener('DOMContentLoaded', () => {
             dataType: 'json',
             data: JSON.stringify({ id: parseInt(corteId) })
         }).done(function (resp) {
+            const contenedor = document.getElementById('modalDetalleContenido');
             if (resp.success && Array.isArray(resp.detalles)) {
-                let html = '<h5>Desglose del corte</h5>';
-                html += '<table class="table table-sm"><thead><tr><th>Denominación</th><th>Cantidad</th><th>Tipo</th><th>Subtotal</th></tr></thead><tbody>';
-                resp.detalles.forEach(d => {
-                    html += `<tr><td>${d.denominacion}</td><td>${d.cantidad}</td><td>${d.tipo_pago}</td><td>${parseFloat(d.subtotal).toFixed(2)}</td></tr>`;
+                contenedor.innerHTML = '<h5>Desglose del corte</h5><table class="table table-sm" id="tablaDetalleCorte"></table>';
+                const tablaDetalle = document.getElementById('tablaDetalleCorte');
+                tablaDetalle.innerHTML = '';
+                const thead = `<tr>
+                    <th>Denominación</th>
+                    <th>Cantidad</th>
+                    <th>Tipo de pago</th>
+                    <th>Subtotal</th>
+                </tr>`;
+                tablaDetalle.innerHTML = thead;
+                resp.detalles.forEach(item => {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `
+                        <td>${item.denominacion}</td>
+                        <td>${item.cantidad}</td>
+                        <td>${item.tipo_pago}</td>
+                        <td>$${parseFloat(item.subtotal).toFixed(2)}</td>
+                    `;
+                    tablaDetalle.appendChild(fila);
                 });
-                html += '</tbody></table>';
-                $('#modalDetalleContenido').html(html);
-                $('#modalDetalle').modal('show');
             } else {
-                alert(resp.mensaje || 'Error al obtener detalle');
+                const msg = resp.mensaje || 'Error al obtener detalle';
+                contenedor.innerHTML = `<p>${msg}</p>`;
             }
+            $('#modalDetalle').modal('show');
         }).fail(function () {
-            alert('Error al obtener detalle');
+            const contenedor = document.getElementById('modalDetalleContenido');
+            contenedor.innerHTML = '<p>Error al obtener detalle</p>';
+            $('#modalDetalle').modal('show');
         });
     });
 
