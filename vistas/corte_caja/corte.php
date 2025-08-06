@@ -65,6 +65,20 @@ ob_start();
 </div>
 
 <h2 class="section-header">Historial de Cortes</h2>
+<div class="d-flex justify-content-between mb-2">
+  <div>
+    <label for="selectRegistros">Mostrar</label>
+    <select id="selectRegistros" class="custom-select custom-select-sm">
+      <option value="15">15</option>
+      <option value="25">25</option>
+      <option value="50">50</option>
+    </select>
+    <span>registros</span>
+  </div>
+  <div>
+    <input type="text" id="buscarCorte" class="form-control form-control-sm" placeholder="Buscar...">
+  </div>
+</div>
 <div class="table-responsive">
   <table id="tablaCortes" class="styled-table">
     <thead>
@@ -82,6 +96,7 @@ ob_start();
     </tbody>
   </table>
 </div>
+<div id="paginacion" class="mt-2"></div>
 
 </div>
 <?php require_once __DIR__ . '/../footer.php'; ?>
@@ -91,3 +106,4 @@ ob_start();
 <?php
 $content = ob_get_clean();
 include __DIR__ . '/../nav.php';
+
