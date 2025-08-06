@@ -148,10 +148,31 @@ function abrirModalDesglose(corteId, resumen) {
 
     function agregarFila() {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td><input type="number" step="0.01" class="denominacion"></td>`+
-            `<td><input type="number" min="0" class="cantidad" value="0"></td>`+
-            `<td><select class="tipo"><option value="efectivo">efectivo</option><option value="cheque">cheque</option><option value="boucher">boucher</option></select></td>`+
-            `<td><button class="btn custom-btn delFila">X</button></td>`;
+
+        const tdDen = document.createElement('td');
+        const select = document.createElement('select');
+        select.classList.add('denominacion');
+        catalogoDenominaciones.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = `${d.descripcion} ($${d.valor})`;
+            select.appendChild(opt);
+        });
+        tdDen.appendChild(select);
+
+        const tdCant = document.createElement('td');
+        tdCant.innerHTML = `<input type="number" min="0" class="cantidad" value="0">`;
+
+        const tdTipo = document.createElement('td');
+        tdTipo.innerHTML = `<select class="tipo"><option value="efectivo">efectivo</option><option value="cheque">cheque</option><option value="boucher">boucher</option></select>`;
+
+        const tdDel = document.createElement('td');
+        tdDel.innerHTML = `<button class="btn custom-btn delFila">X</button>`;
+
+        tr.appendChild(tdDen);
+        tr.appendChild(tdCant);
+        tr.appendChild(tdTipo);
+        tr.appendChild(tdDel);
         tbody.appendChild(tr);
         tr.querySelector('.delFila').addEventListener('click', () => { tr.remove(); calcular(); });
         tr.querySelectorAll('input,select').forEach(el => el.addEventListener('input', calcular));
@@ -161,13 +182,15 @@ function abrirModalDesglose(corteId, resumen) {
         const filas = Array.from(tbody.querySelectorAll('tr'));
         let total = 0;
         filas.forEach(f => {
-            const d = parseFloat(f.querySelector('.denominacion').value) || 0;
+            const id = parseInt(f.querySelector('.denominacion').value);
+            const denom = catalogoDenominaciones.find(d => d.id === id);
+            const valor = denom ? parseFloat(denom.valor) : 0;
             const c = parseInt(f.querySelector('.cantidad').value) || 0;
             const t = f.querySelector('.tipo').value;
             if (t === 'efectivo') {
-                total += d * c;
+                total += valor * c;
             } else {
-                total += d;
+                total += valor;
             }
         });
         modal.querySelector('#totalDesglose').textContent = total.toFixed(2);
@@ -185,7 +208,7 @@ function abrirModalDesglose(corteId, resumen) {
     modal.querySelector('#guardarDesglose').addEventListener('click', async () => {
         const filas = Array.from(tbody.querySelectorAll('tr'));
         const detalle = filas.map(tr => ({
-            denominacion: parseFloat(tr.querySelector('.denominacion').value) || 0,
+            denominacion_id: parseInt(tr.querySelector('.denominacion').value),
             cantidad: parseInt(tr.querySelector('.cantidad').value) || 0,
             tipo_pago: tr.querySelector('.tipo').value
         })).filter(d => d.cantidad > 0 || d.tipo_pago !== 'efectivo');
@@ -339,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 resp.detalles.forEach(item => {
                     const fila = document.createElement('tr');
                     fila.innerHTML = `
-                        <td>${item.denominacion}</td>
+                        <td>${item.descripcion}</td>
                         <td>${item.cantidad}</td>
                         <td>${item.tipo_pago}</td>
                         <td>$${parseFloat(item.subtotal).toFixed(2)}</td>

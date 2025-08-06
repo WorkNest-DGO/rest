@@ -10,19 +10,6 @@ $input = json_decode(file_get_contents('php://input'), true);
 $corte_id = $input['corte_id'] ?? ($_SESSION['corte_id'] ?? null);
 $detalle   = $input['detalle'] ?? null;
 
-if ($detalle === null && isset($input['desglose'])) {
-    $detalle = [];
-    foreach ($input['desglose'] as $den => $cant) {
-        $detalle[] = ['denominacion' => (float)$den, 'cantidad' => (int)$cant, 'tipo_pago' => 'efectivo'];
-    }
-    if (isset($input['boucher']) && $input['boucher'] > 0) {
-        $detalle[] = ['denominacion' => (float)$input['boucher'], 'cantidad' => 1, 'tipo_pago' => 'boucher'];
-    }
-    if (isset($input['cheque']) && $input['cheque'] > 0) {
-        $detalle[] = ['denominacion' => (float)$input['cheque'], 'cantidad' => 1, 'tipo_pago' => 'cheque'];
-    }
-}
-
 if (!$corte_id || !is_array($detalle)) {
     error('Datos incompletos');
 }
@@ -41,29 +28,37 @@ if (!$info) {
 }
 $corte_total = (float)$info['total'];
 
+$catalogo = [];
+$resCat = $conn->query('SELECT id, valor FROM catalogo_denominaciones');
+while ($row = $resCat->fetch_assoc()) {
+    $catalogo[(int)$row['id']] = (float)$row['valor'];
+}
+
 $total_calc = 0;
 foreach ($detalle as $fila) {
-    $d = (float)($fila['denominacion'] ?? 0);
+    $id = (int)($fila['denominacion_id'] ?? 0);
+    $valor = $catalogo[$id] ?? 0;
     $c = (int)($fila['cantidad'] ?? 0);
-    if ($fila['tipo_pago'] === 'efectivo') {
-        $total_calc += $d * $c;
+    $tipo = $fila['tipo_pago'] ?? 'efectivo';
+    if ($tipo === 'efectivo') {
+        $total_calc += $valor * $c;
     } else {
-        $total_calc += $d;
+        $total_calc += $valor;
     }
 }
 
 $conn->begin_transaction();
-$ins = $conn->prepare('INSERT INTO desglose_corte (corte_id, denominacion, cantidad, tipo_pago) VALUES (?, ?, ?, ?)');
+$ins = $conn->prepare('INSERT INTO desglose_corte (corte_id, denominacion_id, cantidad, tipo_pago) VALUES (?, ?, ?, ?)');
 if (!$ins) {
     $conn->rollback();
     error('Error al preparar inserción: ' . $conn->error);
 }
 foreach ($detalle as $fila) {
-    $d = (float)($fila['denominacion'] ?? 0);
+    $id = (int)($fila['denominacion_id'] ?? 0);
     $c = (int)($fila['cantidad'] ?? 0);
     $tipo = $fila['tipo_pago'] ?? 'efectivo';
     if ($tipo === 'efectivo' && $c <= 0) continue;
-    $ins->bind_param('idis', $corte_id, $d, $c, $tipo);
+    $ins->bind_param('iiis', $corte_id, $id, $c, $tipo);
     if (!$ins->execute()) {
         $conn->rollback();
         error('Error al guardar desglose: ' . $ins->error);
