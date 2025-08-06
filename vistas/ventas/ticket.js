@@ -13,6 +13,20 @@ function llenarTicket(data) {
         document.getElementById('meseroNombre').textContent = data.mesero_nombre || '';
         document.getElementById('tipoEntrega').textContent = data.tipo_entrega || 'N/A';
         document.getElementById('tipoPago').textContent = data.tipo_pago || 'N/A';
+        const tInfo = document.getElementById('tarjetaInfo');
+        const cInfo = document.getElementById('chequeInfo');
+        if (tInfo) tInfo.style.display = 'none';
+        if (cInfo) cInfo.style.display = 'none';
+        if (data.tipo_pago === 'boucher' && tInfo) {
+            tInfo.style.display = 'block';
+            document.getElementById('tarjetaMarca').textContent = data.tarjeta_marca || '';
+            document.getElementById('tarjetaBanco').textContent = data.tarjeta_banco || '';
+            document.getElementById('tarjetaBoucher').textContent = data.boucher || '';
+        } else if (data.tipo_pago === 'cheque' && cInfo) {
+            cInfo.style.display = 'block';
+            document.getElementById('chequeNumero').textContent = data.cheque_numero || '';
+            document.getElementById('chequeBanco').textContent = data.cheque_banco || '';
+        }
         document.getElementById('horaInicio').textContent = (data.fecha_inicio && data.fecha_inicio !== 'N/A') ? new Date(data.fecha_inicio).toLocaleString() : (data.fecha_inicio || 'N/A');
         document.getElementById('horaFin').textContent = (data.fecha_fin && data.fecha_fin !== 'N/A') ? new Date(data.fecha_fin).toLocaleString() : (data.fecha_fin || 'N/A');
         document.getElementById('tiempoServicio').textContent = data.tiempo_servicio ? data.tiempo_servicio + ' min' : 'N/A';
@@ -44,23 +58,28 @@ function llenarTicket(data) {
         printWindow.print();
     }
 
-    document.addEventListener('DOMContentLoaded', async () => {
-        const params = new URLSearchParams(window.location.search);
-        const imprimir = params.get('print') === '1';
-        const almacenado = localStorage.getItem('ticketData');
-        if (!almacenado) return;
-        const datos = JSON.parse(almacenado);
-        if (imprimir) {
-            document.getElementById('imprimir').style.display = 'block';
-            llenarTicket(datos);
-            liberarMesa(datos.venta_id);
-        } else {
-            serieActual = await obtenerSerieActual();
-            inicializarDividir(datos);
-        }
-        const btnImprimir = document.getElementById('btnImprimir');
-        if (btnImprimir) btnImprimir.addEventListener('click', imprimirTicket);
-    });
+document.addEventListener('DOMContentLoaded', async () => {
+    const params = new URLSearchParams(window.location.search);
+    const imprimir = params.get('print') === '1';
+    const almacenado = localStorage.getItem('ticketData');
+    const sinDatos = document.getElementById('sinDatos');
+    if (!almacenado) {
+        if (sinDatos) sinDatos.style.display = 'block';
+        return;
+    }
+    if (sinDatos) sinDatos.style.display = 'none';
+    const datos = JSON.parse(almacenado);
+    if (imprimir) {
+        document.getElementById('imprimir').style.display = 'block';
+        llenarTicket(datos);
+        liberarMesa(datos.venta_id);
+    } else {
+        serieActual = await obtenerSerieActual();
+        inicializarDividir(datos);
+    }
+    const btnImprimir = document.getElementById('btnImprimir');
+    if (btnImprimir) btnImprimir.addEventListener('click', imprimirTicket);
+});
 
 
     let serieActual = null;
@@ -156,14 +175,16 @@ function llenarTicket(data) {
                         <option value="boucher">Tarjeta</option>
                         <option value="cheque">Cheque</option>
                     </select>`;
+            html += ` <div id="extraPago${i}" class="mt-2"></div>`;
             html += ` <input type="number" step="0.01" id="recibido${i}" class="recibido" placeholder="Recibido">`;
             html += ` Cambio: <span id="cambio${i}">0</span>`;
             html += `<div id="tot${i}"></div>`;
             div.innerHTML = html;
             cont.appendChild(div);
             div.querySelector('#propina' + i).addEventListener('input', mostrarTotal);
-            div.querySelector('#pago' + i).addEventListener('change', mostrarTotal);
+            div.querySelector('#pago' + i).addEventListener('change', () => { mostrarTotal(); mostrarCamposPago(i); });
             div.querySelector('#recibido' + i).addEventListener('input', mostrarTotal);
+            mostrarCamposPago(i);
         }
         mostrarTotal();
     }
@@ -191,6 +212,34 @@ function llenarTicket(data) {
                     inp.style.background = '';
                 }
             }
+        }
+    }
+
+    function mostrarCamposPago(i) {
+        const tipo = document.getElementById('pago' + i).value;
+        const cont = document.getElementById('extraPago' + i);
+        if (!cont) return;
+        let html = '';
+        if (tipo === 'boucher') {
+            html += 'Marca: <select id="tarjetaMarca' + i + '"><option value="">Seleccione</option>';
+            catalogoTarjetas.forEach(t => { html += `<option value="${t.id}">${t.descripcion}</option>`; });
+            html += '</select> ';
+            html += 'Banco: <select id="tarjetaBanco' + i + '"><option value="">Seleccione</option>';
+            catalogoBancos.forEach(b => { html += `<option value="${b.id}">${b.descripcion}</option>`; });
+            html += '</select> ';
+            html += 'Boucher: <input type="text" id="boucher' + i + '">';
+            cont.innerHTML = html;
+            cont.style.display = 'block';
+        } else if (tipo === 'cheque') {
+            html += 'No. Cheque: <input type="text" id="chequeNumero' + i + '"> ';
+            html += 'Banco: <select id="chequeBanco' + i + '"><option value="">Seleccione</option>';
+            catalogoBancos.forEach(b => { html += `<option value="${b.id}">${b.descripcion}</option>`; });
+            html += '</select>';
+            cont.innerHTML = html;
+            cont.style.display = 'block';
+        } else {
+            cont.innerHTML = '';
+            cont.style.display = 'none';
         }
     }
 
@@ -259,12 +308,30 @@ function llenarTicket(data) {
                 alert('Monto insuficiente en subcuenta ' + i);
                 return;
             }
+            const extra = {};
+            if (tipo === 'boucher') {
+                extra.tarjeta_marca_id = parseInt(document.getElementById('tarjetaMarca' + i).value) || null;
+                extra.tarjeta_banco_id = parseInt(document.getElementById('tarjetaBanco' + i).value) || null;
+                extra.boucher = document.getElementById('boucher' + i).value || '';
+                if (!extra.tarjeta_marca_id || !extra.tarjeta_banco_id || !extra.boucher) {
+                    alert('Completa datos de tarjeta en subcuenta ' + i);
+                    return;
+                }
+            } else if (tipo === 'cheque') {
+                extra.cheque_numero = document.getElementById('chequeNumero' + i).value || '';
+                extra.cheque_banco_id = parseInt(document.getElementById('chequeBanco' + i).value) || null;
+                if (!extra.cheque_numero || !extra.cheque_banco_id) {
+                    alert('Completa datos de cheque en subcuenta ' + i);
+                    return;
+                }
+            }
             payload.subcuentas.push({
                 productos: prods,
                 propina: prop,
                 serie_id: serie,
                 tipo_pago: tipo,
-                monto_recibido: recibido
+                monto_recibido: recibido,
+                ...extra
             });
         }
         try {

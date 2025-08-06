@@ -109,7 +109,7 @@ $tipo_entrega     = $tipo_entrega     ?: 'N/A';
 
 $conn->begin_transaction();
 
-$insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, total, propina, usuario_id, tipo_pago, tipo_entrega, monto_recibido, mesa_nombre, mesero_nombre, fecha_inicio, fecha_fin, tiempo_servicio, nombre_negocio, direccion_negocio, rfc_negocio, telefono_negocio, sede_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+$insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, total, propina, usuario_id, tipo_pago, tipo_entrega, monto_recibido, tarjeta_marca_id, tarjeta_banco_id, boucher, cheque_numero, cheque_banco_id, mesa_nombre, mesero_nombre, fecha_inicio, fecha_fin, tiempo_servicio, nombre_negocio, direccion_negocio, rfc_negocio, telefono_negocio, sede_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 $insDetalle = $conn->prepare('INSERT INTO ticket_detalles (ticket_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)');
 if (!$insTicket || !$insDetalle) {
     $conn->rollback();
@@ -166,7 +166,25 @@ foreach ($subcuentas as $sub) {
         $conn->rollback();
         error('Tipo de pago o monto recibido faltante');
     }
-    $insTicket->bind_param('iiddissdssssissssi', $venta_id, $folio_actual, $total, $propina, $usuario_id, $tipo_pago, $tipo_entrega, $monto_recibido, $mesa_nombre, $mesero_nombre, $fecha_inicio, $fecha_fin, $tiempo_servicio, $nombre_negocio, $direccion_negocio, $rfc_negocio, $telefono_negocio, $sede_id);
+    $tarjeta_marca_id = $tarjeta_banco_id = $cheque_banco_id = null;
+    $boucher = $cheque_numero = null;
+    if ($tipo_pago === 'boucher') {
+        $tarjeta_marca_id = isset($sub['tarjeta_marca_id']) ? (int)$sub['tarjeta_marca_id'] : null;
+        $tarjeta_banco_id = isset($sub['tarjeta_banco_id']) ? (int)$sub['tarjeta_banco_id'] : null;
+        $boucher = $sub['boucher'] ?? null;
+        if (!$tarjeta_marca_id || !$tarjeta_banco_id || !$boucher) {
+            $conn->rollback();
+            error('Datos de tarjeta incompletos');
+        }
+    } elseif ($tipo_pago === 'cheque') {
+        $cheque_numero = $sub['cheque_numero'] ?? null;
+        $cheque_banco_id = isset($sub['cheque_banco_id']) ? (int)$sub['cheque_banco_id'] : null;
+        if (!$cheque_numero || !$cheque_banco_id) {
+            $conn->rollback();
+            error('Datos de cheque incompletos');
+        }
+    }
+    $insTicket->bind_param('iiddissdiississssssissi', $venta_id, $folio_actual, $total, $propina, $usuario_id, $tipo_pago, $tipo_entrega, $monto_recibido, $tarjeta_marca_id, $tarjeta_banco_id, $boucher, $cheque_numero, $cheque_banco_id, $mesa_nombre, $mesero_nombre, $fecha_inicio, $fecha_fin, $tiempo_servicio, $nombre_negocio, $direccion_negocio, $rfc_negocio, $telefono_negocio, $sede_id);
     if (!$insTicket->execute()) {
         $conn->rollback();
         error('Error al guardar ticket: ' . $insTicket->error);

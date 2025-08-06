@@ -1,11 +1,19 @@
 <?php
 require_once __DIR__ . '/../../utils/cargar_permisos.php';
+require_once __DIR__ . '/../../config/db.php';
 $path_actual = str_replace('/rest', '', $_SERVER['PHP_SELF']);
 if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
     http_response_code(403);
     echo 'Acceso no autorizado';
     exit;
 }
+
+// Catálogos para datos de pago
+$tarjetas = $conn->query("SELECT id, descripcion FROM catalogo_tarjetas ORDER BY descripcion")
+    ?->fetch_all(MYSQLI_ASSOC) ?? [];
+$bancos = $conn->query("SELECT id, descripcion FROM catalogo_bancos ORDER BY descripcion")
+    ?->fetch_all(MYSQLI_ASSOC) ?? [];
+
 $title = 'Ticket';
 ob_start();
 ?>
@@ -24,6 +32,7 @@ ob_start();
     </div>
 </div>
 <!-- Page Header End -->
+<div id="sinDatos" class="container mt-5">Sin datos cargados</div>
 <div id="dividir" style="display:none;" class="container mt-5">
     <h2 class="section-subheader">Dividir venta</h2>
     <div class="table-responsive">
@@ -60,6 +69,15 @@ ob_start();
         <div><strong>Mesero:</strong> <span id="meseroNombre"></span></div>
         <div><strong>Tipo entrega:</strong> <span id="tipoEntrega"></span></div>
         <div><strong>Tipo pago:</strong> <span id="tipoPago"></span></div>
+        <div id="tarjetaInfo" style="display:none;">
+            <div><strong>Marca tarjeta:</strong> <span id="tarjetaMarca"></span></div>
+            <div><strong>Banco:</strong> <span id="tarjetaBanco"></span></div>
+            <div><strong>Boucher:</strong> <span id="tarjetaBoucher"></span></div>
+        </div>
+        <div id="chequeInfo" style="display:none;">
+            <div><strong>No. Cheque:</strong> <span id="chequeNumero"></span></div>
+            <div><strong>Banco:</strong> <span id="chequeBanco"></span></div>
+        </div>
         <div><strong>Inicio:</strong> <span id="horaInicio"></span></div>
         <div><strong>Fin:</strong> <span id="horaFin"></span></div>
         <div><strong>Tiempo:</strong> <span id="tiempoServicio"></span></div>
@@ -77,7 +95,10 @@ ob_start();
 
 
 <?php require_once __DIR__ . '/../footer.php'; ?>
-
+<script>
+    const catalogoTarjetas = <?php echo json_encode($tarjetas); ?>;
+    const catalogoBancos = <?php echo json_encode($bancos); ?>;
+</script>
 <script src="ticket.js"></script>
 </body>
 
