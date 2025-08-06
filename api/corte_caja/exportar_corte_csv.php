@@ -1,7 +1,12 @@
 <?php
 require_once __DIR__ . '/../../config/db.php';
 
-$corte_id = isset($_GET['corte_id']) ? (int)$_GET['corte_id'] : null;
+$corte_id = null;
+if (isset($_GET['corte_id'])) {
+    $corte_id = (int)$_GET['corte_id'];
+} elseif (isset($_GET['id'])) {
+    $corte_id = (int)$_GET['id'];
+}
 if (!$corte_id) {
     die('corte_id requerido');
 }
