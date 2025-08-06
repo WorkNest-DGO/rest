@@ -37,6 +37,33 @@ ob_start();
 <div id="resumenModal" class="custom-modal" style="display:none;"></div>
 <div id="modalDesglose" class="custom-modal" style="display:none;"></div>
 
+<!-- Modal para detalle de corte -->
+<div class="modal fade" id="modalDetalle" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Detalle de corte</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="modalDetalleContenido">
+        <table id="tablaDetalleCorte" class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Denominación</th>
+              <th>Cantidad</th>
+              <th>Tipo de pago</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <h2 class="section-header">Historial de Cortes</h2>
 <div class="table-responsive">
   <table id="tablaCortes" class="styled-table">

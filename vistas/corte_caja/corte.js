@@ -273,18 +273,16 @@ document.addEventListener('DOMContentLoaded', () => {
             dataType: 'json',
             data: JSON.stringify({ id: parseInt(corteId) })
         }).done(function (resp) {
-            const contenedor = document.getElementById('modalDetalleContenido');
+            const tablaEl = document.getElementById('tablaDetalleCorte');
+            const tablaDetalle = tablaEl ? tablaEl.querySelector('tbody') : null;
+            if (!tablaDetalle) {
+                console.error('No se encontró la tabla de detalle de corte');
+                return;
+            }
+
+            tablaDetalle.innerHTML = '';
+
             if (resp.success && Array.isArray(resp.detalles)) {
-                contenedor.innerHTML = '<h5>Desglose del corte</h5><table class="table table-sm" id="tablaDetalleCorte"></table>';
-                const tablaDetalle = document.getElementById('tablaDetalleCorte');
-                tablaDetalle.innerHTML = '';
-                const thead = `<tr>
-                    <th>Denominación</th>
-                    <th>Cantidad</th>
-                    <th>Tipo de pago</th>
-                    <th>Subtotal</th>
-                </tr>`;
-                tablaDetalle.innerHTML = thead;
                 resp.detalles.forEach(item => {
                     const fila = document.createElement('tr');
                     fila.innerHTML = `
@@ -295,14 +293,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                     tablaDetalle.appendChild(fila);
                 });
+
+                if (!resp.detalles.length) {
+                    tablaDetalle.innerHTML = '<tr><td colspan="4" class="text-center">Sin datos</td></tr>';
+                }
             } else {
                 const msg = resp.mensaje || 'Error al obtener detalle';
-                contenedor.innerHTML = `<p>${msg}</p>`;
+                tablaDetalle.innerHTML = `<tr><td colspan="4" class="text-center">${msg}</td></tr>`;
             }
+
             $('#modalDetalle').modal('show');
         }).fail(function () {
-            const contenedor = document.getElementById('modalDetalleContenido');
-            contenedor.innerHTML = '<p>Error al obtener detalle</p>';
+            const tablaEl = document.getElementById('tablaDetalleCorte');
+            const tablaDetalle = tablaEl ? tablaEl.querySelector('tbody') : null;
+            if (tablaDetalle) {
+                tablaDetalle.innerHTML = '<tr><td colspan="4" class="text-center">Error al obtener detalle</td></tr>';
+            }
             $('#modalDetalle').modal('show');
         });
     });
