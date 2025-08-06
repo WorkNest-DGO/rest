@@ -39,9 +39,8 @@ ob_start();
 
 <div>
 <section class="section">
-	<h1>Kanban Drag and Drop Interface Layout</h1>
-	<h4>Inspired by <a href="https://trello.com/
-    ">Trello</a>, and <a href="https://www.google.com/keep/">Google Keep</a>, <a href="http://blog.invisionapp.com/design-project-management-tool/">Invision</a> and <a href="https://twitter.com/aaronstump">@aaronstump</a></h4>
+	<h1>Distribución de mesas</h1>
+	<h4>Tokyo Sushy Prime </h4>
 </section>
 
 <div class="drag-container">
