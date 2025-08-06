@@ -47,25 +47,7 @@ ul {
 .drag-column-on-hold .drag-column-header,
 .drag-column-on-hold .is-moved,
 .drag-column-on-hold .drag-options {
-  background: #FB7D44;
-}
-
-.drag-column-in-progress .drag-column-header,
-.drag-column-in-progress .is-moved,
-.drag-column-in-progress .drag-options {
-  background: #2A92BF;
-}
-
-.drag-column-needs-review .drag-column-header,
-.drag-column-needs-review .is-moved,
-.drag-column-needs-review .drag-options {
-  background: #F4CE46;
-}
-
-.drag-column-approved .drag-column-header,
-.drag-column-approved .is-moved,
-.drag-column-approved .drag-options {
-  background: #00B961;
+  background: #cc0000;
 }
 
 .drag-column-header {

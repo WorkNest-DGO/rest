@@ -31,7 +31,7 @@ ob_start();
 
 <h1>Mesas</h1>
 <div>
-    <button id="btn-unir">Unir mesas</button>
+    <button class="btn custom-btn" id="btn-unir">Unir mesas</button>
     <select id="filtro-area"></select>
 </div>
 <div id="tablero"></div>

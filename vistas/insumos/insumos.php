@@ -43,6 +43,11 @@ ob_start();
             <div class="d-flex justify-content-center mb-3">
                 <input type="text" id="buscarInsumo" class="form-control" placeholder="Buscar" style="text-align: right;">
             </div>
+                <div class="row">
+        <div class="col-12">
+            <ul id="paginador" class="pagination justify-content-center"></ul>
+        </div>
+    </div>
         </div>
         <div class="row" id="catalogoInsumos"></div>
 
@@ -70,11 +75,7 @@ ob_start();
         </form>
 
     </div>
-    <div class="row">
-        <div class="col-12">
-            <ul id="paginador" class="pagination justify-content-center"></ul>
-        </div>
-    </div>
+
 </div>
 </div>
 <!-- Blog End -->
