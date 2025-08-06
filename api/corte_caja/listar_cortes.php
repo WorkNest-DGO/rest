@@ -71,12 +71,13 @@ $stmt->close();
 
 $query = "SELECT v.corte_id AS id, v.fecha_inicio, v.fecha_fin, v.total, v.cajero AS usuario,
                  cc.observaciones, cc.fondo_inicial,
-                 SUM(CASE WHEN dc.tipo_pago='efectivo' THEN dc.denominacion*dc.cantidad ELSE 0 END) AS efectivo,
-                 SUM(CASE WHEN dc.tipo_pago='boucher' THEN dc.denominacion*dc.cantidad ELSE 0 END) AS boucher,
-                 SUM(CASE WHEN dc.tipo_pago='cheque' THEN dc.denominacion*dc.cantidad ELSE 0 END) AS cheque
+                 SUM(CASE WHEN dc.tipo_pago='efectivo' THEN cd.valor*dc.cantidad ELSE 0 END) AS efectivo,
+                 SUM(CASE WHEN dc.tipo_pago='boucher' THEN cd.valor*dc.cantidad ELSE 0 END) AS boucher,
+                 SUM(CASE WHEN dc.tipo_pago='cheque' THEN cd.valor*dc.cantidad ELSE 0 END) AS cheque
           FROM vw_corte_resumen v
           JOIN corte_caja cc ON cc.id = v.corte_id
           LEFT JOIN desglose_corte dc ON dc.corte_id = v.corte_id
+          LEFT JOIN catalogo_denominaciones cd ON cd.id = dc.denominacion_id
           $where
           GROUP BY v.corte_id
           ORDER BY v.fecha_inicio DESC
