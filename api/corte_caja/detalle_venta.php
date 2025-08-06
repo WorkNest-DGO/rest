@@ -2,36 +2,44 @@
 header('Content-Type: application/json');
 require_once '../../config/db.php'; // Ajusta la ruta a tu archivo de conexión
 
+$id = 0;
+
+// Intentar desde JSON
+$input = json_decode(file_get_contents('php://input'), true);
+if (isset($input['id'])) {
+    $id = intval($input['id']);
+}
+
+// Intentar desde GET
+if ($id <= 0 && isset($_GET['id'])) {
+    $id = intval($_GET['id']);
+}
+
+// Intentar desde POST clásico
+if ($id <= 0 && isset($_POST['id'])) {
+    $id = intval($_POST['id']);
+}
+
+if ($id <= 0) {
+    echo json_encode(["success" => false, "mensaje" => "ID no válido"]);
+    exit;
+}
+
 try {
-    // 1️⃣ Obtener ID desde JSON o GET
-    $input = json_decode(file_get_contents('php://input'), true);
-    $idRecibido = 0;
-
-    if (isset($input['id'])) {
-        $idRecibido = intval($input['id']);
-    } elseif (isset($_GET['id'])) {
-        $idRecibido = intval($_GET['id']);
-    }
-
-    if ($idRecibido <= 0) {
-        echo json_encode(["success" => false, "mensaje" => "ID no válido"]);
-        exit;
-    }
-
-    // 2️⃣ Verificar si es venta_id válido
+    // 1️⃣ Verificar si es venta_id válido
     $sqlCheck = "SELECT COUNT(*) AS total FROM venta_detalles WHERE venta_id = ?";
     $stmt = $conn->prepare($sqlCheck);
-    $stmt->bind_param("i", $idRecibido);
+    $stmt->bind_param("i", $id);
     $stmt->execute();
     $resCheck = $stmt->get_result()->fetch_assoc();
 
-    $ventaId = $idRecibido;
+    $ventaId = $id;
 
-    // 3️⃣ Si no hay registros, buscar en tickets
+    // 2️⃣ Si no hay registros, buscar en tickets
     if ($resCheck['total'] == 0) {
         $sqlTicket = "SELECT venta_id FROM tickets WHERE id = ?";
         $stmt = $conn->prepare($sqlTicket);
-        $stmt->bind_param("i", $idRecibido);
+        $stmt->bind_param("i", $id);
         $stmt->execute();
         $resTicket = $stmt->get_result()->fetch_assoc();
 
@@ -43,7 +51,7 @@ try {
         }
     }
 
-    // 4️⃣ Obtener datos de la venta
+    // 3️⃣ Obtener datos de la venta
     $sqlVenta = "SELECT v.id, v.tipo_entrega, m.nombre AS mesa, u.nombre AS mesero
                  FROM ventas v
                  LEFT JOIN mesas m ON v.mesa_id = m.id
@@ -54,7 +62,7 @@ try {
     $stmt->execute();
     $venta = $stmt->get_result()->fetch_assoc();
 
-    // 5️⃣ Obtener productos de la venta
+    // 4️⃣ Obtener productos de la venta
     $sqlProductos = "SELECT vd.id, p.nombre, vd.cantidad, vd.precio_unitario, 
                             (vd.cantidad * vd.precio_unitario) AS subtotal,
                             vd.estado_producto
@@ -66,7 +74,7 @@ try {
     $stmt->execute();
     $productos = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-    // 6️⃣ Respuesta
+    // 5️⃣ Respuesta
     echo json_encode([
         "success" => true,
         "venta_id" => $ventaId,
