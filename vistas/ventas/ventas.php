@@ -8,6 +8,7 @@ if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
     exit;
 }
 
+// Cargar todas las denominaciones disponibles para usarlas en el JS
 $denominaciones = $conn->query("SELECT id, descripcion, valor FROM catalogo_denominaciones ORDER BY valor ASC")->fetch_all(MYSQLI_ASSOC);
 
 $title = 'Ventas';
@@ -155,6 +156,7 @@ ob_start();
     window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;
     // ID de la venta actualmente consultada en detalle
     window.ventaIdActual = null;
+    // Catálogo de denominaciones cargado desde la base de datos
     const catalogoDenominaciones = <?php echo json_encode($denominaciones); ?>;
   </script>
   <script src="ventas.js"></script>
