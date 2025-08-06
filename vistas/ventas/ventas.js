@@ -176,38 +176,71 @@ function mostrarModalDesglose(dataApi) {
 
     function agregarFila() {
         const tr = document.createElement('tr');
-        tr.innerHTML =
-            `<td><input type="number" step="0.01" class="denominacion"></td>` +
-            `<td><input type="number" min="0" class="cantidad" value="0"></td>` +
-            `<td><select class="tipo"><option value="efectivo">efectivo</option><option value="cheque">cheque</option><option value="boucher">boucher</option></select></td>` +
-            `<td><button class="btn custom-btn btn-eliminar">X</button></td>`;
+
+        const tdDen = document.createElement('td');
+        const select = document.createElement('select');
+        select.classList.add('denominacion');
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = '--Seleccione--';
+        select.appendChild(placeholder);
+        catalogoDenominaciones.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = `${d.descripcion} ($${parseFloat(d.valor).toFixed(2)})`;
+            select.appendChild(opt);
+        });
+        tdDen.appendChild(select);
+
+        const tdCant = document.createElement('td');
+        const inpCant = document.createElement('input');
+        inpCant.type = 'number';
+        inpCant.min = '0';
+        inpCant.value = '0';
+        inpCant.classList.add('cantidad');
+        tdCant.appendChild(inpCant);
+
+        const tdTipo = document.createElement('td');
+        const selectTipo = document.createElement('select');
+        selectTipo.classList.add('tipo');
+        ['efectivo', 'cheque', 'boucher'].forEach(tp => {
+            const opt = document.createElement('option');
+            opt.value = tp;
+            opt.textContent = tp;
+            selectTipo.appendChild(opt);
+        });
+        tdTipo.appendChild(selectTipo);
+
+        const tdBtn = document.createElement('td');
+        const btn = document.createElement('button');
+        btn.classList.add('btn', 'custom-btn', 'btn-eliminar');
+        btn.textContent = 'X';
+        tdBtn.appendChild(btn);
+
+        tr.appendChild(tdDen);
+        tr.appendChild(tdCant);
+        tr.appendChild(tdTipo);
+        tr.appendChild(tdBtn);
         tbody.appendChild(tr);
 
-        const btnEliminar = tr.querySelector('.btn-eliminar');
-        if (btnEliminar) {
-            btnEliminar.addEventListener('click', () => {
-                tr.remove();
-                calcular();
-            });
-        } else {
-            console.warn('Botón de eliminar no encontrado en la fila:', tr);
-        }
-
-        tr.querySelectorAll('input,select').forEach(el =>
-            el.addEventListener('input', calcular));
+        btn.addEventListener('click', () => { tr.remove(); calcular(); });
+        tr.querySelectorAll('input,select').forEach(el => el.addEventListener('input', calcular));
     }
 
     function calcular() {
         const filas = Array.from(tbody.querySelectorAll('tr'));
         let total = 0;
         filas.forEach(f => {
-            const d = parseFloat(f.querySelector('.denominacion').value) || 0;
-            const c = parseInt(f.querySelector('.cantidad').value) || 0;
-            const t = f.querySelector('.tipo').value;
-            if (t === 'efectivo') {
-                total += d * c;
+            const denomId = parseInt(f.querySelector('.denominacion').value);
+            const denom = catalogoDenominaciones.find(d => d.id === denomId);
+            if (!denom) return;
+            const valor = parseFloat(denom.valor);
+            const cantidad = parseInt(f.querySelector('.cantidad').value) || 0;
+            const tipo = f.querySelector('.tipo').value;
+            if (tipo === 'efectivo') {
+                total += valor * cantidad;
             } else {
-                total += d;
+                total += valor;
             }
         });
         modal.querySelector('#totalIngresado').textContent = total.toFixed(2);
@@ -224,11 +257,19 @@ function mostrarModalDesglose(dataApi) {
 
     modal.querySelector('#guardarDesglose').addEventListener('click', async () => {
         const filas = Array.from(tbody.querySelectorAll('tr'));
-        const detalle = filas.map(tr => ({
-            denominacion: parseFloat(tr.querySelector('.denominacion').value) || 0,
-            cantidad: parseInt(tr.querySelector('.cantidad').value) || 0,
-            tipo_pago: tr.querySelector('.tipo').value
-        })).filter(d => d.cantidad > 0 || d.tipo_pago !== 'efectivo');
+        const detalle = [];
+        for (const tr of filas) {
+            const denomId = parseInt(tr.querySelector('.denominacion').value);
+            const cantidad = parseInt(tr.querySelector('.cantidad').value) || 0;
+            const tipoPago = tr.querySelector('.tipo').value;
+            if (!denomId || !catalogoDenominaciones.some(d => d.id === denomId)) {
+                alert('Selecciona una denominación válida en todas las filas');
+                return;
+            }
+            if (cantidad > 0 || tipoPago !== 'efectivo') {
+                detalle.push({ denominacion_id: denomId, cantidad, tipo_pago: tipoPago });
+            }
+        }
 
         if (detalle.length === 0) {
             alert('Agrega al menos una fila válida');

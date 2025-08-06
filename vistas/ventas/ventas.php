@@ -1,11 +1,15 @@
 <?php
 require_once __DIR__ . '/../../utils/cargar_permisos.php';
+require_once __DIR__ . '/../../config/db.php';
 $path_actual = str_replace('/rest', '', $_SERVER['PHP_SELF']);
 if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
     http_response_code(403);
     echo 'Acceso no autorizado';
     exit;
 }
+
+$denominaciones = $conn->query("SELECT id, descripcion, valor FROM catalogo_denominaciones ORDER BY valor ASC")->fetch_all(MYSQLI_ASSOC);
+
 $title = 'Ventas';
 ob_start();
 ?>
@@ -145,15 +149,16 @@ ob_start();
 <div id="modalDesglose" class="custom-modal" style="display:none;"></div>
 
 
-<?php require_once __DIR__ . '/../footer.php'; ?>
-<script>
-  // ID de usuario proveniente de la sesión para operaciones en JS
-  window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;
-  // ID de la venta actualmente consultada en detalle
-  window.ventaIdActual = null;
-</script>
-<script src="ventas.js"></script>
-</body>
+  <?php require_once __DIR__ . '/../footer.php'; ?>
+  <script>
+    // ID de usuario proveniente de la sesión para operaciones en JS
+    window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;
+    // ID de la venta actualmente consultada en detalle
+    window.ventaIdActual = null;
+    const catalogoDenominaciones = <?php echo json_encode($denominaciones); ?>;
+  </script>
+  <script src="ventas.js"></script>
+  </body>
 
 </html>
 <?php
