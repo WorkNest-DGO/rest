@@ -164,7 +164,7 @@ function abrirModalDesglose(corteId, resumen) {
         tdCant.innerHTML = `<input type="number" min="0" class="cantidad" value="0">`;
 
         const tdTipo = document.createElement('td');
-        tdTipo.innerHTML = `<select class="tipo"><option value="efectivo">efectivo</option><option value="cheque">cheque</option><option value="boucher">boucher</option></select>`;
+        tdTipo.textContent = 'efectivo';
 
         const tdDel = document.createElement('td');
         tdDel.innerHTML = `<button class="btn custom-btn delFila">X</button>`;
@@ -182,15 +182,14 @@ function abrirModalDesglose(corteId, resumen) {
         const filas = Array.from(tbody.querySelectorAll('tr'));
         let total = 0;
         filas.forEach(f => {
-            const id = parseInt(f.querySelector('.denominacion').value);
-            const denom = catalogoDenominaciones.find(d => d.id === id);
-            const valor = denom ? parseFloat(denom.valor) : 0;
-            const c = parseInt(f.querySelector('.cantidad').value) || 0;
-            const t = f.querySelector('.tipo').value;
-            if (t === 'efectivo') {
-                total += valor * c;
+            if (f.classList.contains('auto')) {
+                total += parseFloat(f.dataset.total || 0);
             } else {
-                total += valor;
+                const id = parseInt(f.querySelector('.denominacion').value);
+                const denom = catalogoDenominaciones.find(d => d.id === id);
+                const valor = denom ? parseFloat(denom.valor) : 0;
+                const c = parseInt(f.querySelector('.cantidad').value) || 0;
+                total += valor * c;
             }
         });
         modal.querySelector('#totalDesglose').textContent = total.toFixed(2);
@@ -200,6 +199,19 @@ function abrirModalDesglose(corteId, resumen) {
     modal.querySelector('#addFila').addEventListener('click', agregarFila);
     agregarFila();
 
+    // Filas automáticas para tarjeta y cheque
+    ['boucher', 'cheque'].forEach(tp => {
+        if (resumen[tp]) {
+            const info = resumen[tp];
+            const monto = (parseFloat(info.total) || 0) + (parseFloat(info.propina) || 0);
+            const tr = document.createElement('tr');
+            tr.classList.add('auto');
+            tr.dataset.total = monto;
+            tr.innerHTML = `<td>-</td><td>-</td><td>${tp}</td><td></td>`;
+            tbody.appendChild(tr);
+        }
+    });
+
     modal.querySelector('#cancelarDesglose').addEventListener('click', () => {
         modal.style.display = 'none';
         verificarCorte();
@@ -207,11 +219,14 @@ function abrirModalDesglose(corteId, resumen) {
 
     modal.querySelector('#guardarDesglose').addEventListener('click', async () => {
         const filas = Array.from(tbody.querySelectorAll('tr'));
-        const detalle = filas.map(tr => ({
-            denominacion_id: parseInt(tr.querySelector('.denominacion').value),
-            cantidad: parseInt(tr.querySelector('.cantidad').value) || 0,
-            tipo_pago: tr.querySelector('.tipo').value
-        })).filter(d => d.cantidad > 0 || d.tipo_pago !== 'efectivo');
+        const detalle = filas
+            .filter(tr => !tr.classList.contains('auto'))
+            .map(tr => ({
+                denominacion_id: parseInt(tr.querySelector('.denominacion').value),
+                cantidad: parseInt(tr.querySelector('.cantidad').value) || 0,
+                tipo_pago: 'efectivo'
+            }))
+            .filter(d => d.cantidad > 0);
 
         if (detalle.length === 0) {
             alert('Agrega al menos una fila válida');

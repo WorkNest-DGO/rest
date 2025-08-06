@@ -62,13 +62,21 @@ if (isset($input['folio'])) {
 }
 
 $stmt = $conn->prepare("SELECT t.id, t.folio, t.total, t.propina, t.fecha, t.venta_id,
-                               t.mesa_nombre, t.mesero_nombre, t.fecha_inicio, t.fecha_fin,
-                               t.tiempo_servicio, t.nombre_negocio, t.direccion_negocio,
-                               t.rfc_negocio, t.telefono_negocio, t.sede_id,
-                               t.tipo_pago, t.monto_recibido, v.tipo_entrega
-                        FROM tickets t
-                        LEFT JOIN ventas v ON t.venta_id = v.id
-                        WHERE $cond");
+                                t.mesa_nombre, t.mesero_nombre, t.fecha_inicio, t.fecha_fin,
+                                t.tiempo_servicio, t.nombre_negocio, t.direccion_negocio,
+                                t.rfc_negocio, t.telefono_negocio, t.sede_id,
+                                t.tipo_pago, t.monto_recibido,
+                                t.tarjeta_marca_id, tm.descripcion AS tarjeta_marca,
+                                t.tarjeta_banco_id, cb.descripcion AS tarjeta_banco,
+                                t.boucher,
+                                t.cheque_numero, t.cheque_banco_id, cb2.descripcion AS cheque_banco,
+                                v.tipo_entrega
+                         FROM tickets t
+                         LEFT JOIN catalogo_tarjetas tm ON t.tarjeta_marca_id = tm.id
+                         LEFT JOIN catalogo_bancos cb ON t.tarjeta_banco_id = cb.id
+                         LEFT JOIN catalogo_bancos cb2 ON t.cheque_banco_id = cb2.id
+                         LEFT JOIN ventas v ON t.venta_id = v.id
+                         WHERE $cond");
 if (!$stmt) {
     error('Error al preparar consulta: ' . $conn->error);
 }
@@ -114,30 +122,35 @@ while ($t = $res->fetch_assoc()) {
     $tipo_pago        = $t['tipo_pago']        ?? 'N/A';
     $tipo_entrega     = $t['tipo_entrega']     ?? 'N/A';
     $cambio           = max(0, ($t['monto_recibido'] ?? 0) - ($t['total'] ?? 0));
-    $tickets[] = [
-        'ticket_id'        => (int)$t['id'],
-        'folio'            => (int)$t['folio'],
-        'fecha'            => $t['fecha'] ?? 'N/A',
-        'venta_id'         => (int)$t['venta_id'],
-        'propina'          => (float)$t['propina'],
-        'total'            => (float)$t['total'],
-        'mesa_nombre'      => $mesa_nombre,
-        'mesero_nombre'    => $mesero_nombre,
-        'fecha_inicio'     => $fecha_inicio,
-        'fecha_fin'        => $fecha_fin,
-        'tiempo_servicio'  => $tiempo_servicio,
-        'nombre_negocio'   => $nombre_negocio,
-        'direccion_negocio'=> $direccion_negocio,
-        'rfc_negocio'      => $rfc_negocio,
-        'telefono_negocio' => $telefono_negocio,
-        'tipo_pago'        => $tipo_pago,
-        'tipo_entrega'     => $tipo_entrega,
-        'cambio'           => (float)$cambio,
-        'total_letras'     => numeroALetras($t['total']),
-        'logo_url'         => '../../utils/logo.png',
-        'sede_id'          => isset($t['sede_id']) && !empty($t['sede_id']) ? (int)$t['sede_id'] : 1,
-        'productos'        => $prods
-    ];
+      $tickets[] = [
+          'ticket_id'        => (int)$t['id'],
+          'folio'            => (int)$t['folio'],
+          'fecha'            => $t['fecha'] ?? 'N/A',
+          'venta_id'         => (int)$t['venta_id'],
+          'propina'          => (float)$t['propina'],
+          'total'            => (float)$t['total'],
+          'mesa_nombre'      => $mesa_nombre,
+          'mesero_nombre'    => $mesero_nombre,
+          'fecha_inicio'     => $fecha_inicio,
+          'fecha_fin'        => $fecha_fin,
+          'tiempo_servicio'  => $tiempo_servicio,
+          'nombre_negocio'   => $nombre_negocio,
+          'direccion_negocio'=> $direccion_negocio,
+          'rfc_negocio'      => $rfc_negocio,
+          'telefono_negocio' => $telefono_negocio,
+          'tipo_pago'        => $tipo_pago,
+          'tarjeta_marca'    => $t['tarjeta_marca'] ?? null,
+          'tarjeta_banco'    => $t['tarjeta_banco'] ?? null,
+          'boucher'          => $t['boucher'] ?? null,
+          'cheque_numero'    => $t['cheque_numero'] ?? null,
+          'cheque_banco'     => $t['cheque_banco'] ?? null,
+          'tipo_entrega'     => $tipo_entrega,
+          'cambio'           => (float)$cambio,
+          'total_letras'     => numeroALetras($t['total']),
+          'logo_url'         => '../../utils/logo.png',
+          'sede_id'          => isset($t['sede_id']) && !empty($t['sede_id']) ? (int)$t['sede_id'] : 1,
+          'productos'        => $prods
+      ];
 }
 $stmt->close();
 
