@@ -111,7 +111,7 @@ async function verDetalle(corteId) {
             html += '<table class="table"><thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Usuario</th><th>Propina</th><th></th></tr></thead><tbody>';
             data.resultado.forEach(v => {
                 html += `<tr><td>${v.id}</td><td>${v.fecha}</td><td>${v.total}</td><td>${v.usuario}</td><td>${v.propina}</td>` +
-                        `<td><button class="btn btn-primary verDetalle" data-id="${v.id}">Ver</button></td></tr>`;
+                        `<td><button class="btn btn-primary verVenta" data-id="${v.id}">Ver</button></td></tr>`;
             });
             html += '</tbody></table><button class="btn custom-btn" id="cerrarDetalle">Cerrar</button>';
             modal.innerHTML = html;
@@ -242,7 +242,7 @@ async function cargarHistorial() {
                     <td>${c.fecha_inicio}</td>
                     <td>${c.fecha_fin || ''}</td>
                     <td>${c.total !== null ? c.total : ''}</td>
-                    <td><button class="btn custom-btn verDetalle" data-id="${c.id}">Ver detalle</button> <a class="btn custom-btn" href="../../api/corte_caja/exportar_corte_csv.php?corte_id=${c.id}">Exportar</a></td>
+                    <td><button class="btn custom-btn verDetalle" data-id="${c.id}">Ver detalle</button> <button class="btn custom-btn exportarCsv" data-id="${c.id}">Exportar</button></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -259,33 +259,61 @@ document.addEventListener('DOMContentLoaded', () => {
     verificarCorte();
     cargarHistorial();
 
-    // Delegación de eventos para botones generados dinámicamente
+    // Detalle de corte
     $(document).on('click', '.verDetalle', function () {
-        const ventaId = $(this).data('id');
-        if (!ventaId) {
-            console.error('ID de venta no especificado');
+        const corteId = $(this).data('id');
+        if (!corteId) {
+            console.error('ID de corte no especificado');
             return;
         }
-
         $.ajax({
             url: '../../api/corte_caja/detalle_venta.php',
             method: 'POST',
             contentType: 'application/json',
             dataType: 'json',
-            data: JSON.stringify({ venta_id: parseInt(ventaId) })
+            data: JSON.stringify({ id: parseInt(corteId) })
         }).done(function (resp) {
-            if (resp.success) {
-                const info = resp.resultado || resp;
+            if (resp.success && Array.isArray(resp.detalles)) {
+                let html = '<h5>Desglose del corte</h5>';
+                html += '<table class="table table-sm"><thead><tr><th>Denominación</th><th>Cantidad</th><th>Tipo</th><th>Subtotal</th></tr></thead><tbody>';
+                resp.detalles.forEach(d => {
+                    html += `<tr><td>${d.denominacion}</td><td>${d.cantidad}</td><td>${d.tipo_pago}</td><td>${parseFloat(d.subtotal).toFixed(2)}</td></tr>`;
+                });
+                html += '</tbody></table>';
+                $('#modalDetalleContenido').html(html);
+                $('#modalDetalle').modal('show');
+            } else {
+                alert(resp.mensaje || 'Error al obtener detalle');
+            }
+        }).fail(function () {
+            alert('Error al obtener detalle');
+        });
+    });
+
+    // Detalle de venta
+    $(document).on('click', '.verVenta', function () {
+        const ventaId = $(this).data('id');
+        if (!ventaId) {
+            console.error('ID de venta no especificado');
+            return;
+        }
+        $.ajax({
+            url: '../../api/corte_caja/detalle_venta.php',
+            method: 'POST',
+            contentType: 'application/json',
+            dataType: 'json',
+            data: JSON.stringify({ id: parseInt(ventaId) })
+        }).done(function (resp) {
+            if (resp.success && Array.isArray(resp.productos)) {
+                const info = resp;
                 const destino = info.tipo_entrega === 'mesa' ? info.mesa : info.repartidor;
                 let html = `<h5>Detalle de venta</h5>`;
                 html += `<p>Tipo: ${info.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${info.mesero}</p>`;
                 html += '<table class="table table-sm"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th></tr></thead><tbody>';
-                if (Array.isArray(info.productos)) {
-                    info.productos.forEach(p => {
-                        const est = (p.estado_producto || '').replace('_', ' ');
-                        html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${est}</td></tr>`;
-                    });
-                }
+                info.productos.forEach(p => {
+                    const est = (p.estado_producto || '').replace('_', ' ');
+                    html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${est}</td></tr>`;
+                });
                 html += '</tbody></table>';
                 if (info.foto_entrega) {
                     html += `<p><img src="../../uploads/evidencias/${info.foto_entrega}" class="img-fluid" alt="evidencia"></p>`;
@@ -299,11 +327,10 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Error al obtener detalle');
         });
     });
-});
-$(document).on('click', '.verDetalle', function () {
-    const idVenta = $(this).data('id');
-    $.post('../../api/corte_caja/detalle_venta.php', { id: idVenta }, function (respuesta) {
-        $('#modalDetalleContenido').html(respuesta);
-        $('#modalDetalle').modal('show');
+
+    // Exportar corte
+    $(document).on('click', '.exportarCsv', function () {
+        const corteId = $(this).data('id');
+        window.open('../../api/corte_caja/exportar_corte_csv.php?id=' + corteId, '_blank');
     });
 });
