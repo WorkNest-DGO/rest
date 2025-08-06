@@ -9,9 +9,9 @@ if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
 }
 
 // Catálogos para datos de pago
-$tarjetas = $conn->query("SELECT id, descripcion FROM catalogo_tarjetas ORDER BY descripcion")
+$tarjetas = $conn->query("SELECT id, nombre FROM catalogo_tarjetas ORDER BY nombre")
     ?->fetch_all(MYSQLI_ASSOC) ?? [];
-$bancos = $conn->query("SELECT id, descripcion FROM catalogo_bancos ORDER BY descripcion")
+$bancos = $conn->query("SELECT id, nombre FROM catalogo_bancos ORDER BY nombre")
     ?->fetch_all(MYSQLI_ASSOC) ?? [];
 
 $title = 'Ticket';
@@ -56,7 +56,7 @@ ob_start();
 
 <div id="imprimir" style="display:none;" class="custom-modal2">
     <div id="ticketContainer">
-        <img id="ticketLogo" src="utils/logo.png" alt="Logo" style="max-width:100px;">
+        <img id="ticketLogo" src="../../utils/logo.png" alt="Logo" style="max-width:100px;">
         <h2 id="nombreRestaurante" class="section-header">Mi Restaurante</h2>
         <div id="direccionNegocio"></div>
         <div id="rfcNegocio"></div>
