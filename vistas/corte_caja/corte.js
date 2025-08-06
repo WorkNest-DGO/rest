@@ -1,5 +1,8 @@
 let corteActual = null;
 const usuarioId = 1; // En entorno real, este valor provendría de la sesión
+let pagina = 1;
+let limite = 15;
+let busqueda = '';
 
 function calcularTotalEsperado(resumen) {
     let total = 0;
@@ -229,12 +232,14 @@ function abrirModalDesglose(corteId, resumen) {
 
 async function cargarHistorial() {
     try {
-        const resp = await fetch('../../api/corte_caja/listar_cortes.php');
+        const offset = (pagina - 1) * limite;
+        const params = new URLSearchParams({ limit: limite, offset, search: busqueda });
+        const resp = await fetch('../../api/corte_caja/listar_cortes.php?' + params.toString());
         const data = await resp.json();
         if (data.success) {
             const tbody = document.querySelector('#tablaCortes tbody');
             tbody.innerHTML = '';
-            data.resultado.forEach(c => {
+            data.resultado.cortes.forEach(c => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${c.id}</td>
@@ -246,6 +251,7 @@ async function cargarHistorial() {
                 `;
                 tbody.appendChild(tr);
             });
+            construirPaginacion(data.resultado.total);
         } else {
             alert(data.mensaje);
         }
@@ -255,9 +261,56 @@ async function cargarHistorial() {
     }
 }
 
+function construirPaginacion(total) {
+    const cont = document.getElementById('paginacion');
+    if (!cont) return;
+    cont.innerHTML = '';
+    const totalPaginas = Math.ceil(total / limite);
+    for (let i = 1; i <= totalPaginas; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className = 'btn custom-btn pagina';
+        btn.dataset.pagina = i;
+        if (i === pagina) {
+            btn.disabled = true;
+        }
+        cont.appendChild(btn);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     verificarCorte();
     cargarHistorial();
+
+    const sel = document.getElementById('selectRegistros');
+    const input = document.getElementById('buscarCorte');
+    const pagDiv = document.getElementById('paginacion');
+
+    if (sel) {
+        sel.value = limite;
+        sel.addEventListener('change', () => {
+            limite = parseInt(sel.value, 10);
+            pagina = 1;
+            cargarHistorial();
+        });
+    }
+
+    if (input) {
+        input.addEventListener('input', () => {
+            busqueda = input.value;
+            pagina = 1;
+            cargarHistorial();
+        });
+    }
+
+    if (pagDiv) {
+        pagDiv.addEventListener('click', e => {
+            if (e.target.classList.contains('pagina')) {
+                pagina = parseInt(e.target.dataset.pagina, 10);
+                cargarHistorial();
+            }
+        });
+    }
 
     // Detalle de corte
     $(document).on('click', '.verDetalle', function () {
