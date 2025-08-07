@@ -152,21 +152,21 @@ function mostrarModalDesglose(dataApi) {
     let html = '<div style="background:#000;border:1px solid #333;padding:10px;">';
     html += '<h3>Desglose de caja</h3>';
 
-    let totalGeneral = 0;
+    let totalEsperadoGeneral = 0;
     let detalleTotales = '';
     let totalEfectivoEsperado = 0;
 
     for (const tipo in totalEsperadoObj) {
         const pago = totalEsperadoObj[tipo] || {};
         const subtotal = (parseFloat(pago.total) || 0) + (parseFloat(pago.propina) || 0);
-        totalGeneral += subtotal;
+        totalEsperadoGeneral += subtotal;
         if (tipo === 'efectivo') {
             totalEfectivoEsperado += subtotal;
         }
         detalleTotales += `<p><strong>${tipo}</strong>: $${subtotal.toFixed(2)} (Total: $${(parseFloat(pago.total) || 0).toFixed(2)} + Propina: $${(parseFloat(pago.propina) || 0).toFixed(2)}) | Ingresado: $<span class="ingreso" data-tipo="${tipo}">${tipo !== 'efectivo' ? subtotal.toFixed(2) : '0.00'}</span></p>`;
     }
 
-    html += `<h4>Total esperado: $${totalGeneral.toFixed(2)}</h4>`;
+    html += `<h4>Total esperado: $${totalEsperadoGeneral.toFixed(2)}</h4>`;
     html += detalleTotales;
 
     html += `<p>Total ingresado: $<span id="totalIngresado">0.00</span> | Dif.: $<span id="difIngresado">${(0 - totalEfectivoEsperado).toFixed(2)}</span></p>`;
@@ -190,7 +190,7 @@ function mostrarModalDesglose(dataApi) {
         catalogoDenominaciones.forEach(d => {
             const opt = document.createElement('option');
             opt.value = d.id;
-            opt.textContent = `${d.descripcion} ($${parseFloat(d.valor).toFixed(2)})`;
+            opt.textContent = d.descripcion;
             select.appendChild(opt);
         });
         tdDen.appendChild(select);
@@ -323,21 +323,31 @@ function mostrarModalDesglose(dataApi) {
     modal.querySelector('#guardarDesglose').addEventListener('click', async () => {
         const filas = Array.from(tbody.querySelectorAll('tr'));
         const detalle = [];
+        let totalEfectivo = 0;
+        let totalBoucher = 0;
+        let totalCheque = 0;
+
         for (const tr of filas) {
             const tipoPago = tr.querySelector('.tipo').value;
             if (tipoPago === 'efectivo') {
                 const denomId = parseInt(tr.querySelector('.denominacion').value);
                 const cantidad = parseInt(tr.querySelector('.cantidad').value) || 0;
-                if (!denomId || !catalogoDenominaciones.some(d => d.id === denomId)) {
-                    alert('Selecciona una denominación válida en todas las filas de efectivo');
-                    return;
-                }
                 if (cantidad > 0) {
+                    if (!denomId || !catalogoDenominaciones.some(d => d.id === denomId)) {
+                        alert('Selecciona una denominación válida en todas las filas de efectivo');
+                        return;
+                    }
+                    const denom = catalogoDenominaciones.find(d => d.id === denomId);
+                    totalEfectivo += parseFloat(denom.valor) * cantidad;
                     detalle.push({ denominacion_id: denomId, cantidad, tipo_pago: tipoPago });
                 }
             } else {
-                const cantidad = parseFloat(tr.querySelector('.cantidad').value) || 0;
-                detalle.push({ denominacion_id: null, cantidad, tipo_pago: tipoPago });
+                const monto = parseFloat(tr.querySelector('.cantidad').value) || 0;
+                if (monto > 0) {
+                    if (tipoPago === 'boucher') totalBoucher += monto;
+                    if (tipoPago === 'cheque') totalCheque += monto;
+                    detalle.push({ denominacion_id: null, cantidad: monto, tipo_pago: tipoPago });
+                }
             }
         }
 
@@ -345,6 +355,10 @@ function mostrarModalDesglose(dataApi) {
             alert('Agrega al menos una fila válida');
             return;
         }
+
+        const totalGeneral = totalEfectivo + totalBoucher + totalCheque;
+        const diferencia = totalGeneral - totalEsperadoGeneral;
+        alert(`Efectivo: $${totalEfectivo.toFixed(2)}\nBoucher: $${totalBoucher.toFixed(2)}\nCheque: $${totalCheque.toFixed(2)}\nTotal: $${totalGeneral.toFixed(2)}\nDif.: $${diferencia.toFixed(2)}`);
 
         try {
             const resp = await fetch('../../api/corte_caja/guardar_desglose.php', {

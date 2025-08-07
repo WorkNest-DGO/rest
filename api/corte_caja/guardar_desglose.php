@@ -34,31 +34,47 @@ while ($row = $resCat->fetch_assoc()) {
     $catalogo[(int)$row['id']] = (float)$row['valor'];
 }
 
-$total_calc = 0;
+$totales = [
+    'efectivo' => 0,
+    'boucher' => 0,
+    'cheque' => 0
+];
+
+$filasValidas = [];
 foreach ($detalle as $fila) {
-    $id = (int)($fila['denominacion_id'] ?? 0);
-    $valor = $catalogo[$id] ?? 0;
-    $c = (int)($fila['cantidad'] ?? 0);
     $tipo = $fila['tipo_pago'] ?? 'efectivo';
     if ($tipo === 'efectivo') {
-        $total_calc += $valor * $c;
+        $id = (int)($fila['denominacion_id'] ?? 0);
+        $cantidad = (int)($fila['cantidad'] ?? 0);
+        if ($cantidad <= 0) continue;
+        if (!$id || !isset($catalogo[$id])) {
+            error('Selecciona una denominación válida en todas las filas de efectivo');
+        }
+        $valor = $catalogo[$id];
+        $totales['efectivo'] += $valor * $cantidad;
+        $filasValidas[] = [$valor, $cantidad, $tipo, $id];
     } else {
-        $total_calc += $valor;
+        $monto = (float)($fila['cantidad'] ?? 0);
+        if ($monto <= 0) continue;
+        $totales[$tipo] += $monto;
+        $filasValidas[] = [$monto, 1, $tipo, null];
     }
 }
 
+if (!$filasValidas) {
+    error('Sin filas válidas');
+}
+
 $conn->begin_transaction();
-$ins = $conn->prepare('INSERT INTO desglose_corte (corte_id, denominacion_id, cantidad, tipo_pago) VALUES (?, ?, ?, ?)');
+$ins = $conn->prepare('INSERT INTO desglose_corte (corte_id, denominacion, cantidad, tipo_pago, denominacion_id) VALUES (?, ?, ?, ?, ?)');
 if (!$ins) {
     $conn->rollback();
     error('Error al preparar inserción: ' . $conn->error);
 }
-foreach ($detalle as $fila) {
-    $id = (int)($fila['denominacion_id'] ?? 0);
-    $c = (int)($fila['cantidad'] ?? 0);
-    $tipo = $fila['tipo_pago'] ?? 'efectivo';
-    if ($tipo === 'efectivo' && $c <= 0) continue;
-    $ins->bind_param('iiis', $corte_id, $id, $c, $tipo);
+
+foreach ($filasValidas as $f) {
+    [$denom, $cant, $tipo, $denomId] = $f;
+    $ins->bind_param('idisi', $corte_id, $denom, $cant, $tipo, $denomId);
     if (!$ins->execute()) {
         $conn->rollback();
         error('Error al guardar desglose: ' . $ins->error);
@@ -67,5 +83,6 @@ foreach ($detalle as $fila) {
 $ins->close();
 $conn->commit();
 
-success(['total' => $total_calc]);
+$totalGeneral = $totales['efectivo'] + $totales['boucher'] + $totales['cheque'];
+success(['totales' => $totales, 'total_general' => $totalGeneral]);
 ?>

@@ -152,10 +152,17 @@ function abrirModalDesglose(corteId, resumen) {
         const tdDen = document.createElement('td');
         const select = document.createElement('select');
         select.classList.add('denominacion');
+
+        // Opción placeholder para obligar a elegir denominación
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = '--Seleccione--';
+        select.appendChild(placeholder);
+
         catalogoDenominaciones.forEach(d => {
             const opt = document.createElement('option');
             opt.value = d.id;
-            opt.textContent = `${d.descripcion} ($${d.valor})`;
+            opt.textContent = d.descripcion;
             select.appendChild(opt);
         });
         tdDen.appendChild(select);
@@ -219,19 +226,42 @@ function abrirModalDesglose(corteId, resumen) {
 
     modal.querySelector('#guardarDesglose').addEventListener('click', async () => {
         const filas = Array.from(tbody.querySelectorAll('tr'));
-        const detalle = filas
-            .filter(tr => !tr.classList.contains('auto'))
-            .map(tr => ({
-                denominacion_id: parseInt(tr.querySelector('.denominacion').value),
-                cantidad: parseInt(tr.querySelector('.cantidad').value) || 0,
-                tipo_pago: 'efectivo'
-            }))
-            .filter(d => d.cantidad > 0);
+        const detalle = [];
+        let totalEfectivo = 0;
+        let totalBoucher = 0;
+        let totalCheque = 0;
+
+        for (const tr of filas) {
+            if (tr.classList.contains('auto')) {
+                const tipoPago = tr.querySelector('td:nth-child(3)').textContent;
+                const monto = parseFloat(tr.dataset.total || 0);
+                if (tipoPago === 'boucher') totalBoucher += monto;
+                if (tipoPago === 'cheque') totalCheque += monto;
+                detalle.push({ denominacion_id: null, cantidad: monto, tipo_pago: tipoPago });
+                continue;
+            }
+
+            const denomId = parseInt(tr.querySelector('.denominacion').value);
+            const cantidad = parseInt(tr.querySelector('.cantidad').value) || 0;
+            if (cantidad > 0) {
+                if (!denomId || !catalogoDenominaciones.some(d => d.id === denomId)) {
+                    alert('Selecciona una denominación válida en todas las filas de efectivo');
+                    return;
+                }
+                const denom = catalogoDenominaciones.find(d => d.id === denomId);
+                totalEfectivo += parseFloat(denom.valor) * cantidad;
+                detalle.push({ denominacion_id: denomId, cantidad, tipo_pago: 'efectivo' });
+            }
+        }
 
         if (detalle.length === 0) {
             alert('Agrega al menos una fila válida');
             return;
         }
+
+        const totalGeneral = totalEfectivo + totalBoucher + totalCheque;
+        const diferencia = totalGeneral - totalEsperado;
+        alert(`Efectivo: $${totalEfectivo.toFixed(2)}\nBoucher: $${totalBoucher.toFixed(2)}\nCheque: $${totalCheque.toFixed(2)}\nTotal: $${totalGeneral.toFixed(2)}\nDif.: $${diferencia.toFixed(2)}`);
 
         try {
             const resp = await fetch('../../api/corte_caja/guardar_desglose.php', {
