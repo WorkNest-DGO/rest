@@ -4,20 +4,31 @@ if (Array.isArray(window.catalogoDenominaciones) && catalogoDenominaciones.lengt
     console.error('Error al cargar denominaciones');
 }
 
-async function cargarHistorial() {
+let currentPage = 1;
+let limit = 15;
+const order = 'fecha DESC';
+
+async function cargarHistorial(page = currentPage) {
+    currentPage = page;
     try {
-        const resp = await fetch('../../api/ventas/listar_ventas.php');
+        const resp = await fetch(`../../api/ventas/listar_ventas.php?pagina=${currentPage}&limite=${limit}&orden=${encodeURIComponent(order)}`);
         const data = await resp.json();
         if (data.success) {
             const tbody = document.querySelector('#historial tbody');
             tbody.innerHTML = '';
             ventasData = {};
-            data.resultado.forEach(v => {
+            const hoy = new Date().toISOString().split('T')[0];
+            (data.resultado.ventas || []).forEach(v => {
                 const id = v.venta_id || v.id; // compatibilidad con vista
                 ventasData[id] = v;
                 const row = document.createElement('tr');
+                const fechaParte = (v.fecha || '').split(' ')[0];
+                if (fechaParte === hoy) {
+                    row.classList.add('table-info');
+                }
+                const fechaMostrar = fechaParte === hoy ? 'Hoy' : v.fecha;
                 const accion = v.estatus !== 'cancelada'
-                    ? `<button class="btn custom-btn btn-cancelar" data-id="${id}">Cancelar</button>`
+                    ? `<button class=\"btn custom-btn btn-cancelar\" data-id=\"${id}\">Cancelar</button>`
                     : '';
                 const destino = v.tipo_entrega === 'mesa'
                     ? v.mesa
@@ -29,23 +40,52 @@ async function cargarHistorial() {
                     : 'N/A';
                 row.innerHTML = `
                     <td>${id}</td>
-                    <td>${v.fecha}</td>
+                    <td>${fechaMostrar}</td>
                     <td>${v.total}</td>
                     <td>${v.tipo_entrega}</td>
                     <td>${destino || ''}</td>
                     <td>${v.estatus}</td>
                     <td>${entregado}</td>
-                    <td><button class="btn custom-btn btn-detalle" data-id="${id}">Ver detalles</button></td>
+                    <td><button class=\"btn custom-btn btn-detalle\" data-id=\"${id}\">Ver detalles</button></td>
                     <td>${accion}</td>
                 `;
                 tbody.appendChild(row);
             });
+            renderPagination(data.resultado.total_paginas, data.resultado.pagina_actual);
         } else {
             alert(data.mensaje);
         }
     } catch (err) {
         console.error(err);
         alert('Error al cargar ventas');
+    }
+}
+
+function renderPagination(total, page) {
+    const cont = document.getElementById('paginacion');
+    cont.innerHTML = '';
+    if (total <= 1) return;
+    if (page > 1) {
+        const prev = document.createElement('button');
+        prev.textContent = 'Anterior';
+        prev.className = 'btn btn-secondary me-1';
+        prev.addEventListener('click', () => cargarHistorial(page - 1));
+        cont.appendChild(prev);
+    }
+    for (let i = 1; i <= total; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className = 'btn btn-secondary me-1';
+        if (i === page) btn.disabled = true;
+        btn.addEventListener('click', () => cargarHistorial(i));
+        cont.appendChild(btn);
+    }
+    if (page < total) {
+        const next = document.createElement('button');
+        next.textContent = 'Siguiente';
+        next.className = 'btn btn-secondary';
+        next.addEventListener('click', () => cargarHistorial(page + 1));
+        cont.appendChild(next);
     }
 }
 
@@ -924,6 +964,11 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('observacion').value = '';
         }
         verificarActivacionProductos();
+    });
+
+    document.getElementById('recordsPerPage').addEventListener('change', e => {
+        limit = parseInt(e.target.value);
+        cargarHistorial(1);
     });
 
     // Delegación de eventos con jQuery para botones dinámicos
