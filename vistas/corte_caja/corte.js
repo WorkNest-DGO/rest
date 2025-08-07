@@ -412,7 +412,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     html += `<h5>${tp}</h5><table class="table table-bordered"><thead><tr><th>Descripción</th><th>Cantidad</th><th>Valor</th><th>Subtotal</th></tr></thead><tbody>`;
                     arr.forEach(r => {
                         total += r.subtotal;
-                        html += `<tr><td>${r.descripcion}</td><td>${r.cantidad}</td><td>${r.valor}</td><td>${r.subtotal}</td></tr>`;
+                        const desc = r.denominacion_id === 12 ? 'Pago Boucher'
+                                     : r.denominacion_id === 13 ? 'Pago Cheque'
+                                     : r.descripcion;
+                        html += `<tr><td>${desc}</td><td>${r.cantidad}</td><td>${r.valor}</td><td>${r.subtotal}</td></tr>`;
                     });
                     html += `<tr><td colspan="3"><strong>Total</strong></td><td><strong>${total.toFixed(2)}</strong></td></tr>`;
                     html += '</tbody></table>';

@@ -10,6 +10,7 @@ $orden = trim($orden);
 if ($orden !== 'fecha ASC' && $orden !== 'fecha DESC') {
     $orden = 'fecha DESC';
 }
+$orden = 'v.' . $orden;
 $offset = ($pagina - 1) * $limite;
 
 $baseFrom = "FROM vw_ventas_detalladas vw JOIN ventas v ON v.id = vw.venta_id LEFT JOIN tickets t ON t.venta_id = v.id";
@@ -23,7 +24,7 @@ if ($busqueda !== '') {
     $types = 's';
 }
 
-$countSql = "SELECT COUNT(*) AS total $baseFrom$where";
+$countSql = "SELECT COUNT(DISTINCT v.id) AS total $baseFrom$where";
 $countStmt = $conn->prepare($countSql);
 if ($busqueda !== '') {
     $countStmt->bind_param($types, ...$params);
@@ -36,10 +37,20 @@ if (!$countResult) {
 $totalRegistros = (int)$countResult->fetch_assoc()['total'];
 $totalPaginas = (int)ceil($totalRegistros / $limite);
 
-$query = "SELECT vw.*, v.tipo_entrega, v.usuario_id, v.entregado, v.sede_id, t.folio, t.mesa_nombre, t.mesero_nombre, t.tipo_pago, t.fecha as ticket_fecha
+$query = "SELECT v.id AS venta_id, v.fecha, v.estatus, vw.usuario, vw.mesa, vw.repartidor,
+                 v.tipo_entrega, v.usuario_id, v.entregado, v.sede_id,
+                 GROUP_CONCAT(t.folio ORDER BY t.folio) AS folio,
+                 MAX(t.mesa_nombre) AS mesa_nombre,
+                 MAX(t.mesero_nombre) AS mesero_nombre,
+                 GROUP_CONCAT(t.tipo_pago ORDER BY t.id) AS tipo_pago,
+                 MIN(t.fecha) AS ticket_fecha,
+                 COALESCE(SUM(t.total), v.total) AS total,
+                 COALESCE(SUM(t.propina),0) AS propina,
+                 COUNT(t.id) AS num_tickets
           $baseFrom$where
+          GROUP BY v.id
           ORDER BY $orden
-          LIMIT ? OFFSET ?"; 
+          LIMIT ? OFFSET ?";
 $stmt = $conn->prepare($query);
 if (!$stmt) {
     error('Error al preparar consulta: ' . $conn->error);

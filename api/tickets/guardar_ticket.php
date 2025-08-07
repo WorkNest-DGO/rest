@@ -16,8 +16,8 @@ $usuario_id = (int)$input['usuario_id'];
 $subcuentas = $input['subcuentas'];
 $sede_id    = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$input['sede_id'] : 1;
 
-// Obtener datos de la venta
-$stmtVenta = $conn->prepare('SELECT mesa_id, usuario_id AS mesero_id, fecha_inicio, tipo_entrega FROM ventas WHERE id = ?');
+// Obtener datos de la venta, incluyendo el corte asociado
+$stmtVenta = $conn->prepare('SELECT mesa_id, usuario_id AS mesero_id, fecha_inicio, tipo_entrega, corte_id FROM ventas WHERE id = ?');
 if (!$stmtVenta) {
     error('Error al preparar datos de venta: ' . $conn->error);
 }
@@ -35,6 +35,10 @@ if (!$venta) {
 
 $mesa_nombre = null;
 $tipo_entrega = $venta['tipo_entrega'] ?? '';
+$corte_id = isset($venta['corte_id']) ? (int)$venta['corte_id'] : null;
+if (!$corte_id) {
+    error('Venta sin corte asociado');
+}
 if ($tipo_entrega === 'rapido') {
     $mesa_nombre = 'Venta rápida';
 } elseif (!empty($venta['mesa_id'])) {
@@ -166,6 +170,9 @@ foreach ($subcuentas as $sub) {
         $conn->rollback();
         error('Tipo de pago o monto recibido faltante');
     }
+    if ($tipo_pago === 'boucher' || $tipo_pago === 'cheque') {
+        $monto_recibido = $total;
+    }
     $tarjeta_marca_id = $tarjeta_banco_id = null;
     $cheque_banco_id = null;
     $boucher = $cheque_numero = null;
@@ -218,6 +225,23 @@ foreach ($subcuentas as $sub) {
         error('Error al guardar ticket: ' . $insTicket->error);
     }
     $ticket_id = $insTicket->insert_id;
+
+    if ($tipo_pago === 'boucher' || $tipo_pago === 'cheque') {
+        $denom_id = $tipo_pago === 'boucher' ? 12 : 13;
+        $insDesglose = $conn->prepare('INSERT INTO desglose_corte (corte_id, denominacion, cantidad, tipo_pago, denominacion_id) VALUES (?, ?, ?, ?, ?)');
+        if (!$insDesglose) {
+            $conn->rollback();
+            error('Error al preparar desglose: ' . $conn->error);
+        }
+        $denom = 1.00;
+        $cant = $total;
+        $insDesglose->bind_param('iddsi', $corte_id, $denom, $cant, $tipo_pago, $denom_id);
+        if (!$insDesglose->execute()) {
+            $conn->rollback();
+            error('Error al guardar desglose: ' . $insDesglose->error);
+        }
+        $insDesglose->close();
+    }
 
     foreach ($sub['productos'] as $p) {
         $producto_id     = (int)$p['producto_id'];
