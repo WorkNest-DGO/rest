@@ -48,7 +48,7 @@ ob_start();
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <div class="modal-body" id="modalDetalleContenido"></div>
+      <div class="modal-body" id="modalDetalleContenido"><!-- Se llena dinámicamente con detalles de efectivo, boucher y cheque --></div>
     </div>
   </div>
 </div>
