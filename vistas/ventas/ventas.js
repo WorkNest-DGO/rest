@@ -975,7 +975,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('buscadorVentas').addEventListener('input', e => {
-        searchQuery = e.target.value;
+        searchQuery = e.target.value.trim();
         cargarHistorial(1);
     });
 
