@@ -396,42 +396,36 @@ document.addEventListener('DOMContentLoaded', () => {
             dataType: 'json',
             data: JSON.stringify({ id: parseInt(corteId) })
         }).done(function (resp) {
-            const tablaEl = document.getElementById('tablaDetalleCorte');
-            const tablaDetalle = tablaEl ? tablaEl.querySelector('tbody') : null;
-            if (!tablaDetalle) {
-                console.error('No se encontró la tabla de detalle de corte');
-                return;
-            }
-
-            tablaDetalle.innerHTML = '';
-
+            const cont = document.getElementById('modalDetalleContenido');
+            if (!cont) return;
             if (resp.success && Array.isArray(resp.detalles)) {
-                resp.detalles.forEach(item => {
-                    const fila = document.createElement('tr');
-                    fila.innerHTML = `
-                        <td>${item.descripcion}</td>
-                        <td>${item.cantidad}</td>
-                        <td>${item.tipo_pago}</td>
-                        <td>$${parseFloat(item.subtotal).toFixed(2)}</td>
-                    `;
-                    tablaDetalle.appendChild(fila);
+                const grupos = {};
+                resp.detalles.forEach(d => {
+                    if (!grupos[d.tipo_pago]) grupos[d.tipo_pago] = [];
+                    grupos[d.tipo_pago].push(d);
                 });
-
-                if (!resp.detalles.length) {
-                    tablaDetalle.innerHTML = '<tr><td colspan="4" class="text-center">Sin datos</td></tr>';
-                }
+                let html = '';
+                ['efectivo', 'boucher', 'cheque'].forEach(tp => {
+                    const arr = grupos[tp] || [];
+                    if (!arr.length) return;
+                    let total = 0;
+                    html += `<h5>${tp}</h5><table class="table table-bordered"><thead><tr><th>Descripción</th><th>Cantidad</th><th>Valor</th><th>Subtotal</th></tr></thead><tbody>`;
+                    arr.forEach(r => {
+                        total += r.subtotal;
+                        html += `<tr><td>${r.descripcion}</td><td>${r.cantidad}</td><td>${r.valor}</td><td>${r.subtotal}</td></tr>`;
+                    });
+                    html += `<tr><td colspan="3"><strong>Total</strong></td><td><strong>${total.toFixed(2)}</strong></td></tr>`;
+                    html += '</tbody></table>';
+                });
+                cont.innerHTML = html;
             } else {
                 const msg = resp.mensaje || 'Error al obtener detalle';
-                tablaDetalle.innerHTML = `<tr><td colspan="4" class="text-center">${msg}</td></tr>`;
+                cont.innerHTML = `<p class="text-center">${msg}</p>`;
             }
-
             $('#modalDetalle').modal('show');
         }).fail(function () {
-            const tablaEl = document.getElementById('tablaDetalleCorte');
-            const tablaDetalle = tablaEl ? tablaEl.querySelector('tbody') : null;
-            if (tablaDetalle) {
-                tablaDetalle.innerHTML = '<tr><td colspan="4" class="text-center">Error al obtener detalle</td></tr>';
-            }
+            const cont = document.getElementById('modalDetalleContenido');
+            if (cont) cont.innerHTML = '<p class="text-center">Error al obtener detalle</p>';
             $('#modalDetalle').modal('show');
         });
     });

@@ -44,7 +44,7 @@ async function cargarHistorial() {
                     <td>${c.cheque || ''}</td>
                     <td>${c.fondo_inicial || ''}</td>
                     <td>${c.observaciones || ''}</td>
-                    <td><button class="btn custom-btn" data-id="${c.id}">Ver detalle</button></td>
+                    <td><button class="btn custom-btn detalle" data-id="${c.id}">Ver detalle</button></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -65,15 +65,28 @@ async function verDetalle(corteId) {
     modal.innerHTML = 'Cargando...';
     modal.style.display = 'block';
     try {
-        const resp = await fetch('../../api/corte_caja/listar_ventas_por_corte.php?corte_id=' + corteId);
+        const resp = await fetch('../../api/corte_caja/detalle_venta.php?corte_id=' + corteId);
         const data = await resp.json();
         if (data.success) {
-            let html = `<h3>Ventas del corte ${corteId}</h3>`;
-            html += '<table border="1"><thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Propina</th><th>Tipo</th></tr></thead><tbody>';
-            data.resultado.forEach(v => {
-                html += `<tr><td>${v.id}</td><td>${v.fecha}</td><td>${v.total}</td><td>${v.propina}</td><td>${v.tipo_entrega}</td></tr>`;
+            const grupos = {};
+            data.detalles.forEach(d => {
+                if (!grupos[d.tipo_pago]) grupos[d.tipo_pago] = [];
+                grupos[d.tipo_pago].push(d);
             });
-            html += '</tbody></table><button class="btn custom-btn" id="cerrarModal">Cerrar</button>';
+            let html = `<h3>Desglose del corte ${corteId}</h3>`;
+            ['efectivo', 'boucher', 'cheque'].forEach(tp => {
+                const arr = grupos[tp] || [];
+                if (!arr.length) return;
+                let total = 0;
+                html += `<h4>${tp}</h4><table border="1"><thead><tr><th>Descripción</th><th>Cantidad</th><th>Valor</th><th>Subtotal</th></tr></thead><tbody>`;
+                arr.forEach(r => {
+                    total += r.subtotal;
+                    html += `<tr><td>${r.descripcion}</td><td>${r.cantidad}</td><td>${r.valor}</td><td>${r.subtotal}</td></tr>`;
+                });
+                html += `<tr><td colspan="3"><strong>Total</strong></td><td><strong>${total.toFixed(2)}</strong></td></tr>`;
+                html += '</tbody></table>';
+            });
+            html += '<button class="btn custom-btn" id="cerrarModal">Cerrar</button>';
             modal.innerHTML = html;
             document.getElementById('cerrarModal').addEventListener('click', () => {
                 modal.style.display = 'none';

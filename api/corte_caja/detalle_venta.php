@@ -36,11 +36,15 @@ if ($id <= 0) {
 
 try {
     // 1️⃣ Intentar obtener desglose de corte
-    $sqlDesglose = "SELECT dc.id, cd.descripcion, cd.valor, dc.cantidad, dc.tipo_pago,
+    $sqlDesglose = "SELECT dc.tipo_pago,
+                           cd.descripcion,
+                           dc.cantidad,
+                           cd.valor,
                            (cd.valor * dc.cantidad) AS subtotal
-                    FROM desglose_corte dc
+                    FROM corte_caja cc
+                    JOIN desglose_corte dc ON dc.corte_id = cc.id
                     JOIN catalogo_denominaciones cd ON cd.id = dc.denominacion_id
-                    WHERE dc.corte_id = ?";
+                    WHERE cc.id = ?";
     $stmt = $conn->prepare($sqlDesglose);
     $stmt->bind_param('i', $id);
     $stmt->execute();
@@ -50,11 +54,10 @@ try {
         $detalles = [];
         while ($row = $resDesglose->fetch_assoc()) {
             $detalles[] = [
-                'id' => (int)$row['id'],
-                'descripcion' => $row['descripcion'],
-                'valor' => (float)$row['valor'],
-                'cantidad' => (int)$row['cantidad'],
                 'tipo_pago' => $row['tipo_pago'],
+                'descripcion' => $row['descripcion'],
+                'cantidad' => (float)$row['cantidad'],
+                'valor' => (float)$row['valor'],
                 'subtotal' => round((float)$row['subtotal'], 2)
             ];
         }

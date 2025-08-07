@@ -98,6 +98,7 @@ ob_start();
 <script>
     const catalogoTarjetas = <?php echo json_encode($tarjetas); ?>;
     const catalogoBancos = <?php echo json_encode($bancos); ?>;
+    const denominacionesUrl = '../../api/corte_caja/listar_denominaciones.php';
 </script>
 <script src="ticket.js"></script>
 </body>
