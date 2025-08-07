@@ -18,9 +18,9 @@ $params = [];
 $types = '';
 if ($busqueda !== '') {
     $like = "%{$busqueda}%";
-    $where = " WHERE t.folio LIKE ? OR t.mesa_nombre LIKE ? OR t.mesero_nombre LIKE ? OR t.tipo_pago LIKE ? OR DATE(t.fecha) LIKE ?";
-    $params = [$like, $like, $like, $like, $like];
-    $types = str_repeat('s', 5);
+    $where = " WHERE CONCAT_WS(' ', v.id, t.folio, v.fecha, v.total, v.estatus, v.tipo_entrega, t.tipo_pago, vw.usuario, t.mesa_nombre, t.mesero_nombre) LIKE ?";
+    $params = [$like];
+    $types = 's';
 }
 
 $countSql = "SELECT COUNT(*) AS total $baseFrom$where";
