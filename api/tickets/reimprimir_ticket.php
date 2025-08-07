@@ -144,6 +144,15 @@ while ($t = $res->fetch_assoc()) {
           'boucher'          => $t['boucher'] ?? null,
           'cheque_numero'    => $t['cheque_numero'] ?? null,
           'cheque_banco'     => $t['cheque_banco'] ?? null,
+          'tarjeta'          => [
+              'marca'   => $t['tarjeta_marca'] ?? null,
+              'banco'   => $t['tarjeta_banco'] ?? null,
+              'boucher' => $t['boucher'] ?? null
+          ],
+          'cheque'           => [
+              'numero' => $t['cheque_numero'] ?? null,
+              'banco'  => $t['cheque_banco'] ?? null
+          ],
           'tipo_entrega'     => $tipo_entrega,
           'cambio'           => (float)$cambio,
           'total_letras'     => numeroALetras($t['total']),

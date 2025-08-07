@@ -1,4 +1,5 @@
 function llenarTicket(data) {
+        console.log('Datos de ticket recibidos:', data);
         const logoSrc = data.logo_url || '../../utils/logo.png';
         document.getElementById('ticketLogo').src = logoSrc;
         document.getElementById('ventaId').textContent = data.venta_id;
@@ -19,13 +20,15 @@ function llenarTicket(data) {
         if (cInfo) cInfo.style.display = 'none';
         if (data.tipo_pago === 'boucher' && tInfo) {
             tInfo.style.display = 'block';
-            document.getElementById('tarjetaMarca').textContent = data.tarjeta_marca || '';
-            document.getElementById('tarjetaBanco').textContent = data.tarjeta_banco || '';
-            document.getElementById('tarjetaBoucher').textContent = data.boucher || '';
+            const tarjeta = data.tarjeta || {};
+            document.getElementById('tarjetaMarca').textContent = tarjeta.marca || 'No definido';
+            document.getElementById('tarjetaBanco').textContent = tarjeta.banco || 'No definido';
+            document.getElementById('tarjetaBoucher').textContent = tarjeta.boucher || 'No definido';
         } else if (data.tipo_pago === 'cheque' && cInfo) {
             cInfo.style.display = 'block';
-            document.getElementById('chequeNumero').textContent = data.cheque_numero || '';
-            document.getElementById('chequeBanco').textContent = data.cheque_banco || '';
+            const cheque = data.cheque || {};
+            document.getElementById('chequeNumero').textContent = cheque.numero || 'No definido';
+            document.getElementById('chequeBanco').textContent = cheque.banco || 'No definido';
         }
         document.getElementById('horaInicio').textContent = (data.fecha_inicio && data.fecha_inicio !== 'N/A') ? new Date(data.fecha_inicio).toLocaleString() : (data.fecha_inicio || 'N/A');
         document.getElementById('horaFin').textContent = (data.fecha_fin && data.fecha_fin !== 'N/A') ? new Date(data.fecha_fin).toLocaleString() : (data.fecha_fin || 'N/A');
