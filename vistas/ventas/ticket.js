@@ -74,6 +74,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         llenarTicket(datos);
         liberarMesa(datos.venta_id);
     } else {
+        const ok = await cargarDenominacionesPago();
+        if (!ok) return;
         serieActual = await obtenerSerieActual();
         inicializarDividir(datos);
     }
@@ -83,6 +85,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     let serieActual = null;
+    let denomBoucherId = null;
+    let denomChequeId = null;
+
+    async function cargarDenominacionesPago() {
+        try {
+            const resp = await fetch(denominacionesUrl);
+            const data = await resp.json();
+            if (data.success && Array.isArray(data.resultado)) {
+                data.resultado.forEach(d => {
+                    if (d.descripcion === 'Pago Boucher') denomBoucherId = d.id;
+                    if (d.descripcion === 'Pago Cheque') denomChequeId = d.id;
+                });
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        if (!denomBoucherId || !denomChequeId) {
+            alert('Faltan denominaciones para pagos con tarjeta o cheque');
+            return false;
+        }
+        return true;
+    }
+
     async function obtenerSerieActual() {
         try {
             const resp = await fetch('../../api/horarios/serie_actual.php');
@@ -270,6 +295,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function guardarSubcuentas() {
         const info = JSON.parse(localStorage.getItem('ticketData'));
+        if (!denomBoucherId || !denomChequeId) {
+            alert('No hay denominaciones configuradas para tarjeta o cheque');
+            return;
+        }
         const payload = {
             venta_id: info.venta_id,
             usuario_id: info.usuario_id || 1,
@@ -346,12 +375,39 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (d.success) {
                 ticketsGuardados = d.resultado.tickets || [];
                 alert('Tickets guardados');
+                await registrarDesglosePagos(payload.subcuentas);
                 await mostrarBotonesImprimir(payload, true);
             } else {
                 alert(d.mensaje);
             }
         } catch (e) {
             alert('Error al guardar');
+        }
+    }
+
+    async function registrarDesglosePagos(subcuentas) {
+        const totales = { boucher: 0, cheque: 0 };
+        subcuentas.forEach(sc => {
+            const total = sc.productos.reduce((s, p) => s + p.cantidad * p.precio_unitario, 0) + (parseFloat(sc.propina || 0));
+            if (sc.tipo_pago === 'boucher') totales.boucher += total;
+            if (sc.tipo_pago === 'cheque') totales.cheque += total;
+        });
+        const detalle = [];
+        if (totales.boucher > 0 && denomBoucherId) {
+            detalle.push({ tipo_pago: 'boucher', denominacion_id: denomBoucherId, cantidad: totales.boucher, denominacion: 1 });
+        }
+        if (totales.cheque > 0 && denomChequeId) {
+            detalle.push({ tipo_pago: 'cheque', denominacion_id: denomChequeId, cantidad: totales.cheque, denominacion: 1 });
+        }
+        if (!detalle.length) return;
+        try {
+            await fetch('../../api/corte_caja/guardar_desglose.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ detalle })
+            });
+        } catch (err) {
+            console.error('Error al registrar desglose', err);
         }
     }
 

@@ -34,10 +34,11 @@ while ($row = $resCat->fetch_assoc()) {
     $catalogo[(int)$row['id']] = (float)$row['valor'];
 }
 
+// Acumular totales por tipo de pago
 $totales = [
     'efectivo' => 0,
-    'boucher' => 0,
-    'cheque' => 0
+    'boucher'  => 0,
+    'cheque'   => 0
 ];
 
 $filasValidas = [];
@@ -46,7 +47,9 @@ foreach ($detalle as $fila) {
     if ($tipo === 'efectivo') {
         $id = (int)($fila['denominacion_id'] ?? 0);
         $cantidad = (int)($fila['cantidad'] ?? 0);
-        if ($cantidad <= 0) continue;
+        if ($cantidad <= 0) {
+            continue;
+        }
         if (!$id || !isset($catalogo[$id])) {
             error('Selecciona una denominación válida en todas las filas de efectivo');
         }
@@ -55,9 +58,18 @@ foreach ($detalle as $fila) {
         $filasValidas[] = [$valor, $cantidad, $tipo, $id];
     } else {
         $monto = (float)($fila['cantidad'] ?? 0);
-        if ($monto <= 0) continue;
+        if ($monto <= 0) {
+            continue;
+        }
+        $id = isset($fila['denominacion_id']) ? (int)$fila['denominacion_id'] : 0;
         $totales[$tipo] += $monto;
-        $filasValidas[] = [$monto, 1, $tipo, null];
+        if ($id && isset($catalogo[$id])) {
+            $valor = $catalogo[$id];
+            $filasValidas[] = [$valor, $monto, $tipo, $id];
+        } else {
+            // Compatibilidad con llamadas anteriores sin denominacion_id
+            $filasValidas[] = [$monto, 1, $tipo, null];
+        }
     }
 }
 
@@ -74,7 +86,8 @@ if (!$ins) {
 
 foreach ($filasValidas as $f) {
     [$denom, $cant, $tipo, $denomId] = $f;
-    $ins->bind_param('idisi', $corte_id, $denom, $cant, $tipo, $denomId);
+    // cantidad puede contener decimales
+    $ins->bind_param('iddsi', $corte_id, $denom, $cant, $tipo, $denomId);
     if (!$ins->execute()) {
         $conn->rollback();
         error('Error al guardar desglose: ' . $ins->error);

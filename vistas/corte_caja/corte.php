@@ -48,19 +48,7 @@ ob_start();
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <div class="modal-body" id="modalDetalleContenido">
-        <table id="tablaDetalleCorte" class="table table-bordered">
-          <thead>
-            <tr>
-              <th>Denominación</th>
-              <th>Cantidad</th>
-              <th>Tipo de pago</th>
-              <th>Subtotal</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <div class="modal-body" id="modalDetalleContenido"></div>
     </div>
   </div>
 </div>

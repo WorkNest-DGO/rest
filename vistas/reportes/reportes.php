@@ -66,7 +66,7 @@ ob_start();
                 <th>Cheque</th>
                 <th>Fondo</th>
                 <th>Observaciones</th>
-                <th>Detalle</th>
+                <th>Desglose</th>
             </tr>
         </thead>
         <tbody>
