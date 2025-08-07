@@ -20,15 +20,13 @@ function llenarTicket(data) {
         if (cInfo) cInfo.style.display = 'none';
         if (data.tipo_pago === 'boucher' && tInfo) {
             tInfo.style.display = 'block';
-            const tarjeta = data.tarjeta || {};
-            document.getElementById('tarjetaMarca').textContent = tarjeta.marca || 'No definido';
-            document.getElementById('tarjetaBanco').textContent = tarjeta.banco || 'No definido';
-            document.getElementById('tarjetaBoucher').textContent = tarjeta.boucher || 'No definido';
+            document.getElementById('tarjetaMarca').textContent = data.tarjeta || 'No definido';
+            document.getElementById('tarjetaBanco').textContent = data.banco || 'No definido';
+            document.getElementById('tarjetaBoucher').textContent = data.boucher || 'No definido';
         } else if (data.tipo_pago === 'cheque' && cInfo) {
             cInfo.style.display = 'block';
-            const cheque = data.cheque || {};
-            document.getElementById('chequeNumero').textContent = cheque.numero || 'No definido';
-            document.getElementById('chequeBanco').textContent = cheque.banco || 'No definido';
+            document.getElementById('chequeNumero').textContent = data.cheque_numero || 'No definido';
+            document.getElementById('chequeBanco').textContent = data.banco || 'No definido';
         }
         document.getElementById('horaInicio').textContent = (data.fecha_inicio && data.fecha_inicio !== 'N/A') ? new Date(data.fecha_inicio).toLocaleString() : (data.fecha_inicio || 'N/A');
         document.getElementById('horaFin').textContent = (data.fecha_fin && data.fecha_fin !== 'N/A') ? new Date(data.fecha_fin).toLocaleString() : (data.fecha_fin || 'N/A');
@@ -47,7 +45,7 @@ function llenarTicket(data) {
         document.getElementById('totalLetras').textContent = data.total_letras || '';
     }
 
-    function imprimirTicket() {
+function imprimirTicket() {
         const ticketContainer = document.getElementById('ticketContainer');
         if (!ticketContainer) return;
         const ticketContent = ticketContainer.innerHTML;
@@ -59,7 +57,7 @@ function llenarTicket(data) {
         printWindow.document.write('</body></html>');
         printWindow.document.close();
         printWindow.print();
-    }
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     const params = new URLSearchParams(window.location.search);
@@ -79,6 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         const ok = await cargarDenominacionesPago();
         if (!ok) return;
+        await cargarCatalogosTarjeta();
         serieActual = await obtenerSerieActual();
         inicializarDividir(datos);
     }
@@ -90,6 +89,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     let serieActual = null;
     let denomBoucherId = null;
     let denomChequeId = null;
+    let catalogoTarjetas = [];
+    let catalogoBancos = [];
+
+    async function cargarCatalogosTarjeta() {
+        try {
+            const resp = await fetch(catalogosUrl);
+            const data = await resp.json();
+            if (data.success) {
+                catalogoBancos = Array.isArray(data.bancos) ? data.bancos : [];
+                catalogoTarjetas = Array.isArray(data.tarjetas) ? data.tarjetas : [];
+            }
+        } catch (e) {
+            console.error('Error cargando catálogos', e);
+        }
+    }
 
     async function cargarDenominacionesPago() {
         try {
@@ -250,10 +264,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         let html = '';
         if (tipo === 'boucher') {
             html += 'Marca: <select id="tarjetaMarca' + i + '"><option value="">Seleccione</option>';
-            catalogoTarjetas.forEach(t => { html += `<option value="${t.id}">${t.descripcion}</option>`; });
+            catalogoTarjetas.forEach(t => { html += `<option value="${t.id}">${t.nombre}</option>`; });
             html += '</select> ';
             html += 'Banco: <select id="tarjetaBanco' + i + '"><option value="">Seleccione</option>';
-            catalogoBancos.forEach(b => { html += `<option value="${b.id}">${b.descripcion}</option>`; });
+            catalogoBancos.forEach(b => { html += `<option value="${b.id}">${b.nombre}</option>`; });
             html += '</select> ';
             html += 'Boucher: <input type="text" id="boucher' + i + '">';
             cont.innerHTML = html;
@@ -261,7 +275,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (tipo === 'cheque') {
             html += 'No. Cheque: <input type="text" id="chequeNumero' + i + '"> ';
             html += 'Banco: <select id="chequeBanco' + i + '"><option value="">Seleccione</option>';
-            catalogoBancos.forEach(b => { html += `<option value="${b.id}">${b.descripcion}</option>`; });
+            catalogoBancos.forEach(b => { html += `<option value="${b.id}">${b.nombre}</option>`; });
             html += '</select>';
             cont.innerHTML = html;
             cont.style.display = 'block';
@@ -342,17 +356,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             const extra = {};
             if (tipo === 'boucher') {
-                extra.tarjeta_marca_id = parseInt(document.getElementById('tarjetaMarca' + i).value) || null;
-                extra.tarjeta_banco_id = parseInt(document.getElementById('tarjetaBanco' + i).value) || null;
+                extra.tarjeta_id = parseInt(document.getElementById('tarjetaMarca' + i).value) || null;
+                extra.banco_id = parseInt(document.getElementById('tarjetaBanco' + i).value) || null;
                 extra.boucher = document.getElementById('boucher' + i).value || '';
-                if (!extra.tarjeta_marca_id || !extra.tarjeta_banco_id || !extra.boucher) {
+                if (!extra.tarjeta_id || !extra.banco_id || !extra.boucher) {
                     alert('Completa datos de tarjeta en subcuenta ' + i);
                     return;
                 }
             } else if (tipo === 'cheque') {
                 extra.cheque_numero = document.getElementById('chequeNumero' + i).value || '';
-                extra.cheque_banco_id = parseInt(document.getElementById('chequeBanco' + i).value) || null;
-                if (!extra.cheque_numero || !extra.cheque_banco_id) {
+                extra.banco_id = parseInt(document.getElementById('chequeBanco' + i).value) || null;
+                if (!extra.cheque_numero || !extra.banco_id) {
                     alert('Completa datos de cheque en subcuenta ' + i);
                     return;
                 }
