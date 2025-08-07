@@ -1,14 +1,11 @@
 <?php
 require_once __DIR__ . '/../../utils/cargar_permisos.php';
-require_once __DIR__ . '/../../config/db.php';
 $path_actual = str_replace('/rest', '', $_SERVER['PHP_SELF']);
 if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
     http_response_code(403);
     echo 'Acceso no autorizado';
     exit;
 }
-
-$denominaciones = $conn->query("SELECT id, descripcion, valor FROM catalogo_denominaciones ORDER BY valor ASC")->fetch_all(MYSQLI_ASSOC);
 
 $title = 'Corte de Caja';
 ob_start();
@@ -104,9 +101,6 @@ ob_start();
 
 </div>
 <?php require_once __DIR__ . '/../footer.php'; ?>
-<script>
-    const catalogoDenominaciones = <?php echo json_encode($denominaciones); ?>;
-</script>
 <script src="corte.js"></script>
     </body>
 </html>
