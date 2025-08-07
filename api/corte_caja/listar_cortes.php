@@ -3,8 +3,10 @@ require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
 $usuario_id = null;
-$inicio = null;
-$fin = null;
+$inicio = null; // deprecated
+$fin = null;    // deprecated
+$fecha_inicio = $_REQUEST['fecha_inicio'] ?? null;
+$fecha_fin = $_REQUEST['fecha_fin'] ?? null;
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 15;
 $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
@@ -27,14 +29,21 @@ if ($usuario_id) {
     $params[] = $usuario_id;
     $types .= 'i';
 }
-if ($inicio) {
-    $conditions[] = 'cc.fecha_inicio >= ?';
-    $params[] = $inicio;
+// Compatibilidad con parámetros antiguos
+if (!$fecha_inicio && $inicio) {
+    $fecha_inicio = $inicio;
+}
+if (!$fecha_fin && $fin) {
+    $fecha_fin = $fin;
+}
+if ($fecha_inicio) {
+    $conditions[] = 'DATE(v.fecha_inicio) >= ?';
+    $params[] = $fecha_inicio;
     $types .= 's';
 }
-if ($fin) {
-    $conditions[] = 'cc.fecha_inicio <= ?';
-    $params[] = $fin;
+if ($fecha_fin) {
+    $conditions[] = 'DATE(v.fecha_fin) <= ?';
+    $params[] = $fecha_fin;
     $types .= 's';
 }
 $searchParams = [];

@@ -54,6 +54,13 @@ ob_start();
 </div>
 
 <h2 class="section-header">Historial de Cortes</h2>
+<div class="mb-2">
+  <label for="fechaInicio">Inicio:</label>
+  <input type="date" id="fechaInicio" class="form-control form-control-sm d-inline-block">
+  <label for="fechaFin" class="ml-2">Fin:</label>
+  <input type="date" id="fechaFin" class="form-control form-control-sm d-inline-block">
+  <button id="btnFiltrar" class="btn custom-btn-sm ml-2">Filtrar</button>
+</div>
 <div class="d-flex justify-content-between mb-2">
   <div>
     <label for="selectRegistros">Mostrar</label>
@@ -73,10 +80,15 @@ ob_start();
     <thead>
       <tr>
         <th style="color:#fff">ID</th>
-        <th style="color:#fff">Cajero</th>
         <th style="color:#fff">Fecha inicio</th>
         <th style="color:#fff">Fecha fin</th>
+        <th style="color:#fff">Usuario</th>
+        <th style="color:#fff">Efectivo</th>
+        <th style="color:#fff">Boucher</th>
+        <th style="color:#fff">Cheque</th>
+        <th style="color:#fff">Fondo inicial</th>
         <th style="color:#fff">Total</th>
+        <th style="color:#fff">Observaciones</th>
         <th style="color:#fff">Detalle</th>
       </tr>
     </thead>
