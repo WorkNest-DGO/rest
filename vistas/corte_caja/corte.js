@@ -4,6 +4,12 @@ let pagina = 1;
 let limite = 15;
 let busqueda = '';
 
+if (Array.isArray(window.catalogoDenominaciones) && catalogoDenominaciones.length > 0) {
+    console.log('Denominaciones cargadas:', catalogoDenominaciones);
+} else {
+    console.error('Error al cargar denominaciones');
+}
+
 function calcularTotalEsperado(resumen) {
     let total = 0;
     if (resumen && typeof resumen === 'object') {
@@ -159,12 +165,21 @@ function abrirModalDesglose(corteId, resumen) {
         placeholder.textContent = '--Seleccione--';
         select.appendChild(placeholder);
 
-        catalogoDenominaciones.forEach(d => {
-            const opt = document.createElement('option');
-            opt.value = d.id;
-            opt.textContent = d.descripcion;
-            select.appendChild(opt);
-        });
+        if (Array.isArray(catalogoDenominaciones) && catalogoDenominaciones.length > 0) {
+            catalogoDenominaciones.forEach(d => {
+                console.log('Agregando opción:', d.descripcion);
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = d.descripcion;
+                select.appendChild(opt);
+            });
+        } else {
+            console.warn('No se agregaron opciones al select. Lista vacía.');
+        }
+
+        if (select.options.length <= 1) {
+            console.warn('No se agregaron opciones al select');
+        }
         tdDen.appendChild(select);
 
         const tdCant = document.createElement('td');
