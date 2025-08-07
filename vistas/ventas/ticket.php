@@ -8,12 +8,6 @@ if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
     exit;
 }
 
-// Catálogos para datos de pago
-$tarjetas = $conn->query("SELECT id, nombre FROM catalogo_tarjetas ORDER BY nombre")
-    ?->fetch_all(MYSQLI_ASSOC) ?? [];
-$bancos = $conn->query("SELECT id, nombre FROM catalogo_bancos ORDER BY nombre")
-    ?->fetch_all(MYSQLI_ASSOC) ?? [];
-
 $title = 'Ticket';
 ob_start();
 ?>
@@ -96,8 +90,7 @@ ob_start();
 
 <?php require_once __DIR__ . '/../footer.php'; ?>
 <script>
-    const catalogoTarjetas = <?php echo json_encode($tarjetas); ?>;
-    const catalogoBancos = <?php echo json_encode($bancos); ?>;
+    const catalogosUrl = '../../api/tickets/catalogos_tarjeta.php';
     const denominacionesUrl = '../../api/corte_caja/listar_denominaciones.php';
 </script>
 <script src="ticket.js"></script>

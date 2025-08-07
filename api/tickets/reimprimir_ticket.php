@@ -66,15 +66,14 @@ $stmt = $conn->prepare("SELECT t.id, t.folio, t.total, t.propina, t.fecha, t.ven
                                 t.tiempo_servicio, t.nombre_negocio, t.direccion_negocio,
                                 t.rfc_negocio, t.telefono_negocio, t.sede_id,
                                 t.tipo_pago, t.monto_recibido,
-                                t.tarjeta_marca_id, tm.descripcion AS tarjeta_marca,
-                                t.tarjeta_banco_id, cb.descripcion AS tarjeta_banco,
+                                t.tarjeta_id, ct.nombre AS tarjeta,
+                                t.banco_id, cb.nombre AS banco,
                                 t.boucher,
-                                t.cheque_numero, t.cheque_banco_id, cb2.descripcion AS cheque_banco,
+                                t.cheque_numero,
                                 v.tipo_entrega
                          FROM tickets t
-                         LEFT JOIN catalogo_tarjetas tm ON t.tarjeta_marca_id = tm.id
-                         LEFT JOIN catalogo_bancos cb ON t.tarjeta_banco_id = cb.id
-                         LEFT JOIN catalogo_bancos cb2 ON t.cheque_banco_id = cb2.id
+                         LEFT JOIN catalogo_tarjetas ct ON t.tarjeta_id = ct.id
+                         LEFT JOIN catalogo_bancos cb ON t.banco_id = cb.id
                          LEFT JOIN ventas v ON t.venta_id = v.id
                          WHERE $cond");
 if (!$stmt) {
@@ -139,20 +138,10 @@ while ($t = $res->fetch_assoc()) {
           'rfc_negocio'      => $rfc_negocio,
           'telefono_negocio' => $telefono_negocio,
           'tipo_pago'        => $tipo_pago,
-          'tarjeta_marca'    => $t['tarjeta_marca'] ?? null,
-          'tarjeta_banco'    => $t['tarjeta_banco'] ?? null,
+          'tarjeta'          => $t['tarjeta'] ?? null,
+          'banco'            => $t['banco'] ?? null,
           'boucher'          => $t['boucher'] ?? null,
           'cheque_numero'    => $t['cheque_numero'] ?? null,
-          'cheque_banco'     => $t['cheque_banco'] ?? null,
-          'tarjeta'          => [
-              'marca'   => $t['tarjeta_marca'] ?? null,
-              'banco'   => $t['tarjeta_banco'] ?? null,
-              'boucher' => $t['boucher'] ?? null
-          ],
-          'cheque'           => [
-              'numero' => $t['cheque_numero'] ?? null,
-              'banco'  => $t['cheque_banco'] ?? null
-          ],
           'tipo_entrega'     => $tipo_entrega,
           'cambio'           => (float)$cambio,
           'total_letras'     => numeroALetras($t['total']),
