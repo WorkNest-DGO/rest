@@ -104,13 +104,16 @@ ob_start();
 
 <div class="container mt-5">
   <h2 class="section-header">Historial de Ventas</h2>
-  <div class="mb-2 d-flex justify-content-end">
-    <label for="recordsPerPage" class="me-2">Registros por página:</label>
-    <select id="recordsPerPage" class="form-select w-auto">
-      <option value="15">15</option>
-      <option value="25">25</option>
-      <option value="50">50</option>
-    </select>
+  <div class="mb-2 d-flex justify-content-between">
+    <input type="search" id="buscadorVentas" class="form-control w-50" placeholder="Buscar...">
+    <div class="d-flex align-items-center">
+      <label for="recordsPerPage" class="me-2">Registros por página:</label>
+      <select id="recordsPerPage" class="form-select w-auto">
+        <option value="15">15</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+      </select>
+    </div>
   </div>
   <div class="table-responsive">
     <table id="historial" class="table">
