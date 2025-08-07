@@ -5,6 +5,12 @@ let limite = 15;
 let busqueda = '';
 let catalogoDenominaciones = [];
 
+function formatearMoneda(valor) {
+    const num = Number(valor);
+    if (isNaN(num)) return '$0.00';
+    return '$' + num.toFixed(2);
+}
+
 async function cargarDenominaciones() {
     try {
         const resp = await fetch('../../api/corte_caja/listar_denominaciones.php');
@@ -302,30 +308,48 @@ async function cargarHistorial() {
     try {
         const offset = (pagina - 1) * limite;
         const params = new URLSearchParams({ limit: limite, offset, search: busqueda });
+        const fi = document.getElementById('fechaInicio')?.value;
+        const ff = document.getElementById('fechaFin')?.value;
+        if (fi && ff && fi > ff) {
+            alert('La fecha de inicio no puede ser mayor que la fecha fin');
+            return;
+        }
+        if (fi) params.append('fecha_inicio', fi);
+        if (ff) params.append('fecha_fin', ff);
         const resp = await fetch('../../api/corte_caja/listar_cortes.php?' + params.toString());
         const data = await resp.json();
+        const tbody = document.querySelector('#tablaCortes tbody');
+        tbody.innerHTML = '';
         if (data.success) {
-            const tbody = document.querySelector('#tablaCortes tbody');
-            tbody.innerHTML = '';
-            data.resultado.cortes.forEach(c => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${c.id}</td>
-                    <td>${c.usuario}</td>
-                    <td>${c.fecha_inicio}</td>
-                    <td>${c.fecha_fin || ''}</td>
-                    <td>${c.total !== null ? c.total : ''}</td>
-                    <td><button class="btn custom-btn verDetalle" data-id="${c.id}">Ver detalle</button> <button class="btn custom-btn exportarCsv" data-id="${c.id}">Exportar</button></td>
-                `;
-                tbody.appendChild(tr);
-            });
+            if (Array.isArray(data.resultado.cortes) && data.resultado.cortes.length) {
+                data.resultado.cortes.forEach(c => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${c.id}</td>
+                        <td>${c.fecha_inicio}</td>
+                        <td>${c.fecha_fin || ''}</td>
+                        <td>${c.usuario}</td>
+                        <td>${formatearMoneda(c.efectivo)}</td>
+                        <td>${formatearMoneda(c.boucher)}</td>
+                        <td>${formatearMoneda(c.cheque)}</td>
+                        <td>${formatearMoneda(c.fondo_inicial)}</td>
+                        <td>${formatearMoneda(c.total)}</td>
+                        <td>${c.observaciones || ''}</td>
+                        <td><button class="btn custom-btn verDetalle" data-id="${c.id}">Ver detalle</button> <button class="btn custom-btn exportarCsv" data-id="${c.id}">Exportar</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="11">Sin resultados</td></tr>';
+            }
             construirPaginacion(data.resultado.total);
         } else {
-            alert(data.mensaje);
+            tbody.innerHTML = '<tr><td colspan="11">Error al cargar</td></tr>';
         }
     } catch (err) {
         console.error(err);
-        alert('Error al cargar historial');
+        const tbody = document.querySelector('#tablaCortes tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="11">Error al cargar historial</td></tr>';
     }
 }
 
@@ -355,6 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sel = document.getElementById('selectRegistros');
     const input = document.getElementById('buscarCorte');
     const pagDiv = document.getElementById('paginacion');
+    const btnFiltro = document.getElementById('btnFiltrar');
 
     if (sel) {
         sel.value = limite;
@@ -379,6 +404,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 pagina = parseInt(e.target.dataset.pagina, 10);
                 cargarHistorial();
             }
+        });
+    }
+
+    if (btnFiltro) {
+        btnFiltro.addEventListener('click', () => {
+            pagina = 1;
+            cargarHistorial();
         });
     }
 
