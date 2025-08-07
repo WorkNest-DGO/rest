@@ -109,7 +109,7 @@ $tipo_entrega     = $tipo_entrega     ?: 'N/A';
 
 $conn->begin_transaction();
 
-$insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, total, propina, usuario_id, tipo_pago, tipo_entrega, monto_recibido, tarjeta_marca_id, tarjeta_banco_id, boucher, cheque_banco_id, cheque_numero, mesa_nombre, mesero_nombre, fecha_inicio, fecha_fin, tiempo_servicio, nombre_negocio, direccion_negocio, rfc_negocio, telefono_negocio, sede_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+$insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, total, propina, fecha, usuario_id, monto_recibido, tipo_pago, sede_id, mesa_nombre, mesero_nombre, fecha_inicio, fecha_fin, tiempo_servicio, nombre_negocio, direccion_negocio, rfc_negocio, telefono_negocio, tipo_entrega, tarjeta_marca_id, tarjeta_banco_id, boucher, cheque_numero, cheque_banco_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 $insDetalle = $conn->prepare('INSERT INTO ticket_detalles (ticket_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)');
 if (!$insTicket || !$insDetalle) {
     $conn->rollback();
@@ -185,7 +185,34 @@ foreach ($subcuentas as $sub) {
             error('Datos de cheque incompletos');
         }
     }
-    $insTicket->bind_param('iiddissdiisisssssissssi', $venta_id, $folio_actual, $total, $propina, $usuario_id, $tipo_pago, $tipo_entrega, $monto_recibido, $tarjeta_marca_id, $tarjeta_banco_id, $boucher, $cheque_banco_id, $cheque_numero, $mesa_nombre, $mesero_nombre, $fecha_inicio, $fecha_fin, $tiempo_servicio, $nombre_negocio, $direccion_negocio, $rfc_negocio, $telefono_negocio, $sede_id);
+    $fecha = date('Y-m-d H:i:s');
+    $insTicket->bind_param(
+        'iiddsidsissssisssssiissi',
+        $venta_id,
+        $folio_actual,
+        $total,
+        $propina,
+        $fecha,
+        $usuario_id,
+        $monto_recibido,
+        $tipo_pago,
+        $sede_id,
+        $mesa_nombre,
+        $mesero_nombre,
+        $fecha_inicio,
+        $fecha_fin,
+        $tiempo_servicio,
+        $nombre_negocio,
+        $direccion_negocio,
+        $rfc_negocio,
+        $telefono_negocio,
+        $tipo_entrega,
+        $tarjeta_marca_id,
+        $tarjeta_banco_id,
+        $boucher,
+        $cheque_numero,
+        $cheque_banco_id
+    );
     if (!$insTicket->execute()) {
         $conn->rollback();
         error('Error al guardar ticket: ' . $insTicket->error);
