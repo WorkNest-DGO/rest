@@ -66,14 +66,16 @@ $stmt = $conn->prepare("SELECT t.id, t.folio, t.total, t.propina, t.fecha, t.ven
                                 t.tiempo_servicio, t.nombre_negocio, t.direccion_negocio,
                                 t.rfc_negocio, t.telefono_negocio, t.sede_id,
                                 t.tipo_pago, t.monto_recibido,
-                                t.tarjeta_id, ct.nombre AS tarjeta,
-                                t.banco_id, cb.nombre AS banco,
+                                tm.nombre AS tarjeta,
+                                b1.nombre AS banco_tarjeta,
                                 t.boucher,
+                                b2.nombre AS banco_cheque,
                                 t.cheque_numero,
                                 v.tipo_entrega
                          FROM tickets t
-                         LEFT JOIN catalogo_tarjetas ct ON t.tarjeta_id = ct.id
-                         LEFT JOIN catalogo_bancos cb ON t.banco_id = cb.id
+                         LEFT JOIN catalogo_tarjetas tm ON tm.id = t.tarjeta_marca_id
+                         LEFT JOIN catalogo_bancos b1 ON b1.id = t.tarjeta_banco_id
+                         LEFT JOIN catalogo_bancos b2 ON b2.id = t.cheque_banco_id
                          LEFT JOIN ventas v ON t.venta_id = v.id
                          WHERE $cond");
 if (!$stmt) {
@@ -139,8 +141,9 @@ while ($t = $res->fetch_assoc()) {
           'telefono_negocio' => $telefono_negocio,
           'tipo_pago'        => $tipo_pago,
           'tarjeta'          => $t['tarjeta'] ?? null,
-          'banco'            => $t['banco'] ?? null,
+          'banco_tarjeta'    => $t['banco_tarjeta'] ?? null,
           'boucher'          => $t['boucher'] ?? null,
+          'banco_cheque'     => $t['banco_cheque'] ?? null,
           'cheque_numero'    => $t['cheque_numero'] ?? null,
           'tipo_entrega'     => $tipo_entrega,
           'cambio'           => (float)$cambio,

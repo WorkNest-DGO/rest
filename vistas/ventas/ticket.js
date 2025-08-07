@@ -21,12 +21,12 @@ function llenarTicket(data) {
         if (data.tipo_pago === 'boucher' && tInfo) {
             tInfo.style.display = 'block';
             document.getElementById('tarjetaMarca').textContent = data.tarjeta || 'No definido';
-            document.getElementById('tarjetaBanco').textContent = data.banco || 'No definido';
+            document.getElementById('tarjetaBanco').textContent = data.banco_tarjeta || 'No definido';
             document.getElementById('tarjetaBoucher').textContent = data.boucher || 'No definido';
         } else if (data.tipo_pago === 'cheque' && cInfo) {
             cInfo.style.display = 'block';
             document.getElementById('chequeNumero').textContent = data.cheque_numero || 'No definido';
-            document.getElementById('chequeBanco').textContent = data.banco || 'No definido';
+            document.getElementById('chequeBanco').textContent = data.banco_cheque || 'No definido';
         }
         document.getElementById('horaInicio').textContent = (data.fecha_inicio && data.fecha_inicio !== 'N/A') ? new Date(data.fecha_inicio).toLocaleString() : (data.fecha_inicio || 'N/A');
         document.getElementById('horaFin').textContent = (data.fecha_fin && data.fecha_fin !== 'N/A') ? new Date(data.fecha_fin).toLocaleString() : (data.fecha_fin || 'N/A');
@@ -356,17 +356,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             const extra = {};
             if (tipo === 'boucher') {
-                extra.tarjeta_id = parseInt(document.getElementById('tarjetaMarca' + i).value) || null;
-                extra.banco_id = parseInt(document.getElementById('tarjetaBanco' + i).value) || null;
+                extra.tarjeta_marca_id = parseInt(document.getElementById('tarjetaMarca' + i).value) || null;
+                extra.tarjeta_banco_id = parseInt(document.getElementById('tarjetaBanco' + i).value) || null;
                 extra.boucher = document.getElementById('boucher' + i).value || '';
-                if (!extra.tarjeta_id || !extra.banco_id || !extra.boucher) {
+                if (!extra.tarjeta_marca_id || !extra.tarjeta_banco_id || !extra.boucher) {
                     alert('Completa datos de tarjeta en subcuenta ' + i);
                     return;
                 }
             } else if (tipo === 'cheque') {
                 extra.cheque_numero = document.getElementById('chequeNumero' + i).value || '';
-                extra.banco_id = parseInt(document.getElementById('chequeBanco' + i).value) || null;
-                if (!extra.cheque_numero || !extra.banco_id) {
+                extra.cheque_banco_id = parseInt(document.getElementById('chequeBanco' + i).value) || null;
+                if (!extra.cheque_numero || !extra.cheque_banco_id) {
                     alert('Completa datos de cheque en subcuenta ' + i);
                     return;
                 }
