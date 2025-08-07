@@ -7,11 +7,14 @@ if (Array.isArray(window.catalogoDenominaciones) && catalogoDenominaciones.lengt
 let currentPage = 1;
 let limit = 15;
 const order = 'fecha DESC';
+let searchQuery = '';
 
 async function cargarHistorial(page = currentPage) {
     currentPage = page;
     try {
-        const resp = await fetch(`../../api/ventas/listar_ventas.php?pagina=${currentPage}&limite=${limit}&orden=${encodeURIComponent(order)}`);
+        const resp = await fetch(
+            `../../api/ventas/listar_ventas.php?pagina=${currentPage}&limite=${limit}&orden=${encodeURIComponent(order)}&busqueda=${encodeURIComponent(searchQuery)}`
+        );
         const data = await resp.json();
         if (data.success) {
             const tbody = document.querySelector('#historial tbody');
@@ -968,6 +971,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('recordsPerPage').addEventListener('change', e => {
         limit = parseInt(e.target.value);
+        cargarHistorial(1);
+    });
+
+    document.getElementById('buscadorVentas').addEventListener('input', e => {
+        searchQuery = e.target.value;
         cargarHistorial(1);
     });
 
