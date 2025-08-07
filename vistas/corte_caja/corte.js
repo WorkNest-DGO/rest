@@ -140,99 +140,59 @@ async function verDetalle(corteId) {
 function abrirModalDesglose(corteId, resumen) {
     const totalEsperado = calcularTotalEsperado(resumen);
     const modal = document.getElementById('modalDesglose');
+
+    const montoBoucher = resumen.boucher ? (parseFloat(resumen.boucher.total) || 0) + (parseFloat(resumen.boucher.propina) || 0) : 0;
+    const montoCheque = resumen.cheque ? (parseFloat(resumen.cheque.total) || 0) + (parseFloat(resumen.cheque.propina) || 0) : 0;
+
     let html = '<div style="background:#fff;border:1px solid #333;padding:10px;">';
     html += '<h3>Desglose de caja</h3>';
     html += `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>`;
+    html += '<table id="tablaDesglose" border="1"><thead><tr><th>Denominación</th><th>Cantidad</th><th>Subtotal</th></tr></thead><tbody>';
+    if (Array.isArray(catalogoDenominaciones)) {
+        catalogoDenominaciones.forEach(d => {
+            html += `<tr data-id="${d.id}" data-valor="${d.valor}">
+                        <td>${d.descripcion}<input type="hidden" class="valor" value="${d.valor}"></td>
+                        <td><input type="number" min="0" class="cantidad" value="0"></td>
+                        <td class="subtotal">$0.00</td>
+                    </tr>`;
+        });
+    }
+    html += '</tbody></table>';
+    html += '<div class="mt-2">';
+    html += `<label>Boucher: </label><input type="number" min="0" step="0.01" id="boucherInput" value="${montoBoucher.toFixed(2)}"><br>`;
+    html += `<label>Cheque: </label><input type="number" min="0" step="0.01" id="chequeInput" value="${montoCheque.toFixed(2)}">`;
+    html += '</div>';
+    html += '<p>Efectivo: $<span id="totalEfectivo">0.00</span> | Boucher: $<span id="totalBoucher">0.00</span> | Cheque: $<span id="totalCheque">0.00</span></p>';
     html += '<p>Total ingresado: $<span id="totalDesglose">0.00</span> | Dif.: $<span id="difDesglose">0.00</span></p>';
-    html += '<table id="tablaDesglose" border="1"><thead><tr><th>Denominación</th><th>Cantidad</th><th>Tipo</th><th></th></tr></thead><tbody></tbody></table>';
-    html += '<button class="btn custom-btn" id="addFila">Agregar fila</button> <button class="btn custom-btn" id="guardarDesglose">Guardar desglose</button> <button id="cancelarDesglose">Cancelar</button>';
+    html += '<button class="btn custom-btn" id="guardarDesglose">Guardar</button> <button id="cancelarDesglose">Cancelar</button>';
     html += '</div>';
     modal.innerHTML = html;
     modal.style.display = 'block';
 
     const tbody = modal.querySelector('#tablaDesglose tbody');
 
-    function agregarFila() {
-        const tr = document.createElement('tr');
-
-        const tdDen = document.createElement('td');
-        const select = document.createElement('select');
-        select.classList.add('denominacion');
-
-        // Opción placeholder para obligar a elegir denominación
-        const placeholder = document.createElement('option');
-        placeholder.value = '';
-        placeholder.textContent = '--Seleccione--';
-        select.appendChild(placeholder);
-
-        if (Array.isArray(catalogoDenominaciones) && catalogoDenominaciones.length > 0) {
-            catalogoDenominaciones.forEach(d => {
-                console.log('Agregando opción:', d.descripcion);
-                const opt = document.createElement('option');
-                opt.value = d.id;
-                opt.textContent = d.descripcion;
-                select.appendChild(opt);
-            });
-        } else {
-            console.warn('No se agregaron opciones al select. Lista vacía.');
-        }
-
-        if (select.options.length <= 1) {
-            console.warn('No se agregaron opciones al select');
-        }
-        tdDen.appendChild(select);
-
-        const tdCant = document.createElement('td');
-        tdCant.innerHTML = `<input type="number" min="0" class="cantidad" value="0">`;
-
-        const tdTipo = document.createElement('td');
-        tdTipo.textContent = 'efectivo';
-
-        const tdDel = document.createElement('td');
-        tdDel.innerHTML = `<button class="btn custom-btn delFila">X</button>`;
-
-        tr.appendChild(tdDen);
-        tr.appendChild(tdCant);
-        tr.appendChild(tdTipo);
-        tr.appendChild(tdDel);
-        tbody.appendChild(tr);
-        tr.querySelector('.delFila').addEventListener('click', () => { tr.remove(); calcular(); });
-        tr.querySelectorAll('input,select').forEach(el => el.addEventListener('input', calcular));
-    }
-
     function calcular() {
-        const filas = Array.from(tbody.querySelectorAll('tr'));
-        let total = 0;
-        filas.forEach(f => {
-            if (f.classList.contains('auto')) {
-                total += parseFloat(f.dataset.total || 0);
-            } else {
-                const id = parseInt(f.querySelector('.denominacion').value);
-                const denom = catalogoDenominaciones.find(d => d.id === id);
-                const valor = denom ? parseFloat(denom.valor) : 0;
-                const c = parseInt(f.querySelector('.cantidad').value) || 0;
-                total += valor * c;
-            }
+        let totalEfectivo = 0;
+        tbody.querySelectorAll('tr').forEach(tr => {
+            const valor = parseFloat(tr.dataset.valor);
+            const cantidad = parseInt(tr.querySelector('.cantidad').value) || 0;
+            const subtotal = valor * cantidad;
+            tr.querySelector('.subtotal').textContent = `$${subtotal.toFixed(2)}`;
+            totalEfectivo += subtotal;
         });
-        modal.querySelector('#totalDesglose').textContent = total.toFixed(2);
-        modal.querySelector('#difDesglose').textContent = (total - totalEsperado).toFixed(2);
+        const boucher = parseFloat(document.getElementById('boucherInput').value) || 0;
+        const cheque = parseFloat(document.getElementById('chequeInput').value) || 0;
+        document.getElementById('totalEfectivo').textContent = totalEfectivo.toFixed(2);
+        document.getElementById('totalBoucher').textContent = boucher.toFixed(2);
+        document.getElementById('totalCheque').textContent = cheque.toFixed(2);
+        const totalGeneral = totalEfectivo + boucher + cheque;
+        document.getElementById('totalDesglose').textContent = totalGeneral.toFixed(2);
+        document.getElementById('difDesglose').textContent = (totalGeneral - totalEsperado).toFixed(2);
     }
 
-    modal.querySelector('#addFila').addEventListener('click', agregarFila);
-    agregarFila();
-
-    // Filas automáticas para tarjeta y cheque
-    ['boucher', 'cheque'].forEach(tp => {
-        if (resumen[tp]) {
-            const info = resumen[tp];
-            const monto = (parseFloat(info.total) || 0) + (parseFloat(info.propina) || 0);
-            const tr = document.createElement('tr');
-            tr.classList.add('auto');
-            tr.dataset.total = monto;
-            tr.innerHTML = `<td>-</td><td>-</td><td>${tp}</td><td></td>`;
-            tbody.appendChild(tr);
-        }
-    });
+    tbody.querySelectorAll('.cantidad').forEach(inp => inp.addEventListener('input', calcular));
+    document.getElementById('boucherInput').addEventListener('input', calcular);
+    document.getElementById('chequeInput').addEventListener('input', calcular);
 
     modal.querySelector('#cancelarDesglose').addEventListener('click', () => {
         modal.style.display = 'none';
@@ -240,37 +200,36 @@ function abrirModalDesglose(corteId, resumen) {
     });
 
     modal.querySelector('#guardarDesglose').addEventListener('click', async () => {
-        const filas = Array.from(tbody.querySelectorAll('tr'));
+        calcular();
         const detalle = [];
         let totalEfectivo = 0;
         let totalBoucher = 0;
         let totalCheque = 0;
 
-        for (const tr of filas) {
-            if (tr.classList.contains('auto')) {
-                const tipoPago = tr.querySelector('td:nth-child(3)').textContent;
-                const monto = parseFloat(tr.dataset.total || 0);
-                if (tipoPago === 'boucher') totalBoucher += monto;
-                if (tipoPago === 'cheque') totalCheque += monto;
-                detalle.push({ denominacion_id: null, cantidad: monto, tipo_pago: tipoPago });
-                continue;
-            }
-
-            const denomId = parseInt(tr.querySelector('.denominacion').value);
+        tbody.querySelectorAll('tr').forEach(tr => {
+            const id = parseInt(tr.dataset.id);
+            const valor = parseFloat(tr.dataset.valor);
             const cantidad = parseInt(tr.querySelector('.cantidad').value) || 0;
             if (cantidad > 0) {
-                if (!denomId || !catalogoDenominaciones.some(d => d.id === denomId)) {
-                    alert('Selecciona una denominación válida en todas las filas de efectivo');
-                    return;
-                }
-                const denom = catalogoDenominaciones.find(d => d.id === denomId);
-                totalEfectivo += parseFloat(denom.valor) * cantidad;
-                detalle.push({ denominacion_id: denomId, cantidad, tipo_pago: 'efectivo' });
+                totalEfectivo += valor * cantidad;
+                detalle.push({ denominacion_id: id, cantidad, tipo_pago: 'efectivo', denominacion: valor });
             }
+        });
+
+        const boucher = parseFloat(document.getElementById('boucherInput').value) || 0;
+        if (boucher > 0) {
+            totalBoucher = boucher;
+            detalle.push({ denominacion_id: null, cantidad: boucher, tipo_pago: 'boucher', denominacion: boucher });
+        }
+
+        const cheque = parseFloat(document.getElementById('chequeInput').value) || 0;
+        if (cheque > 0) {
+            totalCheque = cheque;
+            detalle.push({ denominacion_id: null, cantidad: cheque, tipo_pago: 'cheque', denominacion: cheque });
         }
 
         if (detalle.length === 0) {
-            alert('Agrega al menos una fila válida');
+            alert('Ingresa al menos una cantidad mayor que cero');
             return;
         }
 
