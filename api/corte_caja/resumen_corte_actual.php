@@ -11,16 +11,15 @@ if (!isset($_SESSION['usuario_id'])) {
     exit;
 }
 
-// Obtener corte_id desde sesión (establecido en verificar_corte_abierto)
-if (!isset($_SESSION['corte_id'])) {
+// Se permite obtener el corte por parámetro o por sesión
+$corte_id = isset($_GET['corte_id']) ? (int)$_GET['corte_id'] : ($_SESSION['corte_id'] ?? null);
+if (!$corte_id) {
     echo json_encode([
         'success' => false,
         'mensaje' => 'Corte no definido en sesión'
     ]);
     exit;
 }
-
-$corte_id = $_SESSION['corte_id'];
 
 // Obtener resumen de ventas agrupado por tipo de pago
 $sqlResumen = "SELECT 
@@ -39,16 +38,32 @@ $stmtResumen->execute();
 $resultResumen = $stmtResumen->get_result();
 
 $resumen = [];
+$totalEsperado = 0;
 while ($row = $resultResumen->fetch_assoc()) {
+    $total = (float)$row['total'];
+    $propina = (float)$row['propina'];
     $resumen[$row['tipo_pago']] = [
-        'total' => (float)$row['total'],
-        'propina' => (float)$row['propina']
+        'total' => $total,
+        'propina' => $propina
     ];
+    $totalEsperado += $total + $propina;
 }
+
+// Obtener fondo inicial
+$stmtFondo = $conn->prepare('SELECT fondo_inicial FROM corte_caja WHERE id = ?');
+$stmtFondo->bind_param('i', $corte_id);
+$stmtFondo->execute();
+$rowFondo = $stmtFondo->get_result()->fetch_assoc();
+$fondoInicial = (float)($rowFondo['fondo_inicial'] ?? 0);
+$stmtFondo->close();
+
+$totalFinal = $totalEsperado + $fondoInicial;
 
 echo json_encode([
     'success' => true,
     'resultado' => $resumen,
-    'corte_id' => $corte_id
+    'corte_id' => $corte_id,
+    'fondo_inicial' => $fondoInicial,
+    'total_con_propinas_y_fondo' => $totalFinal
 ]);
 ?>

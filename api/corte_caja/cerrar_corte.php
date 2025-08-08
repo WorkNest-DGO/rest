@@ -24,7 +24,7 @@ if (!$corte_id) {
     exit;
 }
 
-$stmt = $conn->prepare('SELECT fecha_inicio FROM corte_caja WHERE id = ? AND usuario_id = ? AND fecha_fin IS NULL');
+$stmt = $conn->prepare('SELECT fecha_inicio, fondo_inicial FROM corte_caja WHERE id = ? AND usuario_id = ? AND fecha_fin IS NULL');
 if (!$stmt) {
     error('Error al preparar consulta: ' . $conn->error);
 }
@@ -37,11 +37,13 @@ if ($res->num_rows === 0) {
 }
 
 $row = $res->fetch_assoc();
-$fecha_inicio = $row['fecha_inicio'];
+$fecha_inicio   = $row['fecha_inicio'];
+$fondo_inicial  = (float)($row['fondo_inicial'] ?? 0);
 $stmt->close();
 
 // Calcular total de ventas del periodo
 $fecha_fin = date('Y-m-d H:i:s');
+// Total de ventas (sin propinas)
 $tot = $conn->prepare("SELECT SUM(total) AS total FROM ventas WHERE usuario_id = ? AND fecha >= ? AND fecha <= ? AND estatus = 'cerrada' AND corte_id IS NULL");
 if (!$tot) {
     error('Error al calcular total: ' . $conn->error);
@@ -52,13 +54,26 @@ $resTot = $tot->get_result()->fetch_assoc();
 $totalVentas = (float)($resTot['total'] ?? 0);
 $tot->close();
 
+// Total de propinas
+$prop = $conn->prepare("SELECT SUM(t.propina) AS propina FROM ventas v JOIN tickets t ON t.venta_id = v.id WHERE v.usuario_id = ? AND v.fecha >= ? AND v.fecha <= ? AND v.estatus = 'cerrada' AND v.corte_id IS NULL");
+if (!$prop) {
+    error('Error al calcular propinas: ' . $conn->error);
+}
+$prop->bind_param('iss', $usuario_id, $fecha_inicio, $fecha_fin);
+$prop->execute();
+$resProp = $prop->get_result()->fetch_assoc();
+$totalPropinas = (float)($resProp['propina'] ?? 0);
+$prop->close();
+
+$totalFinal = $totalVentas + $totalPropinas + $fondo_inicial;
+
 
 // Cerrar corte asignando fecha_fin y total calculado
 $upd = $conn->prepare('UPDATE corte_caja SET fecha_fin = ?, total = ?, observaciones = ? WHERE id = ?');
 if (!$upd) {
     error('Error al preparar cierre: ' . $conn->error);
 }
-$upd->bind_param('sdsi', $fecha_fin, $totalVentas, $observa, $corte_id);
+$upd->bind_param('sdsi', $fecha_fin, $totalFinal, $observa, $corte_id);
 if (!$upd->execute()) {
     $upd->close();
     error('Error al cerrar corte: ' . $upd->error);
@@ -93,5 +108,11 @@ if ($log) {
     $log->close();
 }
 
-success(['ventas_realizadas' => $numVentas, 'total' => $totalVentas]);
+success([
+    'ventas_realizadas' => $numVentas,
+    'total'            => $totalFinal,
+    'total_ventas'     => $totalVentas,
+    'total_propinas'   => $totalPropinas,
+    'fondo_inicial'    => $fondo_inicial
+]);
 ?>
