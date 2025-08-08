@@ -421,48 +421,44 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('ID de corte no especificado');
             return;
         }
-        $.ajax({
-            url: '../../api/corte_caja/detalle_venta.php',
-            method: 'POST',
-            contentType: 'application/json',
-            dataType: 'json',
-            data: JSON.stringify({ id: parseInt(corteId) })
-        }).done(function (resp) {
-            const cont = document.getElementById('modalDetalleContenido');
-            if (!cont) return;
-            if (resp.success && Array.isArray(resp.detalles)) {
-                const grupos = {};
-                resp.detalles.forEach(d => {
-                    if (!grupos[d.tipo_pago]) grupos[d.tipo_pago] = [];
-                    grupos[d.tipo_pago].push(d);
-                });
-                let html = '';
-                ['efectivo', 'boucher', 'cheque'].forEach(tp => {
-                    const arr = grupos[tp] || [];
-                    if (!arr.length) return;
-                    let total = 0;
-                    html += `<h5>${tp}</h5><table class="table table-bordered"><thead><tr><th>Descripción</th><th>Cantidad</th><th>Valor</th><th>Subtotal</th></tr></thead><tbody>`;
-                    arr.forEach(r => {
-                        total += r.subtotal;
-                        const desc = r.denominacion_id === 12 ? 'Pago Boucher'
-                                     : r.denominacion_id === 13 ? 'Pago Cheque'
-                                     : r.descripcion;
-                        html += `<tr><td>${desc}</td><td>${r.cantidad}</td><td>${r.valor}</td><td>${r.subtotal}</td></tr>`;
-                    });
-                    html += `<tr><td colspan="3"><strong>Total</strong></td><td><strong>${total.toFixed(2)}</strong></td></tr>`;
-                    html += '</tbody></table>';
-                });
-                cont.innerHTML = html;
-            } else {
-                const msg = resp.mensaje || 'Error al obtener detalle';
-                cont.innerHTML = `<p class="text-center">${msg}</p>`;
-            }
-            $('#modalDetalle').modal('show');
-        }).fail(function () {
-            const cont = document.getElementById('modalDetalleContenido');
-            if (cont) cont.innerHTML = '<p class="text-center">Error al obtener detalle</p>';
-            $('#modalDetalle').modal('show');
-        });
+        fetch(`../../api/corte_caja/resumen_corte_actual.php?corte_id=${corteId}`)
+            .then(r => r.json())
+            .then(data => {
+                const cont = document.getElementById('modalDetalleContenido');
+                if (!cont) return;
+                if (data.success) {
+                    const resumen = data.resultado || {};
+                    let html = '<h5>Desglose del Corte</h5>';
+                    let totalMontos = 0;
+                    let totalPropinas = 0;
+                    for (const metodo in resumen) {
+                        if (!Object.prototype.hasOwnProperty.call(resumen, metodo)) continue;
+                        const info = resumen[metodo] || {};
+                        const t = parseFloat(info.total) || 0;
+                        const p = parseFloat(info.propina) || 0;
+                        totalMontos += t;
+                        totalPropinas += p;
+                        const totalMetodo = t + p;
+                        html += `<p>${metodo}: $${totalMetodo.toFixed(2)} (Total: $${t.toFixed(2)} + Propina: $${p.toFixed(2)})</p>`;
+                    }
+                    const fondo = parseFloat(data.fondo_inicial || 0);
+                    const totalEsperado = totalMontos + totalPropinas;
+                    const totalFinal = parseFloat(data.total_con_propinas_y_fondo || (totalEsperado + fondo));
+                    html = `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>` + html;
+                    html += `<p>Fondo Inicial: $${fondo.toFixed(2)}</p>`;
+                    html += `<p><strong>Total Final: $${totalFinal.toFixed(2)}</strong></p>`;
+                    cont.innerHTML = html;
+                } else {
+                    const msg = data.mensaje || 'Error al obtener resumen';
+                    cont.innerHTML = `<p class="text-center">${msg}</p>`;
+                }
+                $('#modalDetalle').modal('show');
+            })
+            .catch(() => {
+                const cont = document.getElementById('modalDetalleContenido');
+                if (cont) cont.innerHTML = '<p class="text-center">Error al obtener resumen</p>';
+                $('#modalDetalle').modal('show');
+            });
     });
 
     // Detalle de venta
