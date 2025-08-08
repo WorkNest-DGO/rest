@@ -43,7 +43,7 @@ ob_start();
         </table>
     </div>
     <button id="agregarSub" class="btn custom-btn">Agregar subcuenta</button>
-    <button id="guardarSub" class="btn custom-btn">Guardar Tickets</button>
+    <button id="btnGuardarTicket" class="btn custom-btn">Guardar e imprimir Tickets</button>
     <div id="subcuentas"></div>
     <div id="teclado" class="mt-3"></div>
 </div>
