@@ -28,19 +28,6 @@ async function cargarDenominaciones() {
     }
 }
 
-function calcularTotalEsperado(resumen) {
-    let total = 0;
-    if (resumen && typeof resumen === 'object') {
-        for (const metodo in resumen) {
-            if (Object.prototype.hasOwnProperty.call(resumen, metodo)) {
-                const info = resumen[metodo] || {};
-                total += (parseFloat(info.total) || 0) + (parseFloat(info.propina) || 0);
-            }
-        }
-    }
-    return total;
-}
-
 async function verificarCorte() {
     try {
         const resp = await fetch('../../api/corte_caja/verificar_corte_abierto.php?usuario_id=' + usuarioId);
@@ -93,7 +80,7 @@ async function cerrarCorte() {
             alert('No hay resumen disponible');
             return;
         }
-        await abrirModalDesglose(corteActual, resumen.resultado);
+        await abrirModalDesglose(corteActual, resumen);
     } catch (err) {
         console.error(err);
         alert('Error al obtener resumen');
@@ -113,12 +100,12 @@ async function imprimirResumen() {
         for (const metodo in resumen) {
             if (Object.prototype.hasOwnProperty.call(resumen, metodo)) {
                 const info = resumen[metodo] || {};
-                const subtotal = (parseFloat(info.total) || 0) + (parseFloat(info.propina) || 0);
+                const subtotal = parseFloat(info.total) || 0;
                 html += `<li>${metodo}: $${subtotal.toFixed(2)}</li>`;
             }
         }
-        const totalGeneral = calcularTotalEsperado(resumen);
-        html += `</ul><p>Total esperado: $${totalGeneral.toFixed(2)}</p>`;
+        const totalGeneral = parseFloat(data.totalFinal || 0);
+        html += `</ul><p>Total final: $${totalGeneral.toFixed(2)}</p>`;
         const w = window.open('', 'print');
         w.document.write(html);
         w.print();
@@ -155,22 +142,26 @@ async function verDetalle(corteId) {
     }
 }
 
-async function abrirModalDesglose(corteId, resumen) {
+async function abrirModalDesglose(corteId, dataApi) {
     if (!catalogoDenominaciones.length) {
         await cargarDenominaciones();
     }
-    const totalEsperado = calcularTotalEsperado(resumen);
+    const resumen = dataApi.resultado || {};
+    const totalFinal = parseFloat(dataApi.totalFinal) || 0;
+    const totalAEntregar = parseFloat(dataApi.totalAEntregar) || 0;
+
+    const montoBoucher = resumen.boucher ? (parseFloat(resumen.boucher.total) || 0) : 0;
+    const montoCheque = resumen.cheque ? (parseFloat(resumen.cheque.total) || 0) : 0;
+
     const modal = document.getElementById('modalDesglose');
-
-    const montoBoucher = resumen.boucher ? (parseFloat(resumen.boucher.total) || 0) + (parseFloat(resumen.boucher.propina) || 0) : 0;
-    const montoCheque = resumen.cheque ? (parseFloat(resumen.cheque.total) || 0) + (parseFloat(resumen.cheque.propina) || 0) : 0;
-
     let html = '<div style="background:#fff;border:1px solid #333;padding:10px;">';
     html += '<h3>Desglose de caja</h3>';
-    html += `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>`;
+    html += `<p>Total final: $${totalFinal.toFixed(2)}</p>`;
+    html += `<p>Total a entregar (efectivo): $${totalAEntregar.toFixed(2)}</p>`;
     html += '<div id="camposDesglose"></div>';
     html += '<p>Efectivo: $<span id="totalEfectivo">0.00</span> | Boucher: $<span id="totalBoucher">0.00</span> | Cheque: $<span id="totalCheque">0.00</span></p>';
-    html += '<p>Total ingresado: $<span id="totalDesglose">0.00</span> | Dif.: $<span id="difDesglose">0.00</span></p>';
+    html += '<p>Total contado: $<span id="totalDesglose">0.00</span> | Dif. total: $<span id="difDesglose">0.00</span></p>';
+    html += '<p>Dif. efectivo: $<span id="difEfectivo">0.00</span></p>';
     html += '<button class="btn custom-btn" id="guardarDesglose">Guardar</button> <button id="cancelarDesglose">Cancelar</button>';
     html += '</div>';
     modal.innerHTML = html;
@@ -233,7 +224,8 @@ async function abrirModalDesglose(corteId, resumen) {
         document.getElementById('totalCheque').textContent = totales.cheque.toFixed(2);
         const totalGeneral = totales.efectivo + totales.boucher + totales.cheque;
         document.getElementById('totalDesglose').textContent = totalGeneral.toFixed(2);
-        document.getElementById('difDesglose').textContent = (totalGeneral - totalEsperado).toFixed(2);
+        document.getElementById('difDesglose').textContent = (totalGeneral - totalFinal).toFixed(2);
+        document.getElementById('difEfectivo').textContent = (totalAEntregar - totales.efectivo).toFixed(2);
     }
 
     modal.querySelectorAll('.cantidad').forEach(inp => inp.addEventListener('input', calcular));
@@ -434,16 +426,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     for (const metodo in resumen) {
                         if (!Object.prototype.hasOwnProperty.call(resumen, metodo)) continue;
                         const info = resumen[metodo] || {};
-                        const t = parseFloat(info.total) || 0;
-                        const p = parseFloat(info.propina) || 0;
-                        totalMontos += t;
-                        totalPropinas += p;
-                        const totalMetodo = t + p;
-                        html += `<p>${metodo}: $${totalMetodo.toFixed(2)} (Total: $${t.toFixed(2)} + Propina: $${p.toFixed(2)})</p>`;
+                        const productos = parseFloat(info.productos) || 0;
+                        const propina = parseFloat(info.propina) || 0;
+                        totalMontos += productos;
+                        totalPropinas += propina;
+                        const totalMetodo = productos + propina;
+                        html += `<p>${metodo}: $${totalMetodo.toFixed(2)} (Total: $${productos.toFixed(2)} + Propina: $${propina.toFixed(2)})</p>`;
                     }
-                    const fondo = parseFloat(data.fondo_inicial || 0);
+                    const fondo = parseFloat(data.fondo || 0);
                     const totalEsperado = totalMontos + totalPropinas;
-                    const totalFinal = parseFloat(data.total_con_propinas_y_fondo || (totalEsperado + fondo));
+                    const totalFinal = parseFloat(data.totalFinal || (totalEsperado + fondo));
                     html = `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>` + html;
                     html += `<p>Fondo Inicial: $${fondo.toFixed(2)}</p>`;
                     html += `<p><strong>Total Final: $${totalFinal.toFixed(2)}</strong></p>`;

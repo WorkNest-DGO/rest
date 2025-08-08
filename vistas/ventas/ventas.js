@@ -195,20 +195,35 @@ async function cerrarCaja() {
 }
 
 function mostrarModalDesglose(dataApi) {
-    const totalEsperadoObj = dataApi.resultado || {};
-    let totalEsperadoGeneral = 0;
-    for (const tipo in totalEsperadoObj) {
-        const pago = totalEsperadoObj[tipo] || {};
-        totalEsperadoGeneral += (parseFloat(pago.total) || 0) + (parseFloat(pago.propina) || 0);
-    }
+    const resumenPagos = dataApi.resultado || {};
+    const totalProductos = parseFloat(dataApi.total_productos) || 0;
+    const totalPropinas  = parseFloat(dataApi.total_propinas) || 0;
+    const totalEsperado  = parseFloat(dataApi.totalEsperado) || 0;
+    const fondoInicial   = parseFloat(dataApi.fondo) || 0;
+    const totalFinal     = parseFloat(dataApi.totalFinal) || 0;
+    const totalAEntregar = parseFloat(dataApi.totalAEntregar) || 0;
 
     const modal = document.getElementById('modalDesglose');
     let html = '<div style="background:#000;border:1px solid #333;padding:10px;">';
     html += '<h3>Desglose de caja</h3>';
-    html += `<p>Total esperado: $${totalEsperadoGeneral.toFixed(2)}</p>`;
+    html += `<p>Total productos: $${totalProductos.toFixed(2)}</p>`;
+    html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
+    html += `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>`;
+    html += `<p>Fondo inicial: $${fondoInicial.toFixed(2)}</p>`;
+    html += `<p>Total ingresado: $${totalFinal.toFixed(2)}</p>`;
+    html += '<p>Propinas por tipo de pago:</p><ul>';
+    for (const tipo in resumenPagos) {
+        const p = resumenPagos[tipo];
+        html += `<li>${tipo}: $${(parseFloat(p.propina) || 0).toFixed(2)}</li>`;
+    }
+    html += '</ul><p>Totales por tipo de pago:</p><ul>';
+    for (const tipo in resumenPagos) {
+        const p = resumenPagos[tipo];
+        html += `<li>${tipo}: $${(parseFloat(p.total) || 0).toFixed(2)}</li>`;
+    }
+    html += '</ul>';
     html += '<div id="camposDesglose"></div>';
-    html += '<p>Efectivo: $<span id="totalEfectivo">0.00</span> | Boucher: $<span id="totalBoucher">0.00</span> | Cheque: $<span id="totalCheque">0.00</span></p>';
-    html += '<p>Total ingresado: $<span id="totalIngresado">0.00</span> | Dif.: $<span id="difIngresado">0.00</span></p>';
+    html += '<p>Efectivo contado: $<span id="totalEfectivo">0.00</span> | Dif.: $<span id="difIngresado">0.00</span></p>';
     html += '<button class="btn custom-btn" id="guardarDesglose">Guardar</button> <button id="cancelarDesglose">Cancelar</button>';
     html += '</div>';
     modal.innerHTML = html;
@@ -236,45 +251,20 @@ function mostrarModalDesglose(dataApi) {
         frag.appendChild(div);
     });
 
-    const pagoBoucher = totalEsperadoObj['boucher'] || {};
-    const montoBoucher = (parseFloat(pagoBoucher.total) || 0) + (parseFloat(pagoBoucher.propina) || 0);
-    const divBoucher = document.createElement('div');
-    divBoucher.className = 'grupo-pago';
-    divBoucher.dataset.tipo = 'boucher';
-    divBoucher.innerHTML = `<label>Boucher</label>` +
-        `<input type="number" class="cantidad" data-valor="1" data-tipo="boucher" min="0" step="0.01" value="${montoBoucher.toFixed(2)}">` +
-        `<span class="subtotal">$${montoBoucher.toFixed(2)}</span>`;
-    frag.appendChild(divBoucher);
-
-    const pagoCheque = totalEsperadoObj['cheque'] || {};
-    const montoCheque = (parseFloat(pagoCheque.total) || 0) + (parseFloat(pagoCheque.propina) || 0);
-    const divCheque = document.createElement('div');
-    divCheque.className = 'grupo-pago';
-    divCheque.dataset.tipo = 'cheque';
-    divCheque.innerHTML = `<label>Cheque</label>` +
-        `<input type="number" class="cantidad" data-valor="1" data-tipo="cheque" min="0" step="0.01" value="${montoCheque.toFixed(2)}">` +
-        `<span class="subtotal">$${montoCheque.toFixed(2)}</span>`;
-    frag.appendChild(divCheque);
-
     cont.appendChild(frag);
 
     function calcular() {
-        const totales = { efectivo: 0, boucher: 0, cheque: 0 };
+        let totalEfectivo = 0;
         cont.querySelectorAll('.grupo-pago').forEach(gr => {
             const inp = gr.querySelector('.cantidad');
-            const tipo = inp.dataset.tipo;
             const valor = parseFloat(inp.dataset.valor) || 0;
             const cantidad = parseFloat(inp.value) || 0;
-            const subtotal = tipo === 'efectivo' ? valor * cantidad : cantidad;
+            const subtotal = valor * cantidad;
             gr.querySelector('.subtotal').textContent = `$${subtotal.toFixed(2)}`;
-            totales[tipo] += subtotal;
+            totalEfectivo += subtotal;
         });
-        document.getElementById('totalEfectivo').textContent = totales.efectivo.toFixed(2);
-        document.getElementById('totalBoucher').textContent = totales.boucher.toFixed(2);
-        document.getElementById('totalCheque').textContent = totales.cheque.toFixed(2);
-        const totalGeneral = totales.efectivo + totales.boucher + totales.cheque;
-        document.getElementById('totalIngresado').textContent = totalGeneral.toFixed(2);
-        document.getElementById('difIngresado').textContent = (totalGeneral - totalEsperadoGeneral).toFixed(2);
+        document.getElementById('totalEfectivo').textContent = totalEfectivo.toFixed(2);
+        document.getElementById('difIngresado').textContent = (totalAEntregar - totalEfectivo).toFixed(2);
     }
 
     modal.querySelectorAll('.cantidad').forEach(inp => inp.addEventListener('input', calcular));
@@ -290,25 +280,34 @@ function mostrarModalDesglose(dataApi) {
         const detalle = [];
         cont.querySelectorAll('.grupo-pago').forEach(gr => {
             const inp = gr.querySelector('.cantidad');
-            const tipo = inp.dataset.tipo;
             const cantidad = parseFloat(inp.value) || 0;
             if (cantidad <= 0) return;
-            if (tipo === 'efectivo') {
-                detalle.push({
-                    denominacion_id: parseInt(inp.dataset.id, 10),
-                    cantidad: parseInt(cantidad, 10),
-                    tipo_pago: tipo,
-                    denominacion: parseFloat(inp.dataset.valor)
-                });
-            } else {
-                detalle.push({
-                    denominacion_id: null,
-                    cantidad,
-                    tipo_pago: tipo,
-                    denominacion: cantidad
-                });
-            }
+            detalle.push({
+                denominacion_id: parseInt(inp.dataset.id, 10),
+                cantidad: parseInt(cantidad, 10),
+                tipo_pago: 'efectivo',
+                denominacion: parseFloat(inp.dataset.valor)
+            });
         });
+
+        // Agregar montos de boucher y cheque automáticamente para registro
+        if (resumenPagos.boucher) {
+            detalle.push({
+                denominacion_id: null,
+                cantidad: resumenPagos.boucher.total,
+                tipo_pago: 'boucher',
+                denominacion: resumenPagos.boucher.total
+            });
+        }
+        if (resumenPagos.cheque) {
+            detalle.push({
+                denominacion_id: null,
+                cantidad: resumenPagos.cheque.total,
+                tipo_pago: 'cheque',
+                denominacion: resumenPagos.cheque.total
+            });
+        }
+
         if (!detalle.length) {
             alert('Ingresa al menos una cantidad mayor a cero');
             return;
