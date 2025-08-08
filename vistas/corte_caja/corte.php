@@ -75,7 +75,7 @@ ob_start();
     <input type="text" id="buscarCorte" class="form-control form-control-sm" placeholder="Buscar...">
   </div>
 </div>
-<div class="table-responsive">
+
   <table id="tablaCortes" class="styled-table">
     <thead>
       <tr>
@@ -96,7 +96,7 @@ ob_start();
       <!-- Se llena dinámicamente -->
     </tbody>
   </table>
-</div>
+
 <div id="paginacion" class="mt-2"></div>
 
 </div>
