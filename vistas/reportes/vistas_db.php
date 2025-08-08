@@ -2,7 +2,7 @@
 /**
  * Vista para consultar vistas SQL dinámicamente.
  * Para agregar nuevas vistas, actualiza el mapa viewLabels en vistas_db.js
- * y la lista $whitelist en /apis/reportes/vistas_db.php.
+ * y la lista $whitelist en /api/reportes/vistas_db.php.
  */
 require_once __DIR__ . '/../../utils/cargar_permisos.php';
 $path_actual = str_replace('/rest', '', $_SERVER['PHP_SELF']);

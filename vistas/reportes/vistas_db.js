@@ -1,7 +1,7 @@
 /*
  * Maneja la tabla dinámica de vistas SQL.
  * Para agregar nuevas vistas, actualiza este mapa y la lista en
- * /apis/reportes/vistas_db.php.
+ * /api/reportes/vistas_db.php.
  */
 const viewLabels = {
     vista_productos_mas_vendidos: 'Productos más vendidos',
@@ -64,7 +64,7 @@ async function fetchColumnsAndData() {
         params.append('sort_dir', sortDir);
     }
     try {
-        const res = await fetch(`../../apis/reportes/vistas_db.php?${params.toString()}`);
+        const res = await fetch(`../../api/reportes/vistas_db.php?${params.toString()}`);
         if (!res.ok) throw new Error('HTTP');
         const data = await res.json();
         renderTable(data.columns, data.rows);
