@@ -494,6 +494,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Exportar corte
     $(document).on('click', '.exportarCsv', function () {
         const corteId = $(this).data('id');
-        window.open('../../api/corte_caja/exportar_corte_csv.php?id=' + corteId, '_blank');
+        window.open('../../api/corte_caja/exportar_corte_csv.php?corte_id=' + corteId, '_blank');
     });
 });
