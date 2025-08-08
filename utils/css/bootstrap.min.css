@@ -2109,14 +2109,14 @@ pre code {
 .table-info,
 .table-info>td,
 .table-info>th {
-    background-color: #bee5eb
+    background-color: #584e4d
 }
 
 .table-info tbody+tbody,
 .table-info td,
 .table-info th,
 .table-info thead th {
-    border-color: #86cfda
+    border-color: #584e4d
 }
 
 .table-hover .table-info:hover {
