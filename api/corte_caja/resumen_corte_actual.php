@@ -22,10 +22,10 @@ if (!$corte_id) {
 }
 
 // Obtener resumen de ventas agrupado por tipo de pago
-$sqlResumen = "SELECT 
+$sqlResumen = "SELECT
     t.tipo_pago,
-    SUM(t.total) AS total,
-    SUM(t.propina) AS propina
+    SUM(t.total)   AS total_productos,
+    SUM(t.propina) AS total_propina
 FROM ventas v
 JOIN tickets t ON t.venta_id = v.id
 WHERE v.estatus = 'cerrada'
@@ -33,21 +33,27 @@ WHERE v.estatus = 'cerrada'
 GROUP BY t.tipo_pago";
 
 $stmtResumen = $conn->prepare($sqlResumen);
-$stmtResumen->bind_param("i", $corte_id);
+$stmtResumen->bind_param('i', $corte_id);
 $stmtResumen->execute();
 $resultResumen = $stmtResumen->get_result();
 
 $resumen = [];
-$totalEsperado = 0;
+$totalProductos = 0;
+$totalPropinas  = 0;
 while ($row = $resultResumen->fetch_assoc()) {
-    $total = (float)$row['total'];
-    $propina = (float)$row['propina'];
+    $productos = (float)$row['total_productos'];
+    $propina   = (float)$row['total_propina'];
     $resumen[$row['tipo_pago']] = [
-        'total' => $total,
-        'propina' => $propina
+        'productos' => $productos,
+        'propina'   => $propina,
+        'total'     => $productos + $propina
     ];
-    $totalEsperado += $total + $propina;
+    $totalProductos += $productos;
+    $totalPropinas  += $propina;
 }
+$stmtResumen->close();
+
+$totalEsperado = $totalProductos + $totalPropinas;
 
 // Obtener fondo inicial
 $stmtFondo = $conn->prepare('SELECT fondo_inicial FROM corte_caja WHERE id = ?');
@@ -59,11 +65,20 @@ $stmtFondo->close();
 
 $totalFinal = $totalEsperado + $fondoInicial;
 
+// Total a entregar en efectivo (fondo + ventas y propinas en efectivo)
+$efectivoProductos = $resumen['efectivo']['productos'] ?? 0;
+$efectivoPropina   = $resumen['efectivo']['propina'] ?? 0;
+$totalAEntregar    = $fondoInicial + $efectivoProductos + $efectivoPropina;
+
 echo json_encode([
-    'success' => true,
-    'resultado' => $resumen,
-    'corte_id' => $corte_id,
-    'fondo_inicial' => $fondoInicial,
-    'total_con_propinas_y_fondo' => $totalFinal
+    'success'        => true,
+    'resultado'      => $resumen,
+    'total_productos'=> $totalProductos,
+    'total_propinas' => $totalPropinas,
+    'totalEsperado'  => $totalEsperado,
+    'fondo'          => $fondoInicial,
+    'totalFinal'     => $totalFinal,
+    'totalAEntregar' => $totalAEntregar,
+    'corte_id'       => $corte_id
 ]);
 ?>
