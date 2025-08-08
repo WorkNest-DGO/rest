@@ -94,7 +94,7 @@ function renderPagination(total, page) {
 
 const usuarioId = window.usuarioId || 1; // ID del cajero proveniente de la sesión
 const sedeId = window.sedeId || 1;
-let corteIdActual = null;
+let corteIdActual = window.corteId || null;
 let catalogo = [];
 let productos = [];
 let ventasData = {};
@@ -179,7 +179,7 @@ async function abrirCaja() {
 
 async function cerrarCaja() {
     try {
-        const resumenResp = await fetch('../../api/corte_caja/resumen_corte_actual.php');
+        const resumenResp = await fetch(`../../api/corte_caja/resumen_corte_actual.php?corte_id=${corteIdActual}`);
         const resumen = await resumenResp.json();
 
         if (!resumen.success || !resumen.resultado || resumen.resultado.num_ventas === 0) {
@@ -196,12 +196,16 @@ async function cerrarCaja() {
 
 function mostrarModalDesglose(dataApi) {
     const resumenPagos = dataApi.resultado || {};
-    const totalProductos = parseFloat(dataApi.total_productos) || 0;
-    const totalPropinas  = parseFloat(dataApi.total_propinas) || 0;
-    const totalEsperado  = parseFloat(dataApi.totalEsperado) || 0;
+    let totalProductos = 0;
+    let totalPropinas  = 0;
+    for (const tipo in resumenPagos) {
+        const data = resumenPagos[tipo];
+        totalProductos += parseFloat(data.productos) || 0;
+        totalPropinas  += parseFloat(data.propina) || 0;
+    }
+    const totalEsperado  = totalProductos + totalPropinas;
     const fondoInicial   = parseFloat(dataApi.fondo) || 0;
-    const totalFinal     = parseFloat(dataApi.totalFinal) || 0;
-    const totalAEntregar = parseFloat(dataApi.totalAEntregar) || 0;
+    const totalIngresado = totalEsperado + fondoInicial;
 
     const modal = document.getElementById('modalDesglose');
     let html = '<div style="background:#000;border:1px solid #333;padding:10px;">';
@@ -210,7 +214,7 @@ function mostrarModalDesglose(dataApi) {
     html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
     html += `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>`;
     html += `<p>Fondo inicial: $${fondoInicial.toFixed(2)}</p>`;
-    html += `<p>Total ingresado: $${totalFinal.toFixed(2)}</p>`;
+    html += `<p>Total ingresado: $${totalIngresado.toFixed(2)}</p>`;
     html += '<p>Propinas por tipo de pago:</p><ul>';
     for (const tipo in resumenPagos) {
         const p = resumenPagos[tipo];
@@ -264,7 +268,7 @@ function mostrarModalDesglose(dataApi) {
             totalEfectivo += subtotal;
         });
         document.getElementById('totalEfectivo').textContent = totalEfectivo.toFixed(2);
-        document.getElementById('difIngresado').textContent = (totalAEntregar - totalEfectivo).toFixed(2);
+        document.getElementById('difIngresado').textContent = (totalIngresado - totalEfectivo).toFixed(2);
     }
 
     modal.querySelectorAll('.cantidad').forEach(inp => inp.addEventListener('input', calcular));

@@ -168,6 +168,8 @@ ob_start();
     window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;
     // ID de la venta actualmente consultada en detalle
     window.ventaIdActual = null;
+    // ID de corte actual si existe en la sesión
+    window.corteId = <?php echo json_encode($_SESSION['corte_id'] ?? null); ?>;
     // Catálogo de denominaciones cargado desde la base de datos
     const catalogoDenominaciones = <?php echo json_encode($denominaciones); ?>;
   </script>
