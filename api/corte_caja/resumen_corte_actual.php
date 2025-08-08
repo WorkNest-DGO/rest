@@ -24,8 +24,8 @@ if (!$corte_id) {
 // Obtener resumen de ventas agrupado por tipo de pago
 $sqlResumen = "SELECT
     t.tipo_pago,
-    SUM(t.total)   AS total_productos,
-    SUM(t.propina) AS total_propina
+    SUM(t.total)   AS total,
+    SUM(t.propina) AS propina
 FROM ventas v
 JOIN tickets t ON t.venta_id = v.id
 WHERE v.estatus = 'cerrada'
@@ -41,12 +41,13 @@ $resumen = [];
 $totalProductos = 0;
 $totalPropinas  = 0;
 while ($row = $resultResumen->fetch_assoc()) {
-    $productos = (float)$row['total_productos'];
-    $propina   = (float)$row['total_propina'];
+    $total   = (float)$row['total'];
+    $propina = (float)$row['propina'];
+    $productos = $total - $propina;
     $resumen[$row['tipo_pago']] = [
         'productos' => $productos,
         'propina'   => $propina,
-        'total'     => $productos + $propina
+        'total'     => $total
     ];
     $totalProductos += $productos;
     $totalPropinas  += $propina;
@@ -65,11 +66,6 @@ $stmtFondo->close();
 
 $totalFinal = $totalEsperado + $fondoInicial;
 
-// Total a entregar en efectivo (fondo + ventas y propinas en efectivo)
-$efectivoProductos = $resumen['efectivo']['productos'] ?? 0;
-$efectivoPropina   = $resumen['efectivo']['propina'] ?? 0;
-$totalAEntregar    = $fondoInicial + $efectivoProductos + $efectivoPropina;
-
 echo json_encode([
     'success'        => true,
     'resultado'      => $resumen,
@@ -78,7 +74,6 @@ echo json_encode([
     'totalEsperado'  => $totalEsperado,
     'fondo'          => $fondoInicial,
     'totalFinal'     => $totalFinal,
-    'totalAEntregar' => $totalAEntregar,
     'corte_id'       => $corte_id
 ]);
 ?>
