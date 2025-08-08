@@ -140,7 +140,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let productos = [];
     let numSub = 1;
-    let ticketsGuardados = [];
 
     function inicializarDividir(data) {
         document.getElementById('dividir').style.display = 'block';
@@ -154,7 +153,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             actualizarSelects();
             renderSubcuentas();
         });
-        document.getElementById('guardarSub').addEventListener('click', guardarSubcuentas);
+        const btnGuardar = document.getElementById('btnGuardarTicket');
+        if (btnGuardar) btnGuardar.addEventListener('click', guardarSubcuentas);
     }
 
     function renderProductos() {
@@ -390,10 +390,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             const d = await resp.json();
             if (d.success) {
-                ticketsGuardados = d.resultado.tickets || [];
-                alert('Tickets guardados');
                 await registrarDesglosePagos(payload.subcuentas);
-                await mostrarBotonesImprimir(payload, true);
+                await imprimirTicketsVenta(payload.venta_id);
+                await liberarMesa(payload.venta_id);
             } else {
                 alert(d.mensaje);
             }
@@ -428,38 +427,75 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    async function mostrarBotonesImprimir(payload, auto) {
-        const params = new URLSearchParams(window.location.search);
-        const mesaId = params.get('mesa');
-        for (let i = 0; i < ticketsGuardados.length; i++) {
-            const t = ticketsGuardados[i];
-            let ticketInfo = null;
-            try {
-                const r = await fetch('../../api/tickets/reimprimir_ticket.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ folio: t.folio })
-                });
-                const jd = await r.json();
-                if (jd.success && jd.resultado.tickets && jd.resultado.tickets.length) {
-                    ticketInfo = jd.resultado.tickets[0];
-                }
-            } catch (e) {}
-            if (!ticketInfo) continue;
-            const url = mesaId ? `ticket.php?print=1&mesa=${mesaId}` : 'ticket.php?print=1';
-            const imprimir = () => {
-                localStorage.setItem('ticketData', JSON.stringify(ticketInfo));
-                window.open(url, '_blank');
-            };
-            const div = document.getElementById('sub' + (i + 1));
-            if (div) {
-                const btn = document.createElement('button');
-                btn.textContent = 'Imprimir Ticket';
-                btn.addEventListener('click', imprimir);
-                div.appendChild(btn);
+    async function imprimirTicketsVenta(ventaId) {
+        try {
+            const resp = await fetch('../../api/tickets/reimprimir_ticket.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ venta_id: ventaId })
+            });
+            const data = await resp.json();
+            if (!data.success) {
+                alert(data.mensaje || 'Error al obtener tickets');
+                return;
             }
-            if (auto) imprimir();
+            const tickets = data.resultado.tickets || [];
+            if (!tickets.length) {
+                alert('No hay tickets para imprimir');
+                return;
+            }
+            let html = '<html><head><title>Tickets</title><link rel="stylesheet" href="../../utils/css/style.css"></head><body>';
+            tickets.forEach(t => {
+                html += generarTicketHTML(t) + '<hr>';
+            });
+            html += '<script>window.onload=function(){window.print();}</script></body></html>';
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        } catch (err) {
+            console.error('Error al imprimir tickets', err);
         }
+    }
+
+    function generarTicketHTML(data) {
+        const productosHtml = (data.productos || []).map(p => {
+            const subtotal = p.cantidad * p.precio_unitario;
+            return `<tr><td>${p.nombre}</td><td>${p.cantidad} x ${p.precio_unitario} = ${subtotal}</td></tr>`;
+        }).join('');
+        let extra = '';
+        if (data.tipo_pago === 'boucher') {
+            extra = `<div><strong>Marca tarjeta:</strong> ${data.tarjeta || 'No definido'}</div>` +
+                    `<div><strong>Banco:</strong> ${data.banco_tarjeta || 'No definido'}</div>` +
+                    `<div><strong>Boucher:</strong> ${data.boucher || 'No definido'}</div>`;
+        } else if (data.tipo_pago === 'cheque') {
+            extra = `<div><strong>No. Cheque:</strong> ${data.cheque_numero || 'No definido'}</div>` +
+                    `<div><strong>Banco:</strong> ${data.banco_cheque || 'No definido'}</div>`;
+        }
+        return `<div>
+            <img src="${data.logo_url || '../../utils/logo.png'}" style="max-width:100px;">
+            <h2>${data.nombre_negocio || data.restaurante || ''}</h2>
+            <div>${data.direccion_negocio || ''}</div>
+            <div>${data.rfc_negocio || ''}</div>
+            <div>${data.telefono_negocio || ''}</div>
+            <div style="margin-bottom:10px;">${data.fecha_fin || data.fecha || ''}</div>
+            <div><strong>Folio:</strong> ${data.folio || ''}</div>
+            <div><strong>Venta:</strong> ${data.venta_id}</div>
+            <div><strong>Sede:</strong> ${data.sede_id || ''}</div>
+            <div><strong>Mesa:</strong> ${data.mesa_nombre || ''}</div>
+            <div><strong>Mesero:</strong> ${data.mesero_nombre || ''}</div>
+            <div><strong>Tipo entrega:</strong> ${data.tipo_entrega || 'N/A'}</div>
+            <div><strong>Tipo pago:</strong> ${data.tipo_pago || 'N/A'}</div>
+            ${extra}
+            <div><strong>Inicio:</strong> ${data.fecha_inicio || ''}</div>
+            <div><strong>Fin:</strong> ${data.fecha_fin || ''}</div>
+            <div><strong>Tiempo:</strong> ${data.tiempo_servicio ? data.tiempo_servicio + ' min' : 'N/A'}</div>
+            <table class="styled-table" style="margin-top: 10px;"><tbody>${productosHtml}</tbody></table>
+            <div class="mt-2"><strong>Propina:</strong> $${parseFloat(data.propina || 0).toFixed(2)}</div>
+            <div class="mt-2"><strong>Cambio:</strong> $${parseFloat(data.cambio || 0).toFixed(2)}</div>
+            <div class="mt-2 mb-2">Total: $${parseFloat(data.total || 0).toFixed(2)}</div>
+            <div>${data.total_letras || ''}</div>
+            <p>Gracias por su compra</p>
+        </div>`;
     }
 
     async function liberarMesa(ventaId) {
@@ -478,17 +514,3 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('Error al liberar mesa');
         }
     }
-
-    window.ticketPrinted = function(mesaId) {
-        if (window.opener && window.opener.ticketPrinted) {
-            window.opener.ticketPrinted(mesaId);
-        }
-    };
-
-    window.addEventListener('beforeunload', () => {
-        const params = new URLSearchParams(window.location.search);
-        const mesaId = params.get('mesa');
-        if (window.opener && window.opener.ticketPrinted && mesaId) {
-            window.opener.ticketPrinted(parseInt(mesaId));
-        }
-    });
