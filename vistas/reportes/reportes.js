@@ -149,12 +149,12 @@ async function listarFuentes() {
     const select = document.getElementById('selectFuente');
     if (!select) return;
     try {
-        const resp = await fetch(`${apiReportes}?action=list_sources`);
+        const resp = await fetch(`${apiReportes}?action=list`);
         const data = await resp.json();
         select.innerHTML = '';
         const ogV = document.createElement('optgroup');
-        ogV.label = 'Vistas';
-        data.views.forEach(v => {
+        ogV.label = 'Vistas de BD';
+        (data.views || []).forEach(v => {
             const o = document.createElement('option');
             o.value = v;
             o.textContent = v;
@@ -162,20 +162,18 @@ async function listarFuentes() {
         });
         const ogT = document.createElement('optgroup');
         ogT.label = 'Tablas';
-        data.tables.forEach(t => {
+        (data.tables || []).forEach(t => {
             const o = document.createElement('option');
             o.value = t;
             o.textContent = t;
             ogT.appendChild(o);
         });
-        if (data.views.length) {
-            select.appendChild(ogV);
-            select.appendChild(ogT);
+        select.appendChild(ogV);
+        select.appendChild(ogT);
+        if (data.views && data.views.length) {
             select.value = data.views[0];
-        } else {
-            select.appendChild(ogV);
-            select.appendChild(ogT);
-            if (data.tables.length) select.value = data.tables[0];
+        } else if (data.tables && data.tables.length) {
+            select.value = data.tables[0];
         }
         fuenteActual = select.value;
         cargarFuente();
@@ -193,33 +191,33 @@ async function cargarFuente() {
     loader.style.display = 'block';
     tbody.innerHTML = '';
     const params = new URLSearchParams({
-        action: 'fetch',
+        action: 'data',
         source: fuenteActual,
         page: pagina,
         pageSize: tamPagina
     });
     if (termino) params.append('q', termino);
     if (ordenCol) {
-        params.append('sortBy', ordenCol);
-        params.append('sortDir', ordenDir);
+        params.append('orderBy', ordenCol);
+        params.append('orderDir', ordenDir);
     }
     try {
         const resp = await fetch(`${apiReportes}?${params.toString()}`);
         const data = await resp.json();
         loader.style.display = 'none';
-        if (data.error) {
+        if (!data.ok) {
             thead.innerHTML = '';
-            tbody.innerHTML = `<tr><td colspan="1">${data.error}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="1">${data.error || 'Error'}</td></tr>`;
             document.getElementById('infoReportes').textContent = '';
             return;
         }
-        thead.innerHTML = '<tr>' + data.columns.map(c => `<th data-col="${c}">${c}</th>`).join('') + '</tr>';
+        thead.innerHTML = '<tr>' + data.columns.map(c => `<th data-col="${c.key}">${c.label}</th>`).join('') + '</tr>';
         if (!data.rows.length) {
             tbody.innerHTML = `<tr><td colspan="${data.columns.length}">Sin resultados</td></tr>`;
         } else {
             data.rows.forEach(r => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = data.columns.map(c => `<td>${r[c] !== null ? r[c] : ''}</td>`).join('');
+                tr.innerHTML = data.columns.map(c => `<td>${r[c.key] !== null ? r[c.key] : ''}</td>`).join('');
                 tbody.appendChild(tr);
             });
         }
@@ -242,6 +240,8 @@ function initReportesDinamicos() {
     select.addEventListener('change', () => {
         fuenteActual = select.value;
         pagina = 1;
+        ordenCol = '';
+        ordenDir = 'asc';
         cargarFuente();
     });
     document.getElementById('buscarFuente').addEventListener('input', e => {

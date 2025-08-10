@@ -75,8 +75,8 @@ ob_start();
     </table>
 
 </div>
-<div class="container mt-5 mb-5">
-    <h2 class="section-header">Consulta de Vistas y Tablas</h2>
+<details class="container mt-5 mb-5">
+    <summary class="section-header">Consulta de Vistas y Tablas</summary>
 
     <div class="filtros-container">
         <label for="selectFuente">Fuente:</label>
@@ -105,7 +105,7 @@ ob_start();
         <span id="infoReportes" class="mx-2"></span>
         <button id="nextReportes" class="btn custom-btn-sm">Siguiente</button>
     </div>
-</div>
+</details>
 <?php require_once __DIR__ . '/../footer.php'; ?>
 <script src="reportes.js"></script>
 </body>
