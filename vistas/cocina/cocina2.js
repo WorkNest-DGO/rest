@@ -1,5 +1,4 @@
 (() => {
-  const API_BASE = '/api/cocina';
   const qs = s => document.querySelector(s);
   const qsa = s => Array.from(document.querySelectorAll(s));
 
@@ -96,7 +95,7 @@
   });
 
   async function cargar(){
-    const res = await fetch(`${API_BASE}/listar_productos_cocina.php`);
+    const res = await fetch(`../../api/cocina/listar_productos_cocina.php`);
     if (!res.ok){ alert('Error al cargar comandas'); return; }
     const json = await res.json();
     if (!json.success){ alert(json.message || 'Error'); return; }
@@ -106,7 +105,7 @@
 
   async function cambiarEstado(detalle_id, nuevo_estado){
     try{
-      const res = await fetch(`${API_BASE}/cambiar_estado_producto.php`, {
+      const res = await fetch(`../../api/cocina/cambiar_estado_producto.php`, {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify({ detalle_id, nuevo_estado })
