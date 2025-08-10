@@ -67,13 +67,23 @@ $prop->close();
 
 $totalFinal = $totalVentas + $totalPropinas + $fondo_inicial;
 
+// Obtener folio final del corte
+$folio_fin = 0;
+$ff = $conn->prepare('SELECT IFNULL(MAX(folio), 0) AS folio FROM tickets WHERE corte_id = ? OR (fecha >= ? AND fecha <= ?)');
+if ($ff) {
+    $ff->bind_param('iss', $corte_id, $fecha_inicio, $fecha_fin);
+    $ff->execute();
+    $resFf = $ff->get_result()->fetch_assoc();
+    $folio_fin = (int)($resFf['folio'] ?? 0);
+    $ff->close();
+}
 
-// Cerrar corte asignando fecha_fin y total calculado
-$upd = $conn->prepare('UPDATE corte_caja SET fecha_fin = ?, total = ?, observaciones = ? WHERE id = ?');
+// Cerrar corte asignando fecha_fin, total calculado y folio final
+$upd = $conn->prepare('UPDATE corte_caja SET fecha_fin = ?, total = ?, observaciones = ?, folio_fin = ? WHERE id = ?');
 if (!$upd) {
     error('Error al preparar cierre: ' . $conn->error);
 }
-$upd->bind_param('sdsi', $fecha_fin, $totalFinal, $observa, $corte_id);
+$upd->bind_param('sdsii', $fecha_fin, $totalFinal, $observa, $folio_fin, $corte_id);
 if (!$upd->execute()) {
     $upd->close();
     error('Error al cerrar corte: ' . $upd->error);

@@ -156,6 +156,8 @@ CREATE TABLE `corte_caja` (
   `id` int(11) NOT NULL,
   `usuario_id` int(11) NOT NULL,
   `fecha_inicio` datetime NOT NULL DEFAULT current_timestamp(),
+  `folio_inicio` int(11) DEFAULT NULL,
+  `folio_fin` int(11) DEFAULT NULL,
   `fecha_fin` datetime DEFAULT NULL,
   `total` decimal(10,2) DEFAULT NULL,
   `observaciones` text DEFAULT NULL,
