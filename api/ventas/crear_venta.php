@@ -35,7 +35,7 @@ if ($tipo === 'mesa') {
     if (!$mesa_id || $repartidor_id) {
         error('Venta en mesa requiere mesa_id y sin repartidor_id');
     }
-    $estado = $conn->prepare('SELECT estado FROM mesas WHERE id = ?');
+    $estado = $conn->prepare('SELECT estado, usuario_id FROM mesas WHERE id = ?');
     if (!$estado) {
         error('Error al preparar consulta de mesa: ' . $conn->error);
     }
@@ -49,6 +49,10 @@ if ($tipo === 'mesa') {
     $estado->close();
     if (!$rowEstado) {
         error('Mesa no encontrada');
+    }
+    if ((int)($rowEstado['usuario_id'] ?? 0) !== $usuario_id) {
+        http_response_code(400);
+        error('La mesa seleccionada pertenece a otro mesero. Actualiza la pantalla e inténtalo de nuevo.');
     }
     if ($rowEstado['estado'] !== 'libre') {
         error('La mesa seleccionada no está libre');

@@ -101,6 +101,7 @@ let ventasData = {};
 let repartidores = [];
 let ticketRequests = [];
 let ventaIdActual = null;
+let mesas = [];
 
 function deshabilitarCobro() {
     document.querySelectorAll('#formVenta input, #formVenta select, #formVenta button')
@@ -402,6 +403,61 @@ async function cargarMeseros() {
     }
 }
 
+async function cargarMesas() {
+    try {
+        const resp = await fetch('../../api/mesas/mesas.php');
+        const data = await resp.json();
+        if (data.success) {
+            mesas = data.resultado;
+            const select = document.getElementById('mesa_id');
+            select.innerHTML = '<option value="">Seleccione</option>';
+            mesas.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.nombre;
+                select.appendChild(opt);
+            });
+        } else {
+            alert(data.mensaje || 'Error al cargar mesas');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error de red al cargar mesas');
+    }
+}
+
+function asignarMeseroPorMesa() {
+    const tipo = document.getElementById('tipo_entrega').value;
+    const mesaSelect = document.getElementById('mesa_id');
+    const meseroSelect = document.getElementById('usuario_id');
+    const mesaId = parseInt(mesaSelect.value);
+    if (tipo !== 'mesa') {
+        return;
+    }
+    if (isNaN(mesaId)) {
+        meseroSelect.value = '';
+        meseroSelect.disabled = true;
+        return;
+    }
+    const mesa = mesas.find(m => m.id === mesaId);
+    if (!mesa) {
+        meseroSelect.value = '';
+        meseroSelect.disabled = true;
+        return;
+    }
+    if (!mesa.usuario_id) {
+        alert('La mesa seleccionada no tiene mesero asignado. Contacta al administrador.');
+        mesaSelect.value = '';
+        meseroSelect.value = '';
+        meseroSelect.disabled = true;
+        verificarActivacionProductos();
+        return;
+    }
+    meseroSelect.innerHTML = `<option value="${mesa.usuario_id}">${mesa.mesero_nombre}</option>`;
+    meseroSelect.value = mesa.usuario_id;
+    meseroSelect.disabled = true;
+}
+
 async function cargarProductos() {
     try {
         const resp = await fetch('../../api/inventario/listar_productos.php');
@@ -616,6 +672,10 @@ async function registrarVenta() {
     if (tipo === 'mesa') {
         if (isNaN(mesa_id) || !mesa_id) {
             alert('Selecciona una mesa válida');
+            return;
+        }
+        if (isNaN(usuario_id) || !usuario_id) {
+            alert('La mesa seleccionada no tiene mesero asignado. Contacta al administrador.');
             return;
         }
         const libre = await validarMesaLibre(mesa_id);
@@ -943,34 +1003,36 @@ document.getElementById('tipo_entrega').addEventListener('change', function () {
   document.getElementById('campoObservacion').style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
   if (tipo === 'mesa') {
     document.getElementById('observacion').value = '';
+    document.getElementById('usuario_id').disabled = true;
+    asignarMeseroPorMesa();
+  } else {
+    document.getElementById('usuario_id').disabled = false;
+    cargarMeseros();
   }
   verificarActivacionProductos();
 });
 
 // Detecta cambios en mesa o repartidor
-document.getElementById('mesa_id').addEventListener('change', verificarActivacionProductos);
+document.getElementById('mesa_id').addEventListener('change', () => {
+  asignarMeseroPorMesa();
+  verificarActivacionProductos();
+});
 document.getElementById('repartidor_id').addEventListener('change', verificarActivacionProductos);
 
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('#tablaDesglose, .tablaDesglose, .filaDenominacion').forEach(e => e.remove());
     verificarCorte();
     cargarMeseros();
+    cargarMesas();
     cargarProductos();
     cargarRepartidores();
     cargarHistorial();
     cargarSolicitudes();
     document.getElementById('registrarVenta').addEventListener('click', registrarVenta);
     document.getElementById('agregarProducto').addEventListener('click', agregarFilaProducto);
-    document.getElementById('tipo_entrega').addEventListener('change', () => {
-        const tipo = document.getElementById('tipo_entrega').value;
-        document.getElementById('campoMesa').style.display = tipo === 'mesa' ? 'block' : 'none';
-        document.getElementById('campoRepartidor').style.display = tipo === 'domicilio' ? 'block' : 'none';
-        document.getElementById('campoObservacion').style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
-        if (tipo === 'mesa') {
-            document.getElementById('observacion').value = '';
-        }
-        verificarActivacionProductos();
-    });
+    const meseroSelect = document.getElementById('usuario_id');
+    meseroSelect.disabled = document.getElementById('tipo_entrega').value === 'mesa';
+    verificarActivacionProductos();
 
     document.getElementById('recordsPerPage').addEventListener('change', e => {
         limit = parseInt(e.target.value);

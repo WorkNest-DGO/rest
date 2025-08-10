@@ -7,12 +7,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
-if (!$input || !isset($input['venta_id'], $input['usuario_id'], $input['subcuentas']) || !is_array($input['subcuentas'])) {
+if (!$input || !isset($input['venta_id'], $input['subcuentas']) || !is_array($input['subcuentas'])) {
     error('Datos incompletos');
 }
 
 $venta_id   = (int)$input['venta_id'];
-$usuario_id = (int)$input['usuario_id'];
 $subcuentas = $input['subcuentas'];
 $sede_id    = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$input['sede_id'] : 1;
 
@@ -31,6 +30,12 @@ $venta = $resVenta->fetch_assoc();
 $stmtVenta->close();
 if (!$venta) {
     error('Venta no encontrada');
+}
+
+$usuario_id = (int)($venta['mesero_id'] ?? 0);
+if (isset($input['usuario_id']) && (int)$input['usuario_id'] !== $usuario_id) {
+    http_response_code(400);
+    error('La mesa seleccionada pertenece a otro mesero. Actualiza la pantalla e inténtalo de nuevo.');
 }
 
 $mesa_nombre = null;
