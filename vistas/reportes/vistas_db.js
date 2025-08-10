@@ -11,7 +11,16 @@ const viewLabels = {
     vista_ventas_por_mesero: 'Ventas por mesero',
     vw_consumo_insumos: 'Consumo de insumos',
     vw_corte_resumen: 'Corte resumen',
-    vw_ventas_detalladas: 'Ventas detalladas'
+    vw_ventas_detalladas: 'Ventas detalladas',
+    logs_accion: 'Log de acciones',
+    log_asignaciones_mesas: 'Asignaciones de mesas (log)',
+    log_mesas: 'Log de mesas',
+    movimientos_insumos: 'Movimientos de insumos',
+    fondo: 'Fondo de caja',
+    insumos: 'Insumos',
+    tickets: 'Tickets',
+    ventas: 'Ventas',
+    qrs_insumo: 'QR de insumos'
 };
 
 let currentView = sessionStorage.getItem('vistas_db_view') || 'vista_productos_mas_vendidos';

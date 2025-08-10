@@ -14,7 +14,16 @@ $whitelist = [
     'vista_ventas_por_mesero',
     'vw_consumo_insumos',
     'vw_corte_resumen',
-    'vw_ventas_detalladas'
+    'vw_ventas_detalladas',
+    'logs_accion',
+    'log_asignaciones_mesas',
+    'log_mesas',
+    'movimientos_insumos',
+    'fondo',
+    'insumos',
+    'tickets',
+    'ventas',
+    'qrs_insumo'
 ];
 
 try {
