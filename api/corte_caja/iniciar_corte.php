@@ -50,11 +50,24 @@ if ($stmt->num_rows > 0) {
 }
 $stmt->close();
 
-$stmt = $conn->prepare('INSERT INTO corte_caja (usuario_id, fecha_inicio, fondo_inicial) VALUES (?, NOW(), ?)');
+// Obtener folio inicial del turno actual o último folio existente
+$folio_inicio = 0;
+$res = $conn->query("SELECT MIN(folio) AS folio FROM tickets WHERE fecha >= CURDATE()");
+if ($res && ($row = $res->fetch_assoc()) && $row['folio'] !== null) {
+    $folio_inicio = (int)$row['folio'];
+}
+if ($folio_inicio === 0) {
+    $res = $conn->query("SELECT IFNULL(MAX(folio), 0) AS folio FROM tickets");
+    if ($res && ($row = $res->fetch_assoc())) {
+        $folio_inicio = (int)$row['folio'];
+    }
+}
+
+$stmt = $conn->prepare('INSERT INTO corte_caja (usuario_id, fecha_inicio, fondo_inicial, folio_inicio) VALUES (?, NOW(), ?, ?)');
 if (!$stmt) {
     error('Error al preparar inserción: ' . $conn->error);
 }
-$stmt->bind_param('id', $usuario_id, $fondo_inicial);
+$stmt->bind_param('idi', $usuario_id, $fondo_inicial, $folio_inicio);
 if (!$stmt->execute()) {
     $stmt->close();
     error('Error al crear corte: ' . $stmt->error);
