@@ -935,75 +935,20 @@ function verificarActivacionProductos() {
   }
 }
 
-async function precargarMeseroAsignado() {
-  const mesaId = document.getElementById('mesa_id').value;
-  if (!mesaId) return;
-  try {
-    const resp = await fetch(`../../api/mesas/meseros.php?mesa_id=${mesaId}`);
-    const data = await resp.json();
-    const btn = document.getElementById('registrarVenta');
-    if (!data.success || !data.resultado || data.resultado.length === 0) {
-      alert('Esta mesa no tiene mesero asignado. Asigne uno en el módulo de Mesas.');
-      btn.disabled = true;
-      document.getElementById('usuario_id').value = '';
-      return;
-    }
-    const asignado = data.resultado.find(x => x.asignado) || data.resultado[0];
-    const sel = document.getElementById('usuario_id');
-    if (!sel.querySelector(`option[value="${asignado.id}"]`)) {
-      sel.innerHTML = `<option value="${asignado.id}">${asignado.nombre}</option>`;
-    }
-    sel.value = asignado.id;
-    sel.disabled = true;
-    btn.disabled = false;
-    let badge = document.getElementById('badgeMesero');
-    if (!badge) {
-      badge = document.createElement('span');
-      badge.id = 'badgeMesero';
-      badge.className = 'badge bg-secondary ms-2';
-      sel.insertAdjacentElement('afterend', badge);
-    }
-    badge.textContent = `Mesero asignado: ${asignado.nombre}`;
-  } catch (err) {
-    console.error(err);
-    alert('Error al cargar mesero asignado');
-  }
-}
-
-async function onTipoEntregaChange() {
-  const tipo = document.getElementById('tipo_entrega').value;
+// Detecta cambio de tipo de entrega para mostrar campo correspondiente
+document.getElementById('tipo_entrega').addEventListener('change', function () {
+  const tipo = this.value;
   document.getElementById('campoMesa').style.display = tipo === 'mesa' ? 'block' : 'none';
   document.getElementById('campoRepartidor').style.display = tipo === 'domicilio' ? 'block' : 'none';
   document.getElementById('campoObservacion').style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
-  const sel = document.getElementById('usuario_id');
-  const badge = document.getElementById('badgeMesero');
   if (tipo === 'mesa') {
     document.getElementById('observacion').value = '';
-    sel.disabled = true;
-    if (document.getElementById('mesa_id').value) {
-      await precargarMeseroAsignado();
-    } else {
-      document.getElementById('registrarVenta').disabled = true;
-    }
-  } else {
-    sel.disabled = false;
-    await cargarMeseros();
-    document.getElementById('registrarVenta').disabled = false;
-    if (badge) badge.remove();
   }
   verificarActivacionProductos();
-}
+});
 
-async function onMesaChange() {
-  verificarActivacionProductos();
-  if (document.getElementById('tipo_entrega').value === 'mesa') {
-    await precargarMeseroAsignado();
-  }
-}
-
-// Detecta cambio de tipo de entrega y selección de mesa
-document.getElementById('tipo_entrega').addEventListener('change', onTipoEntregaChange);
-document.getElementById('mesa_id').addEventListener('change', onMesaChange);
+// Detecta cambios en mesa o repartidor
+document.getElementById('mesa_id').addEventListener('change', verificarActivacionProductos);
 document.getElementById('repartidor_id').addEventListener('change', verificarActivacionProductos);
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1016,7 +961,16 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarSolicitudes();
     document.getElementById('registrarVenta').addEventListener('click', registrarVenta);
     document.getElementById('agregarProducto').addEventListener('click', agregarFilaProducto);
-    onTipoEntregaChange();
+    document.getElementById('tipo_entrega').addEventListener('change', () => {
+        const tipo = document.getElementById('tipo_entrega').value;
+        document.getElementById('campoMesa').style.display = tipo === 'mesa' ? 'block' : 'none';
+        document.getElementById('campoRepartidor').style.display = tipo === 'domicilio' ? 'block' : 'none';
+        document.getElementById('campoObservacion').style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
+        if (tipo === 'mesa') {
+            document.getElementById('observacion').value = '';
+        }
+        verificarActivacionProductos();
+    });
 
     document.getElementById('recordsPerPage').addEventListener('change', e => {
         limit = parseInt(e.target.value);

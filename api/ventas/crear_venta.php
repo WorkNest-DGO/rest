@@ -27,7 +27,7 @@ $productos     = isset($input['productos']) && is_array($input['productos']) ? $
 $observacion   = isset($input['observacion']) ? $input['observacion'] : null;
 $sede_id       = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$input['sede_id'] : 1;
 
-if (!$tipo || !$productos || ($tipo !== 'mesa' && !$usuario_id)) {
+if (!$tipo || !$usuario_id || !$productos) {
     error('Datos incompletos para crear la venta');
 }
 
@@ -35,7 +35,7 @@ if ($tipo === 'mesa') {
     if (!$mesa_id || $repartidor_id) {
         error('Venta en mesa requiere mesa_id y sin repartidor_id');
     }
-    $estado = $conn->prepare('SELECT estado, usuario_id FROM mesas WHERE id = ?');
+    $estado = $conn->prepare('SELECT estado FROM mesas WHERE id = ?');
     if (!$estado) {
         error('Error al preparar consulta de mesa: ' . $conn->error);
     }
@@ -52,11 +52,6 @@ if ($tipo === 'mesa') {
     }
     if ($rowEstado['estado'] !== 'libre') {
         error('La mesa seleccionada no está libre');
-    }
-    $usuario_id = (int)$rowEstado['usuario_id'];
-    if (!$usuario_id) {
-        http_response_code(422);
-        error('Esta mesa no tiene mesero asignado. Asigne uno en el módulo de Mesas.');
     }
 } elseif ($tipo === 'domicilio') {
     if (!$repartidor_id || $mesa_id) {
@@ -175,4 +170,3 @@ if ($log) {
 }
 
 success(['venta_id' => $venta_id]);
-
