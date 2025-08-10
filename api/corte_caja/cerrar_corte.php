@@ -41,6 +41,52 @@ $fecha_inicio   = $row['fecha_inicio'];
 $fondo_inicial  = (float)($row['fondo_inicial'] ?? 0);
 $stmt->close();
 
+// Calcular totales de boucher y cheque del corte abierto
+$sqlNoEf = "SELECT
+    SUM(CASE WHEN t.tipo_pago='boucher' THEN t.total ELSE 0 END) AS total_boucher,
+    SUM(CASE WHEN t.tipo_pago='cheque'  THEN t.total ELSE 0 END) AS total_cheque
+FROM tickets t
+JOIN ventas v ON v.id = t.venta_id
+WHERE v.estatus = 'cerrada'
+  AND v.corte_id IS NULL
+  AND t.fecha >= ?
+  AND v.usuario_id = ?";
+
+$stmtNoEf = $conn->prepare($sqlNoEf);
+if (!$stmtNoEf) {
+    error('Error al calcular totales de no efectivo: ' . $conn->error);
+}
+$stmtNoEf->bind_param('si', $fecha_inicio, $usuario_id);
+$stmtNoEf->execute();
+$totNoEf = $stmtNoEf->get_result()->fetch_assoc();
+$stmtNoEf->close();
+
+$totalBoucher = (float)($totNoEf['total_boucher'] ?? 0);
+$totalCheque  = (float)($totNoEf['total_cheque'] ?? 0);
+
+// Registrar boucher y cheque en desglose_corte
+$insNe = $conn->prepare('INSERT INTO desglose_corte (corte_id, denominacion, cantidad, tipo_pago, denominacion_id) VALUES (?, ?, ?, ?, ?)');
+if (!$insNe) {
+    error('Error al preparar inserción de no efectivo: ' . $conn->error);
+}
+$den = 1.00;
+$cant = $totalBoucher;
+$tipo = 'boucher';
+$denId = 12;
+$insNe->bind_param('iddsi', $corte_id, $den, $cant, $tipo, $denId);
+if (!$insNe->execute()) {
+    $insNe->close();
+    error('Error al guardar boucher: ' . $insNe->error);
+}
+$cant = $totalCheque;
+$tipo = 'cheque';
+$denId = 13;
+if (!$insNe->execute()) {
+    $insNe->close();
+    error('Error al guardar cheque: ' . $insNe->error);
+}
+$insNe->close();
+
 // Calcular total de ventas del periodo
 $fecha_fin = date('Y-m-d H:i:s');
 // Total de ventas (sin propinas)
