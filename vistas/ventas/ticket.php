@@ -42,8 +42,8 @@ ob_start();
             <tbody></tbody>
         </table>
     </div>
-    <button id="agregarSub" class="btn custom-btn">Agregar subcuenta</button>
-    <button id="btnGuardarTicket" class="btn custom-btn">Guardar e imprimir Tickets</button>
+    <button id="agregarSub" class="btn custom-btn" type="button">Agregar subcuenta</button>
+    <button id="btnGuardarTicket" class="btn custom-btn" type="button">Guardar e imprimir Tickets</button>
     <div id="subcuentas"></div>
     <div id="teclado" class="mt-3"></div>
 </div>
@@ -84,7 +84,7 @@ ob_start();
         <div id="totalLetras"></div>
         <p>Gracias por su compra</p>
     </div>
-    <button id="btnImprimir" class="btn custom-btn">Imprimir</button>
+    <button id="btnImprimir" class="btn custom-btn" type="button">Imprimir</button>
 </div>
 
 

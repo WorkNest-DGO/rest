@@ -103,6 +103,38 @@ let ticketRequests = [];
 let ventaIdActual = null;
 let mesas = [];
 
+function imprimirTicket(ventaId) {
+    if (!ventaId) {
+        const v = document.getElementById('venta_id');
+        ventaId = v ? v.value : '';
+    }
+    if (!ventaId) {
+        alert('No hay venta para imprimir.');
+        return;
+    }
+    window.location.href = `ticket.php?venta=${encodeURIComponent(ventaId)}`;
+}
+
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="imprimir-ticket"]');
+    if (!btn) return;
+    e.preventDefault();
+    const ventaId = btn.dataset.ventaId || (document.getElementById('venta_id')?.value || '');
+    const mesaId = btn.dataset.mesaId;
+    if (ventaId && mesaId) {
+        imprimirSolicitud(mesaId, ventaId);
+        return;
+    }
+    if (!ventaId) {
+        alert('No hay venta para imprimir.');
+        return;
+    }
+    if (mesaId) {
+        ticketPrinted(mesaId);
+    }
+    window.location.href = `ticket.php?venta=${encodeURIComponent(ventaId)}`;
+});
+
 function deshabilitarCobro() {
     document.querySelectorAll('#formVenta input, #formVenta select, #formVenta button')
         .forEach(el => {
@@ -833,8 +865,7 @@ async function verDetalles(id) {
                     sede_id: sede
                 };
                 localStorage.setItem('ticketData', JSON.stringify(payload));
-                const mesaParam = venta.mesa_id ? `&mesa=${venta.mesa_id}` : '';
-                window.open(`ticket.php?venta=${id}${mesaParam}`, '_blank');
+                imprimirTicket(id);
             });
         } else {
             alert(data.mensaje);
@@ -915,11 +946,8 @@ function cargarSolicitudes() {
             ticketRequests = d.resultado.filter(m => m.ticket_enviado);
             ticketRequests.forEach(req => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>⚠️ ${req.nombre}</td><td><button class="btn custom-btn" data-mesa="${req.id}" data-venta="${req.venta_id}">Imprimir</button></td>`;
+                tr.innerHTML = `<td>⚠️ ${req.nombre}</td><td><button class="btn custom-btn" data-action="imprimir-ticket" data-venta-id="${req.venta_id}" data-mesa-id="${req.id}">Imprimir</button></td>`;
                 tbody.appendChild(tr);
-            });
-            tbody.querySelectorAll('button.printReq').forEach(btn => {
-                btn.addEventListener('click', () => imprimirSolicitud(btn.dataset.mesa, btn.dataset.venta));
             });
         })
         .catch(() => alert('Error al cargar solicitudes'));
@@ -951,8 +979,8 @@ async function imprimirSolicitud(mesaId, ventaId) {
                 sede_id: sede
             };
             localStorage.setItem('ticketData', JSON.stringify(payload));
-            const w = window.open(`ticket.php?venta=${ventaId}&mesa=${mesaId}`, '_blank');
-            if (w) w.focus();
+            ticketPrinted(mesaId);
+            imprimirTicket(ventaId);
         } else {
             alert(data.mensaje);
         }
