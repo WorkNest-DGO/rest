@@ -858,7 +858,7 @@ async function verDetalles(id) {
             html += `<select id="detalle_producto"></select>`;
             html += `<input type="number" id="detalle_cantidad" value="1" min="1">`;
             html += `<button class="btn custom-btn" id="addDetalle">Agregar</button>`;
-            html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button id="cerrarDetalle">Cerrar</button>`;
+            html += ` <button class="btn custom-btn btn-imprimir-ticket" data-venta-id="${id}">Imprimir ticket</button> <button id="cerrarDetalle">Cerrar</button>`;
 
             contenedor.innerHTML = html;
             contenedor.style.display = 'block';
@@ -890,26 +890,7 @@ async function verDetalles(id) {
             document.getElementById('cerrarDetalle').addEventListener('click', () => {
                 contenedor.style.display = 'none';
             });
-            document.getElementById('imprimirTicket').addEventListener('click', () => {
-                const venta = ventasData[id] || {};
-                const total = venta.total || info.productos.reduce((s, p) => s + parseFloat(p.subtotal), 0);
-                let sede = venta.sede_id || sedeId;
-                if (!venta.sede_id) {
-                    const entrada = prompt('Indica sede', sedeId);
-                    if (entrada) sede = parseInt(entrada) || sede;
-                }
-                const payload = {
-                    venta_id: parseInt(id),
-                    usuario_id: venta.usuario_id || 1,
-                    fecha: venta.fecha || '',
-                    productos: info.productos,
-                    total,
-                    sede_id: sede
-                };
-                localStorage.setItem('ticketData', JSON.stringify(payload));
-                const mesaParam = venta.mesa_id ? `&mesa=${venta.mesa_id}` : '';
-                window.open(`ticket.php?venta=${id}${mesaParam}`, '_blank');
-            });
+            // La impresión se maneja con un listener global
         } else {
             alert(data.mensaje);
         }
@@ -989,61 +970,12 @@ function cargarSolicitudes() {
             ticketRequests = d.resultado.filter(m => m.ticket_enviado);
             ticketRequests.forEach(req => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>⚠️ ${req.nombre}</td><td><button class="btn custom-btn" data-mesa="${req.id}" data-venta="${req.venta_id}">Imprimir</button></td>`;
+                tr.innerHTML = `<td>⚠️ ${req.nombre}</td><td><button class="btn custom-btn btn-imprimir-ticket" data-mesa-id="${req.id}" data-venta-id="${req.venta_id}">Imprimir</button></td>`;
                 tbody.appendChild(tr);
-            });
-            tbody.querySelectorAll('button.printReq').forEach(btn => {
-                btn.addEventListener('click', () => imprimirSolicitud(btn.dataset.mesa, btn.dataset.venta));
             });
         })
         .catch(() => alert('Error al cargar solicitudes'));
 }
-
-async function imprimirSolicitud(mesaId, ventaId) {
-    try {
-        const resp = await fetch('../../api/ventas/detalle_venta.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ venta_id: parseInt(ventaId) })
-        });
-        const data = await resp.json();
-        if (data.success) {
-            const info = data.resultado || data;
-            const venta = ventasData[ventaId] || {};
-            const total = venta.total || info.productos.reduce((s, p) => s + parseFloat(p.subtotal), 0);
-            let sede = venta.sede_id || sedeId;
-            if (!venta.sede_id) {
-                const entrada = prompt('Indica sede', sedeId);
-                if (entrada) sede = parseInt(entrada) || sede;
-            }
-            const payload = {
-                venta_id: parseInt(ventaId),
-                usuario_id: venta.usuario_id || 1,
-                fecha: venta.fecha || '',
-                productos: info.productos,
-                total,
-                sede_id: sede
-            };
-            localStorage.setItem('ticketData', JSON.stringify(payload));
-            const w = window.open(`ticket.php?venta=${ventaId}&mesa=${mesaId}`, '_blank');
-            if (w) w.focus();
-        } else {
-            alert(data.mensaje);
-        }
-    } catch (err) {
-        console.error(err);
-        alert('Error al obtener detalles');
-    }
-}
-
-function ticketPrinted(mesaId) {
-    fetch('../../api/mesas/limpiar_ticket.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mesa_id: parseInt(mesaId) })
-    }).finally(cargarSolicitudes);
-}
-window.ticketPrinted = ticketPrinted;
 
 document.addEventListener("change", function (e) {
     if (e.target.classList.contains("producto")) {
@@ -1165,4 +1097,48 @@ document.addEventListener('click', function (e) {
             })
             .catch(() => alert('Error al actualizar estado'));
     }
+});
+
+// Manejar impresión de tickets en la misma pestaña
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.btn-imprimir-ticket');
+    if (!btn) return;
+
+    const ventaId = btn.getAttribute('data-venta-id');
+    if (!ventaId) return;
+
+    try {
+        const resp = await fetch('../../api/ventas/detalle_venta.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ venta_id: parseInt(ventaId) })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            const info = data.resultado || data;
+            const venta = ventasData[ventaId] || {};
+            const total = venta.total || info.productos.reduce((s, p) => s + parseFloat(p.subtotal), 0);
+            let sede = venta.sede_id || sedeId;
+            if (!venta.sede_id) {
+                const entrada = prompt('Indica sede', sedeId);
+                if (entrada) sede = parseInt(entrada) || sede;
+            }
+            const payload = {
+                venta_id: parseInt(ventaId),
+                usuario_id: venta.usuario_id || 1,
+                fecha: venta.fecha || '',
+                productos: info.productos,
+                total,
+                sede_id: sede
+            };
+            localStorage.setItem('ticketData', JSON.stringify(payload));
+        }
+    } catch (err) {
+        console.error(err);
+    }
+
+    const mesaId = btn.getAttribute('data-mesa-id');
+    const mesaParam = mesaId ? `&mesa=${encodeURIComponent(mesaId)}` : '';
+    const url = `ticket.php?venta=${encodeURIComponent(ventaId)}&print=1&from=ventas${mesaParam}`;
+    window.location.assign(url);
 });

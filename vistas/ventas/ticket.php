@@ -94,6 +94,35 @@ ob_start();
     const denominacionesUrl = '../../api/corte_caja/listar_denominaciones.php';
 </script>
 <script src="ticket.js"></script>
+<?php if (!empty($_GET['print']) && $_GET['print'] == '1'): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Cuando la vista esté lista, imprime
+  window.print();
+});
+
+(function () {
+  const destino = (new URLSearchParams(location.search).get('from') === 'ventas')
+    ? 'ventas.php'
+    : 'ventas.php'; // default al listado de ventas
+
+  // Redirigir a ventas después de imprimir
+  const goBack = () => window.location.replace(destino);
+
+  // afterprint estándar
+  window.addEventListener('afterprint', () => goBack());
+
+  // Fallback para navegadores que no disparan afterprint
+  const mm = window.matchMedia ? window.matchMedia('print') : null;
+  if (mm) {
+    const onChange = (e) => { if (!e.matches) { mm.removeEventListener('change', onChange); goBack(); } };
+    mm.addEventListener('change', onChange);
+  }
+  // Fallback duro
+  setTimeout(goBack, 3000);
+})();
+</script>
+<?php endif; ?>
 </body>
 
 </html>
