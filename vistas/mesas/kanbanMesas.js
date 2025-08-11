@@ -292,14 +292,14 @@ function mostrarModalDetalle(datos, ventaId, mesaId, estado, meseroId) {
     });
     html += `</tbody></table>`;
     html += `<h4>Mesero</h4>`;
-    html += `<select id="select_mesero"></select>`;
+    html += `<select id="select_mesero" disabled></select>`;
     html += `<h4>Agregar producto</h4>`;
     html += `<select id="nuevo_producto"></select>`;
     html += `<input type="number" id="nuevo_cantidad" value="1" min="1">`;
     const disabled = !ventaId && estado !== 'ocupada' ? 'disabled' : '';
     html += `<button id="agregarProductoVenta" data-venta="${ventaId || ''}" data-mesa="${mesaId}" data-estado="${estado}" >Agregar producto</button>`;
     if (ventaId) {
-        html += ` <button id="guardarMesero" data-venta="${ventaId}">Actualizar mesero</button>`;
+        html += ` <button id="guardarMesero" data-venta="${ventaId}" hidden>Actualizar mesero</button>`;
     }
     html += ` <button id="cerrarModal">Cerrar</button>`;
     modal.innerHTML = html;
