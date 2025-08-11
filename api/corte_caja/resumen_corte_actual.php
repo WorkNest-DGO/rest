@@ -87,7 +87,7 @@ $sqlRapido = "SELECT SUM(t.total) AS total
                JOIN tickets t ON t.venta_id = v.id
               WHERE v.estatus = 'cerrada'
                 AND v.corte_id = ?
-                AND v.tipo_venta = 'rapida'";
+                AND v.tipo_entrega = 'rapido'";
 $stmtRapido = $conn->prepare($sqlRapido);
 $stmtRapido->bind_param('i', $corte_id);
 $stmtRapido->execute();
@@ -116,11 +116,13 @@ while ($row = $resultRepartidor->fetch_assoc()) {
 $stmtRepartidor->close();
 
 // Información de folios asociados al corte
-$sqlFolios = "SELECT MIN(folio) AS folio_inicio,
-                     MAX(folio) AS folio_fin,
-                     COUNT(*)   AS total_folios
-              FROM ventas
-             WHERE estatus = 'cerrada'
+$sqlFolios = "SELECT 
+    MIN(t.folio) AS folio_inicio,
+    MAX(t.folio) AS folio_fin,
+    COUNT(t.folio) AS total_folios
+FROM ventas v
+JOIN tickets t ON t.venta_id = v.id
+WHERE v.estatus = 'cerrada'
                AND corte_id = ?";
 $stmtFolios = $conn->prepare($sqlFolios);
 $stmtFolios->bind_param('i', $corte_id);
