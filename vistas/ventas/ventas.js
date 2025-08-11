@@ -243,12 +243,12 @@ function mostrarModalDesglose(dataApi) {
     const modal = document.getElementById('modalDesglose');
     let html = '<div style="background:#000;border:1px solid #333;padding:10px;">';
     html += '<h3>Desglose de caja</h3>';
-    html += `<p>Total productos: $${totalProductos.toFixed(2)}</p>`;
-    html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
     html += `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>`;
     html += `<p>Fondo inicial: $${fondoInicial.toFixed(2)}</p>`;
-    html += `<p>Total ingresado: $${totalIngresado.toFixed(2)}</p>`;
+    html += `<p>Total productos: $${totalProductos.toFixed(2)}</p>`;
+    html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
     html += '<p>Propinas por tipo de pago:</p><ul>';
+    html += `<p>Total ingresado: $${totalIngresado.toFixed(2)}</p>`;
     for (const tipo in resumenPagos) {
         const p = resumenPagos[tipo];
         html += `<li>${tipo}: $${(parseFloat(p.propina) || 0).toFixed(2)}</li>`;
