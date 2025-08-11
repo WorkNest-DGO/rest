@@ -56,24 +56,98 @@ $stmtResumen->close();
 
 $totalEsperado = $totalProductos + $totalPropinas;
 
-// Obtener fondo inicial
-$stmtFondo = $conn->prepare('SELECT fondo_inicial FROM corte_caja WHERE id = ?');
+// Obtener fondo inicial y fecha de inicio del corte
+$stmtFondo = $conn->prepare('SELECT fondo_inicial, fecha_inicio FROM corte_caja WHERE id = ?');
 $stmtFondo->bind_param('i', $corte_id);
 $stmtFondo->execute();
-$rowFondo = $stmtFondo->get_result()->fetch_assoc();
+$rowFondo    = $stmtFondo->get_result()->fetch_assoc();
 $fondoInicial = (float)($rowFondo['fondo_inicial'] ?? 0);
+$fechaInicio  = $rowFondo['fecha_inicio'] ?? '';
 $stmtFondo->close();
 
 $totalFinal = $totalEsperado + $fondoInicial;
 
+// Total de ventas registradas por usuarios con rol de mesero
+$sqlMeseros = "SELECT SUM(t.total) AS total
+               FROM ventas v
+               JOIN tickets t ON t.venta_id = v.id
+               JOIN usuarios u ON u.id = v.usuario_id
+              WHERE v.estatus = 'cerrada'
+                AND v.corte_id = ?
+                AND u.rol = 'mesero'";
+$stmtMeseros = $conn->prepare($sqlMeseros);
+$stmtMeseros->bind_param('i', $corte_id);
+$stmtMeseros->execute();
+$totalMeseros = (float)($stmtMeseros->get_result()->fetch_assoc()['total'] ?? 0);
+$stmtMeseros->close();
+
+// Total de ventas de tipo rapida
+$sqlRapido = "SELECT SUM(t.total) AS total
+               FROM ventas v
+               JOIN tickets t ON t.venta_id = v.id
+              WHERE v.estatus = 'cerrada'
+                AND v.corte_id = ?
+                AND v.tipo_venta = 'rapida'";
+$stmtRapido = $conn->prepare($sqlRapido);
+$stmtRapido->bind_param('i', $corte_id);
+$stmtRapido->execute();
+$totalRapido = (float)($stmtRapido->get_result()->fetch_assoc()['total'] ?? 0);
+$stmtRapido->close();
+
+// Totales agrupados por repartidor
+$sqlRepartidor = "SELECT r.nombre, SUM(t.total) AS total
+                  FROM ventas v
+                  JOIN tickets t ON t.venta_id = v.id
+                  JOIN repartidores r ON r.id = v.repartidor_id
+                 WHERE v.estatus = 'cerrada'
+                   AND v.corte_id = ?
+                 GROUP BY r.id, r.nombre";
+$stmtRepartidor = $conn->prepare($sqlRepartidor);
+$stmtRepartidor->bind_param('i', $corte_id);
+$stmtRepartidor->execute();
+$resultRepartidor = $stmtRepartidor->get_result();
+$totalRepartidor = [];
+while ($row = $resultRepartidor->fetch_assoc()) {
+    $totalRepartidor[] = [
+        'nombre' => $row['nombre'],
+        'total'  => (float)$row['total']
+    ];
+}
+$stmtRepartidor->close();
+
+// Información de folios asociados al corte
+$sqlFolios = "SELECT MIN(folio) AS folio_inicio,
+                     MAX(folio) AS folio_fin,
+                     COUNT(*)   AS total_folios
+              FROM ventas
+             WHERE estatus = 'cerrada'
+               AND corte_id = ?";
+$stmtFolios = $conn->prepare($sqlFolios);
+$stmtFolios->bind_param('i', $corte_id);
+$stmtFolios->execute();
+$rowFolios   = $stmtFolios->get_result()->fetch_assoc();
+$folioInicio = (int)($rowFolios['folio_inicio'] ?? 0);
+$folioFin    = (int)($rowFolios['folio_fin'] ?? 0);
+$totalFolios = (int)($rowFolios['total_folios'] ?? 0);
+$stmtFolios->close();
+
+$resultado = $resumen;
+$resultado['total_productos'] = $totalProductos;
+$resultado['total_propinas']  = $totalPropinas;
+$resultado['totalEsperado']   = $totalEsperado;
+$resultado['fondo']           = $fondoInicial;
+$resultado['totalFinal']      = $totalFinal;
+$resultado['corte_id']        = $corte_id;
+$resultado['total_meseros']   = $totalMeseros;
+$resultado['total_rapido']    = $totalRapido;
+$resultado['total_repartidor']= $totalRepartidor;
+$resultado['fecha_inicio']    = $fechaInicio;
+$resultado['folio_inicio']    = $folioInicio;
+$resultado['folio_fin']       = $folioFin;
+$resultado['total_folios']    = $totalFolios;
+
 echo json_encode([
-    'success'        => true,
-    'resultado'      => $resumen,
-    'total_productos'=> $totalProductos,
-    'total_propinas' => $totalPropinas,
-    'totalEsperado'  => $totalEsperado,
-    'fondo'          => $fondoInicial,
-    'totalFinal'     => $totalFinal,
-    'corte_id'       => $corte_id
+    'success'   => true,
+    'resultado' => $resultado
 ]);
 ?>
