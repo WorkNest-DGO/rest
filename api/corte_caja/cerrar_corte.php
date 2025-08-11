@@ -67,43 +67,58 @@ $prop->close();
 
 $totalFinal = $totalVentas + $totalPropinas + $fondo_inicial;
 
-// Obtener folio final del corte (por ventana y usuario)
-$folio_fin = 0;
-$ff = $conn->prepare("
-    SELECT IFNULL(MAX(t.folio), 0) AS folio
-    FROM tickets t
-    INNER JOIN ventas v ON v.id = t.venta_id
-    WHERE v.usuario_id = ? 
-      AND v.fecha >= ? 
-      AND v.fecha <= ?
-      AND v.estatus = 'cerrada'
-");
-if ($ff) {
-    $ff->bind_param('iss', $usuario_id, $fecha_inicio, $fecha_fin);
-    $ff->execute();
-    $resFf = $ff->get_result()->fetch_assoc();
-    $folio_fin = (int)($resFf['folio'] ?? 0);
-    $ff->close();
-}
+// 1) Folio fin calculado
+$stmt = $conn->prepare("\n  SELECT IFNULL(MAX(t.folio), 0) AS folio_fin_calc\n  FROM tickets t\n  INNER JOIN ventas v ON v.id = t.venta_id\n  WHERE v.usuario_id = ?\n    AND v.fecha >= ?\n    AND v.fecha <= ?\n    AND v.estatus = 'cerrada'\n");
+$stmt->bind_param('iss', $usuario_id, $fecha_inicio, $fecha_fin);
+$stmt->execute();
+$folio_fin_calc = (int)($stmt->get_result()->fetch_assoc()['folio_fin_calc'] ?? 0);
+$stmt->close();
 
-// Cerrar corte asignando fecha_fin, total calculado y folio final
-$upd = $conn->prepare('UPDATE corte_caja SET fecha_fin = ?, total = ?, observaciones = ?, folio_fin = ? WHERE id = ?');
+// 2) Leer folio_inicio del corte
+$folio_inicio = 0;
+$stmt = $conn->prepare('SELECT IFNULL(folio_inicio,0) AS fi FROM corte_caja WHERE id = ?');
+$stmt->bind_param('i', $corte_id);
+$stmt->execute();
+$folio_inicio = (int)($stmt->get_result()->fetch_assoc()['fi'] ?? 0);
+$stmt->close();
+if ($folio_inicio <= 0) {
+    $folio_inicio = 1;
+}
+if ($folio_fin_calc === 0) {
+    $folio_fin_calc = $folio_inicio;
+}
+$total_folios = max($folio_fin_calc - $folio_inicio, 0);
+
+$conn->begin_transaction();
+
+// Cerrar corte asignando fecha_fin, total calculado y folios
+$upd = $conn->prepare('UPDATE corte_caja SET fecha_fin = NOW(), total = ?, observaciones = ?, folio_fin = ?, total_folios = ? WHERE id = ?');
 if (!$upd) {
+    $conn->rollback();
     error('Error al preparar cierre: ' . $conn->error);
 }
-$upd->bind_param('sdsii', $fecha_fin, $totalFinal, $observa, $folio_fin, $corte_id);
+$upd->bind_param('dsiii', $totalFinal, $observa, $folio_fin_calc, $total_folios, $corte_id);
 if (!$upd->execute()) {
     $upd->close();
+    $conn->rollback();
     error('Error al cerrar corte: ' . $upd->error);
 }
 $upd->close();
 
 $updVentas = $conn->prepare("UPDATE ventas SET corte_id = ? WHERE usuario_id = ? AND fecha >= ? AND fecha <= ? AND estatus = 'cerrada' AND (corte_id IS NULL)");
-if ($updVentas) {
-    $updVentas->bind_param('iiss', $corte_id, $usuario_id, $fecha_inicio, $fecha_fin);
-    $updVentas->execute();
-    $updVentas->close();
+if (!$updVentas) {
+    $conn->rollback();
+    error('Error al preparar actualización de ventas: ' . $conn->error);
 }
+$updVentas->bind_param('iiss', $corte_id, $usuario_id, $fecha_inicio, $fecha_fin);
+if (!$updVentas->execute()) {
+    $updVentas->close();
+    $conn->rollback();
+    error('Error al asignar ventas al corte: ' . $updVentas->error);
+}
+$updVentas->close();
+
+$conn->commit();
 
 $stmt = $conn->prepare("SELECT COUNT(*) AS num FROM ventas WHERE usuario_id = ? AND fecha >= ? AND fecha <= ? AND estatus = 'cerrada'");
 if ($stmt) {
@@ -131,6 +146,9 @@ success([
     'total'            => $totalFinal,
     'total_ventas'     => $totalVentas,
     'total_propinas'   => $totalPropinas,
-    'fondo_inicial'    => $fondo_inicial
+    'fondo_inicial'    => $fondo_inicial,
+    'folio_inicio'     => $folio_inicio,
+    'folio_fin'        => $folio_fin_calc,
+    'total_folios'     => $total_folios
 ]);
 ?>
