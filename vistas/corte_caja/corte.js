@@ -150,18 +150,8 @@ async function abrirModalDesglose(corteId, dataApi) {
     const totalFinal = parseFloat(dataApi.totalFinal) || 0;
     const totalAEntregar = parseFloat(dataApi.totalAEntregar) || 0;
 
-    let montoBoucher = 0;
-    let montoCheque = 0;
-    try {
-        const respNE = await fetch('../../api/corte_caja/totales_no_efectivo.php');
-        const dataNE = await respNE.json();
-        if (dataNE.success) {
-            montoBoucher = parseFloat(dataNE.boucher) || 0;
-            montoCheque  = parseFloat(dataNE.cheque) || 0;
-        }
-    } catch (e) {
-        console.error('No se pudo precargar boucher/cheque', e);
-    }
+    const montoBoucher = resumen.boucher ? (parseFloat(resumen.boucher.total) || 0) : 0;
+    const montoCheque = resumen.cheque ? (parseFloat(resumen.cheque.total) || 0) : 0;
 
     const modal = document.getElementById('modalDesglose');
     let html = '<div style="background:#fff;border:1px solid #333;padding:10px;">';
@@ -200,25 +190,42 @@ async function abrirModalDesglose(corteId, dataApi) {
         frag.appendChild(div);
     });
 
+    const divBoucher = document.createElement('div');
+    divBoucher.className = 'grupo-pago';
+    divBoucher.dataset.tipo = 'boucher';
+    divBoucher.innerHTML = `<label>Boucher</label>` +
+        `<input type="number" class="cantidad" data-valor="1" data-tipo="boucher" min="0" step="0.01" value="${montoBoucher.toFixed(2)}">` +
+        `<span class="subtotal">$${montoBoucher.toFixed(2)}</span>`;
+    frag.appendChild(divBoucher);
+
+    const divCheque = document.createElement('div');
+    divCheque.className = 'grupo-pago';
+    divCheque.dataset.tipo = 'cheque';
+    divCheque.innerHTML = `<label>Cheque</label>` +
+        `<input type="number" class="cantidad" data-valor="1" data-tipo="cheque" min="0" step="0.01" value="${montoCheque.toFixed(2)}">` +
+        `<span class="subtotal">$${montoCheque.toFixed(2)}</span>`;
+    frag.appendChild(divCheque);
+
     cont.appendChild(frag);
 
     function calcular() {
-        let totalEfectivo = 0;
+        const totales = { efectivo: 0, boucher: 0, cheque: 0 };
         cont.querySelectorAll('.grupo-pago').forEach(gr => {
             const inp = gr.querySelector('.cantidad');
+            const tipo = inp.dataset.tipo;
             const valor = parseFloat(inp.dataset.valor) || 0;
             const cantidad = parseFloat(inp.value) || 0;
-            const subtotal = valor * cantidad;
+            const subtotal = tipo === 'efectivo' ? valor * cantidad : cantidad;
             gr.querySelector('.subtotal').textContent = `$${subtotal.toFixed(2)}`;
-            totalEfectivo += subtotal;
+            totales[tipo] += subtotal;
         });
-        document.getElementById('totalEfectivo').textContent = totalEfectivo.toFixed(2);
-        document.getElementById('totalBoucher').textContent = montoBoucher.toFixed(2);
-        document.getElementById('totalCheque').textContent = montoCheque.toFixed(2);
-        const totalGeneral = totalEfectivo + montoBoucher + montoCheque;
+        document.getElementById('totalEfectivo').textContent = totales.efectivo.toFixed(2);
+        document.getElementById('totalBoucher').textContent = totales.boucher.toFixed(2);
+        document.getElementById('totalCheque').textContent = totales.cheque.toFixed(2);
+        const totalGeneral = totales.efectivo + totales.boucher + totales.cheque;
         document.getElementById('totalDesglose').textContent = totalGeneral.toFixed(2);
         document.getElementById('difDesglose').textContent = (totalGeneral - totalFinal).toFixed(2);
-        document.getElementById('difEfectivo').textContent = (totalAEntregar - totalEfectivo).toFixed(2);
+        document.getElementById('difEfectivo').textContent = (totalAEntregar - totales.efectivo).toFixed(2);
     }
 
     modal.querySelectorAll('.cantidad').forEach(inp => inp.addEventListener('input', calcular));
@@ -234,14 +241,23 @@ async function abrirModalDesglose(corteId, dataApi) {
         const detalle = [];
         cont.querySelectorAll('.grupo-pago').forEach(gr => {
             const inp = gr.querySelector('.cantidad');
+            const tipo = inp.dataset.tipo;
             const cantidad = parseFloat(inp.value) || 0;
             if (cantidad <= 0) return;
-            detalle.push({
-                denominacion_id: parseInt(inp.dataset.id, 10),
-                cantidad: parseInt(cantidad, 10),
-                tipo_pago: 'efectivo',
-                denominacion: parseFloat(inp.dataset.valor)
-            });
+            if (tipo === 'efectivo') {
+                detalle.push({
+                    denominacion_id: parseInt(inp.dataset.id, 10),
+                    cantidad: parseInt(cantidad, 10),
+                    tipo_pago: tipo,
+                    denominacion: parseFloat(inp.dataset.valor)
+                });
+            } else {
+                detalle.push({
+                    cantidad,
+                    tipo_pago: tipo,
+                    denominacion: cantidad
+                });
+            }
         });
         if (!detalle.length) {
             alert('Ingresa al menos una cantidad mayor a cero');

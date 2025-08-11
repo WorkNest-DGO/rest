@@ -44,21 +44,33 @@ $totales = [
 $filasValidas = [];
 foreach ($detalle as $fila) {
     $tipo = $fila['tipo_pago'] ?? 'efectivo';
-    if ($tipo !== 'efectivo') {
-        // Los montos no efectivos se calculan automáticamente al cerrar
-        continue;
+    if ($tipo === 'efectivo') {
+        $id = (int)($fila['denominacion_id'] ?? 0);
+        $cantidad = (int)($fila['cantidad'] ?? 0);
+        if ($cantidad <= 0) {
+            continue;
+        }
+        if (!$id || !isset($catalogo[$id])) {
+            error('Selecciona una denominación válida en todas las filas de efectivo');
+        }
+        $valor = $catalogo[$id];
+        $totales['efectivo'] += $valor * $cantidad;
+        $filasValidas[] = [$valor, $cantidad, $tipo, $id];
+    } else {
+        $monto = (float)($fila['cantidad'] ?? 0);
+        if ($monto <= 0) {
+            continue;
+        }
+        $id = isset($fila['denominacion_id']) ? (int)$fila['denominacion_id'] : 0;
+        $totales[$tipo] += $monto;
+        if ($id && isset($catalogo[$id])) {
+            $valor = $catalogo[$id];
+            $filasValidas[] = [$valor, $monto, $tipo, $id];
+        } else {
+            // Compatibilidad con llamadas anteriores sin denominacion_id
+            $filasValidas[] = [$monto, 1, $tipo, null];
+        }
     }
-    $id = (int)($fila['denominacion_id'] ?? 0);
-    $cantidad = (int)($fila['cantidad'] ?? 0);
-    if ($cantidad <= 0) {
-        continue;
-    }
-    if (!$id || !isset($catalogo[$id])) {
-        error('Selecciona una denominación válida en todas las filas de efectivo');
-    }
-    $valor = $catalogo[$id];
-    $totales['efectivo'] += $valor * $cantidad;
-    $filasValidas[] = [$valor, $cantidad, $tipo, $id];
 }
 
 if (!$filasValidas) {
@@ -84,6 +96,6 @@ foreach ($filasValidas as $f) {
 $ins->close();
 $conn->commit();
 
-$totalGeneral = $totales['efectivo'];
+$totalGeneral = $totales['efectivo'] + $totales['boucher'] + $totales['cheque'];
 success(['totales' => $totales, 'total_general' => $totalGeneral]);
 ?>
