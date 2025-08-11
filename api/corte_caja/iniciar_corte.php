@@ -50,30 +50,39 @@ if ($stmt->num_rows > 0) {
 }
 $stmt->close();
 
-// Obtener folio inicial del turno actual o último folio existente
-$folio_inicio = 0;
-$res = $conn->query("SELECT MIN(folio) AS folio FROM tickets WHERE fecha >= CURDATE()");
-if ($res && ($row = $res->fetch_assoc()) && $row['folio'] !== null) {
-    $folio_inicio = (int)$row['folio'];
-}
-if ($folio_inicio === 0) {
-    $res = $conn->query("SELECT IFNULL(MAX(folio), 0) AS folio FROM tickets");
-    if ($res && ($row = $res->fetch_assoc())) {
-        $folio_inicio = (int)$row['folio'];
-    }
-}
-
-$stmt = $conn->prepare('INSERT INTO corte_caja (usuario_id, fecha_inicio, fondo_inicial, folio_inicio) VALUES (?, NOW(), ?, ?)');
+$fecha_inicio = date('Y-m-d H:i:s');
+$stmt = $conn->prepare('INSERT INTO corte_caja (usuario_id, fecha_inicio, fondo_inicial) VALUES (?, ?, ?)');
 if (!$stmt) {
     error('Error al preparar inserción: ' . $conn->error);
 }
-$stmt->bind_param('idi', $usuario_id, $fondo_inicial, $folio_inicio);
+$stmt->bind_param('isd', $usuario_id, $fecha_inicio, $fondo_inicial);
 if (!$stmt->execute()) {
     $stmt->close();
     error('Error al crear corte: ' . $stmt->error);
 }
 $corte_id = $stmt->insert_id;
 $stmt->close();
+
+// Calcular siguiente folio disponible para el usuario
+$folio_inicio = 1;
+$q = $conn->prepare('SELECT IFNULL(MAX(t.folio), 0) + 1 AS siguiente FROM tickets t INNER JOIN ventas v ON v.id = t.venta_id WHERE v.usuario_id = ?');
+if ($q) {
+    $q->bind_param('i', $usuario_id);
+    $q->execute();
+    $r = $q->get_result()->fetch_assoc();
+    $folio_inicio = (int)($r['siguiente'] ?? 1);
+    $q->close();
+}
+if ($folio_inicio <= 0) {
+    $folio_inicio = 1;
+}
+
+$u = $conn->prepare('UPDATE corte_caja SET folio_inicio = ? WHERE id = ?');
+if ($u) {
+    $u->bind_param('ii', $folio_inicio, $corte_id);
+    $u->execute();
+    $u->close();
+}
 
 // Lógica reemplazada por base de datos: ver bd.sql (Logs)
 $log = $conn->prepare('INSERT INTO logs_accion (usuario_id, modulo, accion, referencia_id) VALUES (?, ?, ?, ?)');
@@ -85,5 +94,9 @@ if ($log) {
     $log->close();
 }
 
-success(['corte_id' => $corte_id]);
+success([
+    'corte_id'     => $corte_id,
+    'folio_inicio' => $folio_inicio,
+    'fecha_inicio' => $fecha_inicio
+]);
 ?>
