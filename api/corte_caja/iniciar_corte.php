@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
+require_once __DIR__ . '/helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error('Método no permitido');
@@ -63,19 +64,9 @@ if (!$stmt->execute()) {
 $corte_id = $stmt->insert_id;
 $stmt->close();
 
-// Calcular siguiente folio disponible para el usuario
-$folio_inicio = 1;
-$q = $conn->prepare('SELECT IFNULL(MAX(t.folio), 0) + 1 AS siguiente FROM tickets t INNER JOIN ventas v ON v.id = t.venta_id WHERE v.usuario_id = ?');
-if ($q) {
-    $q->bind_param('i', $usuario_id);
-    $q->execute();
-    $r = $q->get_result()->fetch_assoc();
-    $folio_inicio = (int)($r['siguiente'] ?? 1);
-    $q->close();
-}
-if ($folio_inicio <= 0) {
-    $folio_inicio = 1;
-}
+// Determinar serie activa y folio inicial desde catalogo_folios
+$serie_id = getSerieActiva($conn);
+$folio_inicio = getFolioActualSerie($conn, $serie_id);
 
 $u = $conn->prepare('UPDATE corte_caja SET folio_inicio = ? WHERE id = ?');
 if ($u) {
