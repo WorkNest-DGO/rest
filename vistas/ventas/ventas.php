@@ -70,7 +70,7 @@ ob_start();
 
         <div class="form-group">
           <label for="usuario_id" class="text-white">Mesero:</label>
-          <select id="usuario_id" name="usuario_id" class="form-control" required></select>
+          <select id="usuario_id" name="usuario_id" class="form-control"></select>
         </div>
 
         <!-- Sección que se muestra al elegir una mesa -->

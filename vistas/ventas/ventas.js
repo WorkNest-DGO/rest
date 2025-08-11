@@ -413,26 +413,28 @@ async function cargarRepartidores() {
     }
 }
 
+// Carga el catálogo de meseros desde el backend de mesas
 async function cargarMeseros() {
-    try {
-        const resp = await fetch('../../api/usuarios/listar_meseros.php');
-        const data = await resp.json();
-        if (data.success) {
-            const select = document.getElementById('usuario_id');
-            select.innerHTML = '<option value="">--Selecciona--</option>';
-            data.resultado.forEach(u => {
-                const opt = document.createElement('option');
-                opt.value = u.id;
-                opt.textContent = u.nombre;
-                select.appendChild(opt);
-            });
-        } else {
-            alert(data.mensaje);
-        }
-    } catch (err) {
-        console.error(err);
-        alert('Error al cargar meseros');
+  try {
+    const resp = await fetch('../../api/mesas/meseros.php');
+    const data = await resp.json();
+    const select = document.getElementById('usuario_id');
+    if (!select) return;
+    select.innerHTML = '<option value="">--Selecciona--</option>';
+
+    if (data && data.success) {
+      (data.resultado || []).forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = u.nombre;
+        select.appendChild(opt);
+      });
+    } else {
+      console.warn(data?.mensaje || 'No se pudieron cargar meseros.');
     }
+  } catch (e) {
+    console.error('Error al cargar meseros:', e);
+  }
 }
 
 async function cargarMesas() {
@@ -456,6 +458,74 @@ async function cargarMesas() {
         console.error(err);
         alert('Error de red al cargar mesas');
     }
+}
+
+function setLabelUsuario(texto) {
+  const lbl = document.querySelector('label[for="usuario_id"]');
+  if (lbl) lbl.textContent = texto;
+}
+
+async function cargarUsuariosPorRol(rol = 'repartidor') {
+  try {
+    const resp = await fetch('../../api/usuarios/listar_usuarios.php');
+    const data = await resp.json();
+    const select = document.getElementById('usuario_id');
+    if (!select) return;
+    select.innerHTML = '<option value="">--Selecciona--</option>';
+
+    if (data && data.success) {
+      (data.resultado || [])
+        .filter(u => String(u.rol || '').toLowerCase() === String(rol).toLowerCase())
+        .forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u.id;
+          opt.textContent = u.nombre;
+          select.appendChild(opt);
+        });
+    } else {
+      console.warn(data?.mensaje || 'No se pudieron cargar usuarios.');
+    }
+  } catch (e) {
+    console.error('Error al cargar usuarios:', e);
+  }
+}
+
+function esRepartidorCasaSeleccionado() {
+  const sel = document.getElementById('repartidor_id');
+  if (!sel || sel.selectedIndex < 0) return false;
+  const txt = sel.options[sel.selectedIndex].textContent || '';
+  return txt.trim().toLowerCase() === 'repartidor casa';
+}
+
+async function actualizarSelectorUsuario() {
+  const tipo = (document.getElementById('tipo_entrega')?.value || '').toLowerCase();
+  const usuarioSel = document.getElementById('usuario_id');
+  if (!usuarioSel) return;
+
+  if (tipo === 'domicilio') {
+    usuarioSel.disabled = false;
+    if (esRepartidorCasaSeleccionado()) {
+      setLabelUsuario('Usuario:');
+      await cargarUsuariosPorRol('repartidor');
+    } else {
+      setLabelUsuario('Mesero:');
+      await cargarMeseros();
+    }
+  } else if (tipo === 'mesa') {
+    setLabelUsuario('Mesero:');
+    usuarioSel.disabled = true;
+    if (typeof asignarMeseroPorMesa === 'function') {
+      asignarMeseroPorMesa();
+    }
+  } else { // 'rapido' u otros
+    setLabelUsuario('Mesero:');
+    usuarioSel.disabled = false;
+    await cargarMeseros();
+  }
+
+  if (typeof verificarActivacionProductos === 'function') {
+    verificarActivacionProductos();
+  }
 }
 
 function asignarMeseroPorMesa() {
@@ -1096,34 +1166,37 @@ function verificarActivacionProductos() {
   }
 }
 
-// Detecta cambio de tipo de entrega para mostrar campo correspondiente
-document.getElementById('tipo_entrega').addEventListener('change', function () {
-  const tipo = this.value;
-  document.getElementById('campoMesa').style.display = tipo === 'mesa' ? 'block' : 'none';
-  document.getElementById('campoRepartidor').style.display = tipo === 'domicilio' ? 'block' : 'none';
-  document.getElementById('campoObservacion').style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
-  if (tipo === 'mesa') {
-    document.getElementById('observacion').value = '';
-    document.getElementById('usuario_id').disabled = true;
-    asignarMeseroPorMesa();
-  } else {
-    document.getElementById('usuario_id').disabled = false;
-    cargarMeseros();
-  }
-  verificarActivacionProductos();
-});
+// Listener tipo_entrega: deja tu lógica de mostrar/ocultar divs y AL FINAL llama a actualizarSelectorUsuario()
+const tipoEntregaEl = document.getElementById('tipo_entrega');
+if (tipoEntregaEl) {
+  tipoEntregaEl.addEventListener('change', function () {
+    const tipo = this.value;
+    const campoMesa = document.getElementById('campoMesa');
+    const campoRepartidor = document.getElementById('campoRepartidor');
+    const campoObservacion = document.getElementById('campoObservacion');
+
+    if (campoMesa) campoMesa.style.display = (tipo === 'mesa') ? 'block' : 'none';
+    if (campoRepartidor) campoRepartidor.style.display = (tipo === 'domicilio') ? 'block' : 'none';
+    if (campoObservacion) campoObservacion.style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
+
+    actualizarSelectorUsuario();
+  });
+}
 
 // Detecta cambios en mesa o repartidor
 document.getElementById('mesa_id').addEventListener('change', () => {
   asignarMeseroPorMesa();
   verificarActivacionProductos();
 });
-document.getElementById('repartidor_id').addEventListener('change', verificarActivacionProductos);
+// Listener repartidor_id: cada vez que cambie, recalcula si es "Repartidor casa"
+const repartidorEl = document.getElementById('repartidor_id');
+if (repartidorEl) {
+  repartidorEl.addEventListener('change', actualizarSelectorUsuario);
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('#tablaDesglose, .tablaDesglose, .filaDenominacion').forEach(e => e.remove());
     verificarCorte();
-    cargarMeseros();
     cargarMesas();
     cargarProductos();
     cargarRepartidores();
@@ -1131,9 +1204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarSolicitudes();
     document.getElementById('registrarVenta').addEventListener('click', registrarVenta);
     document.getElementById('agregarProducto').addEventListener('click', agregarFilaProducto);
-    const meseroSelect = document.getElementById('usuario_id');
-    meseroSelect.disabled = document.getElementById('tipo_entrega').value === 'mesa';
-    verificarActivacionProductos();
+    actualizarSelectorUsuario();
 
     document.getElementById('recordsPerPage').addEventListener('change', e => {
         limit = parseInt(e.target.value);
