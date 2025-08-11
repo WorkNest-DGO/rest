@@ -57,29 +57,49 @@ $stmtResumen->close();
 $totalEsperado = $totalProductos + $totalPropinas;
 
 // Obtener fondo inicial y fecha de inicio del corte
-$stmtFondo = $conn->prepare('SELECT fondo_inicial, fecha_inicio FROM corte_caja WHERE id = ?');
+$stmtFondo = $conn->prepare('SELECT c.fondo_inicial, c.fecha_inicio, u.nombre AS cajero
+             FROM corte_caja c
+             JOIN usuarios u ON u.id = c.usuario_id
+             WHERE c.id = ?');
 $stmtFondo->bind_param('i', $corte_id);
 $stmtFondo->execute();
 $rowFondo    = $stmtFondo->get_result()->fetch_assoc();
 $fondoInicial = (float)($rowFondo['fondo_inicial'] ?? 0);
 $fechaInicio  = $rowFondo['fecha_inicio'] ?? '';
+$resultado['cajero'] = $rowFondo['cajero'] ?? '';
 $stmtFondo->close();
 
 $totalFinal = $totalEsperado + $fondoInicial;
 
 // Total de ventas registradas por usuarios con rol de mesero
-$sqlMeseros = "SELECT SUM(t.total) AS total
-               FROM ventas v
-               JOIN tickets t ON t.venta_id = v.id
-               JOIN usuarios u ON u.id = v.usuario_id
-              WHERE v.estatus = 'cerrada'
-                AND v.corte_id = ?
-                AND u.rol = 'mesero'";
+$sqlMeseros = "
+    SELECT 
+        TRIM(u.nombre) AS nombre, 
+        IFNULL(SUM(t.total), 0) AS total
+    FROM usuarios u 
+    LEFT JOIN ventas v 
+        ON v.usuario_id = u.id  
+        AND v.corte_id = ?
+    LEFT JOIN tickets t 
+        ON t.venta_id = v.id
+    WHERE u.rol = 'mesero'
+    GROUP BY u.nombre
+";
+
 $stmtMeseros = $conn->prepare($sqlMeseros);
 $stmtMeseros->bind_param('i', $corte_id);
 $stmtMeseros->execute();
-$totalMeseros = (float)($stmtMeseros->get_result()->fetch_assoc()['total'] ?? 0);
+$resMeseros = $stmtMeseros->get_result();
+
+$meseros = [];
+while ($row = $resMeseros->fetch_assoc()) {
+    $meseros[] = [
+        'nombre' => trim($row['nombre']),
+        'total'  => (float)$row['total']
+    ];
+}
 $stmtMeseros->close();
+
 
 // Total de ventas de tipo rapida
 $sqlRapido = "SELECT SUM(t.total) AS total
@@ -95,13 +115,11 @@ $totalRapido = (float)($stmtRapido->get_result()->fetch_assoc()['total'] ?? 0);
 $stmtRapido->close();
 
 // Totales agrupados por repartidor
-$sqlRepartidor = "SELECT r.nombre, SUM(t.total) AS total
-                  FROM ventas v
-                  JOIN tickets t ON t.venta_id = v.id
-                  JOIN repartidores r ON r.id = v.repartidor_id
-                 WHERE v.estatus = 'cerrada'
-                   AND v.corte_id = ?
-                 GROUP BY r.id, r.nombre";
+$sqlRepartidor = "SELECT r.nombre, IFNULL(SUM(t.total), 0) AS total
+                  FROM repartidores r
+                  LEFT JOIN ventas v ON v.repartidor_id = r.id AND v.corte_id = ?
+                  LEFT JOIN tickets t ON t.venta_id = v.id
+                  GROUP BY r.nombre";
 $stmtRepartidor = $conn->prepare($sqlRepartidor);
 $stmtRepartidor->bind_param('i', $corte_id);
 $stmtRepartidor->execute();
@@ -140,7 +158,7 @@ $resultado['totalEsperado']   = $totalEsperado;
 $resultado['fondo']           = $fondoInicial;
 $resultado['totalFinal']      = $totalFinal;
 $resultado['corte_id']        = $corte_id;
-$resultado['total_meseros']   = $totalMeseros;
+$resultado['total_meseros'] = $meseros;
 $resultado['total_rapido']    = $totalRapido;
 $resultado['total_repartidor']= $totalRepartidor;
 $resultado['fecha_inicio']    = $fechaInicio;
@@ -150,6 +168,7 @@ $resultado['total_folios']    = $totalFolios;
 
 echo json_encode([
     'success'   => true,
-    'resultado' => $resultado
+    'resultado' => $resultado,
+    "cajero" => $rowFondo['cajero'] ?? ''
 ]);
 ?>
