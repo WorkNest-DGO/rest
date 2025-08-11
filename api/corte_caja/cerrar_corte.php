@@ -2,6 +2,7 @@
 session_start();
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
+require_once __DIR__ . '/helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error('Método no permitido');
@@ -67,12 +68,9 @@ $prop->close();
 
 $totalFinal = $totalVentas + $totalPropinas + $fondo_inicial;
 
-// 1) Folio fin calculado
-$stmt = $conn->prepare("\n  SELECT IFNULL(MAX(t.folio), 0) AS folio_fin_calc\n  FROM tickets t\n  INNER JOIN ventas v ON v.id = t.venta_id\n  WHERE v.usuario_id = ?\n    AND v.fecha >= ?\n    AND v.fecha <= ?\n    AND v.estatus = 'cerrada'\n");
-$stmt->bind_param('iss', $usuario_id, $fecha_inicio, $fecha_fin);
-$stmt->execute();
-$folio_fin_calc = (int)($stmt->get_result()->fetch_assoc()['folio_fin_calc'] ?? 0);
-$stmt->close();
+// 1) Obtener serie activa y folio final desde catalogo_folios
+$serie_id = getSerieActiva($conn);
+$folio_fin_calc = getFolioActualSerie($conn, $serie_id);
 
 // 2) Leer folio_inicio del corte
 $folio_inicio = 0;
@@ -81,23 +79,44 @@ $stmt->bind_param('i', $corte_id);
 $stmt->execute();
 $folio_inicio = (int)($stmt->get_result()->fetch_assoc()['fi'] ?? 0);
 $stmt->close();
-if ($folio_inicio <= 0) {
-    $folio_inicio = 1;
+
+$total_folios = 0;
+$has_total_folios = false;
+$col = $conn->prepare("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'corte_caja' AND COLUMN_NAME = 'total_folios' LIMIT 1");
+if ($col && $col->execute()) {
+    $has_total_folios = $col->get_result()->num_rows > 0;
+    $col->close();
+    if ($has_total_folios) {
+        if ($folio_inicio <= 0) {
+            $folio_inicio = 1;
+        }
+        if ($folio_fin_calc === 0) {
+            $folio_fin_calc = $folio_inicio;
+        }
+        $total_folios = max($folio_fin_calc - $folio_inicio, 0);
+    }
+} else {
+    if ($col) { $col->close(); }
 }
-if ($folio_fin_calc === 0) {
-    $folio_fin_calc = $folio_inicio;
-}
-$total_folios = max($folio_fin_calc - $folio_inicio, 0);
 
 $conn->begin_transaction();
 
 // Cerrar corte asignando fecha_fin, total calculado y folios
-$upd = $conn->prepare('UPDATE corte_caja SET fecha_fin = NOW(), total = ?, observaciones = ?, folio_fin = ?, total_folios = ? WHERE id = ?');
-if (!$upd) {
-    $conn->rollback();
-    error('Error al preparar cierre: ' . $conn->error);
+if ($has_total_folios) {
+    $upd = $conn->prepare('UPDATE corte_caja SET fecha_fin = NOW(), total = ?, observaciones = ?, folio_fin = ?, total_folios = ? WHERE id = ?');
+    if (!$upd) {
+        $conn->rollback();
+        error('Error al preparar cierre: ' . $conn->error);
+    }
+    $upd->bind_param('dsiii', $totalFinal, $observa, $folio_fin_calc, $total_folios, $corte_id);
+} else {
+    $upd = $conn->prepare('UPDATE corte_caja SET fecha_fin = NOW(), total = ?, observaciones = ?, folio_fin = ? WHERE id = ?');
+    if (!$upd) {
+        $conn->rollback();
+        error('Error al preparar cierre: ' . $conn->error);
+    }
+    $upd->bind_param('dsii', $totalFinal, $observa, $folio_fin_calc, $corte_id);
 }
-$upd->bind_param('dsiii', $totalFinal, $observa, $folio_fin_calc, $total_folios, $corte_id);
 if (!$upd->execute()) {
     $upd->close();
     $conn->rollback();
