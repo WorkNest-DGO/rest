@@ -747,6 +747,7 @@ async function registrarVenta() {
         if (data.success) {
             alert('Venta registrada');
             await cargarHistorial();
+            await resetFormularioVenta();
         } else {
             alert(data.mensaje);
         }
@@ -754,6 +755,78 @@ async function registrarVenta() {
         console.error(err);
         alert('Error al registrar venta');
     }
+}
+async function resetFormularioVenta() {
+  // Limpiar selects visibles
+  const tipoEntrega = document.getElementById('tipo_entrega');
+  const mesa = document.getElementById('mesa_id');
+  const rep = document.getElementById('repartidor_id');
+  const mesero = document.getElementById('usuario_id');
+  const obs = document.getElementById('observacion');
+
+  if (tipoEntrega) tipoEntrega.value = '';         // vuelve al estado neutro
+  if (mesa) mesa.value = '';
+  if (rep) rep.value = '';
+  if (mesero) { mesero.disabled = false; mesero.value = ''; }
+  if (obs) obs.value = '';
+
+  // Oculta secciones dependientes y revalida
+  const campoMesa = document.getElementById('campoMesa');
+  const campoRep = document.getElementById('campoRepartidor');
+  const campoObs = document.getElementById('campoObservacion');
+  if (campoMesa) campoMesa.style.display = 'none';
+  if (campoRep) campoRep.style.display = 'none';
+  if (campoObs) campoObs.style.display = 'none';
+
+  // Reset de tabla de productos a UNA fila limpia
+  const tbody = document.querySelector('#productos tbody');
+  if (tbody) {
+    const base = tbody.querySelector('tr');
+    tbody.innerHTML = ''; // limpia todo
+    const fila = base.cloneNode(true);
+    // limpia inputs y precio unitario cacheado
+    fila.querySelectorAll('input').forEach(inp => {
+      inp.value = '';
+      if (inp.classList.contains('precio')) delete inp.dataset.unitario;
+    });
+    // repuebla el select de producto con el catálogo actual
+    const selProd = fila.querySelector('select.producto');
+    if (selProd) {
+      selProd.innerHTML = '<option value="">--Selecciona--</option>';
+      (catalogo || []).forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nombre;
+        opt.dataset.precio = p.precio;
+        opt.dataset.existencia = p.existencia;
+        selProd.appendChild(opt);
+      });
+      // reengancha eventos de la fila
+      selProd.addEventListener('change', () => {
+        actualizarPrecio(selProd);
+        verificarActivacionProductos();
+      });
+      const cant = fila.querySelector('.cantidad');
+      if (cant) {
+        cant.value = '';
+        cant.addEventListener('input', () => {
+          manejarCantidad(cant, selProd);
+          validarInventario();
+        });
+      }
+    }
+    tbody.appendChild(fila);
+  }
+
+  // Recargar opciones desde el backend (mesas/repartidores/meseros) por si cambió algo
+  await Promise.allSettled([
+    cargarMesas(),
+    cargarRepartidores(),
+    cargarMeseros()
+  ]);
+
+  verificarActivacionProductos();
+  if (tipoEntrega) tipoEntrega.focus();
 }
 
 async function cancelarVenta(id) {

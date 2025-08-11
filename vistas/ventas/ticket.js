@@ -45,29 +45,18 @@ function llenarTicket(data) {
         document.getElementById('totalLetras').textContent = data.total_letras || '';
     }
 
-function redirDespuesImprimir() {
-        const redir = () => {
-            window.onafterprint = null;
-            window.location.href = 'ventas.php';
-        };
-        window.onafterprint = redir;
-        let fallbackTimer = setTimeout(redir, 8000);
-        const mql = window.matchMedia('print');
-        const mmListener = (e) => {
-            if (!e.matches) {
-                mql.removeListener(mmListener);
-                clearTimeout(fallbackTimer);
-                redir();
-            }
-        };
-        if (mql && mql.addListener) {
-            mql.addListener(mmListener);
-        }
-}
-
 function imprimirTicket() {
-        redirDespuesImprimir();
-        window.print();
+        const ticketContainer = document.getElementById('ticketContainer');
+        if (!ticketContainer) return;
+        const ticketContent = ticketContainer.innerHTML;
+        const printWindow = window.open('', '', 'width=400,height=600');
+        printWindow.document.write('<html><head><title>Imprimir Ticket</title>');
+        printWindow.document.write('<link rel="stylesheet" href="../../utils/css/style.css">');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(ticketContent);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -459,19 +448,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             tickets.forEach(t => {
                 html += generarTicketHTML(t) + '<hr>';
             });
-            html += `<script>
-function redir(){window.onafterprint=null;if(window.opener){window.opener.location.href='ventas.php';}window.close();}
-window.onafterprint=redir;
-let fallbackTimer=setTimeout(redir,8000);
-const mql=window.matchMedia('print');
-const mmListener=(e)=>{if(!e.matches){mql.removeListener(mmListener);clearTimeout(fallbackTimer);redir();}};
-if(mql&&mql.addListener){mql.addListener(mmListener);}
-window.onload=function(){window.print();};
-</script></body></html>`;
+            html += '<script>window.onload=function(){window.print();}</script></body></html>';
             const blob = new Blob([html], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
-            const w = window.open(url, '_blank');
-            if (w) w.focus();
+            window.open(url, '_blank');
         } catch (err) {
             console.error('Error al imprimir tickets', err);
         }
