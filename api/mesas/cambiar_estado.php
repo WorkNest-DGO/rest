@@ -49,7 +49,14 @@ if ($nuevo_estado === 'ocupada') {
     }
     $stmt->bind_param('i', $mesa_id);
 } elseif ($nuevo_estado === 'libre') {
-    $stmt = $conn->prepare("UPDATE mesas SET estado = 'libre', tiempo_ocupacion_inicio = NULL, estado_reserva = 'ninguna', nombre_reserva = NULL, fecha_reserva = NULL, usuario_id = NULL WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE mesas
+SET estado = 'libre',
+    tiempo_ocupacion_inicio = NULL,
+    estado_reserva = 'ninguna',
+    nombre_reserva = NULL,
+    fecha_reserva = NULL
+WHERE id = ?
+");
     if (!$stmt) {
         error('Error al preparar consulta: ' . $conn->error);
     }

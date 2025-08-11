@@ -51,7 +51,15 @@ if ($log) {
     $log->close();
 }
 
-$upd = $conn->prepare("UPDATE mesas SET estado = 'libre', tiempo_ocupacion_inicio = NULL, estado_reserva = 'ninguna', nombre_reserva = NULL, fecha_reserva = NULL, usuario_id = NULL, ticket_enviado = FALSE WHERE id = ?");
+$upd = $conn->prepare("UPDATE mesas
+SET estado = 'libre',
+    tiempo_ocupacion_inicio = NULL,
+    estado_reserva = 'ninguna',
+    nombre_reserva = NULL,
+    fecha_reserva = NULL,
+    ticket_enviado = FALSE
+WHERE id = ?
+");
 if (!$upd) {
     error('Error al preparar actualización: ' . $conn->error);
 }
