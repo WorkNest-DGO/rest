@@ -152,7 +152,6 @@ ob_start();
       </thead>
       <tbody>
         <!-- Las solicitudes se insertarán aquí dinámicamente -->
-        <!-- Los botones de impresión se manejan vía JS en la misma pestaña -->
       </tbody>
     </table>
   </div>

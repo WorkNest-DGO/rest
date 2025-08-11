@@ -46,7 +46,17 @@ function llenarTicket(data) {
     }
 
 function imprimirTicket() {
-    window.print();
+        const ticketContainer = document.getElementById('ticketContainer');
+        if (!ticketContainer) return;
+        const ticketContent = ticketContainer.innerHTML;
+        const printWindow = window.open('', '', 'width=400,height=600');
+        printWindow.document.write('<html><head><title>Imprimir Ticket</title>');
+        printWindow.document.write('<link rel="stylesheet" href="../../utils/css/style.css">');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(ticketContent);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -144,9 +154,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderSubcuentas();
         });
         const btnGuardar = document.getElementById('btnGuardarTicket');
-        if (btnGuardar) {
-            // El guardado e impresión se maneja con un listener global
-        }
+        if (btnGuardar) btnGuardar.addEventListener('click', guardarSubcuentas);
     }
 
     function renderProductos() {
@@ -383,15 +391,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             const d = await resp.json();
             if (d.success) {
                 await registrarDesglosePagos(payload.subcuentas);
+                await imprimirTicketsVenta(payload.venta_id);
                 await liberarMesa(payload.venta_id);
-                return true;
             } else {
                 alert(d.mensaje);
             }
         } catch (e) {
             alert('Error al guardar');
         }
-        return false;
     }
 
     async function registrarDesglosePagos(subcuentas) {
@@ -420,6 +427,76 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    async function imprimirTicketsVenta(ventaId) {
+        try {
+            const resp = await fetch('../../api/tickets/reimprimir_ticket.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ venta_id: ventaId })
+            });
+            const data = await resp.json();
+            if (!data.success) {
+                alert(data.mensaje || 'Error al obtener tickets');
+                return;
+            }
+            const tickets = data.resultado.tickets || [];
+            if (!tickets.length) {
+                alert('No hay tickets para imprimir');
+                return;
+            }
+            let html = '<html><head><title>Tickets</title><link rel="stylesheet" href="../../utils/css/style.css"></head><body>';
+            tickets.forEach(t => {
+                html += generarTicketHTML(t) + '<hr>';
+            });
+            html += '<script>window.onload=function(){window.print();}</script></body></html>';
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        } catch (err) {
+            console.error('Error al imprimir tickets', err);
+        }
+    }
+
+    function generarTicketHTML(data) {
+        const productosHtml = (data.productos || []).map(p => {
+            const subtotal = p.cantidad * p.precio_unitario;
+            return `<tr><td>${p.nombre}</td><td>${p.cantidad} x ${p.precio_unitario} = ${subtotal}</td></tr>`;
+        }).join('');
+        let extra = '';
+        if (data.tipo_pago === 'boucher') {
+            extra = `<div><strong>Marca tarjeta:</strong> ${data.tarjeta || 'No definido'}</div>` +
+                    `<div><strong>Banco:</strong> ${data.banco_tarjeta || 'No definido'}</div>` +
+                    `<div><strong>Boucher:</strong> ${data.boucher || 'No definido'}</div>`;
+        } else if (data.tipo_pago === 'cheque') {
+            extra = `<div><strong>No. Cheque:</strong> ${data.cheque_numero || 'No definido'}</div>` +
+                    `<div><strong>Banco:</strong> ${data.banco_cheque || 'No definido'}</div>`;
+        }
+        return `<div>
+            <img src="${data.logo_url || '../../utils/logo.png'}" style="max-width:100px;">
+            <h2>${data.nombre_negocio || data.restaurante || ''}</h2>
+            <div>${data.direccion_negocio || ''}</div>
+            <div>${data.rfc_negocio || ''}</div>
+            <div>${data.telefono_negocio || ''}</div>
+            <div style="margin-bottom:10px;">${data.fecha_fin || data.fecha || ''}</div>
+            <div><strong>Folio:</strong> ${data.folio || ''}</div>
+            <div><strong>Venta:</strong> ${data.venta_id}</div>
+            <div><strong>Sede:</strong> ${data.sede_id || ''}</div>
+            <div><strong>Mesa:</strong> ${data.mesa_nombre || ''}</div>
+            <div><strong>Mesero:</strong> ${data.mesero_nombre || ''}</div>
+            <div><strong>Tipo entrega:</strong> ${data.tipo_entrega || 'N/A'}</div>
+            <div><strong>Tipo pago:</strong> ${data.tipo_pago || 'N/A'}</div>
+            ${extra}
+            <div><strong>Inicio:</strong> ${data.fecha_inicio || ''}</div>
+            <div><strong>Fin:</strong> ${data.fecha_fin || ''}</div>
+            <div><strong>Tiempo:</strong> ${data.tiempo_servicio ? data.tiempo_servicio + ' min' : 'N/A'}</div>
+            <table class="styled-table" style="margin-top: 10px;"><tbody>${productosHtml}</tbody></table>
+            <div class="mt-2"><strong>Propina:</strong> $${parseFloat(data.propina || 0).toFixed(2)}</div>
+            <div class="mt-2"><strong>Cambio:</strong> $${parseFloat(data.cambio || 0).toFixed(2)}</div>
+            <div class="mt-2 mb-2">Total: $${parseFloat(data.total || 0).toFixed(2)}</div>
+            <div>${data.total_letras || ''}</div>
+            <p>Gracias por su compra</p>
+        </div>`;
+    }
 
     async function liberarMesa(ventaId) {
         if (!ventaId) return;
@@ -436,42 +513,4 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (e) {
             console.error('Error al liberar mesa');
         }
-    }
-
-    // Guardar e imprimir en la misma vista
-    document.addEventListener('click', async (e) => {
-        const btn = e.target.closest('#btnGuardarTicket');
-        if (!btn) return;
-
-        e.preventDefault();
-        btn.disabled = true;
-
-        try {
-            const ok = await guardarSubcuentas();
-            if (ok) {
-                await imprimirYVolverAVentas();
-            } else {
-                throw new Error('Error al guardar el ticket');
-            }
-        } catch (err) {
-            alert(err.message || 'Ocurrió un error al guardar e imprimir');
-            btn.disabled = false;
-        }
-    });
-
-    async function imprimirYVolverAVentas() {
-        const destino = 'ventas.php';
-        const goBack = () => window.location.replace(destino);
-
-        const onAfter = () => { window.removeEventListener('afterprint', onAfter); goBack(); };
-        window.addEventListener('afterprint', onAfter);
-
-        const mm = window.matchMedia ? window.matchMedia('print') : null;
-        if (mm) {
-            const onChange = (e) => { if (!e.matches) { mm.removeEventListener('change', onChange); goBack(); } };
-            mm.addEventListener('change', onChange);
-        }
-
-        setTimeout(goBack, 3000);
-        window.print();
     }
