@@ -179,8 +179,6 @@ ob_start();
     <button id="guardarCorteTemporal" class="btn btn-success">Guardar Corte Temporal</button>
   </div>
 </div>
-<!-- Contenedor oculto para impresión del corte con desglose -->
-<div id="printResumenDesglose" style="display:none;"></div>
 
 <!-- Modal Movimiento de Caja -->
 <div class="modal fade" id="modalMovimientoCaja" tabindex="-1" aria-hidden="true">

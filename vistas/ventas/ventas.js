@@ -283,8 +283,32 @@ function guardarCorteTemporal(datos) {
 }
 
 function imprimirCorteTemporal(datos) {
-    const url = '/rest/vistas/corte_caja/imprimir_corte_temporal.php?datos=' + encodeURIComponent(JSON.stringify(datos));
-    window.open(url, '_blank');
+    const win = window.open('', '_blank', 'width=600,height=800');
+    if (!win) {
+        console.error('No fue posible abrir la ventana de impresión');
+        return;
+    }
+    win.document.write('<html><head><title>Corte Temporal</title>');
+    win.document.write('<style>table{border-collapse:collapse;width:100%;}td,th{border:1px solid #000;padding:4px;font-family:monospace;font-size:12px;}</style>');
+    win.document.write('</head><body>');
+    win.document.write('<h2>Corte Temporal</h2>');
+    win.document.write('<table><tbody>');
+    for (const k in datos) {
+        const v = datos[k];
+        if (typeof v === 'object') {
+            win.document.write(`<tr><th colspan="2">${k}</th></tr>`);
+            for (const k2 in v) {
+                const v2 = typeof v[k2] === 'object' ? JSON.stringify(v[k2]) : v[k2];
+                win.document.write(`<tr><td>${k2}</td><td>${v2}</td></tr>`);
+            }
+        } else {
+            win.document.write(`<tr><td>${k}</td><td>${v}</td></tr>`);
+        }
+    }
+    win.document.write('</tbody></table>');
+    win.document.write('</body></html>');
+    win.document.close();
+    win.print();
 }
 
 function mostrarModalDesglose(dataApi) {
@@ -475,10 +499,6 @@ function mostrarModalDesglose(dataApi) {
 function imprimirResumenDesglose(resumen, desglose) {
     const data = { ...resumen, desglose };
     const html = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-    const cont = document.getElementById('printResumenDesglose');
-    if (cont) {
-        cont.innerHTML = html;
-    }
     const win = window.open('', '_blank');
     if (win) {
         win.document.write(html);
