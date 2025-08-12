@@ -102,6 +102,7 @@ let repartidores = [];
 let ticketRequests = [];
 let ventaIdActual = null;
 let mesas = [];
+let modalMovimientoCaja;
 
 function imprimirTicket(ventaId) {
     if (!ventaId) {
@@ -1229,6 +1230,54 @@ if (repartidorEl) {
   repartidorEl.addEventListener('change', actualizarSelectorUsuario);
 }
 
+function actualizarFechaMovimiento() {
+    const now = new Date();
+    const formatted = now.toLocaleString();
+    const fechaInput = document.getElementById('fechaMovimiento');
+    if (fechaInput) {
+        fechaInput.value = formatted;
+    }
+}
+
+function abrirModalMovimiento(tipo) {
+    const tipoSelect = document.getElementById('tipoMovimiento');
+    const montoInput = document.getElementById('montoMovimiento');
+    const motivoInput = document.getElementById('motivoMovimiento');
+    if (tipoSelect) tipoSelect.value = tipo;
+    if (montoInput) montoInput.value = '';
+    if (motivoInput) motivoInput.value = '';
+    actualizarFechaMovimiento();
+    modalMovimientoCaja.show();
+}
+
+async function guardarMovimientoCaja() {
+    const tipo = document.getElementById('tipoMovimiento').value;
+    const monto = parseFloat(document.getElementById('montoMovimiento').value);
+    const motivo = document.getElementById('motivoMovimiento').value.trim();
+    if (!tipo || isNaN(monto) || monto <= 0 || !motivo) {
+        alert('Completa todos los campos obligatorios');
+        return;
+    }
+    try {
+        const resp = await fetch('../../api/corte_caja/movimiento_caja.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tipo_movimiento: tipo, monto, motivo })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            modalMovimientoCaja.hide();
+            alert('Movimiento registrado correctamente');
+            location.reload();
+        } else {
+            alert(data.error || data.mensaje || 'Error al registrar movimiento');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al registrar movimiento');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('#tablaDesglose, .tablaDesglose, .filaDenominacion').forEach(e => e.remove());
     verificarCorte();
@@ -1250,6 +1299,11 @@ document.addEventListener('DOMContentLoaded', () => {
         searchQuery = e.target.value.trim();
         cargarHistorial(1);
     });
+
+    modalMovimientoCaja = new bootstrap.Modal(document.getElementById('modalMovimientoCaja'));
+    document.getElementById('btnDeposito').addEventListener('click', () => abrirModalMovimiento('deposito'));
+    document.getElementById('btnRetiro').addEventListener('click', () => abrirModalMovimiento('retiro'));
+    document.getElementById('guardarMovimiento').addEventListener('click', guardarMovimientoCaja);
 
     // Delegación de eventos con jQuery para botones dinámicos
 $(document).on('click', '.btn-detalle', function () {

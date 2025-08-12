@@ -118,6 +118,12 @@ ob_start();
   </div>
 </div>
 
+<!-- Botones de movimientos de caja -->
+<div class="container mt-3 mb-3 text-center">
+  <button id="btnDeposito" class="btn btn-success me-2">Depósito a caja</button>
+  <button id="btnRetiro" class="btn btn-danger">Retiro de caja</button>
+</div>
+
 <div class="container mt-5">
   <h2 class="section-header">Historial de Ventas</h2>
   <div class="mb-2 d-flex justify-content-between">
@@ -161,6 +167,45 @@ ob_start();
 <!-- Modales -->
 <div id="modal-detalles" class="custom-modal" style="display:none;"></div>
 <div id="modalDesglose" class="custom-modal" style="display:none;"></div>
+
+<!-- Modal Movimiento de Caja -->
+<div class="modal fade" id="modalMovimientoCaja" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Movimiento de caja</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formMovimientoCaja">
+          <div class="mb-3">
+            <label for="tipoMovimiento" class="form-label">Tipo de movimiento</label>
+            <select id="tipoMovimiento" class="form-select">
+              <option value="deposito">Depósito</option>
+              <option value="retiro">Retiro</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="montoMovimiento" class="form-label">Monto</label>
+            <input type="number" step="0.01" class="form-control" id="montoMovimiento" required>
+          </div>
+          <div class="mb-3">
+            <label for="motivoMovimiento" class="form-label">Motivo</label>
+            <textarea id="motivoMovimiento" class="form-control" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="fechaMovimiento" class="form-label">Fecha</label>
+            <input type="text" class="form-control" id="fechaMovimiento" readonly>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="guardarMovimiento">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 
   <?php require_once __DIR__ . '/../footer.php'; ?>
