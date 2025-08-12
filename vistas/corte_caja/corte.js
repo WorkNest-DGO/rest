@@ -1,4 +1,5 @@
 let corteActual = null;
+let corteTemporalData = null;
 const usuarioId = 1; // En entorno real, este valor provendría de la sesión
 let pagina = 1;
 let limite = 15;
@@ -36,8 +37,9 @@ async function verificarCorte() {
         cont.innerHTML = '';
         if (data.success && data.abierto) {
             corteActual = data.corte_id;
-            cont.innerHTML = `<p>Inicio: ${data.fecha_inicio}</p><button class="btn custom-btn" id="btnCerrar">Cerrar Corte</button> <button id="btnImprimir">Imprimir</button>`;
+            cont.innerHTML = `<p>Inicio: ${data.fecha_inicio}</p><button class="btn custom-btn" id="btnCerrar">Cerrar Corte</button> <button id="btnCorteTemporal" class="btn custom-btn btn-warning">Corte Temporal</button> <button id="btnImprimir">Imprimir</button>`;
             document.getElementById('btnCerrar').addEventListener('click', cerrarCorte);
+            document.getElementById('btnCorteTemporal').addEventListener('click', abrirCorteTemporal);
             document.getElementById('btnImprimir').addEventListener('click', imprimirResumen);
         } else {
             corteActual = null;
@@ -112,6 +114,27 @@ async function imprimirResumen() {
     } catch (err) {
         console.error(err);
         alert('Error al imprimir');
+    }
+}
+
+async function abrirCorteTemporal() {
+    try {
+        const r = await fetch('../../api/corte_caja/resumen_corte_actual.php');
+        const res = await r.json();
+        if (res.success) {
+            corteTemporalData = res.resultado;
+            let html = '<ul>';
+            for (const k in res.resultado) {
+                if (typeof res.resultado[k] !== 'object') {
+                    html += `<li><strong>${k}:</strong> ${res.resultado[k]}</li>`;
+                }
+            }
+            html += '</ul>';
+            document.getElementById('corteTemporalDatos').innerHTML = html;
+            document.getElementById('modalCorteTemporal').style.display = 'block';
+        }
+    } catch (err) {
+        console.error(err);
     }
 }
 
@@ -403,6 +426,42 @@ document.addEventListener('DOMContentLoaded', () => {
         btnFiltro.addEventListener('click', () => {
             pagina = 1;
             cargarHistorial();
+        });
+    }
+
+    const closeTemp = document.getElementById('closeCorteTemporal');
+    if (closeTemp) {
+        closeTemp.addEventListener('click', () => {
+            document.getElementById('modalCorteTemporal').style.display = 'none';
+        });
+    }
+    const guardarTemp = document.getElementById('guardarCorteTemporal');
+    if (guardarTemp) {
+        guardarTemp.addEventListener('click', async () => {
+            const obs = document.getElementById('corteTemporalObservaciones').value || '';
+            const payload = {
+                corte_id: corteTemporalData.corte_id,
+                total: corteTemporalData.totalFinal,
+                observaciones: obs,
+                datos_json: corteTemporalData
+            };
+            try {
+                const resp = await fetch('../../api/corte_caja/guardar_corte_temporal.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    alert('Corte temporal guardado correctamente');
+                    document.getElementById('modalCorteTemporal').style.display = 'none';
+                    window.open(`ticket_corte_temporal.php?id=${data.id}`, '_blank');
+                } else {
+                    alert('Error al guardar: ' + (data.message || ''));
+                }
+            } catch (err) {
+                alert('Error al guardar');
+            }
         });
     }
 

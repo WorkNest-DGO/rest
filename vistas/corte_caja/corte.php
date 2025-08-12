@@ -38,6 +38,21 @@ ob_start();
 <div id="resumenModal" class="custom-modal" style="display:none;"></div>
 <div id="modalDesglose" class="custom-modal" style="display:none;"></div>
 
+<!-- Modal Corte Temporal -->
+<div id="modalCorteTemporal" class="custom-modal" style="display:none;">
+  <div class="modal-content">
+    <span id="closeCorteTemporal" class="close">&times;</span>
+    <h2>Corte Temporal</h2>
+    <div id="corteTemporalDatos" style="max-height:300px;overflow:auto;"></div>
+    <div>
+      <label>Observaciones:</label>
+      <textarea id="corteTemporalObservaciones" class="form-control"></textarea>
+    </div>
+    <br>
+    <button id="guardarCorteTemporal" class="btn custom-btn btn-success">Guardar Corte Temporal</button>
+  </div>
+</div>
+
 <!-- Modal para detalle de corte -->
 <div class="modal fade" id="modalDetalle" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog" role="document">
