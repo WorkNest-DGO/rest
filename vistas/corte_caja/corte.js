@@ -1,5 +1,4 @@
 let corteActual = null;
-let corteTemporalData = null;
 const usuarioId = 1; // En entorno real, este valor provendría de la sesión
 let pagina = 1;
 let limite = 15;
@@ -34,10 +33,10 @@ async function verificarCorte() {
         const resp = await fetch('../../api/corte_caja/verificar_corte_abierto.php?usuario_id=' + usuarioId);
         const data = await resp.json();
         const cont = document.getElementById('corteActual');
-        cont.innerHTML = '';
+        cont.innerHTML = '<p>Inicio: ${data.fecha_inicio}</p><button class="btn custom-btn" id="btnCerrar">Cerrar Corte</button> <button id="btnImprimir">Imprimir</button>';
         if (data.success && data.abierto) {
             corteActual = data.corte_id;
-            cont.innerHTML = `<p>Inicio: ${data.fecha_inicio}</p><button class="btn custom-btn" id="btnCerrar">Cerrar Corte</button> <button id="btnCorteTemporal" class="btn custom-btn btn-warning">Corte Temporal</button> <button id="btnImprimir">Imprimir</button>`;
+            cont.innerHTML = ``;
             document.getElementById('btnCerrar').addEventListener('click', cerrarCorte);
             document.getElementById('btnCorteTemporal').addEventListener('click', abrirCorteTemporal);
             document.getElementById('btnImprimir').addEventListener('click', imprimirResumen);
@@ -117,26 +116,6 @@ async function imprimirResumen() {
     }
 }
 
-async function abrirCorteTemporal() {
-    try {
-        const r = await fetch('../../api/corte_caja/resumen_corte_actual.php');
-        const res = await r.json();
-        if (res.success) {
-            corteTemporalData = res.resultado;
-            let html = '<ul>';
-            for (const k in res.resultado) {
-                if (typeof res.resultado[k] !== 'object') {
-                    html += `<li><strong>${k}:</strong> ${res.resultado[k]}</li>`;
-                }
-            }
-            html += '</ul>';
-            document.getElementById('corteTemporalDatos').innerHTML = html;
-            document.getElementById('modalCorteTemporal').style.display = 'block';
-        }
-    } catch (err) {
-        console.error(err);
-    }
-}
 
 async function verDetalle(corteId) {
     try {
