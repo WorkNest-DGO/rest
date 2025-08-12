@@ -1,7 +1,7 @@
-if (Array.isArray(window.catalogoDenominaciones) && catalogoDenominaciones.length > 0) {
-    console.log('Denominaciones cargadas:', catalogoDenominaciones);
+if (typeof catalogoDenominaciones !== 'undefined' && Array.isArray(catalogoDenominaciones) && catalogoDenominaciones.length > 0) {
+  console.log('Denominaciones cargadas:', catalogoDenominaciones);
 } else {
-    console.error('Error al cargar denominaciones');
+  console.warn('Denominaciones no disponibles aún');
 }
 
 let currentPage = 1;
@@ -1321,9 +1321,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('agregarProducto').addEventListener('click', agregarFilaProducto);
     actualizarSelectorUsuario();
 
-    document.getElementById('closeModalCorteTemporal').addEventListener('click', () => {
-        document.getElementById('modalCorteTemporal').style.display = 'none';
-    });
+const btnCloseCT = document.getElementById('closeModalCorteTemporal');
+if (btnCloseCT) {
+  btnCloseCT.addEventListener('click', () => {
+    const modal = document.getElementById('modalCorteTemporal');
+    if (modal) modal.style.display = 'none';
+  });
+}
+
 
     document.getElementById('recordsPerPage').addEventListener('change', e => {
         limit = parseInt(e.target.value);

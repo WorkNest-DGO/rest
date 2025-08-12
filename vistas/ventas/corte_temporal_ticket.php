@@ -1,12 +1,7 @@
 <?php
 require_once __DIR__ . '/../../utils/cargar_permisos.php';
 require_once __DIR__ . '/../../config/db.php';
-$path_actual = str_replace('/rest', '', $_SERVER['PHP_SELF']);
-if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
-    http_response_code(403);
-    echo 'Acceso no autorizado';
-    exit;
-}
+
 
 $corte_id = isset($_GET['corte_id']) ? (int)$_GET['corte_id'] : ($_SESSION['corte_id'] ?? null);
 if (!$corte_id) {
