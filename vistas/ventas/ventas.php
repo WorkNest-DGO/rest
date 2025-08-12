@@ -14,6 +14,45 @@ $denominaciones = $conn->query("SELECT id, descripcion, valor FROM catalogo_deno
 $title = 'Ventas';
 ob_start();
 ?>
+<style>
+  /* Modal básico */
+  .modal-corte.hidden { display: none; }
+  .modal-corte {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+  }
+  .modal-corte__dialog {
+    background: #fff; width: 90%; max-width: 860px; border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.2); overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .modal-corte__header, .modal-corte__footer {
+    padding: 12px 16px; background: #f7f7f7; display: flex; gap: 8px; align-items: center;
+  }
+  .modal-corte__header { justify-content: space-between; }
+  .modal-corte__body { padding: 12px 16px; max-height: 70vh; overflow: auto; }
+  .btn { cursor: pointer; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; background: #fff; }
+  .btn-primary { background: #0057d9; color: #fff; border-color: #0045ad; }
+  .btn-secondary { background: #efefef; }
+  .btn-light { background: transparent; border: none; font-size: 20px; line-height: 20px; }
+  /* Ticket monoespaciado 42 col aprox */
+  .ticket-mono {
+    font-family: "Courier New", ui-monospace, Menlo, Consolas, monospace;
+    white-space: pre; line-height: 1.25; font-size: 13px;
+    width: 80mm; max-width: 100%; margin: 0 auto; background: #fff; padding: 8px;
+    border: 1px dashed #ddd; border-radius: 6px;
+  }
+  /* Ocultar UI al imprimir, dejar solo el <pre> */
+  @media print {
+    body * { visibility: hidden !important; }
+    #modalCortePreview, #modalCortePreview * { visibility: visible !important; }
+    #modalCortePreview { position: static; inset: auto; background: none; }
+    .modal-corte__dialog { box-shadow: none; border: none; }
+    .modal-corte__header, .modal-corte__footer { display: none; }
+    .ticket-mono { border: none; }
+  }
+</style>
 <!-- Page Header Start -->
 <div class="page-header mb-0">
   <div class="container">
@@ -215,6 +254,23 @@ ob_start();
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-primary" id="guardarMovimiento">Guardar</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Corte Preview -->
+<div id="modalCortePreview" class="modal-corte hidden" aria-hidden="true">
+  <div class="modal-corte__dialog">
+    <div class="modal-corte__header">
+      <h3>Previsualización – Corte / Cierre de caja</h3>
+      <button type="button" id="btnCerrarModalCorte" class="btn btn-light">×</button>
+    </div>
+    <div class="modal-corte__body">
+      <pre id="corteTicketText" class="ticket-mono"></pre>
+    </div>
+    <div class="modal-corte__footer">
+      <button type="button" id="btnImprimirCorte" class="btn btn-primary">Imprimir</button>
+      <button type="button" id="btnCerrarModalCorte2" class="btn btn-secondary">Cerrar</button>
     </div>
   </div>
 </div>
