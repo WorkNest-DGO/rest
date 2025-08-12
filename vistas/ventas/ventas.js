@@ -253,7 +253,9 @@ function mostrarModalDesglose(dataApi) {
     if (r.total_folios != null) { html += `<p>Total folios: ${r.total_folios}</p>`; }
   
     html += `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>`;
-    html += `<p>Fondo inicial: $${fondoInicial.toFixed(2)}</p>`;
+    html += '<p>Fondo inicial: $<strong id="lblFondo"></strong></p>';
+    html += '<p>Depósitos: $<strong id="lblTotalDepositos"></strong></p>';
+    html += '<p>Retiros: $<strong id="lblTotalRetiros"></strong></p>';
     html += `<p>Total ingresado: $${totalIngresado.toFixed(2)}</p>`;
     html += `<p>Total productos: $${totalProductos.toFixed(2)}</p>`;
         html += '<p>Totales por tipo de pago:</p><ul>';
@@ -301,6 +303,10 @@ function mostrarModalDesglose(dataApi) {
     html += '</div>';
     modal.innerHTML = html;
     modal.style.display = 'block';
+
+    document.getElementById('lblFondo').textContent = fondoInicial.toFixed(2);
+    document.getElementById('lblTotalDepositos').textContent = (Number.parseFloat(r.total_depositos) || 0).toFixed(2);
+    document.getElementById('lblTotalRetiros').textContent = (Number.parseFloat(r.total_retiros) || 0).toFixed(2);
 
     if (!Array.isArray(catalogoDenominaciones) || !catalogoDenominaciones.length) {
         console.error('Error al cargar denominaciones');

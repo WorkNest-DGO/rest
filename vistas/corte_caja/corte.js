@@ -420,11 +420,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!cont) return;
                 if (data.success) {
                     const resumen = data.resultado || {};
+                    const metodosPago = ['efectivo', 'boucher', 'cheque'];
                     let html = '<h5>Desglose del Corte</h5>';
                     let totalMontos = 0;
                     let totalPropinas = 0;
-                    for (const metodo in resumen) {
-                        if (!Object.prototype.hasOwnProperty.call(resumen, metodo)) continue;
+                    metodosPago.forEach(metodo => {
                         const info = resumen[metodo] || {};
                         const productos = parseFloat(info.productos) || 0;
                         const propina = parseFloat(info.propina) || 0;
@@ -432,14 +432,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         totalPropinas += propina;
                         const totalMetodo = productos + propina;
                         html += `<p>${metodo}: $${totalMetodo.toFixed(2)} (Total: $${productos.toFixed(2)} + Propina: $${propina.toFixed(2)})</p>`;
-                    }
-                    const fondo = parseFloat(data.fondo || 0);
+                    });
+                    const fondo = parseFloat(resumen.fondo) || 0;
+                    const totalDepositos = parseFloat(resumen.total_depositos) || 0;
+                    const totalRetiros = parseFloat(resumen.total_retiros) || 0;
                     const totalEsperado = totalMontos + totalPropinas;
-                    const totalFinal = parseFloat(data.totalFinal || (totalEsperado + fondo));
+                    const totalFinal = parseFloat(resumen.totalFinal) || (totalEsperado + fondo + totalDepositos - totalRetiros);
                     html = `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>` + html;
-                    html += `<p>Fondo Inicial: $${fondo.toFixed(2)}</p>`;
+                    html += '<p>Fondo Inicial: $<strong id="lblFondo"></strong></p>';
+                    html += '<p>Depósitos: $<strong id="lblTotalDepositos"></strong></p>';
+                    html += '<p>Retiros: $<strong id="lblTotalRetiros"></strong></p>';
                     html += `<p><strong>Total Final: $${totalFinal.toFixed(2)}</strong></p>`;
                     cont.innerHTML = html;
+                    document.getElementById('lblFondo').textContent = fondo.toFixed(2);
+                    document.getElementById('lblTotalDepositos').textContent = totalDepositos.toFixed(2);
+                    document.getElementById('lblTotalRetiros').textContent = totalRetiros.toFixed(2);
                 } else {
                     const msg = data.mensaje || 'Error al obtener resumen';
                     cont.innerHTML = `<p class="text-center">${msg}</p>`;
