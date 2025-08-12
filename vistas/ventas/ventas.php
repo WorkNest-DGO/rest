@@ -34,7 +34,23 @@ ob_start();
     <p>Control de ventas</p>
     <h2>Registro de Venta</h2>
   </div>
-
+<div class="container mt-5">
+  <h2 class="section-header">Solicitudes de Ticket</h2>
+  <div class="table-responsive">
+    <table id="solicitudes" class="styled-table">
+      <thead>
+        <tr>
+          <th style="color:#fff">Mesa</th>
+          <th style="color:#fff">Imprimir</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Las solicitudes se insertarán aquí dinámicamente -->
+      </tbody>
+    </table>
+  </div>
+</div>
+<br>
   <div class="row justify-content-center">
     <div class="col-md-10 bg-dark p-4 rounded">
       <div id="controlCaja" class="mb-3 text-white"></div>
@@ -140,22 +156,7 @@ ob_start();
 
 
 
-<div class="container mt-5">
-  <h2 class="section-header">Solicitudes de Ticket</h2>
-  <div class="table-responsive">
-    <table id="solicitudes" class="styled-table">
-      <thead>
-        <tr>
-          <th style="color:#fff">Mesa</th>
-          <th style="color:#fff">Imprimir</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Las solicitudes se insertarán aquí dinámicamente -->
-      </tbody>
-    </table>
-  </div>
-</div>
+
 
 <!-- Modales -->
 <div id="modal-detalles" class="custom-modal" style="display:none;"></div>
