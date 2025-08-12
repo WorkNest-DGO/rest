@@ -69,7 +69,21 @@ $fechaInicio  = $rowFondo['fecha_inicio'] ?? '';
 $resultado['cajero'] = $rowFondo['cajero'] ?? '';
 $stmtFondo->close();
 
-$totalFinal = $totalEsperado + $fondoInicial;
+// Obtener totales de depósitos y retiros para el corte
+$sqlMovimientos = "SELECT
+        SUM(CASE WHEN tipo_movimiento='deposito' THEN monto ELSE 0 END) AS total_depositos,
+        SUM(CASE WHEN tipo_movimiento='retiro' THEN monto ELSE 0 END) AS total_retiros
+    FROM movimientos_caja
+    WHERE corte_id = ?";
+$stmtMovimientos = $conn->prepare($sqlMovimientos);
+$stmtMovimientos->bind_param('i', $corte_id);
+$stmtMovimientos->execute();
+$rowMovimientos = $stmtMovimientos->get_result()->fetch_assoc();
+$totalDepositos = (float)($rowMovimientos['total_depositos'] ?? 0);
+$totalRetiros   = (float)($rowMovimientos['total_retiros'] ?? 0);
+$stmtMovimientos->close();
+
+$totalFinal = $totalEsperado + $fondoInicial + $totalDepositos - $totalRetiros;
 
 // Total de ventas registradas por usuarios con rol de mesero
 $sqlMeseros = "
@@ -156,6 +170,8 @@ $resultado['total_productos'] = $totalProductos;
 $resultado['total_propinas']  = $totalPropinas;
 $resultado['totalEsperado']   = $totalEsperado;
 $resultado['fondo']           = $fondoInicial;
+$resultado['total_depositos'] = $totalDepositos;
+$resultado['total_retiros']   = $totalRetiros;
 $resultado['totalFinal']      = $totalFinal;
 $resultado['corte_id']        = $corte_id;
 $resultado['total_meseros'] = $meseros;
