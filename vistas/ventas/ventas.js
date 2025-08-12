@@ -245,16 +245,31 @@ function mostrarModalDesglose(dataApi) {
     const modal = document.getElementById('modalDesglose');
     let html = '<div style="background:#000;border:1px solid #333;padding:10px;">';
     html += '<h3>Desglose de caja</h3>';
-    html += `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>`;
-    html += `<p>Fondo inicial: $${fondoInicial.toFixed(2)}</p>`;
-    html += `<p>Total productos: $${totalProductos.toFixed(2)}</p>`;
-    html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
-
     // Datos de cabecera del corte (si existen)
     if (r.fecha_inicio)  { html += `<p>Fecha inicio: ${r.fecha_inicio}</p>`; }
     if (r.folio_inicio != null) { html += `<p>Folio inicio: ${r.folio_inicio}</p>`; }
     if (r.folio_fin != null)    { html += `<p>Folio fin: ${r.folio_fin}</p>`; }
     if (r.total_folios != null) { html += `<p>Total folios: ${r.total_folios}</p>`; }
+  
+    html += `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>`;
+    html += `<p>Fondo inicial: $${fondoInicial.toFixed(2)}</p>`;
+    html += `<p>Total ingresado: $${totalIngresado.toFixed(2)}</p>`;
+    html += `<p>Total productos: $${totalProductos.toFixed(2)}</p>`;
+        html += '<p>Totales por tipo de pago:</p><ul>';
+    metodosPago.forEach(tipo => {
+        const p = r[tipo] || {};
+        html += `<li>${tipo}: $${(Number.parseFloat(p.total) || 0).toFixed(2)}</li>`;
+    });
+    html += '</ul>';
+    html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
+    html += '<p>Propinas por tipo de pago:</p><ul>';
+    
+    metodosPago.forEach(tipo => {
+        const p = r[tipo] || {};
+        html += `<li>${tipo}: $${(Number.parseFloat(p.propina) || 0).toFixed(2)}</li></ul>`;
+    });
+    
+
 
     // Listado de ventas por mesero (si existe)
     if (Array.isArray(r.total_meseros) && r.total_meseros.length) {
@@ -278,18 +293,7 @@ function mostrarModalDesglose(dataApi) {
       html += '</ul>';
     }
 
-    html += '<p>Propinas por tipo de pago:</p><ul>';
-    html += `<p>Total ingresado: $${totalIngresado.toFixed(2)}</p>`;
-    metodosPago.forEach(tipo => {
-        const p = r[tipo] || {};
-        html += `<li>${tipo}: $${(Number.parseFloat(p.propina) || 0).toFixed(2)}</li>`;
-    });
-    html += '</ul><p>Totales por tipo de pago:</p><ul>';
-    metodosPago.forEach(tipo => {
-        const p = r[tipo] || {};
-        html += `<li>${tipo}: $${(Number.parseFloat(p.total) || 0).toFixed(2)}</li>`;
-    });
-    html += '</ul>';
+
     html += '<div id="camposDesglose"></div>';
     html += '<p>Efectivo contado: $<span id="totalEfectivo">0.00</span> | Dif.: $<span id="difIngresado">0.00</span></p>';
     html += '<button class="btn custom-btn" id="guardarDesglose">Guardar</button> <button id="cancelarDesglose">Cancelar</button>';
