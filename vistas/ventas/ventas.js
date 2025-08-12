@@ -167,7 +167,7 @@ fetch('../../api/corte_caja/verificar_corte_abierto.php', {
       corteIdActual = data.resultado.corte_id;
       cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCaja">Cerrar caja</button> <button id="btnCorteTemporal" class="btn btn-warning">Corte Temporal</button>`;
       document.getElementById('btnCerrarCaja').addEventListener('click', cerrarCaja);
-      document.getElementById('btnCorteTemporal').addEventListener('click', abrirCorteTemporal);
+      document.getElementById('btnCorteTemporal').addEventListener('click', imprimirCorteTemporal);
       habilitarCobro();
     } else {
       cont.innerHTML = `<button class="btn custom-btn" id="btnAbrirCaja">Abrir caja</button>`;
@@ -229,86 +229,12 @@ async function cerrarCaja() {
     }
 }
 
-function abrirCorteTemporal() {
-    fetch('../../api/corte_caja/resumen_corte_actual.php')
-        .then(res => res.json())
-        .then(data => {
-            if (!data.success) {
-                alert('Error al obtener datos del corte.');
-                return;
-            }
-            const r = data.resultado;
-            document.getElementById('corteTemporalDatos').innerHTML = generarHTMLCorte(r);
-            document.getElementById('modalCorteTemporal').style.display = 'block';
-            document.getElementById('guardarCorteTemporal').onclick = function () {
-                guardarCorteTemporal(r);
-            };
-        });
-}
-
-function generarHTMLCorte(r) {
-    let html = '<table class="table"><tbody>';
-    for (const [key, val] of Object.entries(r)) {
-        html += `<tr><td>${key}</td><td>${val}</td></tr>`;
-    }
-    html += '</tbody></table>';
-    return html;
-}
-
-function guardarCorteTemporal(datos) {
-    const obs = document.getElementById('observacionesCorteTemp').value;
-    const payload = {
-        corte_id: datos.corte_id,
-        usuario_id: usuarioId,
-        total: datos.totalFinal,
-        observaciones: obs,
-        datos_json: JSON.stringify(datos)
-    };
-
-    fetch('../../api/corte_caja/guardar_corte_temporal.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    })
-        .then(res => res.json())
-        .then(resp => {
-            if (resp.success) {
-                alert('Corte temporal guardado.');
-                imprimirCorteTemporal(datos);
-                document.getElementById('modalCorteTemporal').style.display = 'none';
-            } else {
-                alert('Error al guardar corte temporal.');
-            }
-        });
-}
-
-function imprimirCorteTemporal(datos) {
-    const win = window.open('', '_blank', 'width=600,height=800');
-    if (!win) {
-        console.error('No fue posible abrir la ventana de impresión');
+function imprimirCorteTemporal() {
+    if (!corteIdActual) {
+        alert('No hay corte abierto');
         return;
     }
-    win.document.write('<html><head><title>Corte Temporal</title>');
-    win.document.write('<style>table{border-collapse:collapse;width:100%;}td,th{border:1px solid #000;padding:4px;font-family:monospace;font-size:12px;}</style>');
-    win.document.write('</head><body>');
-    win.document.write('<h2>Corte Temporal</h2>');
-    win.document.write('<table><tbody>');
-    for (const k in datos) {
-        const v = datos[k];
-        if (typeof v === 'object') {
-            win.document.write(`<tr><th colspan="2">${k}</th></tr>`);
-            for (const k2 in v) {
-                const v2 = typeof v[k2] === 'object' ? JSON.stringify(v[k2]) : v[k2];
-                win.document.write(`<tr><td>${k2}</td><td>${v2}</td></tr>`);
-            }
-        } else {
-            win.document.write(`<tr><td>${k}</td><td>${v}</td></tr>`);
-        }
-    }
-    win.document.write('</tbody></table>');
-    win.document.write('</body></html>');
-    win.document.close();
-    win.print();
+    window.open(`corte_temporal_ticket.php?corte_id=${encodeURIComponent(corteIdActual)}`, '_blank');
 }
 
 function mostrarModalDesglose(dataApi) {
