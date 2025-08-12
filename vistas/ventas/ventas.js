@@ -399,6 +399,8 @@ function mostrarModalDesglose(dataApi) {
             });
             const data = await resp.json();
             if (data.success) {
+                // Imprimir resumen y desglose en nueva ventana
+                imprimirResumenDesglose(r, detalle);
                 modal.style.display = 'none';
                 await finalizarCorte();
             } else {
@@ -409,6 +411,24 @@ function mostrarModalDesglose(dataApi) {
             alert('Error al guardar desglose');
         }
     });
+}
+
+function imprimirResumenDesglose(resumen, desglose) {
+    const data = { ...resumen, desglose };
+    const html = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+    const cont = document.getElementById('printResumenDesglose');
+    if (cont) {
+        cont.innerHTML = html;
+    }
+    const win = window.open('', '_blank');
+    if (win) {
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        win.print();
+    } else {
+        console.error('No fue posible abrir ventana para impresión');
+    }
 }
 
 async function finalizarCorte() {

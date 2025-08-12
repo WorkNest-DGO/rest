@@ -167,6 +167,8 @@ ob_start();
 <!-- Modales -->
 <div id="modal-detalles" class="custom-modal" style="display:none;"></div>
 <div id="modalDesglose" class="custom-modal" style="display:none;"></div>
+<!-- Contenedor oculto para impresión del corte con desglose -->
+<div id="printResumenDesglose" style="display:none;"></div>
 
 <!-- Modal Movimiento de Caja -->
 <div class="modal fade" id="modalMovimientoCaja" tabindex="-1" aria-hidden="true">
