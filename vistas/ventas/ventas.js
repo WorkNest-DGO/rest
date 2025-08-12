@@ -105,6 +105,199 @@ let ventaIdActual = null;
 let mesas = [];
 let modalMovimientoCaja;
 
+// ====== Utilidades de formateo ======
+const TKT_WIDTH = 42;
+
+function money(n) {
+  const num = Number(n) || 0;
+  return '$ ' + num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function repeat(ch, times) { return ch.repeat(Math.max(0, times)); }
+function padLeft(txt, w)  { const s = String(txt); return (repeat(' ', w) + s).slice(-w); }
+function padRight(txt, w) { const s = String(txt); return (s + repeat(' ', w)).slice(0, w); }
+function center(txt) {
+  const s = String(txt);
+  const pad = Math.max(0, Math.floor((TKT_WIDTH - s.length) / 2));
+  return repeat(' ', pad) + s;
+}
+function lineKV(label, value) {
+  const L = String(label);
+  const V = String(value);
+  const spaces = Math.max(1, TKT_WIDTH - L.length - V.length);
+  return L + repeat(' ', spaces) + V;
+}
+function nowISO() {
+  const d = new Date();
+  const pad = (n)=> String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+// ====== Generador de ticket de cierre ======
+function buildCorteTicket(resultado, cajeroOpt) {
+  // resultado = objeto con la estructura del API: efectivo, boucher, cheque, totales, arrays, etc.
+  const r = resultado || {};
+  const cajero = cajeroOpt || r.cajero || '';
+  const fechaInicio = r.fecha_inicio || '';
+  const fechaFin = nowISO();
+  const folInicio = r.folio_inicio ?? '';
+  const folFin = r.folio_fin ?? '';
+  const folCount = r.total_folios ?? '';
+  const corteId = r.corte_id ?? '';
+
+  const efectivo = r.efectivo || {};
+  const boucher  = r.boucher  || {};
+  const cheque   = r.cheque   || {};
+
+  const totalProductos = Number(r.total_productos || 0);
+  const totalPropinas  = Number(r.total_propinas  || 0);
+  const totalEsperado  = Number(r.totalEsperado   || 0);
+  const fondo          = Number(r.fondo           || 0);
+  const totalDepositos = Number(r.total_depositos || 0);
+  const totalRetiros   = Number(r.total_retiros   || 0);
+  const totalFinal     = Number(r.totalFinal      || 0);
+  const dif            = totalFinal - totalEsperado;
+
+  const totalMeseros   = Array.isArray(r.total_meseros) ? r.total_meseros : [];
+  const totalRapido    = Number(r.total_rapido || 0);
+  const totalRepart    = Array.isArray(r.total_repartidor) ? r.total_repartidor : [];
+
+  const desglose       = Array.isArray(r.desglose) ? r.desglose : [];
+  const desgEfectivo   = desglose.filter(x => (x.tipo_pago || '').toLowerCase() === 'efectivo' && Number(x.denominacion) > 0);
+  const desgNoEf       = desglose.filter(x => (x.tipo_pago || '').toLowerCase() !== 'efectivo');
+
+  // Agrupar no-efectivo por tipo_pago (sumar por 'cantidad' asumiendo que en no-efectivo 'cantidad' representa monto)
+  const mapNoEf = {};
+  desgNoEf.forEach(x => {
+    const key = (x.tipo_pago || 'otro').toLowerCase();
+    const monto = Number(x.cantidad || 0);
+    mapNoEf[key] = (mapNoEf[key] || 0) + monto;
+  });
+
+  let out = '';
+  out += repeat('=', TKT_WIDTH) + '\n';
+  out += center('CORTE / CIERRE DE CAJA') + '\n';
+  out += repeat('=', TKT_WIDTH) + '\n';
+  out += lineKV(`Corte ID: ${corteId}`, '') + '\n';
+  out += lineKV(`Inicio: ${fechaInicio}`, '') + '\n';
+  out += lineKV(`Fin:    ${fechaFin}`, '') + '\n';
+  if (folInicio || folFin || folCount) {
+    const folText = `Folios: ${folInicio}–${folFin} (${folCount})`;
+    out += lineKV(folText, '') + '\n';
+  }
+  out += '\n';
+
+  // Totales por forma de pago (efectivo/boucher/cheque si existen)
+  out += '-- Totales por forma de pago ' + repeat('-', TKT_WIDTH - 27) + '\n';
+  const printFP = (label, obj) => {
+    if (!obj || (obj.productos == null && obj.propina == null && obj.total == null)) return;
+    const prod = money(obj.productos || 0);
+    const prop = money(obj.propina   || 0);
+    const tot  = money(obj.total     || 0);
+    out += lineKV(padRight(label, 12) + ' Prod:', padLeft(prod, 12)) + '\n';
+    out += lineKV(padRight('', 12)    + ' Prop:', padLeft(prop, 12)) + '\n';
+    out += lineKV(padRight('', 12)    + ' TOTAL:', padLeft(tot, 12)) + '\n';
+  };
+  printFP('Efectivo', efectivo);
+  printFP('Boucher',  boucher);
+  printFP('Cheque',   cheque);
+  out += '\n';
+
+  // Conciliación
+  out += repeat('-', TKT_WIDTH) + '\n';
+  out += lineKV('Total productos:',  padLeft(money(totalProductos), 14)) + '\n';
+  out += lineKV('Total propinas:',   padLeft(money(totalPropinas), 14)) + '\n';
+  out += lineKV('Total esperado:',   padLeft(money(totalEsperado), 14)) + '\n';
+  out += lineKV('Fondo inicial:',    padLeft(money(fondo), 14)) + '\n';
+  out += lineKV('Depósitos:',        padLeft(money(totalDepositos), 14)) + '\n';
+  out += lineKV('Retiros:',          padLeft(money(totalRetiros), 14)) + '\n';
+  out += repeat('-', TKT_WIDTH) + '\n';
+  out += lineKV('Conteo (total final):', padLeft(money(totalFinal), 14)) + '\n';
+  const difLabel = 'DIF (Conteo - Esperado):';
+  out += lineKV(difLabel, padLeft(money(dif), 14)) + '\n';
+  out += repeat('-', TKT_WIDTH) + '\n\n';
+
+  // Meseros
+  if (totalMeseros.length) {
+    out += '-- Ventas por mesero ' + repeat('-', TKT_WIDTH - 22) + '\n';
+    totalMeseros.forEach(m => {
+      const name = String(m.nombre || '').slice(0, 24);
+      const val  = money(Number(m.total || 0));
+      out += lineKV(padRight(name, 28), padLeft(val, 12)) + '\n';
+    });
+    out += '\n';
+  }
+
+  // Mostrador / rápido
+  if (!isNaN(totalRapido)) {
+    out += lineKV('Ventas mostrador/rápido .....', padLeft(money(totalRapido), 12)) + '\n\n';
+  }
+
+  // Repartidores
+  if (totalRepart.length) {
+    out += '-- Repartidores ' + repeat('-', TKT_WIDTH - 16) + '\n';
+    totalRepart.forEach(x => {
+      const name = String(x.nombre || '').slice(0, 24);
+      const val  = money(Number(x.total || 0));
+      out += lineKV(padRight(name, 28), padLeft(val, 12)) + '\n';
+    });
+    out += '\n';
+  }
+
+  // Desglose
+  out += '-- Desglose de denominaciones ' + repeat('-', TKT_WIDTH - 29) + '\n';
+  if (desgEfectivo.length) {
+    out += '[EFECTIVO]\n';
+    desgEfectivo.forEach(x => {
+      const den  = Number(x.denominacion || 0);
+      const cant = Number(x.cantidad || 0);
+      const subtotal = den * cant;
+      const left = `${money(den)}  x ${padLeft(cant, 5)}  =`;
+      out += lineKV(left, padLeft(money(subtotal), 12)) + '\n';
+    });
+    out += '\n';
+  }
+  if (Object.keys(mapNoEf).length) {
+    out += '[NO EFECTIVO]\n';
+    Object.keys(mapNoEf).forEach(k => {
+      const label = k.charAt(0).toUpperCase() + k.slice(1);
+      out += lineKV(padRight(label, 30), padLeft(money(mapNoEf[k]), 12)) + '\n';
+    });
+    out += '\n';
+  }
+
+  out += repeat('-', TKT_WIDTH) + '\n';
+  out += lineKV('Impreso:', nowISO()) + '\n';
+  if (cajero) out += lineKV('Cajero:', cajero) + '\n';
+  out += repeat('=', TKT_WIDTH) + '\n';
+  return out;
+}
+
+// ====== Controladores del modal ======
+function showCortePreview(resultado, cajero) {
+  try {
+    const txt = buildCorteTicket(resultado, cajero);
+    const pre = document.getElementById('corteTicketText');
+    pre.textContent = txt;
+
+    const modal = document.getElementById('modalCortePreview');
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+  } catch (e) {
+    console.error('Error construyendo ticket de corte:', e);
+    alert('No se pudo generar la previsualización del corte.');
+  }
+}
+
+(function wireModalCorte() {
+  const modal = document.getElementById('modalCortePreview');
+  const btnX  = document.getElementById('btnCerrarModalCorte');
+  const btnC  = document.getElementById('btnCerrarModalCorte2');
+  const btnP  = document.getElementById('btnImprimirCorte');
+  if (btnX) btnX.addEventListener('click', ()=> { modal.classList.add('hidden'); modal.setAttribute('aria-hidden','true'); });
+  if (btnC) btnC.addEventListener('click', ()=> { modal.classList.add('hidden'); modal.setAttribute('aria-hidden','true'); });
+  if (btnP) btnP.addEventListener('click', ()=> { window.print(); });
+})();
+
 function imprimirTicket(ventaId) {
     if (!ventaId) {
         const v = document.getElementById('venta_id');
@@ -483,8 +676,8 @@ function mostrarModalDesglose(dataApi) {
             });
             const data = await resp.json();
             if (data.success) {
-                // Imprimir resumen y desglose en nueva ventana
-                imprimirResumenDesglose(r, detalle);
+                // Mostrar vista previa del corte
+                showCortePreview({ ...r, desglose: detalle });
                 modal.style.display = 'none';
                 await finalizarCorte();
             } else {
@@ -495,20 +688,6 @@ function mostrarModalDesglose(dataApi) {
             alert('Error al guardar desglose');
         }
     });
-}
-
-function imprimirResumenDesglose(resumen, desglose) {
-    const data = { ...resumen, desglose };
-    const html = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-    const win = window.open('', '_blank');
-    if (win) {
-        win.document.write(html);
-        win.document.close();
-        win.focus();
-        win.print();
-    } else {
-        console.error('No fue posible abrir ventana para impresión');
-    }
 }
 
 async function finalizarCorte() {
