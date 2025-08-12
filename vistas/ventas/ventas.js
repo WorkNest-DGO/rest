@@ -228,17 +228,19 @@ async function cerrarCaja() {
 }
 
 function mostrarModalDesglose(dataApi) {
-    const resumenPagos = dataApi.resultado || {};
-    let totalProductos = 0;
-    let totalPropinas  = 0;
-    for (const tipo in resumenPagos) {
-        const data = resumenPagos[tipo];
-        totalProductos += parseFloat(data.productos) || 0;
-        totalPropinas  += parseFloat(data.propina) || 0;
-    }
-    const totalEsperado  = totalProductos + totalPropinas;
-    const fondoInicial   = parseFloat(dataApi.fondo) || 0;
-    const totalIngresado = totalEsperado + fondoInicial;
+    const r = dataApi?.resultado || {};
+    const metodosPago = ['efectivo', 'boucher', 'cheque'];
+
+    // Usa los totales del API si vienen; si no, calcula con metodosPago
+    const totalProductos = Number.parseFloat(r.total_productos) ||
+      metodosPago.reduce((acc, m) => acc + (Number.parseFloat(r[m]?.productos) || 0), 0);
+
+    const totalPropinas = Number.parseFloat(r.total_propinas) ||
+      metodosPago.reduce((acc, m) => acc + (Number.parseFloat(r[m]?.propina) || 0), 0);
+
+    const totalEsperado  = Number.parseFloat(r.totalEsperado) || (totalProductos + totalPropinas);
+    const fondoInicial   = Number.parseFloat(r.fondo) || 0;
+    const totalIngresado = Number.parseFloat(r.totalFinal) || (totalEsperado + fondoInicial);
 
     const modal = document.getElementById('modalDesglose');
     let html = '<div style="background:#000;border:1px solid #333;padding:10px;">';
@@ -247,17 +249,46 @@ function mostrarModalDesglose(dataApi) {
     html += `<p>Fondo inicial: $${fondoInicial.toFixed(2)}</p>`;
     html += `<p>Total productos: $${totalProductos.toFixed(2)}</p>`;
     html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
+
+    // Datos de cabecera del corte (si existen)
+    if (r.fecha_inicio)  { html += `<p>Fecha inicio: ${r.fecha_inicio}</p>`; }
+    if (r.folio_inicio != null) { html += `<p>Folio inicio: ${r.folio_inicio}</p>`; }
+    if (r.folio_fin != null)    { html += `<p>Folio fin: ${r.folio_fin}</p>`; }
+    if (r.total_folios != null) { html += `<p>Total folios: ${r.total_folios}</p>`; }
+
+    // Listado de ventas por mesero (si existe)
+    if (Array.isArray(r.total_meseros) && r.total_meseros.length) {
+      html += '<h4>Ventas por mesero</h4><ul>';
+      r.total_meseros.forEach(m => {
+        const nombre = (m?.nombre ?? '').toString();
+        const total  = Number.parseFloat(m?.total) || 0;
+        html += `<li>${nombre}: $${total.toFixed(2)}</li>`;
+      });
+      html += '</ul>';
+    }
+
+    // Totales por repartidor (si existe)
+    if (Array.isArray(r.total_repartidor) && r.total_repartidor.length) {
+      html += '<h4>Total por repartidor</h4><ul>';
+      r.total_repartidor.forEach(x => {
+        const nombre = (x?.nombre ?? '').toString();
+        const total  = Number.parseFloat(x?.total) || 0;
+        html += `<li>${nombre}: $${total.toFixed(2)}</li>`;
+      });
+      html += '</ul>';
+    }
+
     html += '<p>Propinas por tipo de pago:</p><ul>';
     html += `<p>Total ingresado: $${totalIngresado.toFixed(2)}</p>`;
-    for (const tipo in resumenPagos) {
-        const p = resumenPagos[tipo];
-        html += `<li>${tipo}: $${(parseFloat(p.propina) || 0).toFixed(2)}</li>`;
-    }
+    metodosPago.forEach(tipo => {
+        const p = r[tipo] || {};
+        html += `<li>${tipo}: $${(Number.parseFloat(p.propina) || 0).toFixed(2)}</li>`;
+    });
     html += '</ul><p>Totales por tipo de pago:</p><ul>';
-    for (const tipo in resumenPagos) {
-        const p = resumenPagos[tipo];
-        html += `<li>${tipo}: $${(parseFloat(p.total) || 0).toFixed(2)}</li>`;
-    }
+    metodosPago.forEach(tipo => {
+        const p = r[tipo] || {};
+        html += `<li>${tipo}: $${(Number.parseFloat(p.total) || 0).toFixed(2)}</li>`;
+    });
     html += '</ul>';
     html += '<div id="camposDesglose"></div>';
     html += '<p>Efectivo contado: $<span id="totalEfectivo">0.00</span> | Dif.: $<span id="difIngresado">0.00</span></p>';
@@ -328,20 +359,20 @@ function mostrarModalDesglose(dataApi) {
         });
 
         // Agregar montos de boucher y cheque automáticamente para registro
-        if (resumenPagos.boucher) {
+        if (r.boucher) {
             detalle.push({
                 denominacion_id: null,
-                cantidad: resumenPagos.boucher.total,
+                cantidad: r.boucher.total,
                 tipo_pago: 'boucher',
-                denominacion: resumenPagos.boucher.total
+                denominacion: r.boucher.total
             });
         }
-        if (resumenPagos.cheque) {
+        if (r.cheque) {
             detalle.push({
                 denominacion_id: null,
-                cantidad: resumenPagos.cheque.total,
+                cantidad: r.cheque.total,
                 tipo_pago: 'cheque',
-                denominacion: resumenPagos.cheque.total
+                denominacion: r.cheque.total
             });
         }
 
