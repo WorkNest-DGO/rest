@@ -167,6 +167,18 @@ ob_start();
 <!-- Modales -->
 <div id="modal-detalles" class="custom-modal" style="display:none;"></div>
 <div id="modalDesglose" class="custom-modal" style="display:none;"></div>
+<!-- Modal Corte Temporal -->
+<div id="modalCorteTemporal" class="custom-modal" style="display:none;">
+  <div class="modal-content">
+    <span id="closeModalCorteTemporal" class="close">&times;</span>
+    <h2>Corte Temporal</h2>
+    <div id="corteTemporalDatos"></div>
+    <label for="observacionesCorteTemp">Observaciones:</label>
+    <textarea id="observacionesCorteTemp" rows="3" style="width:100%;"></textarea>
+    <br><br>
+    <button id="guardarCorteTemporal" class="btn btn-success">Guardar Corte Temporal</button>
+  </div>
+</div>
 <!-- Contenedor oculto para impresión del corte con desglose -->
 <div id="printResumenDesglose" style="display:none;"></div>
 

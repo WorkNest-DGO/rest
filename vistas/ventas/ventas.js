@@ -165,8 +165,9 @@ fetch('../../api/corte_caja/verificar_corte_abierto.php', {
 
     if (data.success && data.resultado.abierto) {
       corteIdActual = data.resultado.corte_id;
-      cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCaja">Cerrar caja</button>`;
+      cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCaja">Cerrar caja</button> <button id="btnCorteTemporal" class="btn btn-warning">Corte Temporal</button>`;
       document.getElementById('btnCerrarCaja').addEventListener('click', cerrarCaja);
+      document.getElementById('btnCorteTemporal').addEventListener('click', abrirCorteTemporal);
       habilitarCobro();
     } else {
       cont.innerHTML = `<button class="btn custom-btn" id="btnAbrirCaja">Abrir caja</button>`;
@@ -226,6 +227,64 @@ async function cerrarCaja() {
         console.error("Error al obtener resumen:", error);
         alert("Ocurrió un error inesperado al consultar el corte.");
     }
+}
+
+function abrirCorteTemporal() {
+    fetch('../../api/corte_caja/resumen_corte_actual.php')
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {
+                alert('Error al obtener datos del corte.');
+                return;
+            }
+            const r = data.resultado;
+            document.getElementById('corteTemporalDatos').innerHTML = generarHTMLCorte(r);
+            document.getElementById('modalCorteTemporal').style.display = 'block';
+            document.getElementById('guardarCorteTemporal').onclick = function () {
+                guardarCorteTemporal(r);
+            };
+        });
+}
+
+function generarHTMLCorte(r) {
+    let html = '<table class="table"><tbody>';
+    for (const [key, val] of Object.entries(r)) {
+        html += `<tr><td>${key}</td><td>${val}</td></tr>`;
+    }
+    html += '</tbody></table>';
+    return html;
+}
+
+function guardarCorteTemporal(datos) {
+    const obs = document.getElementById('observacionesCorteTemp').value;
+    const payload = {
+        corte_id: datos.corte_id,
+        usuario_id: usuarioId,
+        total: datos.totalFinal,
+        observaciones: obs,
+        datos_json: JSON.stringify(datos)
+    };
+
+    fetch('../../api/corte_caja/guardar_corte_temporal.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+        .then(res => res.json())
+        .then(resp => {
+            if (resp.success) {
+                alert('Corte temporal guardado.');
+                imprimirCorteTemporal(datos);
+                document.getElementById('modalCorteTemporal').style.display = 'none';
+            } else {
+                alert('Error al guardar corte temporal.');
+            }
+        });
+}
+
+function imprimirCorteTemporal(datos) {
+    const url = '/rest/vistas/corte_caja/imprimir_corte_temporal.php?datos=' + encodeURIComponent(JSON.stringify(datos));
+    window.open(url, '_blank');
 }
 
 function mostrarModalDesglose(dataApi) {
@@ -1315,6 +1374,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('registrarVenta').addEventListener('click', registrarVenta);
     document.getElementById('agregarProducto').addEventListener('click', agregarFilaProducto);
     actualizarSelectorUsuario();
+
+    document.getElementById('closeModalCorteTemporal').addEventListener('click', () => {
+        document.getElementById('modalCorteTemporal').style.display = 'none';
+    });
 
     document.getElementById('recordsPerPage').addEventListener('change', e => {
         limit = parseInt(e.target.value);
