@@ -1260,7 +1260,7 @@ async function verDetalles(id) {
                     : 'Venta rápida';
             let html = `<h3>Detalle de venta</h3>
                         <p>Tipo: ${info.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${info.mesero}</p>`;
-            html += `<table border="1"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th></tr></thead><tbody>`;
+            html += `<table border="1"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th>Hora entrega</th><th></th></tr></thead><tbody>`;
             info.productos.forEach(p => {
                 const btnEliminar = p.estado_producto !== 'entregado'
                     ? `<button class="btn custom-btn delDetalle" data-id="${p.id}">Eliminar</button>`
@@ -1269,7 +1269,8 @@ async function verDetalles(id) {
                     ? ` <button class="btn btn-success btn-entregar" data-id="${p.id}">Entregar</button>`
                     : '';
                 const est = (p.estado_producto || '').replace('_', ' ');
-                html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${est}</td>` +
+                const hora = p.entregado_hr ? p.entregado_hr : '';
+                html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${est}</td><td>${hora}</td>` +
                         `<td>${btnEliminar}${btnEntregar}</td></tr>`;
             });
             html += `</tbody></table>`;
