@@ -24,7 +24,7 @@ ob_start();
       <option value="domicilio">Domicilio</option>
       <option value="rapido">Rápido</option>
     </select>
-    <button id="btnRefrescar" class="btn btn-primary">Refrescar</button>
+    <button id="btnRefrescar" class="btn custom-btn">Refrescar</button>
   </div>
 </div>
 

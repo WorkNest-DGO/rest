@@ -359,7 +359,7 @@ fetch('../../api/corte_caja/verificar_corte_abierto.php', {
 
     if (data.success && data.resultado.abierto) {
       corteIdActual = data.resultado.corte_id;
-      cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCaja">Cerrar caja</button> <button id="btnCorteTemporal" class="btn btn-warning">Corte Temporal</button>`;
+      cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCaja">Cerrar caja</button> <button id="btnCorteTemporal" class="btn custom-btn">Corte Temporal</button>`;
       document.getElementById('btnCerrarCaja').addEventListener('click', cerrarCaja);
       document.getElementById('btnCorteTemporal').addEventListener('click', abrirCorteTemporal);
       habilitarCobro();
@@ -576,7 +576,7 @@ function mostrarModalDesglose(dataApi) {
 
     html += '<div id="camposDesglose"></div>';
     html += '<p>Efectivo contado: $<span id="totalEfectivo">0.00</span> | Dif.: $<span id="difIngresado">0.00</span></p>';
-    html += '<button class="btn custom-btn" id="guardarDesglose">Guardar</button> <button id="cancelarDesglose">Cancelar</button>';
+    html += '<button class="btn custom-btn" id="guardarDesglose">Guardar</button> <button class="btn custom-btn" id="cancelarDesglose">Cancelar</button>';
     html += '</div>';
     modal.innerHTML = html;
     modal.style.display = 'block';
@@ -1280,7 +1280,7 @@ async function verDetalles(id) {
             html += `<select id="detalle_producto"></select>`;
             html += `<input type="number" id="detalle_cantidad" value="1" min="1">`;
             html += `<button class="btn custom-btn" id="addDetalle">Agregar</button>`;
-            html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button id="cerrarDetalle">Cerrar</button>`;
+            html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button  class="btn custom-btn" id="cerrarDetalle">Cerrar</button>`;
 
             contenedor.innerHTML = html;
             contenedor.style.display = 'block';

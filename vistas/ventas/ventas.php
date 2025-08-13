@@ -159,8 +159,8 @@ ob_start();
 
 <!-- Botones de movimientos de caja -->
 <div class="container mt-3 mb-3 text-center">
-  <button id="btnDeposito" class="btn btn-success me-2">Depósito a caja</button>
-  <button id="btnRetiro" class="btn btn-danger">Retiro de caja</button>
+  <button id="btnDeposito" type="button" class="btn custom-btn">Depósito a caja</button>
+  <button id="btnRetiro" type="button" class="btn custom-btn">Retiro de caja</button>
 </div>
 
 <div class="container mt-5">
