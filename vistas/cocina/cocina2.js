@@ -42,7 +42,7 @@
         <div class='title'>${it.producto} <small>x${it.cantidad}</small></div>
         <div class='meta'>
           <span>${it.destino}</span>
-          <span>${formatHora(it.hora)}</span>
+          <span>${formatHora(it.estado === 'entregado' ? it.entregado_hr : it.hora)}</span>
           ${it.observaciones ? `<span>Obs: ${escapeHtml(it.observaciones)}</span>` : ''}
         </div>
       `;

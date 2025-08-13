@@ -56,7 +56,11 @@ if (!isset($transiciones[$actual]) || $transiciones[$actual] !== $nuevo_estado) 
 
 // La actualización del estado ya no depende de triggers o procedimientos
 // almacenados. Todo se realiza directamente desde PHP.
-$upd = $conn->prepare('UPDATE venta_detalles SET estado_producto = ? WHERE id = ?');
+if ($nuevo_estado === 'entregado') {
+    $upd = $conn->prepare("UPDATE venta_detalles SET estado_producto = ?, entregado_hr = IF(entregado_hr IS NULL, NOW(), entregado_hr) WHERE id = ?");
+} else {
+    $upd = $conn->prepare('UPDATE venta_detalles SET estado_producto = ? WHERE id = ?');
+}
 if (!$upd) {
     error('Error al preparar actualización: ' . $conn->error);
 }
