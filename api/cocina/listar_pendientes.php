@@ -11,7 +11,6 @@ $query = "SELECT
             p.nombre AS producto,
             d.cantidad,
             d.created_at,
-            d.entregado_hr,
             d.estado_producto,
             d.observaciones,
             d.id AS detalle_id
@@ -34,7 +33,6 @@ while ($row = $result->fetch_assoc()) {
         'producto'      => $row['producto'],
         'cantidad'      => (int) $row['cantidad'],
         'hora'          => $row['created_at'],
-        'entregado_hr'  => $row['entregado_hr'],
         'estado'        => $row['estado_producto'],
         'observaciones' => $row['observaciones'],
         'detalle_id'    => (int) $row['detalle_id']

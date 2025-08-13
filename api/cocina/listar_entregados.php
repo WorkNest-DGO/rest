@@ -11,8 +11,6 @@ $query = "SELECT
             p.nombre AS producto,
             d.cantidad,
             d.created_at,
-            d.entregado_hr,
-            d.estado_producto,
             d.id AS detalle_id
           FROM venta_detalles d
           JOIN ventas v ON v.id = d.venta_id
@@ -30,14 +28,12 @@ if (!$result) {
 $entregados = [];
 while ($row = $result->fetch_assoc()) {
     $entregados[] = [
-        'destino'      => $row['destino'],
-        'tipo'         => $row['tipo_entrega'],
-        'producto'     => $row['producto'],
-        'cantidad'     => (int) $row['cantidad'],
-        'hora'         => $row['entregado_hr'],
-        'entregado_hr' => $row['entregado_hr'],
-        'estado'       => $row['estado_producto'],
-        'detalle_id'   => (int) $row['detalle_id']
+        'destino'    => $row['destino'],
+        'tipo'       => $row['tipo_entrega'],
+        'producto'   => $row['producto'],
+        'cantidad'   => (int) $row['cantidad'],
+        'hora'       => $row['created_at'],
+        'detalle_id' => (int) $row['detalle_id']
     ];
 }
 

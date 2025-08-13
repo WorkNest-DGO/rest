@@ -278,7 +278,7 @@ function cerrarModal() {
 function mostrarModalDetalle(datos, ventaId, mesaId, estado, meseroId) {
     const modal = document.getElementById('modal-detalle');
     let html = `<h3>Mesa ${datos.mesa} - Venta ${ventaId || ''}</h3>`;
-    html += `<table border="1"><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th>Hora entrega</th><th></th><th></th></tr></thead><tbody>`;
+    html += `<table border="1"><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th><th></th></tr></thead><tbody>`;
     datos.productos.forEach(p => {
         const est = p.estado_producto;
         const btnEliminar = (est !== 'en_preparacion' && est !== 'entregado')
@@ -288,8 +288,7 @@ function mostrarModalDetalle(datos, ventaId, mesaId, estado, meseroId) {
         const btnEntregar = est !== 'entregado'
             ? `<button class="entregar" data-id="${p.id}" ${puedeEntregar ? '' : 'disabled'}>Marcar como entregado</button>`
             : '';
-        const hora = p.entregado_hr ? p.entregado_hr : '';
-        html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${textoEstado(est)}</td><td>${hora}</td><td>${btnEliminar}</td><td>${btnEntregar}</td></tr>`;
+        html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${textoEstado(est)}</td><td>${btnEliminar}</td><td>${btnEntregar}</td></tr>`;
     });
     html += `</tbody></table>`;
     html += `<h4>Mesero</h4>`;

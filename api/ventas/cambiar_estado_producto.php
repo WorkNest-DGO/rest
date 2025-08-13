@@ -19,11 +19,7 @@ if (!in_array($estado, $permitidos, true)) {
     error('Estado no permitido');
 }
 
-if ($estado === 'entregado') {
-    $stmt = $conn->prepare("UPDATE venta_detalles SET estado_producto = ?, entregado_hr = IF(entregado_hr IS NULL, NOW(), entregado_hr) WHERE id = ?");
-} else {
-    $stmt = $conn->prepare('UPDATE venta_detalles SET estado_producto = ? WHERE id = ?');
-}
+$stmt = $conn->prepare('UPDATE venta_detalles SET estado_producto = ? WHERE id = ?');
 if (!$stmt) {
     error('Error al preparar actualización: ' . $conn->error);
 }

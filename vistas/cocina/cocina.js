@@ -88,7 +88,7 @@ async function cargarEntregados() {
                     contCards.appendChild(header);
                     grupo = p.destino;
                 }
-                const t = tiempoTranscurrido(p.entregado_hr);
+                const t = tiempoTranscurrido(p.hora);
                 const card = document.createElement('div');
                 card.className = 'menu-item';
                 card.innerHTML = `

@@ -34,7 +34,7 @@ if (!$detalle) {
     error('Detalle no encontrado');
 }
 
-$upd = $conn->prepare("UPDATE venta_detalles SET estado_producto = 'entregado', entregado_hr = IF(entregado_hr IS NULL, NOW(), entregado_hr) WHERE id = ?");
+$upd = $conn->prepare("UPDATE venta_detalles SET estado_producto = 'entregado' WHERE id = ?");
 if (!$upd) {
     error('Error al preparar actualización: ' . $conn->error);
 }
