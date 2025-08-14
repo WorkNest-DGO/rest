@@ -29,7 +29,7 @@ ob_start();
   <h1 class="section-header">Inventario</h1>
 
   <div class="mb-3 text-end">
-    <button class="btn custom-btn" id="agregarProducto" onclick="abrirModalAgregar()">Agregar producto</button>
+    <button class="btn custom-btn" id="agregarProducto">Agregar producto</button>
   </div>
 
   <div class="table-responsive">
@@ -50,36 +50,65 @@ ob_start();
   </div>
 </div>
 
-<div id="modalAgregar" class="modal" style="display:none;">
-  <div class="modal-content">
-    <h2>Agregar Producto</h2>
-    <form id="formAgregar">
-      <label>Nombre:</label>
-      <input type="text" id="nombreProducto" required><br>
-      <label>Precio:</label>
-      <input type="number" step="0.01" id="precioProducto" required><br>
-      <label>Descripción:</label>
-      <textarea id="descripcionProducto"></textarea><br>
-      <label>Existencia:</label>
-      <input type="number" id="existenciaProducto" required><br>
-      <div class="modal-buttons">
-        <button class="btn custom-btn" type="submit">Guardar</button>
-        <button class="btn custom-btn" type="button" onclick="cerrarModal()">Cancelar</button>
+<!-- MODAL NORMALIZED 2025-08-14 -->
+<div class="modal fade" id="modalAgregar" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="formAgregar">
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Producto</h5>
+          <button type="button" class="close" onclick="cerrarModalAgregar()" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="nombreProducto">Nombre:</label>
+            <input type="text" id="nombreProducto" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="precioProducto">Precio:</label>
+            <input type="number" step="0.01" id="precioProducto" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="descripcionProducto">Descripción:</label>
+            <textarea id="descripcionProducto" class="form-control"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="existenciaProducto">Existencia:</label>
+            <input type="number" id="existenciaProducto" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn custom-btn" type="submit">Guardar</button>
+          <button class="btn custom-btn" type="button" onclick="cerrarModalAgregar()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NORMALIZED 2025-08-14 -->
+<div class="modal fade" id="modalAlerta" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitulo">Resultado</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
-    </form>
+      <div class="modal-body">
+        <p id="mensajeModal"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn custom-btn" data-dismiss="modal">Aceptar</button>
+      </div>
+    </div>
   </div>
 </div>
 
-
-<div id="modalAlerta" class="modal-style" style="display:none;">
-  <div class="modal-content-style">
-    <h3 id="modalTitulo">Resultado</h3>
-    <p id="mensajeModal"></p>
-    <button class="btn custom-btn" id="cerrarModal">Aceptar</button>
-  </div>
-</div>
-
-<!-- Modal Bootstrap para confirmación -->
+<!-- MODAL NORMALIZED 2025-08-14 -->
 <div class="modal fade" id="modalConfirmacion" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content custom-modal">
@@ -93,7 +122,7 @@ ob_start();
   </div>
 </div>
 
-
+<script src="../../utils/js/modal-lite.js"></script>
 <script src="inventario.js"></script>
 <?php
 $content = ob_get_clean();
