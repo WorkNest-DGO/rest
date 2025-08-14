@@ -35,22 +35,50 @@ ob_start();
 </div>
 
 <!-- Modales -->
-<div id="resumenModal" class="custom-modal" style="display:none;"></div>
-<div id="modalDesglose" class="custom-modal" style="display:none;"></div>
+<!-- MODAL NORMALIZED 2025-08-14 -->
+<div class="modal fade" id="resumenModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Ventas del corte</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body"><!-- contenido dinámico --></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
+<!-- MODAL NORMALIZED 2025-08-14 -->
+<div class="modal fade" id="modalDesglose" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Desglose de caja</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body"><!-- contenido dinámico --></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-
-<!-- Modal para detalle de corte -->
+<!-- MODAL NORMALIZED 2025-08-14 -->
 <div class="modal fade" id="modalDetalle" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Detalle de corte</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       </div>
       <div class="modal-body" id="modalDetalleContenido"><!-- Se llena dinámicamente con detalles de efectivo, boucher y cheque --></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -103,6 +131,7 @@ ob_start();
 
 </div>
 <?php require_once __DIR__ . '/../footer.php'; ?>
+<script src="../../utils/js/modal-lite.js"></script>
 <script src="corte.js"></script>
     </body>
 </html>
