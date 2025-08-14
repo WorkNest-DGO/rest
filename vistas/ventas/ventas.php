@@ -15,41 +15,18 @@ $title = 'Ventas';
 ob_start();
 ?>
 <style>
-  /* Modal básico */
-  .modal-corte.hidden { display: none; }
-  .modal-corte {
-    position: fixed; inset: 0; background: rgba(0,0,0,.45);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 9999;
-  }
-  .modal-corte__dialog {
-    background: #fff; width: 90%; max-width: 860px; border-radius: 10px;
-    box-shadow: 0 10px 30px rgba(0,0,0,.2); overflow: hidden;
-    display: flex; flex-direction: column;
-  }
-  .modal-corte__header, .modal-corte__footer {
-    padding: 12px 16px; background: #f7f7f7; display: flex; gap: 8px; align-items: center;
-  }
-  .modal-corte__header { justify-content: space-between; }
-  .modal-corte__body { padding: 12px 16px; max-height: 70vh; overflow: auto; }
-  .btn { cursor: pointer; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; background: #fff; }
-  .btn-primary { background: #0057d9; color: #fff; border-color: #0045ad; }
-  .btn-secondary { background: #efefef; }
-  .btn-light { background: transparent; border: none; font-size: 20px; line-height: 20px; }
-  /* Ticket monoespaciado 42 col aprox */
   .ticket-mono {
     font-family: "Courier New", ui-monospace, Menlo, Consolas, monospace;
     white-space: pre; line-height: 1.25; font-size: 13px;
     width: 80mm; max-width: 100%; margin: 0 auto; background: #fff; padding: 8px;
     border: 1px dashed #ddd; border-radius: 6px;
   }
-  /* Ocultar UI al imprimir, dejar solo el <pre> */
   @media print {
     body * { visibility: hidden !important; }
     #modalCortePreview, #modalCortePreview * { visibility: visible !important; }
     #modalCortePreview { position: static; inset: auto; background: none; }
-    .modal-corte__dialog { box-shadow: none; border: none; }
-    .modal-corte__header, .modal-corte__footer { display: none; }
+    #modalCortePreview .modal-dialog { box-shadow: none; }
+    #modalCortePreview .modal-header, #modalCortePreview .modal-footer { display: none; }
     .ticket-mono { border: none; }
   }
 </style>
@@ -163,8 +140,8 @@ ob_start();
 
 <!-- Botones de movimientos de caja -->
 <div class="container mt-3 mb-3 text-center">
-  <button id="btnDeposito" type="button" class="btn custom-btn">Depósito a caja</button>
-  <button id="btnRetiro" type="button" class="btn custom-btn">Retiro de caja</button>
+  <button id="btnDeposito" type="button" class="btn custom-btn" data-toggle="modal" data-target="#modalMovimientoCaja">Depósito a caja</button>
+  <button id="btnRetiro" type="button" class="btn custom-btn" data-toggle="modal" data-target="#modalMovimientoCaja">Retiro de caja</button>
 </div>
 
 <div class="container mt-5">
@@ -208,28 +185,63 @@ ob_start();
 
 
 <!-- Modales -->
-<div id="modal-detalles" class="custom-modal" style="display:none;"></div>
-<div id="modalDesglose" class="custom-modal" style="display:none;"></div>
-<!-- Modal Corte Temporal -->
-<div id="modalCorteTemporal" class="custom-modal" style="display:none;">
-  <div class="modal-content">
-    <span id="closeModalCorteTemporal" class="close">&times;</span>
-    <h2>Corte Temporal</h2>
-    <div id="corteTemporalDatos"></div>
-    <label for="observacionesCorteTemp">Observaciones:</label>
-    <textarea id="observacionesCorteTemp" rows="3" style="width:100%;"></textarea>
-    <br><br>
-    <button id="guardarCorteTemporal" class="btn btn-success">Guardar Corte Temporal</button>
+<!-- MODAL NORMALIZED 2025-08-14 -->
+<div class="modal fade" id="modal-detalles" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Detalle de venta</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body"><!-- contenido dinámico --></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- MODAL NORMALIZED 2025-08-14 -->
+<div class="modal fade" id="modalDesglose" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Desglose de caja</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body"><!-- contenido dinámico --></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- MODAL NORMALIZED 2025-08-14 -->
+<div class="modal fade" id="modalCorteTemporal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Corte Temporal</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <div id="corteTemporalDatos"></div>
+        <label for="observacionesCorteTemp">Observaciones:</label>
+        <textarea id="observacionesCorteTemp" class="form-control" rows="3"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button id="guardarCorteTemporal" class="btn btn-success">Guardar Corte Temporal</button>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Modal Movimiento de Caja -->
-<div class="modal fade" id="modalMovimientoCaja" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<!-- MODAL NORMALIZED 2025-08-14 -->
+<div class="modal fade" id="modalMovimientoCaja" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Movimiento de caja</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       </div>
       <div class="modal-body">
         <form id="formMovimientoCaja">
@@ -255,32 +267,35 @@ ob_start();
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-primary" id="guardarMovimiento">Guardar</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Modal Corte Preview -->
-<div id="modalCortePreview" class="modal-corte hidden" aria-hidden="true">
-  <div class="modal-corte__dialog">
-    <div class="modal-corte__header">
-      <h3>Previsualización – Corte / Cierre de caja</h3>
-      <button type="button" id="btnCerrarModalCorte" class="btn btn-light">×</button>
-    </div>
-    <div class="modal-corte__body">
-      <pre id="corteTicketText" class="ticket-mono"></pre>
-    </div>
-    <div class="modal-corte__footer">
-      <button type="button" id="btnImprimirCorte" class="btn btn-primary">Imprimir</button>
-      <button type="button" id="btnCerrarModalCorte2" class="btn btn-secondary">Cerrar</button>
+<!-- MODAL NORMALIZED 2025-08-14 -->
+<div class="modal fade" id="modalCortePreview" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Previsualización – Corte / Cierre de caja</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <pre id="corteTicketText" class="ticket-mono"></pre>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btnImprimirCorte" class="btn btn-primary">Imprimir</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
     </div>
   </div>
 </div>
 
 
   <?php require_once __DIR__ . '/../footer.php'; ?>
+  <script src="../../utils/js/modal-lite.js"></script>
   <script>
     // ID de usuario proveniente de la sesión para operaciones en JS
     window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;
