@@ -92,7 +92,11 @@ ob_start();
 <br>
   <div class="row justify-content-center">
     <div class="col-md-10 bg-dark p-4 rounded">
-      <div id="controlCaja" class="mb-3 text-white"></div>
+           <div id="controlCaja" class="mb-3 text-white">
+        <button id="btnCerrarCorte" type="button" class="btn custom-btn" title="" style="display:none">
+          Cerrar corte
+        </button>
+      </div>
       <form id="formVenta">
         <div class="form-group">
           <label for="tipo_entrega" class="text-white">Tipo de venta:</label>

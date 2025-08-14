@@ -59,6 +59,7 @@ async function cargarHistorial(page = currentPage) {
         } else {
             alert(data.mensaje);
         }
+        await actualizarEstadoBotonCerrarCorte();
     } catch (err) {
         console.error(err);
         alert('Error al cargar ventas');
@@ -104,6 +105,92 @@ let ticketRequests = [];
 let ventaIdActual = null;
 let mesas = [];
 let modalMovimientoCaja;
+
+// ==== [INICIO BLOQUE valida: validación para cierre de corte] ====
+const VENTAS_URL = typeof API_LISTAR_VENTAS !== 'undefined' ? API_LISTAR_VENTAS : '../../api/ventas/listar_ventas.php';
+const MESAS_URL  = typeof API_LISTAR_MESAS  !== 'undefined' ? API_LISTAR_MESAS  : '../../api/mesas/listar_mesas.php';
+
+// Devuelve { hayVentasActivas, hayMesasOcupadas, bloqueado }
+async function hayBloqueosParaCerrarCorte() {
+  const [ventasResp, mesasResp] = await Promise.all([
+    fetch(VENTAS_URL, { cache: 'no-store' }).then(r => r.json()),
+    fetch(MESAS_URL,  { cache: 'no-store' }).then(r => r.json())
+  ]);
+
+  const ventas = (ventasResp && ventasResp.resultado && ventasResp.resultado.ventas) || [];
+  const hayVentasActivas = ventas.some(v => String(v.estatus || '').toLowerCase() === 'activa');
+
+  const mesas = (mesasResp && mesasResp.resultado) || [];
+  const hayMesasOcupadas = mesas.some(m => String(m.estado || '').toLowerCase() === 'ocupada');
+
+  return { hayVentasActivas, hayMesasOcupadas, bloqueado: (hayVentasActivas || hayMesasOcupadas) };
+}
+
+function toggleBotonCerrarCorte(bloqueado, detalle = '') {
+  const btn = document.getElementById('btnCerrarCorte');
+  if (!btn) return;
+  btn.disabled = !!bloqueado;
+  btn.title = bloqueado
+    ? ('No puedes cerrar el corte: hay pendientes' + (detalle ? ' ' + detalle : ''))
+    : '';
+}
+
+// Ejecuta validación y actualiza estado del botón
+async function actualizarEstadoBotonCerrarCorte() {
+  try {
+    const { hayVentasActivas, hayMesasOcupadas, bloqueado } = await hayBloqueosParaCerrarCorte();
+    const partes = [];
+    if (hayMesasOcupadas) partes.push('[mesas ocupadas]');
+    if (hayVentasActivas) partes.push('[ventas activas]');
+    toggleBotonCerrarCorte(bloqueado, partes.join(' '));
+  } catch (e) {
+    console.error('Validación de corte falló:', e);
+    // Falla de validación => bloquear por seguridad
+    toggleBotonCerrarCorte(true, '[no se pudo validar]');
+  }
+}
+
+// Valida y, sólo si no hay bloqueos, abre la modal existente
+async function validarYAbrirModalCierre() {
+  try {
+    const { hayVentasActivas, hayMesasOcupadas, bloqueado } = await hayBloqueosParaCerrarCorte();
+    if (bloqueado) {
+      const msg = [
+        'No puedes cerrar el corte ni mostrar el desglose mientras existan pendientes.',
+        hayMesasOcupadas ? '- Mesas: hay al menos una en estado OCUPADA.' : '',
+        hayVentasActivas ? '- Ventas: hay al menos una en estatus ACTIVA.' : ''
+      ].filter(Boolean).join('\n');
+      alert(msg);
+      return; // <-- No abrir modal
+    }
+    if (typeof cerrarCaja === 'function') {
+      cerrarCaja();
+    } else if (typeof abrirModalDesglose === 'function') {
+      abrirModalDesglose();
+    } else if (typeof abrirModalCierre === 'function') {
+      abrirModalCierre();
+    } else {
+      console.warn('No se encontró la función para abrir la modal de desglose.');
+    }
+  } catch (e) {
+    console.error(e);
+    alert('No fue posible validar el estado de mesas/ventas. Intenta de nuevo.');
+  }
+}
+
+// Hook al cargar y al hacer click en el botón
+document.addEventListener('DOMContentLoaded', () => {
+  actualizarEstadoBotonCerrarCorte();
+
+  const btn = document.getElementById('btnCerrarCorte');
+  if (btn) {
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      validarYAbrirModalCierre();
+    });
+  }
+});
+// ==== [FIN BLOQUE valida] ====
 
 // ====== Utilidades de formateo ======
 const TKT_WIDTH = 42;
@@ -358,9 +445,14 @@ fetch('../../api/corte_caja/verificar_corte_abierto.php', {
     cont.innerHTML = '';
 
     if (data.success && data.resultado.abierto) {
-      corteIdActual = data.resultado.corte_id;
-      cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCaja">Cerrar caja</button> <button id="btnCorteTemporal" class="btn custom-btn">Corte Temporal</button>`;
-      document.getElementById('btnCerrarCaja').addEventListener('click', cerrarCaja);
+      cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCorte">Cerrar corte</button> <button id="btnCorteTemporal" class="btn btn-warning">Corte Temporal</button>`;
+      const btnCerrar = document.getElementById('btnCerrarCorte');
+      if (btnCerrar) {
+        btnCerrar.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          validarYAbrirModalCierre();
+        });
+      }
       document.getElementById('btnCorteTemporal').addEventListener('click', abrirCorteTemporal);
       habilitarCobro();
     } else {
@@ -368,6 +460,7 @@ fetch('../../api/corte_caja/verificar_corte_abierto.php', {
       document.getElementById('btnAbrirCaja').addEventListener('click', abrirCaja);
       deshabilitarCobro();
     }
+    actualizarEstadoBotonCerrarCorte();
   });
 
 }
@@ -775,6 +868,7 @@ async function cargarMesas() {
         } else {
             alert(data.mensaje || 'Error al cargar mesas');
         }
+        await actualizarEstadoBotonCerrarCorte();
     } catch (err) {
         console.error(err);
         alert('Error de red al cargar mesas');

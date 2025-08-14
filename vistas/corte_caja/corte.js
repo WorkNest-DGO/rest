@@ -444,97 +444,150 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Detalle de corte
-    $(document).on('click', '.verDetalle', function () {
-        const corteId = $(this).data('id');
-        if (!corteId) {
-            console.error('ID de corte no especificado');
-            return;
-        }
-        fetch(`../../api/corte_caja/resumen_corte_actual.php?corte_id=${corteId}`)
-            .then(r => r.json())
-            .then(data => {
-                const cont = document.getElementById('modalDetalleContenido');
-                if (!cont) return;
-                if (data.success) {
-                    const resumen = data.resultado || {};
-                    const metodosPago = ['efectivo', 'boucher', 'cheque'];
-                    let html = '<h5>Desglose del Corte</h5>';
-                    let totalMontos = 0;
-                    let totalPropinas = 0;
-                    metodosPago.forEach(metodo => {
-                        const info = resumen[metodo] || {};
-                        const productos = parseFloat(info.productos) || 0;
-                        const propina = parseFloat(info.propina) || 0;
-                        totalMontos += productos;
-                        totalPropinas += propina;
-                        const totalMetodo = productos + propina;
-                        html += `<p>${metodo}: $${totalMetodo.toFixed(2)} (Total: $${productos.toFixed(2)} + Propina: $${propina.toFixed(2)})</p>`;
-                    });
-                    const fondo = parseFloat(resumen.fondo) || 0;
-                    const totalDepositos = parseFloat(resumen.total_depositos) || 0;
-                    const totalRetiros = parseFloat(resumen.total_retiros) || 0;
-                    const totalEsperado = totalMontos + totalPropinas;
-                    const totalFinal = parseFloat(resumen.totalFinal) || (totalEsperado + fondo + totalDepositos - totalRetiros);
-                    html = `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>` + html;
-                    html += '<p>Fondo Inicial: $<strong id="lblFondo"></strong></p>';
-                    html += '<p>Depósitos: $<strong id="lblTotalDepositos"></strong></p>';
-                    html += '<p>Retiros: $<strong id="lblTotalRetiros"></strong></p>';
-                    html += `<p><strong>Total Final: $${totalFinal.toFixed(2)}</strong></p>`;
-                    cont.innerHTML = html;
-                    document.getElementById('lblFondo').textContent = fondo.toFixed(2);
-                    document.getElementById('lblTotalDepositos').textContent = totalDepositos.toFixed(2);
-                    document.getElementById('lblTotalRetiros').textContent = totalRetiros.toFixed(2);
-                } else {
-                    const msg = data.mensaje || 'Error al obtener resumen';
-                    cont.innerHTML = `<p class="text-center">${msg}</p>`;
-                }
-                $('#modalDetalle').modal('show');
-            })
-            .catch(() => {
-                const cont = document.getElementById('modalDetalleContenido');
-                if (cont) cont.innerHTML = '<p class="text-center">Error al obtener resumen</p>';
-                $('#modalDetalle').modal('show');
-            });
-    });
-
-    // Detalle de venta
-    $(document).on('click', '.verVenta', function () {
-        const ventaId = $(this).data('id');
-        if (!ventaId) {
-            console.error('ID de venta no especificado');
-            return;
-        }
-        $.ajax({
-            url: '../../api/corte_caja/detalle_venta.php',
-            method: 'POST',
-            contentType: 'application/json',
-            dataType: 'json',
-            data: JSON.stringify({ id: parseInt(ventaId) })
-        }).done(function (resp) {
-            if (resp.success && Array.isArray(resp.productos)) {
-                const info = resp;
-                const destino = info.tipo_entrega === 'mesa' ? info.mesa : info.repartidor;
-                let html = `<h5>Detalle de venta</h5>`;
-                html += `<p>Tipo: ${info.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${info.mesero}</p>`;
-                html += '<table class="table table-sm"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th></tr></thead><tbody>';
-                info.productos.forEach(p => {
-                    const est = (p.estado_producto || '').replace('_', ' ');
-                    html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${est}</td></tr>`;
+// Detalle de corte
+$(document).on('click', '.verDetalle', function () {
+    const corteId = $(this).data('id');
+    if (!corteId) {
+        console.error('ID de corte no especificado');
+        return;
+    }
+    fetch(`../../api/corte_caja/resumen_corte_actual.php?corte_id=${corteId}`)
+        .then(r => r.json())
+        .then(data => {
+            const cont = document.getElementById('modalDetalleContenido');
+            if (!cont) return;
+            if (data.success) {
+                const resumen = data.resultado || {};
+                const metodosPago = ['efectivo', 'boucher', 'cheque'];
+                let html = '<h5 class="drag-column-header">Desglose del Corte</h5>';
+                let totalMontos = 0;
+                let totalPropinas = 0;
+                metodosPago.forEach(metodo => {
+                    const info = resumen[metodo] || {};
+                    const productos = parseFloat(info.productos) || 0;
+                    const propina = parseFloat(info.propina) || 0;
+                    totalMontos += productos;
+                    totalPropinas += propina;
+                    const totalMetodo = productos + propina;
+                    html += `<p class="drag-options-label">${metodo}: $${totalMetodo.toFixed(2)} 
+                        <span>(Total: $${productos.toFixed(2)} + Propina: $${propina.toFixed(2)})</span></p>`;
                 });
-                html += '</tbody></table>';
-                if (info.foto_entrega) {
-                    html += `<p><img src="../../uploads/evidencias/${info.foto_entrega}" class="img-fluid" alt="evidencia"></p>`;
-                }
-                $('#modalDetalleContenido').html(html);
-                $('#modalDetalle').modal('show');
+                const fondo = parseFloat(resumen.fondo) || 0;
+                const totalDepositos = parseFloat(resumen.total_depositos) || 0;
+                const totalRetiros = parseFloat(resumen.total_retiros) || 0;
+                const totalEsperado = totalMontos + totalPropinas;
+                const totalFinal = parseFloat(resumen.totalFinal) || (totalEsperado + fondo + totalDepositos - totalRetiros);
+
+                html = `<p class="drag-options-label"><strong>Total esperado:</strong> $${totalEsperado.toFixed(2)}</p>` + html;
+                html += `<p class="drag-options-label">Fondo Inicial: $<strong id="lblFondo"></strong></p>`;
+                html += `<p class="drag-options-label">Depósitos: $<strong id="lblTotalDepositos"></strong></p>`;
+                html += `<p class="drag-options-label">Retiros: $<strong id="lblTotalRetiros"></strong></p>`;
+                html += `<p class="drag-options-label"><strong>Total Final: $${totalFinal.toFixed(2)}</strong></p>`;
+
+                cont.innerHTML = `
+                    <div class="drag-container">
+                        <div class="drag-list">
+                            <div class="drag-column drag-column-on-hold">
+                                <div class="drag-inner-list drag-item">
+                                    ${html}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                document.getElementById('lblFondo').textContent = fondo.toFixed(2);
+                document.getElementById('lblTotalDepositos').textContent = totalDepositos.toFixed(2);
+                document.getElementById('lblTotalRetiros').textContent = totalRetiros.toFixed(2);
             } else {
-                alert(resp.mensaje || 'Error al obtener detalle');
+                const msg = data.mensaje || 'Error al obtener resumen';
+                cont.innerHTML = `<p class="text-center drag-options-label">${msg}</p>`;
             }
-        }).fail(function () {
-            alert('Error al obtener detalle');
+            $('#modalDetalle').modal('show');
+        })
+        .catch(() => {
+            const cont = document.getElementById('modalDetalleContenido');
+            if (cont) cont.innerHTML = '<p class="text-center drag-options-label">Error al obtener resumen</p>';
+            $('#modalDetalle').modal('show');
         });
+});
+
+// Detalle de venta
+$(document).on('click', '.verVenta', function () {
+    const ventaId = $(this).data('id');
+    if (!ventaId) {
+        console.error('ID de venta no especificado');
+        return;
+    }
+    $.ajax({
+        url: '../../api/corte_caja/detalle_venta.php',
+        method: 'POST',
+        contentType: 'application/json',
+        dataType: 'json',
+        data: JSON.stringify({ id: parseInt(ventaId) })
+    }).done(function (resp) {
+        if (resp.success && Array.isArray(resp.productos)) {
+            const info = resp;
+            const destino = info.tipo_entrega === 'mesa' ? info.mesa : info.repartidor;
+
+            let html = `<h5 class="drag-column-header">Detalle de venta</h5>`;
+            html += `<p class="drag-options-label">
+                        Tipo: <strong>${info.tipo_entrega}</strong><br>
+                        Destino: <strong>${destino}</strong><br>
+                        Mesero: <strong>${info.mesero}</strong>
+                     </p>`;
+
+            html += `<table class="table table-sm drag-options">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Cant</th>
+                                <th>Precio</th>
+                                <th>Subtotal</th>
+                                <th>Estatus</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+            info.productos.forEach(p => {
+                const est = (p.estado_producto || '').replace('_', ' ');
+                html += `<tr>
+                            <td>${p.nombre}</td>
+                            <td>${p.cantidad}</td>
+                            <td>${p.precio_unitario}</td>
+                            <td>${p.subtotal}</td>
+                            <td>${est}</td>
+                         </tr>`;
+            });
+
+            html += `</tbody></table>`;
+
+            if (info.foto_entrega) {
+                html += `<p class="drag-options-label">
+                            <img src="../../uploads/evidencias/${info.foto_entrega}" 
+                                 class="img-fluid drag-item" 
+                                 alt="evidencia">
+                         </p>`;
+            }
+
+            $('#modalDetalleContenido').html(`
+                <div class="drag-container">
+                    <div class="drag-list">
+                        <div class="drag-column drag-column-on-hold">
+                            <div class="drag-inner-list drag-item">
+                                ${html}
+                            </div>
+                        </div>
+                    </div>
+                </div>`);
+            $('#modalDetalle').modal('show');
+        } else {
+            alert(resp.mensaje || 'Error al obtener detalle');
+        }
+    }).fail(function () {
+        alert('Error al obtener detalle');
     });
+});
+
 
     // Exportar corte
     $(document).on('click', '.exportarCsv', function () {

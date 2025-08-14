@@ -20,6 +20,30 @@ if (!$corte_id) {
     ]);
     exit;
 }
+// ==== [INICIO BLOQUE valida: guardia de pendientes] ====
+function contar($db, $sql) {
+  $res = $db->query($sql);
+  if (!$res) return 0;
+  $row = $res->fetch_assoc();
+  return (int)($row['c'] ?? 0);
+}
+
+$ventasActivas = contar($conn, "SELECT COUNT(*) AS c FROM ventas WHERE estatus='activa'");
+$mesasOcupadas = contar($conn, "SELECT COUNT(*) AS c FROM mesas  WHERE estado='ocupada'");
+
+if ($ventasActivas > 0 || $mesasOcupadas > 0) {
+  http_response_code(400);
+  echo json_encode([
+    'success' => false,
+    'mensaje' => 'No se puede continuar: existen pendientes.',
+    'detalle' => [
+      'ventas_activas' => $ventasActivas,
+      'mesas_ocupadas' => $mesasOcupadas
+    ]
+  ]);
+  exit;
+}
+// ==== [FIN BLOQUE valida] ====
 
 // Obtener resumen de ventas agrupado por tipo de pago
 $sqlResumen = "SELECT
