@@ -50,7 +50,7 @@ async function cargarHistorial(page = currentPage) {
                     <td>${destino || ''}</td>
                     <td>${v.estatus}</td>
                     <td>${entregado}</td>
-                    <td><button class=\"btn custom-btn btn-detalle\" data-id=\"${id}\">Ver detalles</button></td>
+                    <td><button class=\"btn custom-btn btn-detalle\" data-id=\"${id}\" data-toggle=\"modal\" data-target=\"#modal-detalles\">Ver detalles</button></td>
                     <td>${accion}</td>
                 `;
                 tbody.appendChild(row);
@@ -104,7 +104,6 @@ let repartidores = [];
 let ticketRequests = [];
 let ventaIdActual = null;
 let mesas = [];
-let modalMovimientoCaja;
 
 // ==== [INICIO BLOQUE valida: validación para cierre de corte] ====
 const VENTAS_URL = typeof API_LISTAR_VENTAS !== 'undefined' ? API_LISTAR_VENTAS : '../../api/ventas/listar_ventas.php';
@@ -365,10 +364,7 @@ function showCortePreview(resultado, cajero) {
     const txt = buildCorteTicket(resultado, cajero);
     const pre = document.getElementById('corteTicketText');
     pre.textContent = txt;
-
-    const modal = document.getElementById('modalCortePreview');
-    modal.classList.remove('hidden');
-    modal.setAttribute('aria-hidden', 'false');
+    showModal('#modalCortePreview');
   } catch (e) {
     console.error('Error construyendo ticket de corte:', e);
     alert('No se pudo generar la previsualización del corte.');
@@ -376,12 +372,7 @@ function showCortePreview(resultado, cajero) {
 }
 
 (function wireModalCorte() {
-  const modal = document.getElementById('modalCortePreview');
-  const btnX  = document.getElementById('btnCerrarModalCorte');
-  const btnC  = document.getElementById('btnCerrarModalCorte2');
   const btnP  = document.getElementById('btnImprimirCorte');
-  if (btnX) btnX.addEventListener('click', ()=> { modal.classList.add('hidden'); modal.setAttribute('aria-hidden','true'); });
-  if (btnC) btnC.addEventListener('click', ()=> { modal.classList.add('hidden'); modal.setAttribute('aria-hidden','true'); });
   if (btnP) btnP.addEventListener('click', ()=> { window.print(); });
 })();
 
@@ -526,7 +517,7 @@ function abrirCorteTemporal() {
             }
             const r = data.resultado;
             document.getElementById('corteTemporalDatos').innerHTML = generarHTMLCorte(r);
-            document.getElementById('modalCorteTemporal').style.display = 'block';
+            showModal('#modalCorteTemporal');
             document.getElementById('guardarCorteTemporal').onclick = function () {
                 guardarCorteTemporal(r);
             };
@@ -562,7 +553,7 @@ function guardarCorteTemporal(datos) {
             if (resp.success) {
                 alert('Corte temporal guardado.');
                 imprimirCorteTemporal(datos);
-                document.getElementById('modalCorteTemporal').style.display = 'none';
+                hideModal('#modalCorteTemporal');
             } else {
                 alert('Error al guardar corte temporal.');
             }
@@ -614,7 +605,8 @@ function mostrarModalDesglose(dataApi) {
     const totalIngresado = Number.parseFloat(r.totalFinal) || (totalEsperado + fondoInicial);
 
     const modal = document.getElementById('modalDesglose');
-    let html = '<div style="background:#000;border:1px solid #333;padding:10px;">';
+    const body = modal.querySelector('.modal-body');
+    let html = '<div class="bg-dark text-white p-3 border">';
     html += '<h3>Desglose de caja</h3>';
     // Datos de cabecera del corte (si existen)
     if (r.fecha_inicio)  { html += `<p>Fecha inicio: ${r.fecha_inicio}</p>`; }
@@ -669,10 +661,10 @@ function mostrarModalDesglose(dataApi) {
 
     html += '<div id="camposDesglose"></div>';
     html += '<p>Efectivo contado: $<span id="totalEfectivo">0.00</span> | Dif.: $<span id="difIngresado">0.00</span></p>';
-    html += '<button class="btn custom-btn" id="guardarDesglose">Guardar</button> <button class="btn custom-btn" id="cancelarDesglose">Cancelar</button>';
+    html += '<button class="btn custom-btn" id="guardarDesglose">Guardar</button> <button class="btn custom-btn" id="cancelarDesglose" data-dismiss="modal">Cancelar</button>';
     html += '</div>';
-    modal.innerHTML = html;
-    modal.style.display = 'block';
+    body.innerHTML = html;
+    showModal('#modalDesglose');
 
     document.getElementById('lblFondo').textContent = fondoInicial.toFixed(2);
     document.getElementById('lblTotalDepositos').textContent = (Number.parseFloat(r.total_depositos) || 0).toFixed(2);
@@ -681,7 +673,7 @@ function mostrarModalDesglose(dataApi) {
     if (!Array.isArray(catalogoDenominaciones) || !catalogoDenominaciones.length) {
         console.error('Error al cargar denominaciones');
         modal.querySelector('#cancelarDesglose').addEventListener('click', () => {
-            modal.style.display = 'none';
+            hideModal('#modalDesglose');
             habilitarCobro();
         });
         return;
@@ -720,7 +712,7 @@ function mostrarModalDesglose(dataApi) {
     calcular();
 
     modal.querySelector('#cancelarDesglose').addEventListener('click', () => {
-        modal.style.display = 'none';
+        hideModal('#modalDesglose');
         habilitarCobro();
     });
 
@@ -771,7 +763,7 @@ function mostrarModalDesglose(dataApi) {
             if (data.success) {
                 // Mostrar vista previa del corte
                 showCortePreview({ ...r, desglose: detalle });
-                modal.style.display = 'none';
+                hideModal('#modalDesglose');
                 await finalizarCorte();
             } else {
                 alert(data.mensaje || 'Error al guardar desglose');
@@ -1346,7 +1338,8 @@ async function verDetalles(id) {
         const data = await resp.json();
         if (data.success) {
             const info = data.resultado || data;
-            const contenedor = document.getElementById('modal-detalles');
+            const modal = document.getElementById('modal-detalles');
+            const contenedor = modal.querySelector('.modal-body');
             const destino = info.tipo_entrega === 'mesa'
                 ? info.mesa
                 : info.tipo_entrega === 'domicilio'
@@ -1374,10 +1367,10 @@ async function verDetalles(id) {
             html += `<select id="detalle_producto"></select>`;
             html += `<input type="number" id="detalle_cantidad" value="1" min="1">`;
             html += `<button class="btn custom-btn" id="addDetalle">Agregar</button>`;
-            html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button  class="btn custom-btn" id="cerrarDetalle">Cerrar</button>`;
+            html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button  class="btn custom-btn" id="cerrarDetalle" data-dismiss="modal">Cerrar</button>`;
 
             contenedor.innerHTML = html;
-            contenedor.style.display = 'block';
+            showModal('#modal-detalles');
 
             const selectProd = document.getElementById('detalle_producto');
             selectProd.innerHTML = '<option value="">--Selecciona--</option>';
@@ -1404,7 +1397,7 @@ async function verDetalles(id) {
             });
             document.getElementById('addDetalle').addEventListener('click', () => agregarDetalle(id));
             document.getElementById('cerrarDetalle').addEventListener('click', () => {
-                contenedor.style.display = 'none';
+                hideModal('#modal-detalles');
             });
             document.getElementById('imprimirTicket').addEventListener('click', () => {
                 const venta = ventasData[id] || {};
@@ -1626,7 +1619,7 @@ function abrirModalMovimiento(tipo) {
     if (montoInput) montoInput.value = '';
     if (motivoInput) motivoInput.value = '';
     actualizarFechaMovimiento();
-    modalMovimientoCaja.show();
+    showModal('#modalMovimientoCaja');
 }
 
 async function guardarMovimientoCaja() {
@@ -1645,7 +1638,7 @@ async function guardarMovimientoCaja() {
         });
         const data = await resp.json();
         if (data.success) {
-            modalMovimientoCaja.hide();
+            hideModal('#modalMovimientoCaja');
             alert('Movimiento registrado correctamente');
             location.reload();
         } else {
@@ -1669,10 +1662,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('agregarProducto').addEventListener('click', agregarFilaProducto);
     actualizarSelectorUsuario();
 
-    document.getElementById('closeModalCorteTemporal').addEventListener('click', () => {
-        document.getElementById('modalCorteTemporal').style.display = 'none';
-    });
-
     document.getElementById('recordsPerPage').addEventListener('change', e => {
         limit = parseInt(e.target.value);
         cargarHistorial(1);
@@ -1683,7 +1672,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cargarHistorial(1);
     });
 
-    modalMovimientoCaja = new bootstrap.Modal(document.getElementById('modalMovimientoCaja'));
     document.getElementById('btnDeposito').addEventListener('click', () => abrirModalMovimiento('deposito'));
     document.getElementById('btnRetiro').addEventListener('click', () => abrirModalMovimiento('retiro'));
     document.getElementById('guardarMovimiento').addEventListener('click', guardarMovimientoCaja);
