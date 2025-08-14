@@ -313,7 +313,6 @@ async function eliminarInsumo(id) {
 
 function abrirFormulario(id) {
     const form = document.getElementById('formInsumo');
-    form.style.display = 'block';
     document.getElementById('insumoId').value = id || '';
     if (id) {
         const ins = catalogo.find(i => i.id == id);
@@ -326,10 +325,11 @@ function abrirFormulario(id) {
         form.reset();
         document.getElementById('existencia').value = 0;
     }
+    showModal('#modalInsumo');
 }
 
 function cerrarFormulario() {
-    document.getElementById('formInsumo').style.display = 'none';
+    hideModal('#modalInsumo');
 }
 
 async function guardarInsumo(ev) {

@@ -41,7 +41,7 @@ ob_start();
                 <a class="btn custom-btn me-2" type="button" id="btnNuevoInsumo">Nuevo insumo</a>
             </div>
             <div class="d-flex justify-content-center mb-3">
-                <input type="text" id="buscarInsumo" class="form-control" placeholder="Buscar" style="text-align: right;">
+                <input type="text" id="buscarInsumo" class="form-control text-end" placeholder="Buscar">
             </div>
                 <div class="row">
         <div class="col-12">
@@ -51,28 +51,51 @@ ob_start();
         </div>
         <div class="row" id="catalogoInsumos"></div>
 
-        <form id="formInsumo" class="custom-modal" style="display:none;">
-            <input type="hidden" id="insumoId">
-            <div>
-                <label>Nombre:</label><br>
-                <input type="text" id="nombre"><br>
-                <label>Unidad:</label><br>
-                <input type="text" id="unidad"><br>
-                <label>Existencia:</label><br>
-                <input type="number" step="0.01" id="existencia" value="0"><br>
-                <label>Tipo:</label><br>
-                <select id="tipo_control"><br>
-                    <option value="por_receta">por_receta</option>
-                    <option value="unidad_completa">unidad_completa</option>
-                    <option value="uso_general">uso_general</option>
-                    <option value="no_controlado">no_controlado</option>
-                    <option value="desempaquetado">desempaquetado</option>
-                </select><br><br>
-                <input type="file" id="imagen"><br><br>
-                <button class="btn custom-btn me-2" type="submit">Guardar</button>
-                <button class="btn custom-btn me-2" type="button" id="cancelarInsumo">Cancelar</button>
+        <div class="modal fade" id="modalInsumo" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <form id="formInsumo">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Insumo</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="insumoId">
+                            <div class="form-group">
+                                <label for="nombre">Nombre:</label>
+                                <input type="text" id="nombre" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="unidad">Unidad:</label>
+                                <input type="text" id="unidad" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="existencia">Existencia:</label>
+                                <input type="number" step="0.01" id="existencia" class="form-control" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="tipo_control">Tipo:</label>
+                                <select id="tipo_control" class="form-control">
+                                    <option value="por_receta">por_receta</option>
+                                    <option value="unidad_completa">unidad_completa</option>
+                                    <option value="uso_general">uso_general</option>
+                                    <option value="no_controlado">no_controlado</option>
+                                    <option value="desempaquetado">desempaquetado</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="imagen">Imagen:</label>
+                                <input type="file" id="imagen" class="form-control">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn custom-btn me-2" type="submit">Guardar</button>
+                            <button class="btn custom-btn me-2" type="button" id="cancelarInsumo" data-dismiss="modal">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </form>
+        </div>
 
     </div>
 
@@ -166,6 +189,7 @@ ob_start();
 
 
 <?php require_once __DIR__ . '/../footer.php'; ?>
+<script src="../../utils/js/modal-lite.js"></script>
 <script src="insumos.js"></script>
 </body>
 
@@ -174,3 +198,4 @@ ob_start();
 <?php
 $content = ob_get_clean();
 include __DIR__ . '/../nav.php';
+?>
