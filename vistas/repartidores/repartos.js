@@ -130,16 +130,15 @@ async function marcarEnCamino(id) {
 }
 
 function mostrarDetalle(info) {
-    const contenedor = document.getElementById('modal-detalles');
-    let html = `
-        <div class="container mt-5 mb-5 custom-modal">
-            <h3 style="color:#b80000;">Productos entregados</h3>
-            <ul style="list-style-type: none; padding: 0;">`;
-    
+    const modal = document.getElementById('modal-detalles');
+    const contenedor = modal.querySelector('.modal-body');
+    let html = `<h3 style="color:#b80000;">Productos entregados</h3>`;
+    html += `<ul style="list-style-type: none; padding: 0;">`;
+
     info.productos.forEach(p => {
         const sub = p.cantidad * p.precio_unitario;
-        html += `<li style="padding: 5px 0; border-bottom: 1px solid #ccc; ">
-                    <strong >${p.nombre}</strong> - ${p.cantidad} x $${p.precio_unitario.toFixed(2)} = $${sub.toFixed(2)}
+        html += `<li style="padding: 5px 0; border-bottom: 1px solid #ccc;">
+                    <strong>${p.nombre}</strong> - ${p.cantidad} x $${p.precio_unitario.toFixed(2)} = $${sub.toFixed(2)}
                  </li>`;
     });
 
@@ -150,23 +149,15 @@ function mostrarDetalle(info) {
 
     if (info.foto_entrega) {
         html += `<div style="margin-top: 15px;">
-                    <p >Evidencia:</p>
+                    <p>Evidencia:</p>
                     <img src="../../uploads/evidencias/${info.foto_entrega}" alt="Evidencia" style="max-width: 100%; height: auto; border: 1px solid #ccc;">
                  </div>`;
     }
 
-    html += `<p style="margin-top: 15px; "><strong >Total:</strong> $${info.total.toFixed(2)}</p>
-             <div style="text-align: right; margin-top: 20px;">
-                 <button class="btn custom-btn" id="cerrarDetalle">Cerrar</button>
-             </div>
-        </div>`;
-
+    html += `<p style="margin-top: 15px;"><strong>Total:</strong> $${info.total.toFixed(2)}</p>`;
     contenedor.innerHTML = html;
-    contenedor.style.display = 'block';
 
-    document.getElementById('cerrarDetalle').addEventListener('click', () => {
-        contenedor.style.display = 'none';
-    });
+    showModal('#modal-detalles');
 }
 
 
