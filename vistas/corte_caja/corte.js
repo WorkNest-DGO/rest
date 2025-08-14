@@ -122,19 +122,16 @@ async function verDetalle(corteId) {
         const resp = await fetch('../../api/corte_caja/listar_ventas_por_corte.php?corte_id=' + corteId);
         const data = await resp.json();
         if (data.success) {
-            const modal = document.getElementById('resumenModal');
+            const modalBody = document.querySelector('#resumenModal .modal-body');
             let html = `<h3>Ventas del corte ${corteId}</h3>`;
             html += '<table class="table"><thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Usuario</th><th>Propina</th><th></th></tr></thead><tbody>';
             data.resultado.forEach(v => {
                 html += `<tr><td>${v.id}</td><td>${v.fecha}</td><td>${v.total}</td><td>${v.usuario}</td><td>${v.propina}</td>` +
-                        `<td><button class="btn btn-primary verVenta" data-id="${v.id}">Ver</button></td></tr>`;
+                        `<td><button class="btn btn-primary verVenta" data-id="${v.id}" data-toggle="modal" data-target="#modalDetalle">Ver</button></td></tr>`;
             });
-            html += '</tbody></table><button class="btn custom-btn" id="cerrarDetalle">Cerrar</button>';
-            modal.innerHTML = html;
-            modal.style.display = 'block';
-            document.getElementById('cerrarDetalle').addEventListener('click', () => {
-                modal.style.display = 'none';
-            });
+            html += '</tbody></table>';
+            modalBody.innerHTML = html;
+            showModal('#resumenModal');
         } else {
             alert(data.mensaje);
         }
@@ -155,8 +152,8 @@ async function abrirModalDesglose(corteId, dataApi) {
     const montoBoucher = resumen.boucher ? (parseFloat(resumen.boucher.total) || 0) : 0;
     const montoCheque = resumen.cheque ? (parseFloat(resumen.cheque.total) || 0) : 0;
 
-    const modal = document.getElementById('modalDesglose');
-    let html = '<div style="background:#fff;border:1px solid #333;padding:10px;">';
+    const modalBody = document.querySelector('#modalDesglose .modal-body');
+    let html = '<div>';
     html += '<h3>Desglose de caja</h3>';
     html += `<p>Total final: $${totalFinal.toFixed(2)}</p>`;
     html += `<p>Total a entregar (efectivo): $${totalAEntregar.toFixed(2)}</p>`;
@@ -166,20 +163,20 @@ async function abrirModalDesglose(corteId, dataApi) {
     html += '<p>Dif. efectivo: $<span id="difEfectivo">0.00</span></p>';
     html += '<button class="btn custom-btn" id="guardarDesglose">Guardar</button> <button id="cancelarDesglose">Cancelar</button>';
     html += '</div>';
-    modal.innerHTML = html;
-    modal.style.display = 'block';
+    modalBody.innerHTML = html;
+    showModal('#modalDesglose');
 
     if (!catalogoDenominaciones.length) {
         console.error('Error al cargar denominaciones');
-        const btnCerrar = modal.querySelector('#cancelarDesglose');
+        const btnCerrar = modalBody.querySelector('#cancelarDesglose');
         btnCerrar.addEventListener('click', () => {
-            modal.style.display = 'none';
+            hideModal('#modalDesglose');
             verificarCorte();
         });
         return;
     }
 
-    const cont = modal.querySelector('#camposDesglose');
+    const cont = modalBody.querySelector('#camposDesglose');
     const frag = document.createDocumentFragment();
 
     catalogoDenominaciones.forEach(d => {
@@ -230,15 +227,15 @@ async function abrirModalDesglose(corteId, dataApi) {
         document.getElementById('difEfectivo').textContent = (totalAEntregar - totales.efectivo).toFixed(2);
     }
 
-    modal.querySelectorAll('.cantidad').forEach(inp => inp.addEventListener('input', calcular));
+    modalBody.querySelectorAll('.cantidad').forEach(inp => inp.addEventListener('input', calcular));
     calcular();
 
-    modal.querySelector('#cancelarDesglose').addEventListener('click', () => {
-        modal.style.display = 'none';
+    modalBody.querySelector('#cancelarDesglose').addEventListener('click', () => {
+        hideModal('#modalDesglose');
         verificarCorte();
     });
 
-    modal.querySelector('#guardarDesglose').addEventListener('click', async () => {
+    modalBody.querySelector('#guardarDesglose').addEventListener('click', async () => {
         calcular();
         const detalle = [];
         cont.querySelectorAll('.grupo-pago').forEach(gr => {
@@ -282,7 +279,7 @@ async function abrirModalDesglose(corteId, dataApi) {
                 if (resCierre.success) {
                     alert('Corte cerrado');
                     corteActual = null;
-                    modal.style.display = 'none';
+                    hideModal('#modalDesglose');
                     await cargarHistorial();
                     verificarCorte();
                 } else {
@@ -329,7 +326,7 @@ async function cargarHistorial() {
                         <td>${formatearMoneda(c.fondo_inicial)}</td>
                         <td>${formatearMoneda(c.total)}</td>
                         <td>${c.observaciones || ''}</td>
-                        <td><button class="btn custom-btn verDetalle" data-id="${c.id}">Ver detalle</button> <button class="btn custom-btn exportarCsv" data-id="${c.id}">Exportar</button></td>
+                        <td><button class="btn custom-btn verDetalle" data-id="${c.id}" data-toggle="modal" data-target="#modalDetalle">Ver detalle</button> <button class="btn custom-btn exportarCsv" data-id="${c.id}">Exportar</button></td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -411,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeTemp = document.getElementById('closeCorteTemporal');
     if (closeTemp) {
         closeTemp.addEventListener('click', () => {
-            document.getElementById('modalCorteTemporal').style.display = 'none';
+            hideModal('#modalCorteTemporal');
         });
     }
     const guardarTemp = document.getElementById('guardarCorteTemporal');
@@ -433,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await resp.json();
                 if (data.success) {
                     alert('Corte temporal guardado correctamente');
-                    document.getElementById('modalCorteTemporal').style.display = 'none';
+                    hideModal('#modalCorteTemporal');
                     window.open(`ticket_corte_temporal.php?id=${data.id}`, '_blank');
                 } else {
                     alert('Error al guardar: ' + (data.message || ''));
@@ -502,12 +499,12 @@ $(document).on('click', '.verDetalle', function () {
                 const msg = data.mensaje || 'Error al obtener resumen';
                 cont.innerHTML = `<p class="text-center drag-options-label">${msg}</p>`;
             }
-            $('#modalDetalle').modal('show');
+            showModal('#modalDetalle');
         })
         .catch(() => {
             const cont = document.getElementById('modalDetalleContenido');
             if (cont) cont.innerHTML = '<p class="text-center drag-options-label">Error al obtener resumen</p>';
-            $('#modalDetalle').modal('show');
+            showModal('#modalDetalle');
         });
 });
 
@@ -579,7 +576,7 @@ $(document).on('click', '.verVenta', function () {
                         </div>
                     </div>
                 </div>`);
-            $('#modalDetalle').modal('show');
+            showModal('#modalDetalle');
         } else {
             alert(resp.mensaje || 'Error al obtener detalle');
         }
