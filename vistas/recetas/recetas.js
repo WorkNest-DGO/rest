@@ -291,26 +291,23 @@ async function subirImagenProducto() {
 }
 
 function abrirModalCopiar() {
-    const modal = document.getElementById('modal-copiar');
-    let html = '<h3>Copiar receta</h3>';
-    html += '<select id="producto_copiar"><option value="">--Selecciona--</option>';
+    const modal = document.getElementById('modalCopiarReceta');
+    const body = modal.querySelector('.modal-body');
+    const footer = modal.querySelector('.modal-footer');
+    let html = '<select id="producto_copiar" class="form-control"><option value="">--Selecciona--</option>';
     catalogoProductos.forEach(p => {
         html += `<option value="${p.id}">${p.nombre}</option>`;
     });
-    html += '</select> ';
-    html += '<button class="btn custom-btn" id="btnCopiarAhora">Copiar</button> ';
-    html += '<button class="btn custom-btn" id="cerrarCopiar">Cerrar</button>';
-    modal.innerHTML = html;
-    modal.style.display = 'block';
+    html += '</select>';
+    body.innerHTML = html;
+    footer.innerHTML = '<button class="btn custom-btn" id="btnCopiarAhora">Copiar</button> <button class="btn btn-secondary" data-dismiss="modal">Cerrar</button>';
+    showModal('#modalCopiarReceta');
     document.getElementById('btnCopiarAhora').addEventListener('click', () => {
         const id = parseInt(document.getElementById('producto_copiar').value);
         if (!isNaN(id)) {
             copiarReceta(id);
-            modal.style.display = 'none';
+            hideModal('#modalCopiarReceta');
         }
-    });
-    document.getElementById('cerrarCopiar').addEventListener('click', () => {
-        modal.style.display = 'none';
     });
 }
 
