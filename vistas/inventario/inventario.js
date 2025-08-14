@@ -87,15 +87,12 @@ async function eliminarProducto(id) {
     }
 }
 
-
 function abrirModalAgregar() {
-    document.getElementById('modalAgregar').style.display = 'flex';
+    showModal('#modalAgregar');
 }
-function agregarProducto() {
-    abrirModalAgregar();
-}
-function cerrarModal() {
-    document.getElementById('modalAgregar').style.display = 'none';
+
+function cerrarModalAgregar() {
+    hideModal('#modalAgregar');
     document.getElementById('formAgregar').reset();
 }
 
@@ -116,7 +113,7 @@ document.getElementById('formAgregar').addEventListener('submit', async (e) => {
         const data = await resp.json();
         if (data.success) {
             alert(data.resultado?.mensaje || 'Producto agregado');
-            cerrarModal();
+            cerrarModalAgregar();
             cargarProductos();
         } else {
             alert(data.mensaje);
@@ -128,28 +125,21 @@ document.getElementById('formAgregar').addEventListener('submit', async (e) => {
 });
 
 
-
 function mostrarModal(titulo, mensaje) {
-    const modal = document.getElementById('modalAlerta');
-    const mensajeEl = document.getElementById('mensajeModal');
-
-    mensajeEl.innerText = mensaje;
-    modal.style.display = 'flex';
-
-    document.getElementById('cerrarModal').onclick = () => {
-        modal.style.display = 'none';
-    };
+    document.getElementById('modalTitulo').textContent = titulo;
+    document.getElementById('mensajeModal').textContent = mensaje;
+    showModal('#modalAlerta');
 }
 
 function mostrarConfirmacion(mensaje) {
-    const $modal = $('#modalConfirmacion');
-    $modal.find('.mensaje').text(mensaje);
-    $modal.modal('show');
+    const modal = document.getElementById('modalConfirmacion');
+    modal.querySelector('.mensaje').textContent = mensaje;
+    showModal('#modalConfirmacion');
 }
 
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarProductos();
-    document.getElementById('agregarProducto').addEventListener('click', agregarProducto);
+    document.getElementById('agregarProducto').addEventListener('click', abrirModalAgregar);
 });
 
