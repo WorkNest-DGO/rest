@@ -1,3 +1,10 @@
+function showAppMsg(msg) {
+    const body = document.querySelector('#appMsgModal .modal-body');
+    if (body) body.textContent = String(msg);
+    showModal('#appMsgModal');
+}
+window.alert = showAppMsg;
+
 if (typeof catalogoDenominaciones !== 'undefined' && Array.isArray(catalogoDenominaciones) && catalogoDenominaciones.length > 0) {
   console.log('Denominaciones cargadas:', catalogoDenominaciones);
 } else {

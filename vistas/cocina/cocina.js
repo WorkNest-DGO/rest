@@ -1,3 +1,9 @@
+function showAppMsg(msg) {
+    const body = document.querySelector('#appMsgModal .modal-body');
+    if (body) body.textContent = String(msg);
+    showModal('#appMsgModal');
+}
+window.alert = showAppMsg;
 function tiempoTranscurrido(fecha) {
     const minutos = Math.floor((Date.now() - new Date(fecha).getTime()) / 60000);
     return {

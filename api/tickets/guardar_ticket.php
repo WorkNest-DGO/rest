@@ -41,7 +41,7 @@ if (isset($input['usuario_id']) && (int)$input['usuario_id'] !== $usuario_id) {
 $mesa_nombre = null;
 $tipo_entrega = $venta['tipo_entrega'] ?? '';
 $corte_id = isset($venta['corte_id']) ? (int)$venta['corte_id'] : null;
-if (!$corte_id) {
+if (!$corte_id &&  isset($venta['corte_id'])) {
     error('Venta sin corte asociado');
 }
 if ($tipo_entrega === 'rapido') {

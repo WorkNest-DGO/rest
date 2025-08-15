@@ -1,3 +1,10 @@
+function showAppMsg(msg) {
+    const body = document.querySelector('#appMsgModal .modal-body');
+    if (body) body.textContent = String(msg);
+    showModal('#appMsgModal');
+}
+window.alert = showAppMsg;
+
 const params = new URLSearchParams(location.search);
 const repartidorId = params.get('id');
 

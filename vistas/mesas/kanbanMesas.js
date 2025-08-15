@@ -1,3 +1,10 @@
+function showAppMsg(msg) {
+    const body = document.querySelector('#appMsgModal .modal-body');
+    if (body) body.textContent = String(msg);
+    showModal('#appMsgModal');
+}
+window.alert = showAppMsg;
+
 let productos = [];
 let meseros = [];
 const meseroSeleccionado = {};

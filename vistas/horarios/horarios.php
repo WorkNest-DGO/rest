@@ -84,7 +84,21 @@ ob_start();
         </table>
     </div>
 </div>
-
+<!-- Modal global de mensajes -->
+<div class="modal fade" id="appMsgModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Mensaje</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
 <?php require_once __DIR__ . '/../footer.php'; ?>
 <script src="horarios.js"></script>
 </body>

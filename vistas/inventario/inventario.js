@@ -1,3 +1,9 @@
+function showAppMsg(msg) {
+    const body = document.querySelector('#appMsgModal .modal-body');
+    if (body) body.textContent = String(msg);
+    showModal('#appMsgModal');
+}
+window.alert = showAppMsg;
 async function cargarProductos() {
     try {
         const resp = await fetch('../../api/inventario/listar_productos.php');

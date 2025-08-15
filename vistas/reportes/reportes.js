@@ -1,3 +1,9 @@
+function showAppMsg(msg) {
+    const body = document.querySelector('#appMsgModal .modal-body');
+    if (body) body.textContent = String(msg);
+    showModal('#appMsgModal');
+}
+window.alert = showAppMsg;
 const usuarioId = 1; // En producción usar id de sesión
 const apiReportes = '../../api/reportes/vistas_db.php';
 

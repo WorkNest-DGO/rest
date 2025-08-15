@@ -429,29 +429,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function imprimirTicketsVenta(ventaId) {
         try {
-            const resp = await fetch('../../api/tickets/reimprimir_ticket.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ venta_id: ventaId })
-            });
-            const data = await resp.json();
-            if (!data.success) {
-                alert(data.mensaje || 'Error al obtener tickets');
-                return;
-            }
-            const tickets = data.resultado.tickets || [];
-            if (!tickets.length) {
-                alert('No hay tickets para imprimir');
-                return;
-            }
-            let html = '<html><head><title>Tickets</title><link rel="stylesheet" href="../../utils/css/style.css"></head><body>';
-            tickets.forEach(t => {
-                html += generarTicketHTML(t) + '<hr>';
-            });
-            html += '<script>window.onload=function(){window.print();}</script></body></html>';
-            const blob = new Blob([html], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            window.open(url, '_blank');
+            window.open('../../api/tickets/imprime_ticket.php?venta_id='+ventaId);
+            // const resp = await fetch('../../api/tickets/reimprimir_ticket.php', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ venta_id: ventaId })
+            // });
+            // const data = await resp.json();
+
+            // if (!data.success) {
+            //     alert(data.mensaje || 'Error al obtener tickets');
+            //     return;
+            // }
+            // const tickets = data.resultado.tickets || [];
+            // if (!tickets.length) {
+            //     alert('No hay tickets para imprimir');
+            //     return;
+            // }
+
+            // let html = '<html><head><title>Tickets</title><link rel="stylesheet" href="../../utils/css/style.css"></head><body>';
+            // tickets.forEach(t => {
+            //     html += generarTicketHTML(t) + '<hr>';
+            // });
+            // html += '<script>window.onload=function(){window.print();}</script></body></html>';
+            // console.log(html);
+            // const blob = new Blob([html], { type: 'text/html' });
+            // const url = URL.createObjectURL(blob);
+            // window.open(url, '_blank');
         } catch (err) {
             console.error('Error al imprimir tickets', err);
         }

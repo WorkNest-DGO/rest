@@ -1,3 +1,10 @@
+function showAppMsg(msg) {
+    const body = document.querySelector('#appMsgModal .modal-body');
+    if (body) body.textContent = String(msg);
+    showModal('#appMsgModal');
+}
+window.alert = showAppMsg;
+
 let corteActual = null;
 const usuarioId = 1; // En entorno real, este valor provendría de la sesión
 let pagina = 1;
