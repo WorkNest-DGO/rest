@@ -260,10 +260,20 @@ function mostrarBajoStock(lista) {
 }
 
 async function nuevoProveedor() {
-    const nombre = prompt('Nombre del proveedor:');
-    if (!nombre) return;
-    const telefono = prompt('Teléfono:') || '';
-    const direccion = prompt('Dirección:') || '';
+    const form = document.getElementById('formProveedor');
+    if (form) form.reset();
+    showModal('#modalProveedor');
+}
+
+async function guardarProveedor(ev) {
+    ev.preventDefault();
+    const nombre = document.getElementById('provNombre').value.trim();
+    const telefono = document.getElementById('provTelefono').value.trim();
+    const direccion = document.getElementById('provDireccion').value.trim();
+    if (!nombre) {
+        alert('Nombre requerido');
+        return;
+    }
     try {
         const resp = await fetch('../../api/insumos/agregar_proveedor.php', {
             method: 'POST',
@@ -273,6 +283,9 @@ async function nuevoProveedor() {
         const data = await resp.json();
         if (data.success) {
             alert('Proveedor agregado');
+            hideModal('#modalProveedor');
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            document.body.classList.remove('modal-open');
             cargarProveedores();
         } else {
             alert(data.mensaje);
@@ -447,6 +460,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (form) {
         form.addEventListener('submit', guardarInsumo);
         document.getElementById('cancelarInsumo').addEventListener('click', cerrarFormulario);
+    }
+    const formProv = document.getElementById('formProveedor');
+    if (formProv) {
+        formProv.addEventListener('submit', guardarProveedor);
+        document.getElementById('cancelarProveedor').addEventListener('click', () => {
+            hideModal('#modalProveedor');
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            document.body.classList.remove('modal-open');
+        });
+        document.getElementById('modalProveedor').addEventListener('hidden.bs.modal', () => {
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            document.body.classList.remove('modal-open');
+        });
     }
     const buscador = document.getElementById('buscarInsumo');
     if (buscador) {
