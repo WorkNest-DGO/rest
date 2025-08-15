@@ -27,6 +27,17 @@ window.alert = showAppMsg;
     listo: 'entregado'
   };
 
+  const style = document.createElement('style');
+  style.textContent = `
+    .kanban-item{position:relative;padding-bottom:30px;}
+    .kanban-item .btn-ver{position:absolute;bottom:5px;right:5px;}
+    #productoModalOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;}
+    #productoModalOverlay .modal-box{background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.3);max-width:400px;width:90%;max-height:90%;overflow:auto;position:relative;}
+    #productoModalOverlay .close-btn{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;font-size:14px;}
+    #productoModalOverlay .modal-box p{margin:4px 0;}
+  `;
+  document.head.appendChild(style);
+
   function render(items){
     Object.values(cols).forEach(c => c.innerHTML = '');
     const txt = (filtroInput.value || '').toLowerCase();
@@ -51,7 +62,10 @@ window.alert = showAppMsg;
           <span>${formatHora(it.estado === 'entregado' ? it.entregado_hr : it.hora)}</span>
           ${it.observaciones ? `<span>Obs: ${escapeHtml(it.observaciones)}</span>` : ''}
         </div>
+        <button class="btn-ver">Ver</button>
       `;
+      const verBtn = card.querySelector('.btn-ver');
+      verBtn.addEventListener('click', ev => { ev.stopPropagation(); mostrarModalProducto(it); });
       bindDrag(card);
       (cols[it.estado] || cols.pendiente).appendChild(card);
     });
@@ -72,6 +86,34 @@ window.alert = showAppMsg;
       setTimeout(()=> el.classList.add('dragging'), 0);
     });
     el.addEventListener('dragend', ()=> el.classList.remove('dragging'));
+  }
+
+  function mostrarModalProducto(item){
+    const overlay = document.createElement('div');
+    overlay.id = 'productoModalOverlay';
+    const campos = [
+      ['Producto','producto'],
+      ['Categoría','categoria'],
+      ['Cantidad','cantidad'],
+      ['Precio unitario','precio_unitario'],
+      ['Subtotal','subtotal'],
+      ['Estado','estado'],
+      ['Hora de creación','hora'],
+      ['Hora de entrega','entregado_hr'],
+      ['Minutos transcurridos','minutos_transcurridos'],
+      ['Mesero','mesero'],
+      ['Cajero','cajero'],
+      ['Sede','sede'],
+      ['Estado de entrega','estado_entrega'],
+      ['Observaciones','observaciones'],
+      ['Observaciones venta','observaciones_venta'],
+      ['Insumos requeridos','insumos_requeridos'],
+      ['Prioridad','prioridad']
+    ];
+    const contenido = campos.map(([lab, key]) => `<p><strong>${lab}:</strong> ${escapeHtml(item[key] != null ? String(item[key]) : '')}</p>`).join('');
+    overlay.innerHTML = `<div class="modal-box"><button class="close-btn">Cerrar</button>${contenido}</div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('.close-btn').addEventListener('click', () => overlay.remove());
   }
 
   qsa('.kanban-dropzone').forEach(zone => {
