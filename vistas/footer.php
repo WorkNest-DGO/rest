@@ -57,7 +57,7 @@
     </div>
 </div>
         <!-- Footer End -->
-
+        <script src="../../utils/js/modal-lite.js"></script>
         <a href="#" class="back-to-top"><i class="fa fa-chevron-up"></i></a>
 
         <!-- JavaScript Libraries -->

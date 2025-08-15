@@ -1,3 +1,8 @@
+function showAppMsg(msg) {
+    const body = document.querySelector('#appMsgModal .modal-body');
+    if (body) body.textContent = String(msg);
+    showModal('#appMsgModal');
+}
 let catalogoInsumos = [];
 let catalogoProductos = [];
 const imagenDefault = '../../utils/img/default.jpg';

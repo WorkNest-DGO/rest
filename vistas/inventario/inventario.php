@@ -136,7 +136,7 @@ ob_start();
     </div>
   </div>
 </div>
-<script src="../../utils/js/modal-lite.js"></script>
+
 <script src="inventario.js"></script>
 <?php
 $content = ob_get_clean();

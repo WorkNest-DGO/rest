@@ -310,7 +310,7 @@ ob_start();
 </div>
 
   <?php require_once __DIR__ . '/../footer.php'; ?>
-  <script src="../../utils/js/modal-lite.js"></script>
+  
   <script>
     // ID de usuario proveniente de la sesión para operaciones en JS
     window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;
