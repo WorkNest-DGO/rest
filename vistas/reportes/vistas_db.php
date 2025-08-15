@@ -64,6 +64,7 @@ ob_start();
     </div>
 </div>
 <?php require_once __DIR__ . '/../footer.php'; ?>
+<script src="../../utils/js/modal-lite.js"></script>
 <script src="vistas_db.js"></script>
 </body>
 
