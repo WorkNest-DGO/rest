@@ -188,6 +188,47 @@ ob_start();
 
 
 
+<!-- Modal Nuevo Proveedor -->
+<div class="modal fade" id="modalProveedor" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="formProveedor">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nuevo Proveedor</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="drag-container">
+                        <ul class="drag-list">
+                            <li class="drag-column">
+                                <div class="drag-column-header">Datos del proveedor</div>
+                                <ul class="drag-inner-list">
+                                    <li class="drag-item">
+                                        <label class="drag-options-label" for="provNombre">Nombre:
+                                            <input type="text" id="provNombre" class="form-control">
+                                        </label>
+                                        <label class="drag-options-label" for="provTelefono">Teléfono:
+                                            <input type="text" id="provTelefono" class="form-control">
+                                        </label>
+                                        <label class="drag-options-label" for="provDireccion">Dirección:
+                                            <input type="text" id="provDireccion" class="form-control">
+                                        </label>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn custom-btn me-2" type="submit">Guardar</button>
+                    <button class="btn custom-btn me-2" type="button" id="cancelarProveedor" data-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Modal Nuevo Proveedor End -->
+
 <?php require_once __DIR__ . '/../footer.php'; ?>
 <script src="../../utils/js/modal-lite.js"></script>
 <script src="insumos.js"></script>
