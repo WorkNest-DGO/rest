@@ -4,6 +4,15 @@ function showAppMsg(msg) {
     showModal('#appMsgModal');
 }
 window.alert = showAppMsg;
+const userDiv = document.getElementById('user-info');
+const USER_ID = parseInt(userDiv?.dataset.usuarioId || '0', 10);
+const USER_ROL = userDiv?.dataset.rol || '';
+const IS_PRIVILEGED = USER_ROL === 'admin' || USER_ROL === 'cajero';
+
+if (!IS_PRIVILEGED) {
+    const alertBox = document.getElementById('limit-alert');
+    if (alertBox) alertBox.classList.remove('d-none');
+}
 
 const params = new URLSearchParams(location.search);
 const repartidorId = params.get('id');
@@ -16,9 +25,17 @@ function diffMins(a, b) {
 
 async function cargarEntregas() {
     try {
-        const url = repartidorId
-            ? `../../api/repartidores/listar_entregas.php?repartidor_id=${repartidorId}`
-            : '../../api/repartidores/listar_entregas.php';
+        let url = '../../api/repartidores/listar_entregas.php';
+        const qs = new URLSearchParams();
+        if (repartidorId) {
+            qs.set('repartidor_id', repartidorId);
+        }
+        if (!IS_PRIVILEGED) {
+            qs.set('usuario_id', String(USER_ID));
+        }
+        if ([...qs].length) {
+            url += '?' + qs.toString();
+        }
         const resp = await fetch(url);
         const data = await resp.json();
         if (data.success) {
@@ -26,7 +43,11 @@ async function cargarEntregas() {
             const entregadasBody = document.querySelector('#tabla-entregadas tbody');
             pendientesBody.innerHTML = '';
             entregadasBody.innerHTML = '';
-            data.resultado.forEach(v => {
+            let registros = data.resultado || [];
+            if (!IS_PRIVILEGED) {
+                registros = registros.filter(v => parseInt(v.usuario_id) === USER_ID);
+            }
+            registros.forEach(v => {
                 const row = document.createElement('tr');
                 const productos = v.productos.map(p => `${p.nombre} (${p.cantidad})`).join(', ');
                 const asign = v.fecha_asignacion || '';
@@ -168,4 +189,13 @@ function mostrarDetalle(info) {
 }
 
 
-document.addEventListener('DOMContentLoaded', cargarEntregas);
+document.addEventListener('DOMContentLoaded', () => {
+    if (!IS_PRIVILEGED) {
+        const sel = document.querySelector('select[name="usuario_id"], #usuario_id');
+        if (sel) {
+            sel.value = USER_ID;
+            sel.disabled = true;
+        }
+    }
+    cargarEntregas();
+});
