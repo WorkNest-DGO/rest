@@ -535,7 +535,18 @@ function abrirCorteTemporal() {
 function generarHTMLCorte(r) {
     let html = '<table class="table"><tbody>';
     for (const [key, val] of Object.entries(r)) {
-        html += `<tr><td>${key}</td><td>${val}</td></tr>`;
+        let displayVal = val;
+        if (key === 'efectivo' && val && typeof val === 'object') {
+            const productos = val.productos ?? 0;
+            const propina = val.propina ?? 0;
+            const total = val.total ?? 0;
+            displayVal = `Efectivo - Productos: ${productos}, Propina: ${propina}, Total: ${total}`;
+        } else if (key === 'total_meseros' && Array.isArray(val)) {
+            displayVal = val.map(m => `${m.nombre}: ${m.total}`).join('<br>');
+        } else if (key === 'total_repartidor' && Array.isArray(val)) {
+            displayVal = val.map(rp => `${rp.nombre}: ${rp.total}`).join('<br>');
+        }
+        html += `<tr><td>${key}</td><td>${displayVal}</td></tr>`;
     }
     html += '</tbody></table>';
     return html;
