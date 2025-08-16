@@ -36,7 +36,7 @@ document.getElementById('usuarioSelect').onchange = ev => {
 async function cargarRutasUsuario(usuario) {
     if (!usuario) return;
     try {
-        const resp = await fetch(`../../api/usuario_ruta/listar_usuario_rutas.php?usuario=${encodeURIComponent(usuario)}`);
+        const resp = await fetch(`../../api/rutas/listar_usuario_rutas.php?usuario=${encodeURIComponent(usuario)}`);
         const data = await resp.json();
         const tbody = document.querySelector('#tablaRutasUsuario tbody');
         tbody.innerHTML = '';
@@ -68,7 +68,7 @@ async function guardarRutasUsuario() {
     const checks = document.querySelectorAll('#tablaRutasUsuario tbody input[type="checkbox"]');
     const rutas = Array.from(checks).filter(c => c.checked).map(c => c.dataset.nombre);
     try {
-        const resp = await fetch('../../api/usuario_ruta/guardar_usuario_rutas.php', {
+        const resp = await fetch('../../api/rutas/guardar_usuario_rutas.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ usuario, rutas })
