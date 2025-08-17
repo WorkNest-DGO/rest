@@ -6576,7 +6576,7 @@ a.close.disabled {
     display: flex;
     -ms-flex-direction: column;
     flex-direction: column;
-    width: 100%;
+    width: 650px;
     pointer-events: auto;
     background-color: #222;
     background-clip: padding-box;

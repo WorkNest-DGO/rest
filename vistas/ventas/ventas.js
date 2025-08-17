@@ -1420,7 +1420,7 @@ async function verDetalles(id) {
                 : info.tipo_entrega === 'domicilio'
                     ? info.repartidor
                     : 'Venta rápida';
-            let html = `<h3>Detalle de venta</h3>
+            let html = `
                         <p>Tipo: ${info.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${info.mesero}</p>`;
             html += `<table border="1"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th></tr></thead><tbody>`;
             info.productos.forEach(p => {
