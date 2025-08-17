@@ -121,6 +121,7 @@ ob_start();
     </div>
   </div>
 </div>
+
 <!-- Modal global de mensajes -->
 <div class="modal fade" id="appMsgModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog" role="document">
@@ -136,8 +137,9 @@ ob_start();
     </div>
   </div>
 </div>
-
+<?php require_once __DIR__ . '/../footer.php'; ?>
 <script src="inventario.js"></script>
+
 <?php
 $content = ob_get_clean();
 include __DIR__ . '/../nav.php';

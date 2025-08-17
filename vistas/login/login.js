@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const usuario = document.getElementById("usuario").value.trim();
     const contrasena = document.getElementById("contrasena").value.trim();
 
-    fetch("auth/login.php", {
+    fetch("api/usuarios/login.php", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
