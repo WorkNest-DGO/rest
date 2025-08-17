@@ -80,14 +80,14 @@ function renderPagination(total, page) {
     if (page > 1) {
         const prev = document.createElement('button');
         prev.textContent = 'Anterior';
-        prev.className = 'btn btn-secondary me-1';
+        prev.className = 'btn custom-btn me-1';
         prev.addEventListener('click', () => cargarHistorial(page - 1));
         cont.appendChild(prev);
     }
     for (let i = 1; i <= total; i++) {
         const btn = document.createElement('button');
         btn.textContent = i;
-        btn.className = 'btn btn-secondary me-1';
+        btn.className = 'btn custom-btn me-1';
         if (i === page) btn.disabled = true;
         btn.addEventListener('click', () => cargarHistorial(i));
         cont.appendChild(btn);
@@ -95,7 +95,7 @@ function renderPagination(total, page) {
     if (page < total) {
         const next = document.createElement('button');
         next.textContent = 'Siguiente';
-        next.className = 'btn btn-secondary';
+        next.className = 'btn custom-btn';
         next.addEventListener('click', () => cargarHistorial(page + 1));
         cont.appendChild(next);
     }
@@ -504,7 +504,7 @@ async function abrirCaja() {
         btnAbrir.textContent = 'Abrir Caja';
 
         const btnCancelar = document.createElement('button');
-        btnCancelar.className = 'btn btn-secondary';
+        btnCancelar.className = 'btn custom-btn';
         btnCancelar.textContent = 'Cancelar';
 
         footer.appendChild(btnAbrir);
@@ -1442,7 +1442,7 @@ async function verDetalles(id) {
             html += `<select id="detalle_producto"></select>`;
             html += `<input type="number" id="detalle_cantidad" value="1" min="1">`;
             html += `<button class="btn custom-btn" id="addDetalle">Agregar</button>`;
-            html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button  class="btn custom-btn" id="cerrarDetalle" data-dismiss="modal">Cerrar</button>`;
+            html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button hidden class="btn custom-btn" id="cerrarDetalle" data-dismiss="modal">Cerrar</button>`;
 
             contenedor.innerHTML = html;
             showModal('#modal-detalles');

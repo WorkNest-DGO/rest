@@ -195,7 +195,7 @@ ob_start();
       </div>
       <div class="modal-body"><!-- contenido dinámico --></div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn custom-btn" data-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
@@ -210,7 +210,7 @@ ob_start();
       </div>
       <div class="modal-body"><!-- contenido dinámico --></div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn custom-btn" data-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
@@ -267,8 +267,8 @@ ob_start();
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="guardarMovimiento">Guardar</button>
+        <button type="button" class="btn custom-btn" data-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn custom-btn" id="guardarMovimiento">Guardar</button>
       </div>
     </div>
   </div>
@@ -286,8 +286,8 @@ ob_start();
         <pre id="corteTicketText" class="ticket-mono"></pre>
       </div>
       <div class="modal-footer">
-        <button type="button" id="btnImprimirCorte" class="btn btn-primary">Imprimir</button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+        <button type="button" id="btnImprimirCorte" class="btn custom-btn">Imprimir</button>
+        <button type="button" class="btn custom-btn" data-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
@@ -300,7 +300,7 @@ ob_start();
       <div class="modal-body">¿Deseas cancelar la venta?</div>
       <div class="modal-footer">
         <button type="button" class="btn btn-danger" id="confirmCancelVenta">Cancelar venta</button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn custom-btn" data-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
@@ -316,7 +316,7 @@ ob_start();
       </div>
       <div class="modal-body"></div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn custom-btn" data-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
