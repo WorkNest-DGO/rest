@@ -1422,7 +1422,7 @@ async function verDetalles(id) {
                     : 'Venta rápida';
             let html = `
                         <p>Tipo: ${info.tipo_entrega}<br>Destino: ${destino}<br>Mesero: ${info.mesero}</p>`;
-            html += `<table border="1"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th></tr></thead><tbody>`;
+            html += `<table class="styled-table" border="1"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th></tr></thead><tbody>`;
             info.productos.forEach(p => {
                 const btnEliminar = p.estado_producto !== 'entregado'
                     ? `<button class="btn custom-btn delDetalle" data-id="${p.id}">Eliminar</button>`
