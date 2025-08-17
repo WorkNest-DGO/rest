@@ -465,37 +465,111 @@ fetch('../../api/corte_caja/verificar_corte_abierto.php', {
 }
 
 async function abrirCaja() {
-    let fondoData = await fetch('../../api/corte_caja/consultar_fondo.php?usuario_id=' + usuarioId)
+    const fondoData = await fetch('../../api/corte_caja/consultar_fondo.php?usuario_id=' + usuarioId)
         .then(r => r.json());
-    let monto = fondoData.existe ? fondoData.monto : prompt('Indica fondo de caja:');
-    if (monto === null || monto === '' || isNaN(parseFloat(monto))) {
-        alert('Debes indicar un monto');
-        return;
-    }
-    if (!fondoData.existe) {
-        await fetch('../../api/corte_caja/guardar_fondo.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ usuario_id: usuarioId, monto: parseFloat(monto) })
-        });
-    }
-    try {
-        const resp = await fetch('../../api/corte_caja/iniciar_corte.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ usuario_id: usuarioId })
-        });
-        const data = await resp.json();
-        if (data.success) {
-            corteIdActual = data.resultado ? data.resultado.corte_id : data.corte_id;
-            await verificarCorte();
-        } else {
-            alert(data.mensaje);
+
+    let modal = document.getElementById('modalAbrirCaja');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modalAbrirCaja';
+        modal.className = 'modal fade';
+        modal.setAttribute('tabindex', '-1');
+
+        const dialog = document.createElement('div');
+        dialog.className = 'modal-dialog';
+
+        const content = document.createElement('div');
+        content.className = 'modal-content';
+
+        const body = document.createElement('div');
+        body.className = 'modal-body';
+
+        const label = document.createElement('label');
+        label.textContent = 'Monto de apertura:';
+
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = 'montoApertura';
+        input.className = 'form-control';
+
+        body.appendChild(label);
+        body.appendChild(input);
+
+        const footer = document.createElement('div');
+        footer.className = 'modal-footer';
+
+        const btnAbrir = document.createElement('button');
+        btnAbrir.id = 'btnAbrirCajaModal';
+        btnAbrir.className = 'btn custom-btn';
+        btnAbrir.textContent = 'Abrir Caja';
+
+        const btnCancelar = document.createElement('button');
+        btnCancelar.className = 'btn btn-secondary';
+        btnCancelar.textContent = 'Cancelar';
+
+        footer.appendChild(btnAbrir);
+        footer.appendChild(btnCancelar);
+
+        content.appendChild(body);
+        content.appendChild(footer);
+        dialog.appendChild(content);
+        modal.appendChild(dialog);
+        document.body.appendChild(modal);
+
+        if (!document.getElementById('modalAbrirCajaStyles')) {
+            const style = document.createElement('style');
+            style.id = 'modalAbrirCajaStyles';
+            style.textContent = '#modalAbrirCaja .modal-footer{display:flex;justify-content:flex-end;gap:0.5rem;}';
+            document.head.appendChild(style);
         }
-    } catch (err) {
-        console.error(err);
-        alert('Error al abrir caja');
+
+        btnCancelar.addEventListener('click', () => hideModal(modal));
     }
+
+    const inputMonto = modal.querySelector('#montoApertura');
+    if (fondoData.existe) {
+        inputMonto.value = fondoData.monto;
+        inputMonto.readOnly = true;
+    } else {
+        inputMonto.value = '';
+        inputMonto.readOnly = false;
+    }
+
+    const btnAbrir = modal.querySelector('#btnAbrirCajaModal');
+    btnAbrir.onclick = async () => {
+        const monto = inputMonto.value.trim();
+        if (monto === '' || isNaN(parseFloat(monto))) {
+            alert('Debes indicar un monto');
+            return;
+        }
+        if (!fondoData.existe) {
+            await fetch('../../api/corte_caja/guardar_fondo.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario_id: usuarioId, monto: parseFloat(monto) })
+            });
+        }
+        try {
+            const resp = await fetch('../../api/corte_caja/iniciar_corte.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario_id: usuarioId })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                corteIdActual = data.resultado ? data.resultado.corte_id : data.corte_id;
+                hideModal(modal);
+                await verificarCorte();
+            } else {
+                alert(data.mensaje);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error al abrir caja');
+        }
+    };
+
+    showModal(modal);
 }
 
 async function cerrarCaja() {
