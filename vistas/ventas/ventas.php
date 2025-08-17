@@ -293,6 +293,19 @@ ob_start();
   </div>
 </div>
 
+<!-- Modal de confirmación de cancelación -->
+<div class="modal fade" id="cancelVentaModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-body">¿Deseas cancelar la venta?</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" id="confirmCancelVenta">Cancelar venta</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal global de mensajes -->
 <div class="modal fade" id="appMsgModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog" role="document">
