@@ -1402,27 +1402,6 @@ async function resetFormularioVenta() {
   if (tipoEntrega) tipoEntrega.focus();
 }
 
-async function cancelarVenta(id) {
-    if (!confirm('¿Seguro de cancelar la venta?')) return;
-    try {
-        const resp = await fetch('../../api/ventas/cancelar_venta.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ venta_id: parseInt(id) })
-        });
-        const data = await resp.json();
-        if (data.success) {
-            alert('Venta cancelada');
-            await cargarHistorial();
-        } else {
-            alert(data.mensaje);
-        }
-    } catch (err) {
-        console.error(err);
-        alert('Error al cancelar la venta');
-    }
-}
-
 async function verDetalles(id) {
     ventaIdActual = id;
     try {
@@ -1772,28 +1751,40 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnRetiro').addEventListener('click', () => abrirModalMovimiento('retiro'));
     document.getElementById('guardarMovimiento').addEventListener('click', guardarMovimientoCaja);
 
-    // Delegación de eventos con jQuery para botones dinámicos
-$(document).on('click', '.btn-detalle', function () {
-        const id = $(this).data('id');
-        verDetalles(id);
+    // Delegación de eventos con JavaScript puro para botones dinámicos
+    const cancelModal = document.getElementById('cancelVentaModal');
+    const confirmCancelBtn = document.getElementById('confirmCancelVenta');
+
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('btn-detalle')) {
+            const id = e.target.dataset.id;
+            verDetalles(id);
+        } else if (e.target.classList.contains('btn-cancelar')) {
+            const id = e.target.dataset.id;
+            if (cancelModal) {
+                cancelModal.dataset.id = id;
+                showModal('#cancelVentaModal');
+            }
+        }
     });
 
-    $(document).on('click', '.btn-cancelar', function () {
-        const id = $(this).data('id');
-        if (!confirm('¿Seguro de cancelar la venta?')) return;
-        $.ajax({
-            url: '../../api/ventas/cancelar_venta.php',
-            method: 'POST',
-            contentType: 'application/json',
-            dataType: 'json',
-            data: JSON.stringify({ venta_id: parseInt(id) })
-        }).done(function (resp) {
-            alert(resp.mensaje || (resp.success ? 'Venta cancelada' : 'Error'));
-            location.reload();
-        }).fail(function () {
-            alert('Error al cancelar la venta');
+    if (confirmCancelBtn) {
+        confirmCancelBtn.addEventListener('click', function () {
+            const id = cancelModal && cancelModal.dataset.id;
+            hideModal('#cancelVentaModal');
+            fetch('../../api/ventas/cancelar_venta.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ venta_id: parseInt(id, 10) })
+            })
+                .then(r => r.json())
+                .then(resp => {
+                    alert(resp.mensaje || (resp.success ? 'Venta cancelada' : 'Error'));
+                    if (resp.success) location.reload();
+                })
+                .catch(() => alert('Error al cancelar la venta'));
         });
-    });
+    }
 
 });
 
