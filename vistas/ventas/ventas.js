@@ -894,24 +894,26 @@ async function finalizarCorte() {
 
 async function cargarRepartidores() {
     try {
-        const resp = await fetch('../../api/repartidores/listar_repartidores.php');
+        const resp = await fetch('../../api/usuarios/listar_usuarios.php');
         const data = await resp.json();
-        if (data.success) {
-            repartidores = data.resultado;
-            const select = document.getElementById('repartidor_id');
-            select.innerHTML = '<option value="">--Selecciona--</option>';
-            repartidores.forEach(r => {
-                const opt = document.createElement('option');
-                opt.value = r.id;
-                opt.textContent = r.nombre;
-                select.appendChild(opt);
-            });
+        const select = document.getElementById('repartidor_id');
+        if (!select) return;
+        select.innerHTML = '<option value="">--Selecciona--</option>';
+
+        if (data && data.success) {
+            (data.usuarios || [])
+                .filter(u => u.rol === 'repartidor' && parseInt(u.activo) === 1)
+                .forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.id;
+                    opt.textContent = u.nombre;
+                    select.appendChild(opt);
+                });
         } else {
-            alert(data.mensaje);
+            console.error(data?.mensaje || 'Error al obtener usuarios');
         }
     } catch (err) {
-        console.error(err);
-        alert('Error al cargar repartidores');
+        console.error('Error al cargar repartidores:', err);
     }
 }
 
@@ -1658,9 +1660,18 @@ if (tipoEntregaEl) {
     const campoRepartidor = document.getElementById('campoRepartidor');
     const campoObservacion = document.getElementById('campoObservacion');
 
-    if (campoMesa) campoMesa.style.display = (tipo === 'mesa') ? 'block' : 'none';
-    if (campoRepartidor) campoRepartidor.style.display = (tipo === 'domicilio') ? 'block' : 'none';
-    if (campoObservacion) campoObservacion.style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
+    if (tipo === 'domicilio') {
+      if (campoMesa) campoMesa.style.display = 'none';
+      if (campoRepartidor) campoRepartidor.style.display = 'block';
+      cargarRepartidores();
+    } else {
+      if (campoMesa) campoMesa.style.display = (tipo === 'mesa') ? 'block' : 'none';
+      if (campoRepartidor) campoRepartidor.style.display = 'none';
+    }
+
+    if (campoObservacion) {
+      campoObservacion.style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
+    }
 
     actualizarSelectorUsuario();
   });
