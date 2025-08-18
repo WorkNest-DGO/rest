@@ -144,4 +144,28 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('a[href="#Entregados"]').addEventListener('click', () => {
         setTimeout(cargarEntregados, 10);
     });
+    escucharNuevasVentas();
 });
+
+function actualizarPantallaCocina(data) {
+    cargarPendientes();
+}
+
+async function escucharNuevasVentas() {
+    try {
+        const resp = await fetch('../../api/kitchen/long_polling.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ultimo_id: ultimoIdVenta })
+        });
+        const data = await resp.json();
+        if (data.nueva_venta) {
+            ultimoIdVenta = data.data.id;
+            actualizarPantallaCocina(data.data);
+        }
+    } catch (err) {
+        console.error('Error escuchando ventas', err);
+    } finally {
+        escucharNuevasVentas();
+    }
+}

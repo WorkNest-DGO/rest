@@ -1,11 +1,14 @@
 <?php
 require_once __DIR__ . '/../../utils/cargar_permisos.php';
+require_once __DIR__ . '/../../config/db.php';
 $path_actual = str_replace('/rest', '', $_SERVER['PHP_SELF']);
 if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
     http_response_code(403);
     echo 'Acceso no autorizado';
     exit;
 }
+$row = $conn->query("SELECT MAX(id) AS max_id FROM venta_detalles")->fetch_assoc();
+$ultimo_id_venta = $row['max_id'] ?? 0;
 $title = 'Cocina';
 ob_start();
 ?>
@@ -75,9 +78,13 @@ ob_start();
         <!-- Menu End -->
 
 <?php require_once __DIR__ . '/../footer.php'; ?>
+<script>
+  var ultimoIdVenta = <?php echo (int)$ultimo_id_venta; ?>;
+</script>
 <script src="cocina.js"></script>
     </body>
 </html>
 <?php
 $content = ob_get_clean();
 include __DIR__ . '/../nav.php';
+?>
