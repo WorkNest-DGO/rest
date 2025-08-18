@@ -144,11 +144,13 @@ if (!isset($venta_id)) {
     }
 }
 
+// Insertar detalles de la venta y conservar el último ID generado
 $detalle = $conn->prepare('INSERT INTO venta_detalles (venta_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)');
 if (!$detalle) {
     error('Error al preparar detalle: ' . $conn->error);
 }
 
+$ultimo_detalle_id = 0;
 foreach ($productos as $p) {
     $producto_id     = (int) $p['producto_id'];
     $cantidad        = (int) $p['cantidad'];
@@ -159,6 +161,7 @@ foreach ($productos as $p) {
         $detalle->close();
         error('Error al insertar detalle: ' . $detalle->error);
     }
+    $ultimo_detalle_id = $detalle->insert_id;
 }
 $detalle->close();
 
@@ -173,4 +176,4 @@ if ($log) {
     $log->close();
 }
 
-success(['venta_id' => $venta_id]);
+success(['venta_id' => $venta_id, 'ultimo_detalle_id' => $ultimo_detalle_id]);

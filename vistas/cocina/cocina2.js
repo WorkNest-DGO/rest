@@ -4,6 +4,7 @@ function showAppMsg(msg) {
     showModal('#appMsgModal');
 }
 window.alert = showAppMsg;
+window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina') || '0', 10);
 (() => {
   const qs = s => document.querySelector(s);
   const qsa = s => Array.from(document.querySelectorAll(s));
@@ -149,6 +150,11 @@ window.alert = showAppMsg;
     if (!json.success){ alert(json.message || 'Error'); return; }
     cache = json.resultado || json.data || json;
     render(cache);
+    const ids = cache.map(it => parseInt(it.detalle_id, 10) || 0);
+    if (ids.length) {
+      window.ultimoDetalleCocina = Math.max.apply(null, ids);
+      localStorage.setItem('ultimoDetalleCocina', String(window.ultimoDetalleCocina));
+    }
   }
 
   async function cambiarEstado(detalle_id, nuevo_estado){
@@ -170,9 +176,42 @@ window.alert = showAppMsg;
     }
   }
 
+  window.cargarDatosCocina = cargar;
+
   filtroInput.addEventListener('input', ()=> render(cache));
   tipoEntregaSel.addEventListener('change', ()=> render(cache));
   btnRefrescar.addEventListener('click', cargar);
-
-  cargar();
 })();
+
+function escucharNuevasVentas(ultimoId) {
+  $.ajax({
+    url: '../../api/cocina/listen_updates.php',
+    type: 'POST',
+    data: { ultimo_id: ultimoId },
+    dataType: 'json',
+    timeout: 30000,
+    success: function (resp) {
+      if (resp.nueva_venta) {
+        cargarDatosCocina();
+      }
+      const nextId = resp.ultimo_id || ultimoId;
+      window.ultimoDetalleCocina = nextId;
+      localStorage.setItem('ultimoDetalleCocina', String(nextId));
+      escucharNuevasVentas(nextId);
+    },
+    error: function () {
+      setTimeout(() => escucharNuevasVentas(ultimoId), 1000);
+    }
+  });
+}
+
+$(document).ready(function () {
+  if (typeof cargarDatosCocina === 'function') {
+    cargarDatosCocina().then(() => {
+      const startId = window.ultimoDetalleCocina || 0;
+      escucharNuevasVentas(startId);
+    });
+  } else {
+    escucharNuevasVentas(0);
+  }
+});

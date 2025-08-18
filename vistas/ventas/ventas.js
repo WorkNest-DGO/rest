@@ -1317,6 +1317,10 @@ async function registrarVenta() {
         const data = await resp.json();
         if (data.success) {
             alert('Venta registrada');
+            if (data.ultimo_detalle_id) {
+                window.ultimoDetalleCocina = data.ultimo_detalle_id;
+                localStorage.setItem('ultimoDetalleCocina', String(data.ultimo_detalle_id));
+            }
             await cargarHistorial();
             await resetFormularioVenta();
         } else {

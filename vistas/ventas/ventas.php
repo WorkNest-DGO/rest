@@ -333,6 +333,8 @@ ob_start();
     window.corteId = <?php echo json_encode($_SESSION['corte_id'] ?? null); ?>;
     // Catálogo de denominaciones cargado desde la base de datos
     const catalogoDenominaciones = <?php echo json_encode($denominaciones); ?>;
+    // Último ID de detalle enviado a cocina almacenado
+    window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina') || '0', 10);
   </script>
   <script src="ventas.js"></script>
   </body>
