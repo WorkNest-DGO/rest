@@ -1650,36 +1650,21 @@ function verificarActivacionProductos() {
 }
 
 // Listener tipo_entrega: deja tu lógica de mostrar/ocultar divs y AL FINAL llama a actualizarSelectorUsuario()
-$('#tipo_entrega').on('change', async function () {
-  const tipo = this.value;
-  const campoMesa = document.getElementById('campoMesa');
-  const campoRepartidor = document.getElementById('campoRepartidor');
-  const campoObservacion = document.getElementById('campoObservacion');
+const tipoEntregaEl = document.getElementById('tipo_entrega');
+if (tipoEntregaEl) {
+  tipoEntregaEl.addEventListener('change', function () {
+    const tipo = this.value;
+    const campoMesa = document.getElementById('campoMesa');
+    const campoRepartidor = document.getElementById('campoRepartidor');
+    const campoObservacion = document.getElementById('campoObservacion');
 
-  if (campoMesa) campoMesa.style.display = (tipo === 'mesa') ? 'block' : 'none';
-  if (campoObservacion) campoObservacion.style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
+    if (campoMesa) campoMesa.style.display = (tipo === 'mesa') ? 'block' : 'none';
+    if (campoRepartidor) campoRepartidor.style.display = (tipo === 'domicilio') ? 'block' : 'none';
+    if (campoObservacion) campoObservacion.style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
 
-  if (tipo === 'domicilio' || tipo === 'repartidor casa') {
-    if (campoRepartidor) campoRepartidor.style.display = 'block';
-    try {
-      const resp = await fetch('../../api/usuarios/listar_usuarios.php');
-      const data = await resp.json();
-      const usuarios = (data.resultado || data).filter(u => u.rol === 'repartidor' && parseInt(u.activo) === 1);
-      const select = $('#repartidor_id');
-      select.empty().append(new Option('--Selecciona--', ''));
-      usuarios.forEach(u => {
-        select.append(new Option(u.nombre, u.id));
-      });
-    } catch (err) {
-      console.error('Error al cargar repartidores', err);
-    }
-  } else {
-    if (campoRepartidor) campoRepartidor.style.display = 'none';
-    $('#repartidor_id').empty();
-  }
-
-  actualizarSelectorUsuario();
-});
+    actualizarSelectorUsuario();
+  });
+}
 
 // Detecta cambios en mesa o repartidor
 document.getElementById('mesa_id').addEventListener('change', () => {
