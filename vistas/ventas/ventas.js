@@ -968,28 +968,26 @@ function setLabelUsuario(texto) {
   if (lbl) lbl.textContent = texto;
 }
 
-async function cargarUsuariosPorRol(rol = 'repartidor') {
+async function cargarUsuariosPorRol() {
   try {
-    const resp = await fetch('../../api/usuarios/listar_usuarios.php');
+    const resp = await fetch('../../api/usuarios/listar_repartidor.php');
     const data = await resp.json();
     const select = document.getElementById('usuario_id');
     if (!select) return;
     select.innerHTML = '<option value="">--Selecciona--</option>';
 
     if (data && data.success) {
-      (data.resultado || [])
-        .filter(u => String(u.rol || '').toLowerCase() === String(rol).toLowerCase())
-        .forEach(u => {
-          const opt = document.createElement('option');
-          opt.value = u.id;
-          opt.textContent = u.nombre;
-          select.appendChild(opt);
-        });
+      (data.resultado || []).forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = u.nombre;
+        select.appendChild(opt);
+      });
     } else {
-      console.warn(data?.mensaje || 'No se pudieron cargar usuarios.');
+      console.warn(data?.mensaje || 'No se pudieron cargar meseros.');
     }
   } catch (e) {
-    console.error('Error al cargar usuarios:', e);
+    console.error('Error al cargar meseros:', e);
   }
 }
 
@@ -1009,7 +1007,7 @@ async function actualizarSelectorUsuario() {
     usuarioSel.disabled = false;
     if (esRepartidorCasaSeleccionado()) {
       setLabelUsuario('Usuario:');
-      await cargarUsuariosPorRol('repartidor');
+      await cargarUsuariosPorRol();
     } else {
       setLabelUsuario('Mesero:');
       await cargarMeseros();
