@@ -755,32 +755,11 @@ function mostrarModalDesglose(dataApi) {
 
 
     html += '<div id="camposDesglose"></div>';
-    html += '<div><label>Pago Boucher</label><input type="number" id="pagoBoucher" disabled></div>';
-    html += '<div><label>Pago Cheque</label><input type="number" id="pagoCheque" disabled></div>';
     html += '<p>Efectivo contado: $<span id="totalEfectivo">0.00</span> | Dif.: $<span id="difIngresado">0.00</span></p>';
     html += '<button class="btn custom-btn" id="guardarDesglose">Guardar</button> <button class="btn custom-btn" id="cancelarDesglose" data-dismiss="modal">Cancelar</button>';
     html += '</div>';
     body.innerHTML = html;
     showModal('#modalDesglose');
-
-    // Prefill boucher and cheque amounts and disable inputs
-    fetch('../../api/cortes/resumen_corte_actual.php')
-        .then(res => res.json())
-        .then(data => {
-            const boucher = data?.resultado?.boucher?.total ?? 0;
-            const cheque = data?.resultado?.efectivo?.total ?? 0;
-            const inpBoucher = modal.querySelector('#pagoBoucher');
-            const inpCheque = modal.querySelector('#pagoCheque');
-            if (inpBoucher) {
-                inpBoucher.value = boucher;
-                inpBoucher.disabled = true;
-            }
-            if (inpCheque) {
-                inpCheque.value = cheque;
-                inpCheque.disabled = true;
-            }
-        })
-        .catch(err => console.error('Error al prellenar pagos:', err));
 
     document.getElementById('lblFondo').textContent = fondoInicial.toFixed(2);
     document.getElementById('lblTotalDepositos').textContent = (Number.parseFloat(r.total_depositos) || 0).toFixed(2);
@@ -834,11 +813,6 @@ function mostrarModalDesglose(dataApi) {
 
     modal.querySelector('#guardarDesglose').addEventListener('click', async () => {
         calcular();
-        const diferencia = totalIngresado - totalEsperado;
-        if (diferencia < 0) {
-            alert('No se puede cerrar la caja con diferencia negativa');
-            return;
-        }
         const detalle = [];
         cont.querySelectorAll('.grupo-pago').forEach(gr => {
             const inp = gr.querySelector('.cantidad');
@@ -1688,7 +1662,7 @@ $('#tipo_entrega').on('change', async function () {
   if (tipo === 'domicilio' || tipo === 'repartidor casa') {
     if (campoRepartidor) campoRepartidor.style.display = 'block';
     try {
-      const resp = await fetch('../../api/usuarios/listar.php');
+      const resp = await fetch('../../api/usuarios/listar_usuarios.php');
       const data = await resp.json();
       const usuarios = (data.resultado || data).filter(u => u.rol === 'repartidor' && parseInt(u.activo) === 1);
       const select = $('#repartidor_id');
