@@ -83,7 +83,7 @@ $datos2 =json_decode($datos,true);
 
 
 //$connector = new WindowsPrintConnector("smb://ip_maquina/nombre_impresora");
-$connector = new WindowsPrintConnector("smb://FUED/80");
+$connector = new WindowsPrintConnector("smb://FUED/pos58");
 //$connector = new FilePrintConnector("php://stdout");
 $printer = new Printer($connector);
 $printer -> initialize();
