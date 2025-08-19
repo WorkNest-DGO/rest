@@ -11,6 +11,21 @@ if (typeof catalogoDenominaciones !== 'undefined' && Array.isArray(catalogoDenom
   console.warn('Denominaciones no disponibles aún');
 }
 
+$(document).ready(function() {
+    $('.select-producto').select2({
+        placeholder: 'Selecciona un producto',
+        allowClear: true
+    });
+
+    $(document).on('focus', '.select-producto', function () {
+        if (!$(this).hasClass('select2-hidden-accessible')) {
+            $(this).select2({
+                placeholder: 'Selecciona un producto',
+                allowClear: true
+            });
+        }
+    });
+});
 
 let currentPage = 1;
 let limit = 15;
@@ -1441,7 +1456,7 @@ async function verDetalles(id) {
                 html += `<p>Evidencia:<br><img src="../../uploads/evidencias/${info.foto_entrega}" width="300"></p>`;
             }
             html += `<h4>Agregar producto</h4>`;
-            html += `<select id="detalle_producto"></select>`;
+            html += `<select id="detalle_producto" class="select-producto"></select>`;
             html += `<input type="number" id="detalle_cantidad" value="1" min="1">`;
             html += `<button class="btn custom-btn" id="addDetalle">Agregar</button>`;
             html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button hidden class="btn custom-btn" id="cerrarDetalle" data-dismiss="modal">Cerrar</button>`;

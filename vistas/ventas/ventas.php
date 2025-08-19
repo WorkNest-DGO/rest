@@ -122,7 +122,7 @@ ob_start();
             </thead>
             <tbody>
               <tr>
-                <td><select class="form-control producto"></select></td>
+                <td><select class="form-control producto select-producto"></select></td>
                 <td><input type="number" class="form-control cantidad"></td>
                 <td><input type="number" step="0.01" class="form-control precio" readonly></td>
               </tr>
@@ -323,7 +323,10 @@ ob_start();
 </div>
 
   <?php require_once __DIR__ . '/../footer.php'; ?>
-  
+
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
   <script>
     // ID de usuario proveniente de la sesión para operaciones en JS
     window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;
