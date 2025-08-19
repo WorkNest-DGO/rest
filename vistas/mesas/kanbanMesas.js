@@ -10,6 +10,24 @@ let meseros = [];
 const meseroSeleccionado = {};
 const usuarioActual = window.usuarioActual || { id: null, rol: '' };
 
+$(document).ready(function() {
+    $('.select-producto').select2({
+        placeholder: 'Selecciona un producto',
+        allowClear: true,
+        width: '100%'
+    });
+
+    $(document).on('focus', '.select-producto', function () {
+        if (!$(this).hasClass('select2-hidden-accessible')) {
+            $(this).select2({
+                placeholder: 'Selecciona un producto',
+                allowClear: true,
+                width: '100%'
+            });
+        }
+    });
+});
+
 async function cargarMesas() {
     try {
         const resp = await fetch('../../api/mesas/listar_mesas.php');
@@ -302,7 +320,7 @@ function mostrarModalDetalle(datos, ventaId, mesaId, estado, meseroId) {
     html += `<h4>Mesero</h4>`;
     html += `<select id="select_mesero" disabled></select>`;
     html += `<h4>Agregar producto</h4>`;
-    html += `<select id="nuevo_producto"></select>`;
+    html += `<select id="nuevo_producto" class="select-producto"></select>`;
     html += `<input type="number" id="nuevo_cantidad" value="1" min="1">`;
     const disabled = !ventaId && estado !== 'ocupada' ? 'disabled' : '';
     html += `<button id="agregarProductoVenta" data-venta="${ventaId || ''}" data-mesa="${mesaId}" data-estado="${estado}" >Agregar producto</button>`;

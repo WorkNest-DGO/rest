@@ -14,14 +14,16 @@ if (typeof catalogoDenominaciones !== 'undefined' && Array.isArray(catalogoDenom
 $(document).ready(function() {
     $('.select-producto').select2({
         placeholder: 'Selecciona un producto',
-        allowClear: true
+        allowClear: true,
+        width: '100%'
     });
 
     $(document).on('focus', '.select-producto', function () {
         if (!$(this).hasClass('select2-hidden-accessible')) {
             $(this).select2({
                 placeholder: 'Selecciona un producto',
-                allowClear: true
+                allowClear: true,
+                width: '100%'
             });
         }
     });
