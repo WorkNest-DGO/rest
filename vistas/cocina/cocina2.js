@@ -179,12 +179,15 @@ window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina'
   window.cargarDatosCocina = cargar;
 
   filtroInput.addEventListener('input', ()=> render(cache));
-  tipoEntregaSel.addEventListener('change', ()=> render(cache));
-  btnRefrescar.addEventListener('click', cargar);
+  filtroInput.addEventListener('change', ()=> { if (typeof forzarActualizacion === 'function') forzarActualizacion(); });
+  tipoEntregaSel.addEventListener('change', ()=> { render(cache); if (typeof forzarActualizacion === 'function') forzarActualizacion(); });
+  btnRefrescar.addEventListener('click', ()=> { if (typeof forzarActualizacion === 'function') forzarActualizacion(); else cargar(); });
 })();
 
+let escuchaXHR = null;
+
 function escucharNuevasVentas(ultimoId) {
-  $.ajax({
+  const req = $.ajax({
     url: '../../api/cocina/listen_updates.php',
     type: 'POST',
     data: { ultimo_id: ultimoId },
@@ -192,7 +195,7 @@ function escucharNuevasVentas(ultimoId) {
     timeout: 30000,
     success: function (resp) {
       if (resp.nueva_venta) {
-        cargarDatosCocina();
+        if (typeof cargarDatosCocina === 'function') cargarDatosCocina();
       }
       const nextId = resp.ultimo_id || ultimoId;
       window.ultimoDetalleCocina = nextId;
@@ -201,17 +204,37 @@ function escucharNuevasVentas(ultimoId) {
     },
     error: function () {
       setTimeout(() => escucharNuevasVentas(ultimoId), 1000);
+    },
+    complete: function (jqXHR) {
+      if (escuchaXHR === jqXHR) escuchaXHR = null;
     }
   });
+  escuchaXHR = req;
 }
+
+function reiniciarEscucha() {
+  const startId = window.ultimoDetalleCocina || 0;
+  if (escuchaXHR) {
+    try { escuchaXHR.abort(); } catch (e) {}
+    escuchaXHR = null;
+  }
+  escucharNuevasVentas(startId);
+}
+
+function forzarActualizacion() {
+  if (typeof cargarDatosCocina === 'function') {
+    cargarDatosCocina().then(reiniciarEscucha);
+  } else {
+    reiniciarEscucha();
+  }
+}
+
+$(document).on('click', '.kanban-tab', forzarActualizacion);
 
 $(document).ready(function () {
   if (typeof cargarDatosCocina === 'function') {
-    cargarDatosCocina().then(() => {
-      const startId = window.ultimoDetalleCocina || 0;
-      escucharNuevasVentas(startId);
-    });
+    cargarDatosCocina().then(reiniciarEscucha);
   } else {
-    escucharNuevasVentas(0);
+    reiniciarEscucha();
   }
 });
