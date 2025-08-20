@@ -1900,3 +1900,29 @@ document.addEventListener('click', function (e) {
             .catch(() => alert('Error al actualizar estado'));
     }
 });
+
+// === Integración de comportamiento de ventas2.js ===
+$(document).ready(function () {
+    $('.select-producto').select2();
+});
+
+$(document).on('DOMNodeInserted', function () {
+    $('.select-producto').select2();
+});
+
+$(document).on('change', '.select-producto', function () {
+    const $select = $(this);
+    const $row = $select.closest('tr');
+
+    const selectedOption = $select.find('option:selected');
+    const precio = parseFloat(selectedOption.data('precio')) || 0;
+
+    if (!selectedOption.val()) {
+        $row.find('.cantidad').val('');
+        $row.find('.precio').val('');
+        return;
+    }
+
+    $row.find('.cantidad').val(1);
+    $row.find('.precio').val(precio.toFixed(2));
+});
