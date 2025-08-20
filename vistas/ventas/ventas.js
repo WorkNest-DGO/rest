@@ -1315,6 +1315,24 @@ async function registrarVenta() {
         return;
     }
 
+    // Validar estructura de cada producto
+    for (let i = 0; i < productos.length; i++) {
+        const p = productos[i];
+        if (
+            typeof p.producto_id !== 'number' || isNaN(p.producto_id) ||
+            typeof p.cantidad !== 'number' || isNaN(p.cantidad) ||
+            typeof p.precio_unitario !== 'number' || isNaN(p.precio_unitario)
+        ) {
+            console.warn(`Datos inválidos en la fila ${i + 1}:`, p);
+            ventaValida = false;
+        }
+    }
+
+    if (!ventaValida) {
+        alert('Hay productos con datos inválidos. Corrige antes de registrar la venta.');
+        return;
+    }
+
     if (productos.length === 0) {
         alert('Agrega al menos un producto válido');
         return;
@@ -1357,6 +1375,8 @@ async function registrarVenta() {
         corte_id: corteIdActual,
         sede_id: sedeId
     };
+
+    console.log("Payload que se enviará:", JSON.stringify(payload, null, 2));
 
     try {
         const resp = await fetch('../../api/ventas/crear_venta.php', {
