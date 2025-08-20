@@ -1295,13 +1295,24 @@ async function registrarVenta() {
         const productoId = row.find('.select-producto').val();
         const cantidad = parseInt(row.find('.cantidad').val());
         const precioInput = row.find('.precio');
-        const precio = parseFloat(precioInput.val());
+        let precio = parseFloat(precioInput.val());
+
+        if (isNaN(precio) || !precio) {
+            const selectedOption = row.find('.select-producto option:selected');
+            precio = parseFloat(selectedOption.data('precio'));
+
+            // Si se obtiene así, también actualiza el input
+            if (!isNaN(precio)) {
+                precioInput.val(precio);
+            }
+        }
+
         const precioUnitario = parseFloat(precioInput.data('unitario'));
 
         if (!productoId || isNaN(cantidad) || isNaN(precio)) {
-            alert('Por favor, selecciona productos válidos y completa cantidad y precio.');
+            console.warn("Producto inválido", { productoId, cantidad, precio });
             ventaValida = false;
-            return false; // rompe el each
+            return false; // Detiene el each
         }
 
         productos.push({
