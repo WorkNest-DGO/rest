@@ -122,7 +122,11 @@ ob_start();
             </thead>
             <tbody>
               <tr>
-                <td><select class="form-control select-producto"></select></td>
+                <td>
+                  <select class="form-control select-producto">
+                    <option value="">--Selecciona--</option>
+                  </select>
+                </td>
                 <td><input type="number" class="form-control cantidad"></td>
                 <td><input type="number" step="0.01" class="form-control precio" readonly></td>
               </tr>
