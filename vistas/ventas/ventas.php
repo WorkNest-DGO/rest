@@ -324,8 +324,8 @@ ob_start();
 
   <?php require_once __DIR__ . '/../footer.php'; ?>
 
-  <link href="../../utils/select2.min.css" rel="stylesheet" />
-  <script src="../../utils/select2.min.js"></script>
+  <link href="../../utils/css/select2.min.css" rel="stylesheet" />
+  <script src="../../utils/js/select2.min.js"></script>
 
   <script>
     // ID de usuario proveniente de la sesión para operaciones en JS

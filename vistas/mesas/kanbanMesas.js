@@ -14,7 +14,7 @@ $(document).ready(function() {
     $('.select-producto').select2({
         placeholder: 'Selecciona un producto',
         allowClear: true,
-        width: '100%'
+      
     });
 
     $(document).on('focus', '.select-producto', function () {
@@ -22,7 +22,7 @@ $(document).ready(function() {
             $(this).select2({
                 placeholder: 'Selecciona un producto',
                 allowClear: true,
-                width: '100%'
+       
             });
         }
     });
@@ -151,7 +151,7 @@ function renderKanban(listaMeseros, mesas) {
         }
 
         card.innerHTML = `
-            <input type="checkbox" class="seleccionar" data-id="${m.id}">
+            <input type="checkbox" class="seleccionar" data-id="${m.id}" hidden>
             <h3>${m.nombre}</h3>
             <p>Estado: ${m.estado}</p>
             <p>${ventaTxt}</p>
@@ -456,7 +456,7 @@ async function agregarProductoVenta(ventaId, mesaId, estado) {
             productos: [{ producto_id: productoId, cantidad, precio_unitario: precio }]
         };
         try {
-            const resp = await fetch('../../api/ventas/crear_venta_mesas.php', {
+            const resp = await fetch('../../api/ventas/crear_venta_mesa.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(crearPayload)

@@ -30,7 +30,7 @@ ob_start();
 </div>
 
 <h1>Mesas</h1>
-<div>
+<div hidden>
     <button class="btn custom-btn" id="btn-unir">Unir mesas</button>
     <select id="filtro-area"></select>
 </div>
@@ -68,8 +68,8 @@ ob_start();
 
 <?php require_once __DIR__ . '/../footer.php'; ?>
 
-<link href="../../utils/select2.min.css" rel="stylesheet" />
-<script src="../../utils/select2.min.js"></script>
+<link href="../../utils/css/select2.min.css" rel="stylesheet" />
+<script src="../../utils/js/select2.min.js"></script>
 
 <script>
 window.usuarioActual = {

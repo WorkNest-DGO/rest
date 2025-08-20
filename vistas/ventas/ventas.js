@@ -15,7 +15,7 @@ $(document).ready(function() {
     $('.select-producto').select2({
         placeholder: 'Selecciona un producto',
         allowClear: true,
-        width: '100%'
+
     });
 
     $(document).on('focus', '.select-producto', function () {
@@ -23,7 +23,7 @@ $(document).ready(function() {
             $(this).select2({
                 placeholder: 'Selecciona un producto',
                 allowClear: true,
-                width: '100%'
+
             });
         }
     });
