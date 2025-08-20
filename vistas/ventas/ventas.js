@@ -1126,7 +1126,11 @@ function cargarProductos(callback) {
 function llenarSelectProductos($select) {
     $select.empty().append('<option value="">--Selecciona--</option>');
     productosData.forEach(p => {
-        $select.append(`<option value="${p.id}" data-precio="${p.precio}">${p.nombre}</option>`);
+        const option = $('<option>')
+            .val(p.id)
+            .attr('data-precio', p.precio)
+            .text(p.nombre);
+        $select.append(option);
     });
 }
 
@@ -1283,20 +1287,38 @@ async function registrarVenta() {
     const repartidor_id = parseInt(document.getElementById('repartidor_id').value);
     const usuario_id = parseInt(document.getElementById('usuario_id').value);
     const observacion = document.getElementById('observacion').value.trim();
-    const filas = document.querySelectorAll('#productos tbody tr');
     const productos = [];
+    let ventaValida = true;
 
-    filas.forEach(fila => {
-        const producto_id = parseInt(fila.querySelector('.select-producto').value);
-        const cantidad = parseInt(fila.querySelector('.cantidad').value);
-        if (!isNaN(producto_id) && !isNaN(cantidad)) {
-            const precioInput = fila.querySelector('.precio');
-            const precio_unitario = parseFloat(precioInput.dataset.unitario || 0);
-            if (precio_unitario > 0) {
-                productos.push({ producto_id, cantidad, precio_unitario });
-            }
+    $('#productos tbody tr').each(function () {
+        const row = $(this);
+        const productoId = row.find('.select-producto').val();
+        const cantidad = parseInt(row.find('.cantidad').val());
+        const precioInput = row.find('.precio');
+        const precio = parseFloat(precioInput.val());
+        const precioUnitario = parseFloat(precioInput.data('unitario'));
+
+        if (!productoId || isNaN(cantidad) || isNaN(precio)) {
+            alert('Por favor, selecciona productos válidos y completa cantidad y precio.');
+            ventaValida = false;
+            return false; // rompe el each
         }
+
+        productos.push({
+            producto_id: parseInt(productoId),
+            cantidad,
+            precio_unitario: precioUnitario
+        });
     });
+
+    if (!ventaValida) {
+        return;
+    }
+
+    if (productos.length === 0) {
+        alert('Agrega al menos un producto válido');
+        return;
+    }
 
     if (!validarInventario()) {
         return;
