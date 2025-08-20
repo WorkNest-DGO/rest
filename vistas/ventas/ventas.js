@@ -1080,8 +1080,9 @@ async function cargarProductos() {
                     opt.dataset.existencia = p.existencia;
                     select.appendChild(opt);
                 });
-                actualizarEstiloSelect(select);
-                select.addEventListener('change', () => {
+                $(select).selectpicker('refresh');
+                // select.addEventListener('change', () => {
+                $(select).on('changed.bs.select', () => {
                     actualizarPrecio(select);
                     const cantInput = select.closest('tr').querySelector('.cantidad');
                     const exist = select.selectedOptions[0].dataset.existencia;
@@ -1091,7 +1092,7 @@ async function cargarProductos() {
                         cantInput.removeAttribute('max');
                     }
                     validarInventario();
-                    actualizarEstiloSelect(select);
+                    // actualizarEstiloSelect(select);
                 });
             });
             document.querySelectorAll('#productos .cantidad').forEach(inp => {
@@ -1132,16 +1133,16 @@ function actualizarPrecio(select) {
     }
 }
 
-function actualizarEstiloSelect(select) {
-    const wrap = select.parentElement;
-    if (wrap && wrap.classList.contains('sel')) {
-        if (select.value) {
-            wrap.classList.add('sel-active');
-        } else {
-            wrap.classList.remove('sel-active');
-        }
-    }
-}
+// function actualizarEstiloSelect(select) {
+//     const wrap = select.parentElement;
+//     if (wrap && wrap.classList.contains('sel')) {
+//         if (select.value) {
+//             wrap.classList.add('sel-active');
+//         } else {
+//             wrap.classList.remove('sel-active');
+//         }
+//     }
+// }
 
 function manejarCantidad(input, select) {
     let val = parseInt(input.value) || 0;
@@ -1200,19 +1201,20 @@ function validarInventario() {
 
 function agregarFilaProducto() {
     const tbody = document.querySelector('#productos tbody');
-    const base = tbody.querySelector('tr');
-    const nueva = base.cloneNode(true);
-    nueva.querySelectorAll('input').forEach(inp => {
-        inp.value = '';
-        if (inp.classList.contains('precio')) delete inp.dataset.unitario;
-    });
+    // const base = tbody.querySelector('tr');
+    // const nueva = base.cloneNode(true);
+    const nueva = document.createElement('tr');
+    nueva.innerHTML = `
+        <td>
+            <select class="selectpicker producto" name="producto"
+                data-live-search="true" data-show-subtext="true" data-width="100%"></select>
+        </td>
+        <td><input type="number" class="form-control cantidad"></td>
+        <td><input type="number" step="0.01" class="form-control precio" readonly></td>
+    `;
     tbody.appendChild(nueva);
     const select = nueva.querySelector('.producto');
     select.innerHTML = '<option value="">--Selecciona--</option>';
-    select.removeAttribute('id');
-    if (select.parentElement) {
-        select.parentElement.classList.remove('sel-active');
-    }
     catalogo.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.id;
@@ -1221,8 +1223,13 @@ function agregarFilaProducto() {
         opt.dataset.existencia = p.existencia;
         select.appendChild(opt);
     });
-    actualizarEstiloSelect(select);
-    select.addEventListener('change', () => {
+    $(select).selectpicker({
+        liveSearch: true,
+        liveSearchNormalize: true,
+        noneResultsText: 'Sin resultados para {0}'
+    });
+    // select.addEventListener('change', () => {
+    $(select).on('changed.bs.select', () => {
         actualizarPrecio(select);
         const cantInput = select.closest('tr').querySelector('.cantidad');
         const exist = select.selectedOptions[0].dataset.existencia;
@@ -1232,7 +1239,7 @@ function agregarFilaProducto() {
             cantInput.removeAttribute('max');
         }
         validarInventario();
-        actualizarEstiloSelect(select);
+        // actualizarEstiloSelect(select);
     });
     const cantidadInput = nueva.querySelector('.cantidad');
     cantidadInput.value = '';
@@ -1398,7 +1405,9 @@ async function resetFormularioVenta() {
       });
 
       // reengancha eventos de la fila
-      selProd.addEventListener('change', () => {
+      $(selProd).selectpicker('refresh');
+      // selProd.addEventListener('change', () => {
+      $(selProd).on('changed.bs.select', () => {
         actualizarPrecio(selProd);
         verificarActivacionProductos();
       });
@@ -1463,7 +1472,9 @@ async function verDetalles(id) {
             }
             html += `<h4>Agregar producto</h4>`;
             // html += `<select id="detalle_producto"></select>`;
-            html += `<div class="sel sel--producto"><select id="detalle_producto" name="producto"></select></div>`;
+            // html += `<div class="sel sel--producto"><select id="detalle_producto" name="producto"></select></div>`;
+            html += `<select id="detalle_producto" name="producto" class="selectpicker"
+                       data-live-search="true" data-show-subtext="true" data-width="100%"></select>`;
             html += `<input type="number" id="detalle_cantidad" value="1" min="1">`;
             html += `<button class="btn custom-btn" id="addDetalle">Agregar</button>`;
             html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button hidden class="btn custom-btn" id="cerrarDetalle" data-dismiss="modal">Cerrar</button>`;
@@ -1481,16 +1492,22 @@ async function verDetalles(id) {
                 opt.dataset.existencia = p.existencia;
                 selectProd.appendChild(opt);
             });
-            actualizarEstiloSelect(selectProd);
+            // actualizarEstiloSelect(selectProd);
             const cantDetalle = document.getElementById('detalle_cantidad');
-            selectProd.addEventListener('change', () => {
+            $(selectProd).selectpicker({
+                liveSearch: true,
+                liveSearchNormalize: true,
+                noneResultsText: 'Sin resultados para {0}'
+            });
+            // selectProd.addEventListener('change', () => {
+            $(selectProd).on('changed.bs.select', () => {
                 const exist = selectProd.selectedOptions[0].dataset.existencia;
                 if (exist) {
                     cantDetalle.max = exist;
                 } else {
                     cantDetalle.removeAttribute('max');
                 }
-                actualizarEstiloSelect(selectProd);
+                // actualizarEstiloSelect(selectProd);
             });
 
             contenedor.querySelectorAll('.delDetalle').forEach(btn => {
@@ -1651,12 +1668,18 @@ function ticketPrinted(mesaId) {
 }
 window.ticketPrinted = ticketPrinted;
 
-document.addEventListener("change", function (e) {
-    if (e.target.classList.contains("producto")) {
-        actualizarPrecio(e.target);
-        validarInventario();
-        actualizarEstiloSelect(e.target);
-    }
+// document.addEventListener("change", function (e) {
+//     if (e.target.classList.contains("producto")) {
+//         actualizarPrecio(e.target);
+//         validarInventario();
+//         actualizarEstiloSelect(e.target);
+//     }
+// });
+
+$(document).on('changed.bs.select', '.producto', function () {
+    actualizarPrecio(this);
+    validarInventario();
+    // actualizarEstiloSelect(this);
 });
 function verificarActivacionProductos() {
   const mesa = document.getElementById('mesa_id').value;
@@ -1760,6 +1783,13 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarRepartidores();
     cargarHistorial();
     cargarSolicitudes();
+
+    $('.selectpicker').selectpicker({
+        liveSearch: true,
+        liveSearchNormalize: true,
+        noneResultsText: 'Sin resultados para {0}'
+    });
+
     document.getElementById('registrarVenta').addEventListener('click', registrarVenta);
     document.getElementById('agregarProducto').addEventListener('click', agregarFilaProducto);
     actualizarSelectorUsuario();

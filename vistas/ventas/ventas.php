@@ -14,6 +14,9 @@ $denominaciones = $conn->query("SELECT id, descripcion, valor FROM catalogo_deno
 $title = 'Ventas';
 ob_start();
 ?>
+<!-- Librerías requeridas para bootstrap-select -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.18/css/bootstrap-select.min.css">
 <style>
   .ticket-mono {
     font-family: "Courier New", ui-monospace, Menlo, Consolas, monospace;
@@ -31,6 +34,7 @@ ob_start();
   }
 
   /* Estilos para el select de productos (inspirado en codepen NPLbpP) */
+  /*
   .sel {
     position: relative;
     display: inline-block;
@@ -60,6 +64,12 @@ ob_start();
   .sel:focus-within::after,
   .sel.sel-active::after {
     transform: translateY(-50%) rotate(180deg);
+  }
+  */
+
+  .bootstrap-select .bs-searchbox .form-control {
+    color:#333 !important;
+    background:#fff !important;
   }
 </style>
 <!-- Page Header Start -->
@@ -155,10 +165,11 @@ ob_start();
             <tbody>
                 <tr>
                   <td>
-                    <!-- <select class="form-control producto"></select> -->
-                    <div class="sel sel--producto">
+                    <!-- <div class="sel sel--producto">
                       <select class="producto" name="producto" id="producto_id"></select>
-                    </div>
+                    </div> -->
+                    <select class="selectpicker producto" id="producto_id" name="producto"
+                      data-live-search="true" data-show-subtext="true" data-width="100%"></select>
                   </td>
                   <td><input type="number" class="form-control cantidad"></td>
                   <td><input type="number" step="0.01" class="form-control precio" readonly></td>
@@ -360,7 +371,12 @@ ob_start();
 </div>
 
   <?php require_once __DIR__ . '/../footer.php'; ?>
-  
+
+  <!-- Dependencias de jQuery, Bootstrap 3 y bootstrap-select -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.18/js/bootstrap-select.min.js"></script>
+
   <script>
     // ID de usuario proveniente de la sesión para operaciones en JS
     window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;
