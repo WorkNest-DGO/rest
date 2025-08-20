@@ -1062,6 +1062,46 @@ function asignarMeseroPorMesa() {
     meseroSelect.disabled = true;
 }
 
+// Inicializa el nuevo selector de productos con buscador
+function inicializarBuscadorProducto(select) {
+    const cont = select.closest('.selector-producto');
+    if (!cont) return;
+    const input = cont.querySelector('.buscador-producto');
+    const lista = cont.querySelector('.lista-productos');
+    if (!input || !lista || input.dataset.autocompleteInitialized) return;
+    input.dataset.autocompleteInitialized = 'true';
+
+    input.addEventListener('input', () => {
+        const val = input.value.toLowerCase();
+        lista.innerHTML = '';
+        if (!val) {
+            lista.style.display = 'none';
+            return;
+        }
+        const coincidencias = catalogo.filter(p => p.nombre.toLowerCase().includes(val));
+        coincidencias.forEach(p => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item list-group-item-action';
+            li.textContent = p.nombre;
+            li.addEventListener('click', () => {
+                input.value = p.nombre;
+                select.value = p.id;
+                lista.innerHTML = '';
+                lista.style.display = 'none';
+                select.dispatchEvent(new Event('change'));
+            });
+            lista.appendChild(li);
+        });
+        lista.style.display = coincidencias.length ? 'block' : 'none';
+    });
+
+    document.addEventListener('click', e => {
+        if (!cont.contains(e.target)) {
+            lista.style.display = 'none';
+        }
+    });
+}
+
 async function cargarProductos() {
     try {
         const resp = await fetch('../../api/inventario/listar_productos.php');
@@ -1093,6 +1133,7 @@ async function cargarProductos() {
                     validarInventario();
                     actualizarEstiloSelect(select);
                 });
+                inicializarBuscadorProducto(select); // buscar productos por nombre
             });
             document.querySelectorAll('#productos .cantidad').forEach(inp => {
                 const select = inp.closest('tr').querySelector('.producto');
@@ -1205,7 +1246,13 @@ function agregarFilaProducto() {
     nueva.querySelectorAll('input').forEach(inp => {
         inp.value = '';
         if (inp.classList.contains('precio')) delete inp.dataset.unitario;
+        if (inp.classList.contains('buscador-producto')) delete inp.dataset.autocompleteInitialized;
     });
+    const lista = nueva.querySelector('.lista-productos');
+    if (lista) {
+        lista.innerHTML = '';
+        lista.style.display = 'none';
+    }
     tbody.appendChild(nueva);
     const select = nueva.querySelector('.producto');
     select.innerHTML = '<option value="">--Selecciona--</option>';
@@ -1234,6 +1281,7 @@ function agregarFilaProducto() {
         validarInventario();
         actualizarEstiloSelect(select);
     });
+    inicializarBuscadorProducto(select); // habilita buscador en nueva fila
     const cantidadInput = nueva.querySelector('.cantidad');
     cantidadInput.value = '';
     cantidadInput.addEventListener('input', () => {
