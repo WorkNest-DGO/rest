@@ -29,6 +29,38 @@ ob_start();
     #modalCortePreview .modal-header, #modalCortePreview .modal-footer { display: none; }
     .ticket-mono { border: none; }
   }
+
+  /* Estilos para el select de productos (inspirado en codepen NPLbpP) */
+  .sel {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+  }
+
+  .sel select {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    padding: 6px 30px 6px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background: #fff;
+  }
+
+  .sel::after {
+    content: '\25BC';
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    transition: transform .2s ease-in-out;
+  }
+
+  .sel:focus-within::after,
+  .sel.sel-active::after {
+    transform: translateY(-50%) rotate(180deg);
+  }
 </style>
 <!-- Page Header Start -->
 <div class="page-header mb-0">
@@ -121,13 +153,18 @@ ob_start();
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td><select class="form-control producto"></select></td>
-                <td><input type="number" class="form-control cantidad"></td>
-                <td><input type="number" step="0.01" class="form-control precio" readonly></td>
-              </tr>
-            </tbody>
-          </table>
+                <tr>
+                  <td>
+                    <!-- <select class="form-control producto"></select> -->
+                    <div class="sel sel--producto">
+                      <select class="producto" name="producto" id="producto_id"></select>
+                    </div>
+                  </td>
+                  <td><input type="number" class="form-control cantidad"></td>
+                  <td><input type="number" step="0.01" class="form-control precio" readonly></td>
+                </tr>
+              </tbody>
+            </table>
           <div class="text-center">
             <button type="button" class="btn custom-btn" id="agregarProducto">Agregar Producto</button>
             <button type="button" class="btn custom-btn" id="registrarVenta">Registrar Venta</button>
