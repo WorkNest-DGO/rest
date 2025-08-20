@@ -30,36 +30,16 @@ ob_start();
     .ticket-mono { border: none; }
   }
 
-  /* Estilos para el select de productos (inspirado en codepen NPLbpP) */
-  .sel {
+  /* Estilos para el buscador de productos (inspirado en codepen NPLbpP) */
+  .selector-producto {
     position: relative;
-    display: inline-block;
-    width: 100%;
   }
 
-  .sel select {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 100%;
-    padding: 6px 30px 6px 10px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    background: #fff;
-  }
-
-  .sel::after {
-    content: '\25BC';
-    position: absolute;
-    top: 50%;
-    right: 10px;
-    transform: translateY(-50%);
-    pointer-events: none;
-    transition: transform .2s ease-in-out;
-  }
-
-  .sel:focus-within::after,
-  .sel.sel-active::after {
-    transform: translateY(-50%) rotate(180deg);
+  .lista-productos {
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1000;
   }
 </style>
 <!-- Page Header Start -->
@@ -155,10 +135,18 @@ ob_start();
             <tbody>
                 <tr>
                   <td>
-                    <!-- <select class="form-control producto"></select> -->
+                    <!-- Selector antiguo de productos eliminado -->
+                    <!--
                     <div class="sel sel--producto">
                       <select class="producto" name="producto" id="producto_id"></select>
                     </div>
+                    -->
+                    <!-- Nuevo selector de productos con buscador -->
+                    <div class="selector-producto position-relative"><!-- INICIO nuevo selector -->
+                      <input type="text" class="form-control buscador-producto" placeholder="Buscar producto...">
+                      <select class="producto d-none" name="producto"></select>
+                      <ul class="list-group lista-productos position-absolute w-100"></ul>
+                    </div><!-- FIN nuevo selector -->
                   </td>
                   <td><input type="number" class="form-control cantidad"></td>
                   <td><input type="number" step="0.01" class="form-control precio" readonly></td>
