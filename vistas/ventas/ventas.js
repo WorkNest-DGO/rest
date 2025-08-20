@@ -1107,7 +1107,7 @@ function cargarProductos(callback) {
         return;
     }
     $.ajax({
-        url: '../../api/productos/listar_productos.php',
+        url: '../../api/inventario/listar_productos.php',
         dataType: 'json'
     }).done(function (data) {
         if (data.success) {
