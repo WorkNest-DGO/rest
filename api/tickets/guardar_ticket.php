@@ -32,11 +32,11 @@ if (!$venta) {
     error('Venta no encontrada');
 }
 
-$usuario_id = (int)($venta['mesero_id'] ?? 0);
-if (isset($input['usuario_id']) && (int)$input['usuario_id'] !== $usuario_id) {
-    http_response_code(400);
-    error('La mesa seleccionada pertenece a otro mesero. Actualiza la pantalla e inténtalo de nuevo.');
-}
+//$usuario_id = (int)($venta['mesero_id'] ?? 0);
+//if (isset($input['usuario_id']) && (int)$input['usuario_id'] !== $usuario_id) {
+  //  http_response_code(400);
+    //error('La mesa seleccionada pertenece a otro mesero. Actualiza la pantalla e inténtalo de nuevo.');
+//}
 
 $mesa_nombre = null;
 $tipo_entrega = $venta['tipo_entrega'] ?? '';

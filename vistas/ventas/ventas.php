@@ -326,7 +326,6 @@ ob_start();
 
   <link href="../../utils/css/select2.min.css" rel="stylesheet" />
   <script src="../../utils/js/select2.min.js"></script>
-
   <script>
     // ID de usuario proveniente de la sesión para operaciones en JS
     window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;

@@ -32,19 +32,19 @@ ob_start();
 
 <div id="kanban" class="kanban-container">
   <div class="kanban-board board-pendiente" data-status="pendiente">
-    <h3 class="kanban-tab" data-target="pendiente">Pendiente</h3>
+    <h3>Pendiente</h3>
     <div class="kanban-dropzone" id="col-pendiente"></div>
   </div>
   <div class="kanban-board board-preparacion" data-status="en_preparacion">
-    <h3 class="kanban-tab" data-target="en_preparacion">En preparación</h3>
+    <h3>En preparación</h3>
     <div class="kanban-dropzone" id="col-preparacion"></div>
   </div>
   <div class="kanban-board board-listo" data-status="listo">
-    <h3 class="kanban-tab" data-target="listo">Listo</h3>
+    <h3>Listo</h3>
     <div class="kanban-dropzone" id="col-listo"></div>
   </div>
   <div class="kanban-board board-entregado" data-status="entregado">
-    <h3 class="kanban-tab" data-target="entregado">Entregado</h3>
+    <h3>Entregado</h3>
     <div class="kanban-dropzone" id="col-entregado"></div>
   </div>
 </div>
