@@ -1204,39 +1204,77 @@ function validarInventario() {
 function agregarFilaProducto() {
     const tbody = document.querySelector('#productos tbody');
     const base = tbody.querySelector('tr');
+
+    // Destruye la instancia actual de Select2 antes de clonar
+    const selectBase = base.querySelector('.select-producto');
+    if (selectBase && $(selectBase).hasClass('select2-hidden-accessible')) {
+        $(selectBase).select2('destroy');
+    }
+
     const nueva = base.cloneNode(true);
-    nueva.querySelectorAll('input').forEach(inp => {
-        inp.value = '';
-        if (inp.classList.contains('precio')) delete inp.dataset.unitario;
+
+    // Reaplica Select2 al select original
+    if (selectBase) {
+        $(selectBase).select2({
+            placeholder: 'Selecciona un producto',
+            allowClear: true,
+            width: '100%'
+        });
+    }
+
+    // Limpia los valores de la nueva fila
+    nueva.querySelectorAll('input, select').forEach(elem => {
+        elem.value = '';
+        if (elem.classList.contains('precio')) delete elem.dataset.unitario;
     });
+
     tbody.appendChild(nueva);
-    const select = nueva.querySelector('.producto');
-    select.innerHTML = '<option value="">--Selecciona--</option>';
-    catalogo.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.nombre;
-        opt.dataset.precio = p.precio;
-        opt.dataset.existencia = p.existencia;
-        select.appendChild(opt);
-    });
-    select.addEventListener('change', () => {
-        actualizarPrecio(select);
-        const cantInput = select.closest('tr').querySelector('.cantidad');
-        const exist = select.selectedOptions[0].dataset.existencia;
-        if (exist) {
-            cantInput.max = exist;
-        } else {
-            cantInput.removeAttribute('max');
-        }
-        validarInventario();
-    });
+
+    const select = nueva.querySelector('.select-producto');
+    if (select) {
+        // Asegura un id/name únicos si existían
+        const totalFilas = tbody.querySelectorAll('tr').length;
+        if (select.hasAttribute('id')) select.id = `producto_${totalFilas}`;
+        if (select.hasAttribute('name')) select.name = `producto_${totalFilas}`;
+
+        select.innerHTML = '<option value="">--Selecciona--</option>';
+        catalogo.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.nombre;
+            opt.dataset.precio = p.precio;
+            opt.dataset.existencia = p.existencia;
+            select.appendChild(opt);
+        });
+
+        // Activa Select2 únicamente en el nuevo select
+        $(select).select2({
+            placeholder: 'Selecciona un producto',
+            allowClear: true,
+            width: '100%'
+        });
+
+        select.addEventListener('change', () => {
+            actualizarPrecio(select);
+            const cantInput = select.closest('tr').querySelector('.cantidad');
+            const exist = select.selectedOptions[0].dataset.existencia;
+            if (exist) {
+                cantInput.max = exist;
+            } else {
+                cantInput.removeAttribute('max');
+            }
+            validarInventario();
+        });
+    }
+
     const cantidadInput = nueva.querySelector('.cantidad');
-    cantidadInput.value = '';
-    cantidadInput.addEventListener('input', () => {
-        manejarCantidad(cantidadInput, select);
-        validarInventario();
-    });
+    if (cantidadInput) {
+        cantidadInput.value = '';
+        cantidadInput.addEventListener('input', () => {
+            manejarCantidad(cantidadInput, select);
+            validarInventario();
+        });
+    }
 }
 
 async function validarMesaLibre(id) {
@@ -1374,8 +1412,15 @@ async function resetFormularioVenta() {
   const tbody = document.querySelector('#productos tbody');
   if (tbody) {
     const base = tbody.querySelector('tr');
+    let selectBase = null;
+    if (base) {
+      selectBase = base.querySelector('.select-producto');
+      if (selectBase && $(selectBase).hasClass('select2-hidden-accessible')) {
+        $(selectBase).select2('destroy');
+      }
+    }
     tbody.innerHTML = ''; // limpia todo
-    const fila = base.cloneNode(true);
+    const fila = base ? base.cloneNode(true) : document.createElement('tr');
     // limpia inputs y precio unitario cacheado
     fila.querySelectorAll('input').forEach(inp => {
       inp.value = '';
@@ -1393,6 +1438,14 @@ async function resetFormularioVenta() {
         opt.dataset.existencia = p.existencia;
         selProd.appendChild(opt);
       });
+
+      // Reactiva Select2 únicamente en el nuevo select
+      $(selProd).select2({
+        placeholder: 'Selecciona un producto',
+        allowClear: true,
+        width: '100%'
+      });
+
       // reengancha eventos de la fila
       selProd.addEventListener('change', () => {
         actualizarPrecio(selProd);
