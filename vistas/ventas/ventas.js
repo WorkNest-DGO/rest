@@ -27,7 +27,24 @@ $(document).ready(function() {
             });
         }
     });
+
+
+$(document).on('change', '.select-producto', function () {
+    const fila = $(this).closest('tr');
+    const inputCantidad = fila.find('.cantidad, .cantidad-producto');
+
+    if (inputCantidad.length) {
+        inputCantidad.val('1');
+        // Deja que Select2 actualice el DOM internamente antes de calcular precio
+        setTimeout(() => {
+            actualizarPrecio(fila[0]); // DOM puro
+        }, 10);
+    }
 });
+
+});
+
+
 
 let currentPage = 1;
 let limit = 15;
