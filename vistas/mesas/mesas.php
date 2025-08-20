@@ -68,9 +68,6 @@ ob_start();
 
 <?php require_once __DIR__ . '/../footer.php'; ?>
 
-<link href="../../utils/css/select2.min.css" rel="stylesheet" />
-<script src="../../utils/js/select2.min.js"></script>
-
 <script>
 window.usuarioActual = {
     id: <?= (int)($_SESSION['usuario_id'] ?? 0); ?>,

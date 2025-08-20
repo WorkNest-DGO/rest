@@ -122,11 +122,7 @@ ob_start();
             </thead>
             <tbody>
               <tr>
-                <td>
-                  <select class="form-control select-producto">
-                    <option value="">--Selecciona--</option>
-                  </select>
-                </td>
+                <td><select class="form-control producto"></select></td>
                 <td><input type="number" class="form-control cantidad"></td>
                 <td><input type="number" step="0.01" class="form-control precio" readonly></td>
               </tr>
@@ -327,9 +323,7 @@ ob_start();
 </div>
 
   <?php require_once __DIR__ . '/../footer.php'; ?>
-
-  <link href="../../utils/css/select2.min.css" rel="stylesheet" />
-  <script src="../../utils/js/select2.min.js"></script>
+  
   <script>
     // ID de usuario proveniente de la sesión para operaciones en JS
     window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;

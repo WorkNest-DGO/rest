@@ -11,45 +11,6 @@ if (typeof catalogoDenominaciones !== 'undefined' && Array.isArray(catalogoDenom
   console.warn('Denominaciones no disponibles aún');
 }
 
-$(document).ready(function() {
-    cargarProductos(function() {
-        $('#productos .select-producto').each(function() {
-            llenarSelectProductos($(this));
-        });
-    });
-
-    $('.select-producto').select2({
-        placeholder: 'Selecciona un producto',
-        allowClear: true,
-    });
-
-    $(document).on('focus', '.select-producto', function () {
-        if (!$(this).hasClass('select2-hidden-accessible')) {
-            $(this).select2({
-                placeholder: 'Selecciona un producto',
-                allowClear: true,
-            });
-        }
-    });
-
-    $('#productos').on('change', '.select-producto', function () {
-        const selectedOption = $(this).find('option:selected');
-        const precio = selectedOption.data('precio');
-        const row = $(this).closest('tr');
-        row.find('.cantidad').val(1);
-        row.find('.precio').val(precio);
-        if (typeof validarInventario === 'function') {
-            validarInventario();
-        }
-    });
-
-    $('#productos').on('input', '.cantidad', function () {
-        const select = $(this).closest('tr').find('.select-producto')[0];
-        manejarCantidad(this, select);
-    });
-});
-
-
 
 let currentPage = 1;
 let limit = 15;
@@ -1101,50 +1062,71 @@ function asignarMeseroPorMesa() {
     meseroSelect.disabled = true;
 }
 
-function cargarProductos(callback) {
-    if (productosData.length) {
-        if (typeof callback === 'function') callback();
-        return;
-    }
-    $.ajax({
-        url: '../../api/inventario/listar_productos.php',
-        dataType: 'json'
-    }).done(function (data) {
+async function cargarProductos() {
+    try {
+        const resp = await fetch('../../api/inventario/listar_productos.php');
+        const data = await resp.json();
         if (data.success) {
-            productosData = data.resultado;
-            catalogo = productosData;
-            productos = productosData;
-            if (typeof callback === 'function') callback();
+            catalogo = data.resultado;
+            productos = data.resultado;
+            const selects = document.querySelectorAll('#productos select.producto');
+            selects.forEach(select => {
+                select.innerHTML = '<option value="">--Selecciona--</option>';
+                catalogo.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.nombre;
+                    opt.dataset.precio = p.precio;
+                    opt.dataset.existencia = p.existencia;
+                    select.appendChild(opt);
+                });
+                select.addEventListener('change', () => {
+                    actualizarPrecio(select);
+                    const cantInput = select.closest('tr').querySelector('.cantidad');
+                    const exist = select.selectedOptions[0].dataset.existencia;
+                    if (exist) {
+                        cantInput.max = exist;
+                    } else {
+                        cantInput.removeAttribute('max');
+                    }
+                    validarInventario();
+                });
+            });
+            document.querySelectorAll('#productos .cantidad').forEach(inp => {
+                const select = inp.closest('tr').querySelector('.producto');
+                inp.addEventListener('input', () => {
+                    manejarCantidad(inp, select);
+                    validarInventario();
+                });
+            });
+            validarInventario();
         } else {
             alert(data.mensaje);
         }
-    }).fail(function () {
+    } catch (err) {
+        console.error(err);
         alert('Error al cargar productos');
-    });
-}
-
-function llenarSelectProductos($select) {
-    $select.empty().append('<option value="">--Selecciona--</option>');
-    productosData.forEach(p => {
-        const option = $('<option>')
-            .val(p.id)
-            .attr('data-precio', p.precio)
-            .text(p.nombre);
-        $select.append(option);
-    });
+    }
 }
 
 function actualizarPrecio(select) {
     const row = select.closest('tr');
     const precioInput = row.querySelector('.precio');
     const cantidadInput = row.querySelector('.cantidad');
-    const opt = select.options[select.selectedIndex];
-    const precio = opt ? parseFloat(opt.dataset.precio) : 0;
-    const cant = parseInt(cantidadInput.value) || 1;
-    precioInput.dataset.unitario = precio;
-    precioInput.value = (cant * precio).toFixed(2);
-    if (!cantidadInput.value || parseInt(cantidadInput.value) === 0) {
-        cantidadInput.value = 1;
+    const productoId = select.value;
+    const producto = productos.find(p => parseInt(p.id) === parseInt(productoId));
+    if (producto) {
+        const cant = parseInt(cantidadInput.value) || 1;
+        precioInput.dataset.unitario = producto.precio;
+        precioInput.value = (cant * parseFloat(producto.precio)).toFixed(2);
+        if (!cantidadInput.value || parseInt(cantidadInput.value) === 0) {
+            cantidadInput.value = 1;
+        }
+        cantidadInput.max = producto.existencia;
+    } else {
+        precioInput.value = '';
+        delete precioInput.dataset.unitario;
+        cantidadInput.removeAttribute('max');
     }
 }
 
@@ -1165,7 +1147,7 @@ function manejarCantidad(input, select) {
         val = max;
         input.value = max;
     }
-    actualizarPrecio(select || input.closest('tr').querySelector('.select-producto'));
+    actualizarPrecio(select || input.closest('tr').querySelector('.producto'));
     validarInventario();
 }
 
@@ -1173,7 +1155,7 @@ function validarInventario() {
     const rows = document.querySelectorAll('#productos tbody tr');
     const totales = {};
     rows.forEach(r => {
-        const id = parseInt(r.querySelector('.select-producto').value);
+        const id = parseInt(r.querySelector('.producto').value);
         const cant = parseInt(r.querySelector('.cantidad').value) || 0;
         if (!isNaN(id)) {
             totales[id] = (totales[id] || 0) + cant;
@@ -1181,19 +1163,19 @@ function validarInventario() {
     });
     let ok = true;
     for (const id in totales) {
-        const prod = productosData.find(p => parseInt(p.id) === parseInt(id));
+        const prod = productos.find(p => parseInt(p.id) === parseInt(id));
         if (prod && totales[id] > parseInt(prod.existencia)) {
             const excedente = totales[id] - parseInt(prod.existencia);
             let restante = excedente;
             rows.forEach(r => {
-                const sid = parseInt(r.querySelector('.select-producto').value);
+                const sid = parseInt(r.querySelector('.producto').value);
                 if (sid === parseInt(id) && restante > 0) {
                     const inp = r.querySelector('.cantidad');
                     const val = parseInt(inp.value) || 0;
                     const nuevo = Math.max(val - restante, 0);
                     restante -= val - nuevo;
                     inp.value = nuevo;
-                    actualizarPrecio(r.querySelector('.select-producto'));
+                    actualizarPrecio(r.querySelector('.producto'));
                 }
             });
             alert(`No hay existencia suficiente de ${prod.nombre}`);
@@ -1206,54 +1188,39 @@ function validarInventario() {
 function agregarFilaProducto() {
     const tbody = document.querySelector('#productos tbody');
     const base = tbody.querySelector('tr');
-
-    // Destruye la instancia actual de Select2 antes de clonar
-    const selectBase = base.querySelector('.select-producto');
-    if (selectBase && $(selectBase).hasClass('select2-hidden-accessible')) {
-        $(selectBase).select2('destroy');
-    }
-
     const nueva = base.cloneNode(true);
-
-    // Reaplica Select2 al select original
-    if (selectBase) {
-        $(selectBase).select2({
-            placeholder: 'Selecciona un producto',
-            allowClear: true,
-            width: '100%'
-        });
-    }
-
-    // Limpia los valores de la nueva fila
-    nueva.querySelectorAll('input, select').forEach(elem => {
-        elem.value = '';
-        if (elem.classList.contains('precio')) delete elem.dataset.unitario;
+    nueva.querySelectorAll('input').forEach(inp => {
+        inp.value = '';
+        if (inp.classList.contains('precio')) delete inp.dataset.unitario;
     });
-
     tbody.appendChild(nueva);
-
-    const select = nueva.querySelector('.select-producto');
-    if (select) {
-        // Asegura un id/name únicos si existían
-        const totalFilas = tbody.querySelectorAll('tr').length;
-        if (select.hasAttribute('id')) select.id = `producto_${totalFilas}`;
-        if (select.hasAttribute('name')) select.name = `producto_${totalFilas}`;
-
-        cargarProductos(function () {
-            const $select = $(select);
-            llenarSelectProductos($select);
-            $select.select2({
-                placeholder: 'Selecciona un producto',
-                allowClear: true,
-                width: '100%'
-            });
-        });
-    }
-
+    const select = nueva.querySelector('.producto');
+    select.innerHTML = '<option value="">--Selecciona--</option>';
+    catalogo.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nombre;
+        opt.dataset.precio = p.precio;
+        opt.dataset.existencia = p.existencia;
+        select.appendChild(opt);
+    });
+    select.addEventListener('change', () => {
+        actualizarPrecio(select);
+        const cantInput = select.closest('tr').querySelector('.cantidad');
+        const exist = select.selectedOptions[0].dataset.existencia;
+        if (exist) {
+            cantInput.max = exist;
+        } else {
+            cantInput.removeAttribute('max');
+        }
+        validarInventario();
+    });
     const cantidadInput = nueva.querySelector('.cantidad');
-    if (cantidadInput) {
-        cantidadInput.value = '';
-    }
+    cantidadInput.value = '';
+    cantidadInput.addEventListener('input', () => {
+        manejarCantidad(cantidadInput, select);
+        validarInventario();
+    });
 }
 
 async function validarMesaLibre(id) {
@@ -1287,67 +1254,20 @@ async function registrarVenta() {
     const repartidor_id = parseInt(document.getElementById('repartidor_id').value);
     const usuario_id = parseInt(document.getElementById('usuario_id').value);
     const observacion = document.getElementById('observacion').value.trim();
+    const filas = document.querySelectorAll('#productos tbody tr');
     const productos = [];
-    let ventaValida = true;
 
-    $('#productos tbody tr').each(function () {
-        const row = $(this);
-        const productoId = row.find('.select-producto').val();
-        const cantidad = parseInt(row.find('.cantidad').val());
-        const precioInput = row.find('.precio');
-        let precio = parseFloat(precioInput.val());
-
-        if (isNaN(precio) || !precio) {
-            const selectedOption = row.find('.select-producto option:selected');
-            precio = parseFloat(selectedOption.data('precio'));
-
-            // Si se obtiene así, también actualiza el input
-            if (!isNaN(precio)) {
-                precioInput.val(precio);
+    filas.forEach(fila => {
+        const producto_id = parseInt(fila.querySelector('.producto').value);
+        const cantidad = parseInt(fila.querySelector('.cantidad').value);
+        if (!isNaN(producto_id) && !isNaN(cantidad)) {
+            const precioInput = fila.querySelector('.precio');
+            const precio_unitario = parseFloat(precioInput.dataset.unitario || 0);
+            if (precio_unitario > 0) {
+                productos.push({ producto_id, cantidad, precio_unitario });
             }
         }
-
-        const precioUnitario = parseFloat(precioInput.data('unitario'));
-
-        if (!productoId || isNaN(cantidad) || isNaN(precio)) {
-            console.warn("Producto inválido", { productoId, cantidad, precio });
-            ventaValida = false;
-            return false; // Detiene el each
-        }
-
-        productos.push({
-            producto_id: parseInt(productoId),
-            cantidad,
-            precio_unitario: precioUnitario
-        });
     });
-
-    if (!ventaValida) {
-        return;
-    }
-
-    // Validar estructura de cada producto
-    for (let i = 0; i < productos.length; i++) {
-        const p = productos[i];
-        if (
-            typeof p.producto_id !== 'number' || isNaN(p.producto_id) ||
-            typeof p.cantidad !== 'number' || isNaN(p.cantidad) ||
-            typeof p.precio_unitario !== 'number' || isNaN(p.precio_unitario)
-        ) {
-            console.warn(`Datos inválidos en la fila ${i + 1}:`, p);
-            ventaValida = false;
-        }
-    }
-
-    if (!ventaValida) {
-        alert('Hay productos con datos inválidos. Corrige antes de registrar la venta.');
-        return;
-    }
-
-    if (productos.length === 0) {
-        alert('Agrega al menos un producto válido');
-        return;
-    }
 
     if (!validarInventario()) {
         return;
@@ -1386,8 +1306,6 @@ async function registrarVenta() {
         corte_id: corteIdActual,
         sede_id: sedeId
     };
-
-    console.log("Payload que se enviará:", JSON.stringify(payload, null, 2));
 
     try {
         const resp = await fetch('../../api/ventas/crear_venta.php', {
@@ -1440,31 +1358,24 @@ async function resetFormularioVenta() {
   const tbody = document.querySelector('#productos tbody');
   if (tbody) {
     const base = tbody.querySelector('tr');
-    let selectBase = null;
-    if (base) {
-      selectBase = base.querySelector('.select-producto');
-      if (selectBase && $(selectBase).hasClass('select2-hidden-accessible')) {
-        $(selectBase).select2('destroy');
-      }
-    }
     tbody.innerHTML = ''; // limpia todo
-    const fila = base ? base.cloneNode(true) : document.createElement('tr');
+    const fila = base.cloneNode(true);
     // limpia inputs y precio unitario cacheado
     fila.querySelectorAll('input').forEach(inp => {
       inp.value = '';
       if (inp.classList.contains('precio')) delete inp.dataset.unitario;
     });
     // repuebla el select de producto con el catálogo actual
-    const selProd = fila.querySelector('select.select-producto');
+    const selProd = fila.querySelector('select.producto');
     if (selProd) {
-      cargarProductos(function () {
-        const $sel = $(selProd);
-        llenarSelectProductos($sel);
-        $sel.select2({
-          placeholder: 'Selecciona un producto',
-          allowClear: true,
-          width: '100%'
-        });
+      selProd.innerHTML = '<option value="">--Selecciona--</option>';
+      (catalogo || []).forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nombre;
+        opt.dataset.precio = p.precio;
+        opt.dataset.existencia = p.existencia;
+        selProd.appendChild(opt);
       });
 
       // reengancha eventos de la fila
@@ -1532,7 +1443,7 @@ async function verDetalles(id) {
                 html += `<p>Evidencia:<br><img src="../../uploads/evidencias/${info.foto_entrega}" width="300"></p>`;
             }
             html += `<h4>Agregar producto</h4>`;
-            html += `<select id="detalle_producto" class="select-producto"></select>`;
+            html += `<select id="detalle_producto"></select>`;
             html += `<input type="number" id="detalle_cantidad" value="1" min="1">`;
             html += `<button class="btn custom-btn" id="addDetalle">Agregar</button>`;
             html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button hidden class="btn custom-btn" id="cerrarDetalle" data-dismiss="modal">Cerrar</button>`;
@@ -1541,16 +1452,14 @@ async function verDetalles(id) {
             showModal('#modal-detalles');
 
             const selectProd = document.getElementById('detalle_producto');
-            cargarProductos(function () {
-                selectProd.innerHTML = '<option value="">--Selecciona--</option>';
-                productosData.forEach(p => {
-                    const opt = document.createElement('option');
-                    opt.value = p.id;
-                    opt.textContent = p.nombre;
-                    opt.dataset.precio = p.precio;
-                    opt.dataset.existencia = p.existencia;
-                    selectProd.appendChild(opt);
-                });
+            selectProd.innerHTML = '<option value="">--Selecciona--</option>';
+            catalogo.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.nombre;
+                opt.dataset.precio = p.precio;
+                opt.dataset.existencia = p.existencia;
+                selectProd.appendChild(opt);
             });
             const cantDetalle = document.getElementById('detalle_cantidad');
             selectProd.addEventListener('change', () => {
