@@ -1887,7 +1887,34 @@ document.addEventListener('click', function (e) {
                 } else {
                     alert(data.mensaje || 'Error al actualizar estado');
                 }
-            })
+        })
             .catch(() => alert('Error al actualizar estado'));
+    }
+});
+
+// Actualiza el subtotal al modificar la cantidad
+document.addEventListener('input', function (e) {
+    if (e.target && e.target.classList.contains('cantidad')) {
+        const fila = e.target.closest('tr');
+        const precioInput = fila ? fila.querySelector('.precio') : null;
+        if (!precioInput) return;
+
+        // Validar cantidad mínima de 1
+        let cantidad = parseFloat(e.target.value) || 0;
+        if (cantidad < 1) {
+            cantidad = 1;
+            e.target.value = 1;
+        }
+
+        const precioUnitario = parseFloat(precioInput.dataset.unitario || precioInput.value) || 0;
+        const subtotal = cantidad * precioUnitario;
+
+        // Si existe un campo de subtotal, actualízalo; de lo contrario, usa el campo de precio
+        const subtotalInput = fila.querySelector('.subtotal');
+        if (subtotalInput) {
+            subtotalInput.value = subtotal.toFixed(2);
+        } else {
+            precioInput.value = subtotal.toFixed(2);
+        }
     }
 });
