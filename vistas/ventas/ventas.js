@@ -1113,8 +1113,39 @@ async function cargarProductos() {
         if (data.success) {
             catalogo = data.resultado;
             productos = data.resultado;
-            configurarSelectsProducto('#productos');
-            configurarSelectsProducto('#productosDetalle');
+            const selects = document.querySelectorAll('#productos select.producto');
+            selects.forEach(select => {
+                select.innerHTML = '<option value="">--Selecciona--</option>';
+                catalogo.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.nombre;
+                    opt.dataset.precio = p.precio;
+                    opt.dataset.existencia = p.existencia;
+                    select.appendChild(opt);
+                });
+                actualizarEstiloSelect(select);
+                select.addEventListener('change', () => {
+                    actualizarPrecio(select);
+                    const cantInput = select.closest('tr').querySelector('.cantidad');
+                    const exist = select.selectedOptions[0].dataset.existencia;
+                    if (exist) {
+                        cantInput.max = exist;
+                    } else {
+                        cantInput.removeAttribute('max');
+                    }
+                    validarInventario();
+                    actualizarEstiloSelect(select);
+                });
+                inicializarBuscadorProducto(select); // buscar productos por nombre
+            });
+            document.querySelectorAll('#productos .cantidad').forEach(inp => {
+                const select = inp.closest('tr').querySelector('.producto');
+                inp.addEventListener('input', () => {
+                    manejarCantidad(inp, select);
+                    validarInventario();
+                });
+            });
             validarInventario();
         } else {
             alert(data.mensaje);
@@ -1123,42 +1154,6 @@ async function cargarProductos() {
         console.error(err);
         alert('Error al cargar productos');
     }
-}
-
-function configurarSelectsProducto(contenedor) {
-    const selects = document.querySelectorAll(`${contenedor} select.producto`);
-    selects.forEach(select => {
-        select.innerHTML = '<option value="">--Selecciona--</option>';
-        catalogo.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.id;
-            opt.textContent = p.nombre;
-            opt.dataset.precio = p.precio;
-            opt.dataset.existencia = p.existencia;
-            select.appendChild(opt);
-        });
-        actualizarEstiloSelect(select);
-        select.addEventListener('change', () => {
-            actualizarPrecio(select);
-            const cantInput = select.closest('tr').querySelector('.cantidad');
-            const exist = select.selectedOptions[0].dataset.existencia;
-            if (exist) {
-                cantInput.max = exist;
-            } else {
-                cantInput.removeAttribute('max');
-            }
-            validarInventario();
-            actualizarEstiloSelect(select);
-        });
-        inicializarBuscadorProducto(select);
-    });
-    document.querySelectorAll(`${contenedor} .cantidad`).forEach(inp => {
-        const select = inp.closest('tr').querySelector('.producto');
-        inp.addEventListener('input', () => {
-            manejarCantidad(inp, select);
-            validarInventario();
-        });
-    });
 }
 
 function actualizarPrecio(select) {
