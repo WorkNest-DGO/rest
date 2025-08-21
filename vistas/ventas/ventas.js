@@ -1092,23 +1092,6 @@ function inicializarBuscadorProducto(select) {
                 select.value = p.id;
                 lista.innerHTML = '';
                 lista.style.display = 'none';
-                // Ubicar la fila activa del detalle
-                const fila = select.closest('tr');
-                const precioInput = fila ? fila.querySelector('.precio') : null;
-                const cantidadInput = fila ? fila.querySelector('.cantidad') : null;
-
-                // Extraer el producto seleccionado del catálogo
-                const prod = productos.find(pr => parseInt(pr.id) === parseInt(p.id));
-                if (precioInput && prod) {
-                    const unitario = parseFloat(prod.precio);
-                    precioInput.dataset.unitario = unitario;
-
-                    // Si hay cantidad, calcular el subtotal; de lo contrario, usar precio unitario
-                    const cant = cantidadInput ? parseFloat(cantidadInput.value) || 0 : 0;
-                    precioInput.value = (cant > 0 ? cant * unitario : unitario).toFixed(2);
-                }
-
-                // Reutilizar lógica de cambio de producto/cantidad
                 select.dispatchEvent(new Event('change'));
             });
             lista.appendChild(li);
@@ -1531,14 +1514,10 @@ async function verDetalles(id) {
                 html += `<p>Evidencia:<br><img src="../../uploads/evidencias/${info.foto_entrega}" width="300"></p>`;
             }
             html += `<h4>Agregar producto</h4>`;
-            html += `<div class="selector-producto position-relative">`;
-            html += `  <input type="text" class="form-control buscador-producto" placeholder="Buscar producto...">`;
-              html += `<input type="number" id="detalle_cantidad" value="1" min="1">`;
-            html += `  <select id="detalle_producto" name="producto" class="d-none"></select>`;
-            html += `  <ul class="list-group lista-productos position-absolute w-100"></ul>`;
-            html += `</div>`;
-            html += `<input type="number" id="detalle_cantidad" value="1" min="1" class="d-none">`;
-            html += `<button class="btn custom-btn d-none" id="addDetalle">Agregar</button>`;
+            // html += `<select id="detalle_producto"></select>`;
+            html += `<div class="sel sel--producto"><select id="detalle_producto" name="producto"></select></div>`;
+            html += `<input type="number" id="detalle_cantidad" value="1" min="1">`;
+            html += `<button class="btn custom-btn" id="addDetalle">Agregar</button>`;
             html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button hidden class="btn custom-btn" id="cerrarDetalle" data-dismiss="modal">Cerrar</button>`;
 
             contenedor.innerHTML = html;
@@ -1557,23 +1536,19 @@ async function verDetalles(id) {
             actualizarEstiloSelect(selectProd);
             const cantDetalle = document.getElementById('detalle_cantidad');
             selectProd.addEventListener('change', () => {
-                const exist = selectProd.selectedOptions[0]?.dataset.existencia;
+                const exist = selectProd.selectedOptions[0].dataset.existencia;
                 if (exist) {
                     cantDetalle.max = exist;
                 } else {
                     cantDetalle.removeAttribute('max');
                 }
                 actualizarEstiloSelect(selectProd);
-                cantDetalle.value = 1;
-                agregarDetalle(id);
             });
-            inicializarBuscadorProducto(selectProd);
 
             contenedor.querySelectorAll('.delDetalle').forEach(btn => {
                 btn.addEventListener('click', () => eliminarDetalle(btn.dataset.id, id));
             });
-            const addBtn = document.getElementById('addDetalle');
-            if (addBtn) addBtn.addEventListener('click', () => agregarDetalle(id));
+            document.getElementById('addDetalle').addEventListener('click', () => agregarDetalle(id));
             document.getElementById('cerrarDetalle').addEventListener('click', () => {
                 hideModal('#modal-detalles');
             });
@@ -1915,4 +1890,3 @@ document.addEventListener('click', function (e) {
             .catch(() => alert('Error al actualizar estado'));
     }
 });
-
