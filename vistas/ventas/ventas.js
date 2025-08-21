@@ -1092,6 +1092,23 @@ function inicializarBuscadorProducto(select) {
                 select.value = p.id;
                 lista.innerHTML = '';
                 lista.style.display = 'none';
+                // Ubicar la fila activa del detalle
+                const fila = select.closest('tr');
+                const precioInput = fila ? fila.querySelector('.precio') : null;
+                const cantidadInput = fila ? fila.querySelector('.cantidad') : null;
+
+                // Extraer el producto seleccionado del catálogo
+                const prod = productos.find(pr => parseInt(pr.id) === parseInt(p.id));
+                if (precioInput && prod) {
+                    const unitario = parseFloat(prod.precio);
+                    precioInput.dataset.unitario = unitario;
+
+                    // Si hay cantidad, calcular el subtotal; de lo contrario, usar precio unitario
+                    const cant = cantidadInput ? parseFloat(cantidadInput.value) || 0 : 0;
+                    precioInput.value = (cant > 0 ? cant * unitario : unitario).toFixed(2);
+                }
+
+                // Reutilizar lógica de cambio de producto/cantidad
                 select.dispatchEvent(new Event('change'));
             });
             lista.appendChild(li);
