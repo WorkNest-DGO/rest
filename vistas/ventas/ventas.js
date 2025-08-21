@@ -120,6 +120,7 @@ let mesas = [];
 // ==== [INICIO BLOQUE valida: validación para cierre de corte] ====
 const VENTAS_URL = typeof API_LISTAR_VENTAS !== 'undefined' ? API_LISTAR_VENTAS : '../../api/ventas/listar_ventas.php';
 const MESAS_URL  = typeof API_LISTAR_MESAS  !== 'undefined' ? API_LISTAR_MESAS  : '../../api/mesas/listar_mesas.php';
+const API_BUSCAR_PRODUCTOS = '../../api/productos.php';
 
 // Devuelve { hayVentasActivas, hayMesasOcupadas, bloqueado }
 async function hayBloqueosParaCerrarCorte() {
@@ -1106,6 +1107,47 @@ function inicializarBuscadorProducto(select) {
     });
 }
 
+// Buscador de productos para el detalle de venta usando jQuery y AJAX
+function inicializarBuscadorDetalle() {
+    const $input = $('#detalle_buscador');
+    const $select = $('#detalle_producto');
+    const $lista = $('#detalle_lista');
+    if (!$input.length || !$lista.length) return;
+
+    $input.on('input', function () {
+        const val = $.trim($input.val());
+        $lista.empty();
+        if (!val) { $lista.hide(); return; }
+        $.getJSON(API_BUSCAR_PRODUCTOS, { query: val }, function (resp) {
+            const arr = resp.resultado || resp;
+            arr.forEach(p => {
+                const $li = $('<li>')
+                    .addClass('list-group-item list-group-item-action')
+                    .text(p.nombre);
+                $li.on('click', function () {
+                    $input.val(p.nombre);
+                    $select.html(`<option value="${p.id}" data-precio="${p.precio}">${p.nombre}</option>`).val(p.id);
+                    const prod = catalogo.find(c => parseInt(c.id) === parseInt(p.id));
+                    if (prod && prod.existencia) {
+                        $('#detalle_cantidad').attr('max', prod.existencia);
+                    } else {
+                        $('#detalle_cantidad').removeAttr('max');
+                    }
+                    $lista.empty().hide();
+                });
+                $lista.append($li);
+            });
+            $lista.toggle($lista.children().length > 0);
+        });
+    });
+
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.selector-producto').length) {
+            $lista.hide();
+        }
+    });
+}
+
 async function cargarProductos() {
     try {
         const resp = await fetch('../../api/inventario/listar_productos.php');
@@ -1509,50 +1551,36 @@ async function verDetalles(id) {
                 html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${est}</td>` +
                         `<td>${btnEliminar}${btnEntregar}</td></tr>`;
             });
+            html += `<tr id="detalle_nuevo">
+                <td>
+                  <div class="selector-producto position-relative">
+                    <input type="text" id="detalle_buscador" class="form-control buscador-producto" placeholder="Buscar producto...">
+                    <select id="detalle_producto" class="d-none"></select>
+                    <ul id="detalle_lista" class="list-group lista-productos position-absolute w-100"></ul>
+                  </div>
+                </td>
+                <td><input type="number" id="detalle_cantidad" class="form-control" min="0.01" step="0.01"></td>
+                <td colspan="3"></td>
+                <td><button class="btn custom-btn" id="addDetalle">Agregar</button></td>
+            </tr>`;
             html += `</tbody></table>`;
             if (info.foto_entrega) {
                 html += `<p>Evidencia:<br><img src="../../uploads/evidencias/${info.foto_entrega}" width="300"></p>`;
             }
-            html += `<h4>Agregar producto</h4>`;
-            // html += `<select id="detalle_producto"></select>`;
-            html += `<div class="sel sel--producto"><select id="detalle_producto" name="producto"></select></div>`;
-            html += `<input type="number" id="detalle_cantidad" value="1" min="1">`;
-            html += `<button class="btn custom-btn" id="addDetalle">Agregar</button>`;
-            html += ` <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button hidden class="btn custom-btn" id="cerrarDetalle" data-dismiss="modal">Cerrar</button>`;
+            html += `<button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button hidden class="btn custom-btn" id="cerrarDetalle" data-dismiss="modal">Cerrar</button>`;
 
             contenedor.innerHTML = html;
             showModal('#modal-detalles');
 
-            const selectProd = document.getElementById('detalle_producto');
-            selectProd.innerHTML = '<option value="">--Selecciona--</option>';
-            catalogo.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.id;
-                opt.textContent = p.nombre;
-                opt.dataset.precio = p.precio;
-                opt.dataset.existencia = p.existencia;
-                selectProd.appendChild(opt);
-            });
-            actualizarEstiloSelect(selectProd);
-            const cantDetalle = document.getElementById('detalle_cantidad');
-            selectProd.addEventListener('change', () => {
-                const exist = selectProd.selectedOptions[0].dataset.existencia;
-                if (exist) {
-                    cantDetalle.max = exist;
-                } else {
-                    cantDetalle.removeAttribute('max');
-                }
-                actualizarEstiloSelect(selectProd);
-            });
-
             contenedor.querySelectorAll('.delDetalle').forEach(btn => {
                 btn.addEventListener('click', () => eliminarDetalle(btn.dataset.id, id));
             });
-            document.getElementById('addDetalle').addEventListener('click', () => agregarDetalle(id));
-            document.getElementById('cerrarDetalle').addEventListener('click', () => {
+            inicializarBuscadorDetalle();
+            $('#addDetalle').on('click', () => agregarDetalle(id));
+            $('#cerrarDetalle').on('click', () => {
                 hideModal('#modal-detalles');
             });
-            document.getElementById('imprimirTicket').addEventListener('click', () => {
+            $('#imprimirTicket').on('click', () => {
                 const venta = ventasData[id] || {};
                 const total = venta.total || info.productos.reduce((s, p) => s + parseFloat(p.subtotal), 0);
                 let sede = venta.sede_id || sedeId;
@@ -1603,15 +1631,15 @@ async function eliminarDetalle(detalleId, ventaId) {
 
 async function agregarDetalle(ventaId) {
     const select = document.getElementById('detalle_producto');
-    const cantidad = parseInt(document.getElementById('detalle_cantidad').value);
+    const cantidad = parseFloat(document.getElementById('detalle_cantidad').value);
     const productoId = parseInt(select.value);
     const prod = catalogo.find(p => parseInt(p.id) === productoId);
-    const precio = prod ? parseFloat(prod.precio) : 0;
+    const precio = prod ? parseFloat(prod.precio) : parseFloat(select.selectedOptions[0]?.dataset.precio || 0);
     if (isNaN(productoId) || isNaN(cantidad) || cantidad <= 0) {
         alert('Producto o cantidad inválida');
         return;
     }
-    if (prod && cantidad > parseInt(prod.existencia)) {
+    if (prod && cantidad > parseFloat(prod.existencia)) {
         alert(`Solo hay ${prod.existencia} disponibles de ${prod.nombre}`);
         return;
     }
