@@ -5,6 +5,10 @@ function showAppMsg(msg) {
 }
 window.alert = showAppMsg;
 
+function normalizarTexto(str) {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
 if (typeof catalogoDenominaciones !== 'undefined' && Array.isArray(catalogoDenominaciones) && catalogoDenominaciones.length > 0) {
   console.log('Denominaciones cargadas:', catalogoDenominaciones);
 } else {
@@ -1072,13 +1076,13 @@ function inicializarBuscadorProducto(select) {
     input.dataset.autocompleteInitialized = 'true';
 
     input.addEventListener('input', () => {
-        const val = input.value.toLowerCase();
+        const val = normalizarTexto(input.value);
         lista.innerHTML = '';
         if (!val) {
             lista.style.display = 'none';
             return;
         }
-        const coincidencias = catalogo.filter(p => p.nombre.toLowerCase().includes(val));
+        const coincidencias = catalogo.filter(p => normalizarTexto(p.nombre).includes(val));
         coincidencias.forEach(p => {
             const li = document.createElement('li');
             li.className = 'list-group-item list-group-item-action';
