@@ -1516,6 +1516,7 @@ async function verDetalles(id) {
             html += `<h4>Agregar producto</h4>`;
             html += `<div class="selector-producto position-relative">`;
             html += `  <input type="text" class="form-control buscador-producto" placeholder="Buscar producto...">`;
+              html += `<input type="number" id="detalle_cantidad" value="1" min="1">`;
             html += `  <select id="detalle_producto" name="producto" class="d-none"></select>`;
             html += `  <ul class="list-group lista-productos position-absolute w-100"></ul>`;
             html += `</div>`;
