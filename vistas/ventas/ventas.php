@@ -349,7 +349,7 @@ ob_start();
 
   <?php require_once __DIR__ . '/../footer.php'; ?>
   
-  <script>
+<script>
     // ID de usuario proveniente de la sesión para operaciones en JS
     window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;
     // ID de la venta actualmente consultada en detalle
@@ -360,8 +360,9 @@ ob_start();
     const catalogoDenominaciones = <?php echo json_encode($denominaciones); ?>;
     // Último ID de detalle enviado a cocina almacenado
     window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina') || '0', 10);
-  </script>
-  <script src="ventas.js"></script>
+</script>
+<script src="../../utils/js/buscador.js"></script>
+<script src="ventas.js"></script>
   </body>
 
 </html>

@@ -35,7 +35,20 @@ ob_start();
     <select id="filtro-area"></select>
 </div>
 <div id="tablero"></div>
-<div id="modal-detalle" style="display:none;"></div>
+<div id="modalVenta" class="modal-flotante modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalle de venta</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn custom-btn" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div>
 <section class="section">
@@ -74,6 +87,7 @@ window.usuarioActual = {
     rol: <?= json_encode($_SESSION['rol'] ?? ''); ?>
 };
 </script>
+<script src="../../utils/js/buscador.js"></script>
 <script src="kanbanMesas.js"></script>
 </body>
 </html>

@@ -5,9 +5,6 @@ function showAppMsg(msg) {
 }
 window.alert = showAppMsg;
 
-function normalizarTexto(str) {
-    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-}
 
 if (typeof catalogoDenominaciones !== 'undefined' && Array.isArray(catalogoDenominaciones) && catalogoDenominaciones.length > 0) {
     console.log('Denominaciones cargadas:', catalogoDenominaciones);
@@ -120,7 +117,6 @@ let mesas = [];
 // ==== [INICIO BLOQUE valida: validación para cierre de corte] ====
 const VENTAS_URL = typeof API_LISTAR_VENTAS !== 'undefined' ? API_LISTAR_VENTAS : '../../api/ventas/listar_ventas.php';
 const MESAS_URL = typeof API_LISTAR_MESAS !== 'undefined' ? API_LISTAR_MESAS : '../../api/mesas/listar_mesas.php';
-const API_BUSCAR_PRODUCTOS = '../../api/inventario/listar_productos.php';
 
 // Devuelve { hayVentasActivas, hayMesasOcupadas, bloqueado }
 async function hayBloqueosParaCerrarCorte() {
@@ -1103,71 +1099,6 @@ function inicializarBuscadorProducto(select) {
     document.addEventListener('click', e => {
         if (!cont.contains(e.target)) {
             lista.style.display = 'none';
-        }
-    });
-}
-
-// Buscador de productos para el detalle de venta usando fetch
-function inicializarBuscadorDetalle() {
-    const $input = $('#detalle_buscador');
-    const $select = $('#detalle_producto');
-    const $lista = $('#detalle_lista');
-    if (!$input.length || !$lista.length) return;
-
-    let controller;
-    $input.on('input', () => {
-        const val = $input.val().trim();
-        $lista.empty();
-        if (!val) { $lista.hide(); return; }
-
-        if (controller) controller.abort();
-        controller = new AbortController();
-
-        fetch(`${API_BUSCAR_PRODUCTOS}?query=${encodeURIComponent(val)}`, { signal: controller.signal })
-            .then(r => r.json())
-            .then(resp => {
-                const arr = resp?.resultado || resp || [];
-                renderLista(arr);
-            })
-            .catch(() => {
-                const base = Array.isArray(window.catalogo) ? window.catalogo : [];
-                renderLista(base);
-            });
-
-        function renderLista(arr) {
-            const q = normalizarTexto(val);
-            arr.filter(p => {
-                const nombre = normalizarTexto(p?.nombre || '');
-                const desc = normalizarTexto(p?.descripcion || '');
-                return nombre.includes(q) || desc.includes(q);
-            }).slice(0, 50).forEach(p => {
-                const $li = $('<li>')
-                    .addClass('list-group-item list-group-item-action')
-                    .text(p.nombre)
-                    .on('click', function () {
-                        $input.val(p.nombre);
-                        $select.val(p.id).trigger('change');
-
-                        const prod = (window.catalogo || []).find(c => parseInt(c.id) === parseInt(p.id));
-                        if (prod && prod.existencia) {
-                            $('#detalle_cantidad').attr('max', prod.existencia);
-                        } else {
-                            $('#detalle_cantidad').removeAttr('max');
-                        }
-
-                        $lista.empty().hide();
-                    });
-
-                $lista.append($li);
-            });
-
-            $lista.toggle($lista.children().length > 0);
-        }
-    });
-
-    $(document).on('click', e => {
-        if (!$(e.target).closest('.selector-producto').length) {
-            $lista.hide();
         }
     });
 }
