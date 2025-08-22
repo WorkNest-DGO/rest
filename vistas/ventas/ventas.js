@@ -6,13 +6,13 @@ function showAppMsg(msg) {
 window.alert = showAppMsg;
 
 function normalizarTexto(str) {
-  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
 if (typeof catalogoDenominaciones !== 'undefined' && Array.isArray(catalogoDenominaciones) && catalogoDenominaciones.length > 0) {
-  console.log('Denominaciones cargadas:', catalogoDenominaciones);
+    console.log('Denominaciones cargadas:', catalogoDenominaciones);
 } else {
-  console.warn('Denominaciones no disponibles aún');
+    console.warn('Denominaciones no disponibles aún');
 }
 
 
@@ -119,88 +119,88 @@ let mesas = [];
 
 // ==== [INICIO BLOQUE valida: validación para cierre de corte] ====
 const VENTAS_URL = typeof API_LISTAR_VENTAS !== 'undefined' ? API_LISTAR_VENTAS : '../../api/ventas/listar_ventas.php';
-const MESAS_URL  = typeof API_LISTAR_MESAS  !== 'undefined' ? API_LISTAR_MESAS  : '../../api/mesas/listar_mesas.php';
-const API_BUSCAR_PRODUCTOS = '../../api/productos.php';
+const MESAS_URL = typeof API_LISTAR_MESAS !== 'undefined' ? API_LISTAR_MESAS : '../../api/mesas/listar_mesas.php';
+const API_BUSCAR_PRODUCTOS = '../../api/inventario/listar_productos.php';
 
 // Devuelve { hayVentasActivas, hayMesasOcupadas, bloqueado }
 async function hayBloqueosParaCerrarCorte() {
-  const [ventasResp, mesasResp] = await Promise.all([
-    fetch(VENTAS_URL, { cache: 'no-store' }).then(r => r.json()),
-    fetch(MESAS_URL,  { cache: 'no-store' }).then(r => r.json())
-  ]);
+    const [ventasResp, mesasResp] = await Promise.all([
+        fetch(VENTAS_URL, { cache: 'no-store' }).then(r => r.json()),
+        fetch(MESAS_URL, { cache: 'no-store' }).then(r => r.json())
+    ]);
 
-  const ventas = (ventasResp && ventasResp.resultado && ventasResp.resultado.ventas) || [];
-  const hayVentasActivas = ventas.some(v => String(v.estatus || '').toLowerCase() === 'activa');
+    const ventas = (ventasResp && ventasResp.resultado && ventasResp.resultado.ventas) || [];
+    const hayVentasActivas = ventas.some(v => String(v.estatus || '').toLowerCase() === 'activa');
 
-  const mesas = (mesasResp && mesasResp.resultado) || [];
-  const hayMesasOcupadas = mesas.some(m => String(m.estado || '').toLowerCase() === 'ocupada');
+    const mesas = (mesasResp && mesasResp.resultado) || [];
+    const hayMesasOcupadas = mesas.some(m => String(m.estado || '').toLowerCase() === 'ocupada');
 
-  return { hayVentasActivas, hayMesasOcupadas, bloqueado: (hayVentasActivas || hayMesasOcupadas) };
+    return { hayVentasActivas, hayMesasOcupadas, bloqueado: (hayVentasActivas || hayMesasOcupadas) };
 }
 
 function toggleBotonCerrarCorte(bloqueado, detalle = '') {
-  const btn = document.getElementById('btnCerrarCorte');
-  if (!btn) return;
-  btn.disabled = !!bloqueado;
-  btn.title = bloqueado
-    ? ('No puedes cerrar el corte: hay pendientes' + (detalle ? ' ' + detalle : ''))
-    : '';
+    const btn = document.getElementById('btnCerrarCorte');
+    if (!btn) return;
+    btn.disabled = !!bloqueado;
+    btn.title = bloqueado
+        ? ('No puedes cerrar el corte: hay pendientes' + (detalle ? ' ' + detalle : ''))
+        : '';
 }
 
 // Ejecuta validación y actualiza estado del botón
 async function actualizarEstadoBotonCerrarCorte() {
-  try {
-    const { hayVentasActivas, hayMesasOcupadas, bloqueado } = await hayBloqueosParaCerrarCorte();
-    const partes = [];
-    if (hayMesasOcupadas) partes.push('[mesas ocupadas]');
-    if (hayVentasActivas) partes.push('[ventas activas]');
-    toggleBotonCerrarCorte(bloqueado, partes.join(' '));
-  } catch (e) {
-    console.error('Validación de corte falló:', e);
-    // Falla de validación => bloquear por seguridad
-    toggleBotonCerrarCorte(true, '[no se pudo validar]');
-  }
+    try {
+        const { hayVentasActivas, hayMesasOcupadas, bloqueado } = await hayBloqueosParaCerrarCorte();
+        const partes = [];
+        if (hayMesasOcupadas) partes.push('[mesas ocupadas]');
+        if (hayVentasActivas) partes.push('[ventas activas]');
+        toggleBotonCerrarCorte(bloqueado, partes.join(' '));
+    } catch (e) {
+        console.error('Validación de corte falló:', e);
+        // Falla de validación => bloquear por seguridad
+        toggleBotonCerrarCorte(true, '[no se pudo validar]');
+    }
 }
 
 // Valida y, sólo si no hay bloqueos, abre la modal existente
 async function validarYAbrirModalCierre() {
-  try {
-    const { hayVentasActivas, hayMesasOcupadas, bloqueado } = await hayBloqueosParaCerrarCorte();
-    if (bloqueado) {
-      const msg = [
-        'No puedes cerrar el corte ni mostrar el desglose mientras existan pendientes.',
-        hayMesasOcupadas ? '- Mesas: hay al menos una en estado OCUPADA.' : '',
-        hayVentasActivas ? '- Ventas: hay al menos una en estatus ACTIVA.' : ''
-      ].filter(Boolean).join('\n');
-      alert(msg);
-      return; // <-- No abrir modal
+    try {
+        const { hayVentasActivas, hayMesasOcupadas, bloqueado } = await hayBloqueosParaCerrarCorte();
+        if (bloqueado) {
+            const msg = [
+                'No puedes cerrar el corte ni mostrar el desglose mientras existan pendientes.',
+                hayMesasOcupadas ? '- Mesas: hay al menos una en estado OCUPADA.' : '',
+                hayVentasActivas ? '- Ventas: hay al menos una en estatus ACTIVA.' : ''
+            ].filter(Boolean).join('\n');
+            alert(msg);
+            return; // <-- No abrir modal
+        }
+        if (typeof cerrarCaja === 'function') {
+            cerrarCaja();
+        } else if (typeof abrirModalDesglose === 'function') {
+            abrirModalDesglose();
+        } else if (typeof abrirModalCierre === 'function') {
+            abrirModalCierre();
+        } else {
+            console.warn('No se encontró la función para abrir la modal de desglose.');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('No fue posible validar el estado de mesas/ventas. Intenta de nuevo.');
     }
-    if (typeof cerrarCaja === 'function') {
-      cerrarCaja();
-    } else if (typeof abrirModalDesglose === 'function') {
-      abrirModalDesglose();
-    } else if (typeof abrirModalCierre === 'function') {
-      abrirModalCierre();
-    } else {
-      console.warn('No se encontró la función para abrir la modal de desglose.');
-    }
-  } catch (e) {
-    console.error(e);
-    alert('No fue posible validar el estado de mesas/ventas. Intenta de nuevo.');
-  }
 }
 
 // Hook al cargar y al hacer click en el botón
 document.addEventListener('DOMContentLoaded', () => {
-  actualizarEstadoBotonCerrarCorte();
+    actualizarEstadoBotonCerrarCorte();
 
-  const btn = document.getElementById('btnCerrarCorte');
-  if (btn) {
-    btn.addEventListener('click', (ev) => {
-      ev.preventDefault();
-      validarYAbrirModalCierre();
-    });
-  }
+    const btn = document.getElementById('btnCerrarCorte');
+    if (btn) {
+        btn.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            validarYAbrirModalCierre();
+        });
+    }
 });
 // ==== [FIN BLOQUE valida] ====
 
@@ -208,186 +208,186 @@ document.addEventListener('DOMContentLoaded', () => {
 const TKT_WIDTH = 42;
 
 function money(n) {
-  const num = Number(n) || 0;
-  return '$ ' + num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const num = Number(n) || 0;
+    return '$ ' + num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 function repeat(ch, times) { return ch.repeat(Math.max(0, times)); }
-function padLeft(txt, w)  { const s = String(txt); return (repeat(' ', w) + s).slice(-w); }
+function padLeft(txt, w) { const s = String(txt); return (repeat(' ', w) + s).slice(-w); }
 function padRight(txt, w) { const s = String(txt); return (s + repeat(' ', w)).slice(0, w); }
 function center(txt) {
-  const s = String(txt);
-  const pad = Math.max(0, Math.floor((TKT_WIDTH - s.length) / 2));
-  return repeat(' ', pad) + s;
+    const s = String(txt);
+    const pad = Math.max(0, Math.floor((TKT_WIDTH - s.length) / 2));
+    return repeat(' ', pad) + s;
 }
 function lineKV(label, value) {
-  const L = String(label);
-  const V = String(value);
-  const spaces = Math.max(1, TKT_WIDTH - L.length - V.length);
-  return L + repeat(' ', spaces) + V;
+    const L = String(label);
+    const V = String(value);
+    const spaces = Math.max(1, TKT_WIDTH - L.length - V.length);
+    return L + repeat(' ', spaces) + V;
 }
 function nowISO() {
-  const d = new Date();
-  const pad = (n)=> String(n).padStart(2,'0');
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 // ====== Generador de ticket de cierre ======
 function buildCorteTicket(resultado, cajeroOpt) {
-  // resultado = objeto con la estructura del API: efectivo, boucher, cheque, totales, arrays, etc.
-  const r = resultado || {};
-  const cajero = cajeroOpt || r.cajero || '';
-  const fechaInicio = r.fecha_inicio || '';
-  const fechaFin = nowISO();
-  const folInicio = r.folio_inicio ?? '';
-  const folFin = r.folio_fin ?? '';
-  const folCount = r.total_folios ?? '';
-  const corteId = r.corte_id ?? '';
+    // resultado = objeto con la estructura del API: efectivo, boucher, cheque, totales, arrays, etc.
+    const r = resultado || {};
+    const cajero = cajeroOpt || r.cajero || '';
+    const fechaInicio = r.fecha_inicio || '';
+    const fechaFin = nowISO();
+    const folInicio = r.folio_inicio ?? '';
+    const folFin = r.folio_fin ?? '';
+    const folCount = r.total_folios ?? '';
+    const corteId = r.corte_id ?? '';
 
-  const efectivo = r.efectivo || {};
-  const boucher  = r.boucher  || {};
-  const cheque   = r.cheque   || {};
+    const efectivo = r.efectivo || {};
+    const boucher = r.boucher || {};
+    const cheque = r.cheque || {};
 
-  const totalProductos = Number(r.total_productos || 0);
-  const totalPropinas  = Number(r.total_propinas  || 0);
-  const totalEsperado  = Number(r.totalEsperado   || 0);
-  const fondo          = Number(r.fondo           || 0);
-  const totalDepositos = Number(r.total_depositos || 0);
-  const totalRetiros   = Number(r.total_retiros   || 0);
-  const totalFinal     = Number(r.totalFinal      || 0);
-  const dif            = totalFinal - totalEsperado;
+    const totalProductos = Number(r.total_productos || 0);
+    const totalPropinas = Number(r.total_propinas || 0);
+    const totalEsperado = Number(r.totalEsperado || 0);
+    const fondo = Number(r.fondo || 0);
+    const totalDepositos = Number(r.total_depositos || 0);
+    const totalRetiros = Number(r.total_retiros || 0);
+    const totalFinal = Number(r.totalFinal || 0);
+    const dif = totalFinal - totalEsperado;
 
-  const totalMeseros   = Array.isArray(r.total_meseros) ? r.total_meseros : [];
-  const totalRapido    = Number(r.total_rapido || 0);
-  const totalRepart    = Array.isArray(r.total_repartidor) ? r.total_repartidor : [];
+    const totalMeseros = Array.isArray(r.total_meseros) ? r.total_meseros : [];
+    const totalRapido = Number(r.total_rapido || 0);
+    const totalRepart = Array.isArray(r.total_repartidor) ? r.total_repartidor : [];
 
-  const desglose       = Array.isArray(r.desglose) ? r.desglose : [];
-  const desgEfectivo   = desglose.filter(x => (x.tipo_pago || '').toLowerCase() === 'efectivo' && Number(x.denominacion) > 0);
-  const desgNoEf       = desglose.filter(x => (x.tipo_pago || '').toLowerCase() !== 'efectivo');
+    const desglose = Array.isArray(r.desglose) ? r.desglose : [];
+    const desgEfectivo = desglose.filter(x => (x.tipo_pago || '').toLowerCase() === 'efectivo' && Number(x.denominacion) > 0);
+    const desgNoEf = desglose.filter(x => (x.tipo_pago || '').toLowerCase() !== 'efectivo');
 
-  // Agrupar no-efectivo por tipo_pago (sumar por 'cantidad' asumiendo que en no-efectivo 'cantidad' representa monto)
-  const mapNoEf = {};
-  desgNoEf.forEach(x => {
-    const key = (x.tipo_pago || 'otro').toLowerCase();
-    const monto = Number(x.cantidad || 0);
-    mapNoEf[key] = (mapNoEf[key] || 0) + monto;
-  });
-
-  let out = '';
-  out += repeat('=', TKT_WIDTH) + '\n';
-  out += center('CORTE / CIERRE DE CAJA') + '\n';
-  out += repeat('=', TKT_WIDTH) + '\n';
-  out += lineKV(`Corte ID: ${corteId}`, '') + '\n';
-  out += lineKV(`Inicio: ${fechaInicio}`, '') + '\n';
-  out += lineKV(`Fin:    ${fechaFin}`, '') + '\n';
-  if (folInicio || folFin || folCount) {
-    const folText = `Folios: ${folInicio}–${folFin} (${folCount})`;
-    out += lineKV(folText, '') + '\n';
-  }
-  out += '\n';
-
-  // Totales por forma de pago (efectivo/boucher/cheque si existen)
-  out += '-- Totales por forma de pago ' + repeat('-', TKT_WIDTH - 27) + '\n';
-  const printFP = (label, obj) => {
-    if (!obj || (obj.productos == null && obj.propina == null && obj.total == null)) return;
-    const prod = money(obj.productos || 0);
-    const prop = money(obj.propina   || 0);
-    const tot  = money(obj.total     || 0);
-    out += lineKV(padRight(label, 12) + ' Prod:', padLeft(prod, 12)) + '\n';
-    out += lineKV(padRight('', 12)    + ' Prop:', padLeft(prop, 12)) + '\n';
-    out += lineKV(padRight('', 12)    + ' TOTAL:', padLeft(tot, 12)) + '\n';
-  };
-  printFP('Efectivo', efectivo);
-  printFP('Boucher',  boucher);
-  printFP('Cheque',   cheque);
-  out += '\n';
-
-  // Conciliación
-  out += repeat('-', TKT_WIDTH) + '\n';
-  out += lineKV('Total productos:',  padLeft(money(totalProductos), 14)) + '\n';
-  out += lineKV('Total propinas:',   padLeft(money(totalPropinas), 14)) + '\n';
-  out += lineKV('Total esperado:',   padLeft(money(totalEsperado), 14)) + '\n';
-  out += lineKV('Fondo inicial:',    padLeft(money(fondo), 14)) + '\n';
-  out += lineKV('Depósitos:',        padLeft(money(totalDepositos), 14)) + '\n';
-  out += lineKV('Retiros:',          padLeft(money(totalRetiros), 14)) + '\n';
-  out += repeat('-', TKT_WIDTH) + '\n';
-  out += lineKV('Conteo (total final):', padLeft(money(totalFinal), 14)) + '\n';
-  const difLabel = 'DIF (Conteo - Esperado):';
-  out += lineKV(difLabel, padLeft(money(dif), 14)) + '\n';
-  out += repeat('-', TKT_WIDTH) + '\n\n';
-
-  // Meseros
-  if (totalMeseros.length) {
-    out += '-- Ventas por mesero ' + repeat('-', TKT_WIDTH - 22) + '\n';
-    totalMeseros.forEach(m => {
-      const name = String(m.nombre || '').slice(0, 24);
-      const val  = money(Number(m.total || 0));
-      out += lineKV(padRight(name, 28), padLeft(val, 12)) + '\n';
+    // Agrupar no-efectivo por tipo_pago (sumar por 'cantidad' asumiendo que en no-efectivo 'cantidad' representa monto)
+    const mapNoEf = {};
+    desgNoEf.forEach(x => {
+        const key = (x.tipo_pago || 'otro').toLowerCase();
+        const monto = Number(x.cantidad || 0);
+        mapNoEf[key] = (mapNoEf[key] || 0) + monto;
     });
-    out += '\n';
-  }
 
-  // Mostrador / rápido
-  if (!isNaN(totalRapido)) {
-    out += lineKV('Ventas mostrador/rápido .....', padLeft(money(totalRapido), 12)) + '\n\n';
-  }
-
-  // Repartidores
-  if (totalRepart.length) {
-    out += '-- Repartidores ' + repeat('-', TKT_WIDTH - 16) + '\n';
-    totalRepart.forEach(x => {
-      const name = String(x.nombre || '').slice(0, 24);
-      const val  = money(Number(x.total || 0));
-      out += lineKV(padRight(name, 28), padLeft(val, 12)) + '\n';
-    });
+    let out = '';
+    out += repeat('=', TKT_WIDTH) + '\n';
+    out += center('CORTE / CIERRE DE CAJA') + '\n';
+    out += repeat('=', TKT_WIDTH) + '\n';
+    out += lineKV(`Corte ID: ${corteId}`, '') + '\n';
+    out += lineKV(`Inicio: ${fechaInicio}`, '') + '\n';
+    out += lineKV(`Fin:    ${fechaFin}`, '') + '\n';
+    if (folInicio || folFin || folCount) {
+        const folText = `Folios: ${folInicio}–${folFin} (${folCount})`;
+        out += lineKV(folText, '') + '\n';
+    }
     out += '\n';
-  }
 
-  // Desglose
-  out += '-- Desglose de denominaciones ' + repeat('-', TKT_WIDTH - 29) + '\n';
-  if (desgEfectivo.length) {
-    out += '[EFECTIVO]\n';
-    desgEfectivo.forEach(x => {
-      const den  = Number(x.denominacion || 0);
-      const cant = Number(x.cantidad || 0);
-      const subtotal = den * cant;
-      const left = `${money(den)}  x ${padLeft(cant, 5)}  =`;
-      out += lineKV(left, padLeft(money(subtotal), 12)) + '\n';
-    });
+    // Totales por forma de pago (efectivo/boucher/cheque si existen)
+    out += '-- Totales por forma de pago ' + repeat('-', TKT_WIDTH - 27) + '\n';
+    const printFP = (label, obj) => {
+        if (!obj || (obj.productos == null && obj.propina == null && obj.total == null)) return;
+        const prod = money(obj.productos || 0);
+        const prop = money(obj.propina || 0);
+        const tot = money(obj.total || 0);
+        out += lineKV(padRight(label, 12) + ' Prod:', padLeft(prod, 12)) + '\n';
+        out += lineKV(padRight('', 12) + ' Prop:', padLeft(prop, 12)) + '\n';
+        out += lineKV(padRight('', 12) + ' TOTAL:', padLeft(tot, 12)) + '\n';
+    };
+    printFP('Efectivo', efectivo);
+    printFP('Boucher', boucher);
+    printFP('Cheque', cheque);
     out += '\n';
-  }
-  if (Object.keys(mapNoEf).length) {
-    out += '[NO EFECTIVO]\n';
-    Object.keys(mapNoEf).forEach(k => {
-      const label = k.charAt(0).toUpperCase() + k.slice(1);
-      out += lineKV(padRight(label, 30), padLeft(money(mapNoEf[k]), 12)) + '\n';
-    });
-    out += '\n';
-  }
 
-  out += repeat('-', TKT_WIDTH) + '\n';
-  out += lineKV('Impreso:', nowISO()) + '\n';
-  if (cajero) out += lineKV('Cajero:', cajero) + '\n';
-  out += repeat('=', TKT_WIDTH) + '\n';
-  return out;
+    // Conciliación
+    out += repeat('-', TKT_WIDTH) + '\n';
+    out += lineKV('Total productos:', padLeft(money(totalProductos), 14)) + '\n';
+    out += lineKV('Total propinas:', padLeft(money(totalPropinas), 14)) + '\n';
+    out += lineKV('Total esperado:', padLeft(money(totalEsperado), 14)) + '\n';
+    out += lineKV('Fondo inicial:', padLeft(money(fondo), 14)) + '\n';
+    out += lineKV('Depósitos:', padLeft(money(totalDepositos), 14)) + '\n';
+    out += lineKV('Retiros:', padLeft(money(totalRetiros), 14)) + '\n';
+    out += repeat('-', TKT_WIDTH) + '\n';
+    out += lineKV('Conteo (total final):', padLeft(money(totalFinal), 14)) + '\n';
+    const difLabel = 'DIF (Conteo - Esperado):';
+    out += lineKV(difLabel, padLeft(money(dif), 14)) + '\n';
+    out += repeat('-', TKT_WIDTH) + '\n\n';
+
+    // Meseros
+    if (totalMeseros.length) {
+        out += '-- Ventas por mesero ' + repeat('-', TKT_WIDTH - 22) + '\n';
+        totalMeseros.forEach(m => {
+            const name = String(m.nombre || '').slice(0, 24);
+            const val = money(Number(m.total || 0));
+            out += lineKV(padRight(name, 28), padLeft(val, 12)) + '\n';
+        });
+        out += '\n';
+    }
+
+    // Mostrador / rápido
+    if (!isNaN(totalRapido)) {
+        out += lineKV('Ventas mostrador/rápido .....', padLeft(money(totalRapido), 12)) + '\n\n';
+    }
+
+    // Repartidores
+    if (totalRepart.length) {
+        out += '-- Repartidores ' + repeat('-', TKT_WIDTH - 16) + '\n';
+        totalRepart.forEach(x => {
+            const name = String(x.nombre || '').slice(0, 24);
+            const val = money(Number(x.total || 0));
+            out += lineKV(padRight(name, 28), padLeft(val, 12)) + '\n';
+        });
+        out += '\n';
+    }
+
+    // Desglose
+    out += '-- Desglose de denominaciones ' + repeat('-', TKT_WIDTH - 29) + '\n';
+    if (desgEfectivo.length) {
+        out += '[EFECTIVO]\n';
+        desgEfectivo.forEach(x => {
+            const den = Number(x.denominacion || 0);
+            const cant = Number(x.cantidad || 0);
+            const subtotal = den * cant;
+            const left = `${money(den)}  x ${padLeft(cant, 5)}  =`;
+            out += lineKV(left, padLeft(money(subtotal), 12)) + '\n';
+        });
+        out += '\n';
+    }
+    if (Object.keys(mapNoEf).length) {
+        out += '[NO EFECTIVO]\n';
+        Object.keys(mapNoEf).forEach(k => {
+            const label = k.charAt(0).toUpperCase() + k.slice(1);
+            out += lineKV(padRight(label, 30), padLeft(money(mapNoEf[k]), 12)) + '\n';
+        });
+        out += '\n';
+    }
+
+    out += repeat('-', TKT_WIDTH) + '\n';
+    out += lineKV('Impreso:', nowISO()) + '\n';
+    if (cajero) out += lineKV('Cajero:', cajero) + '\n';
+    out += repeat('=', TKT_WIDTH) + '\n';
+    return out;
 }
 
 // ====== Controladores del modal ======
 function showCortePreview(resultado, cajero) {
-  window.open('../../api/corte_caja/imprime_corte.php?datos='+ JSON.stringify(resultado)+'&detalle='+JSON.stringify(cajero));
-  // try {
-  //   const txt = buildCorteTicket(resultado, cajero);
-  //   const pre = document.getElementById('corteTicketText');
-  //   pre.textContent = txt;
-  //   showModal('#modalCortePreview');
-  // } catch (e) {
-  //   console.error('Error construyendo ticket de corte:', e);
-  //   alert('No se pudo generar la previsualización del corte.');
-  // }
+    window.open('../../api/corte_caja/imprime_corte.php?datos=' + JSON.stringify(resultado) + '&detalle=' + JSON.stringify(cajero));
+    // try {
+    //   const txt = buildCorteTicket(resultado, cajero);
+    //   const pre = document.getElementById('corteTicketText');
+    //   pre.textContent = txt;
+    //   showModal('#modalCortePreview');
+    // } catch (e) {
+    //   console.error('Error construyendo ticket de corte:', e);
+    //   alert('No se pudo generar la previsualización del corte.');
+    // }
 }
 
 (function wireModalCorte() {
-  const btnP  = document.getElementById('btnImprimirCorte');
-  if (btnP) btnP.addEventListener('click', ()=> { window.print(); });
+    const btnP = document.getElementById('btnImprimirCorte');
+    if (btnP) btnP.addEventListener('click', () => { window.print(); });
 })();
 
 function imprimirTicket(ventaId) {
@@ -441,32 +441,32 @@ function habilitarCobro() {
 }
 
 async function verificarCorte() {
-fetch('../../api/corte_caja/verificar_corte_abierto.php', {
-  credentials: 'include'
-})
-  .then(resp => resp.json())
-  .then(data => {
-    const cont = document.getElementById('controlCaja');
-    cont.innerHTML = '';
+    fetch('../../api/corte_caja/verificar_corte_abierto.php', {
+        credentials: 'include'
+    })
+        .then(resp => resp.json())
+        .then(data => {
+            const cont = document.getElementById('controlCaja');
+            cont.innerHTML = '';
 
-    if (data.success && data.resultado.abierto) {
-      cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCorte">Cerrar corte</button> <button id="btnCorteTemporal" class="btn btn-warning">Corte Temporal</button>`;
-      const btnCerrar = document.getElementById('btnCerrarCorte');
-      if (btnCerrar) {
-        btnCerrar.addEventListener('click', (ev) => {
-          ev.preventDefault();
-          validarYAbrirModalCierre();
+            if (data.success && data.resultado.abierto) {
+                cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCorte">Cerrar corte</button> <button id="btnCorteTemporal" class="btn btn-warning">Corte Temporal</button>`;
+                const btnCerrar = document.getElementById('btnCerrarCorte');
+                if (btnCerrar) {
+                    btnCerrar.addEventListener('click', (ev) => {
+                        ev.preventDefault();
+                        validarYAbrirModalCierre();
+                    });
+                }
+                document.getElementById('btnCorteTemporal').addEventListener('click', abrirCorteTemporal);
+                habilitarCobro();
+            } else {
+                cont.innerHTML = `<button class="btn custom-btn" id="btnAbrirCaja">Abrir caja</button>`;
+                document.getElementById('btnAbrirCaja').addEventListener('click', abrirCaja);
+                deshabilitarCobro();
+            }
+            actualizarEstadoBotonCerrarCorte();
         });
-      }
-      document.getElementById('btnCorteTemporal').addEventListener('click', abrirCorteTemporal);
-      habilitarCobro();
-    } else {
-      cont.innerHTML = `<button class="btn custom-btn" id="btnAbrirCaja">Abrir caja</button>`;
-      document.getElementById('btnAbrirCaja').addEventListener('click', abrirCaja);
-      deshabilitarCobro();
-    }
-    actualizarEstadoBotonCerrarCorte();
-  });
 
 }
 
@@ -660,7 +660,7 @@ function guardarCorteTemporal(datos) {
 }
 
 function imprimirCorteTemporal(datos) {
-    window.open('../../api/corte_caja/imprime_corte_temp.php?datos='+ JSON.stringify(datos));
+    window.open('../../api/corte_caja/imprime_corte_temp.php?datos=' + JSON.stringify(datos));
 
     // const win = window.open('', '_blank', 'width=600,height=800');
     // if (!win) {
@@ -696,13 +696,13 @@ function mostrarModalDesglose(dataApi) {
 
     // Usa los totales del API si vienen; si no, calcula con metodosPago
     const totalProductos = Number.parseFloat(r.total_productos) ||
-      metodosPago.reduce((acc, m) => acc + (Number.parseFloat(r[m]?.productos) || 0), 0);
+        metodosPago.reduce((acc, m) => acc + (Number.parseFloat(r[m]?.productos) || 0), 0);
 
     const totalPropinas = Number.parseFloat(r.total_propinas) ||
-      metodosPago.reduce((acc, m) => acc + (Number.parseFloat(r[m]?.propina) || 0), 0);
+        metodosPago.reduce((acc, m) => acc + (Number.parseFloat(r[m]?.propina) || 0), 0);
 
-    const totalEsperado  = Number.parseFloat(r.totalEsperado) || (totalProductos + totalPropinas);
-    const fondoInicial   = Number.parseFloat(r.fondo) || 0;
+    const totalEsperado = Number.parseFloat(r.totalEsperado) || (totalProductos + totalPropinas);
+    const fondoInicial = Number.parseFloat(r.fondo) || 0;
     const totalIngresado = Number.parseFloat(r.totalFinal) || (totalEsperado + fondoInicial);
 
     const modal = document.getElementById('modalDesglose');
@@ -710,18 +710,18 @@ function mostrarModalDesglose(dataApi) {
     let html = '<div class="bg-dark text-white p-3 border">';
     html += '<h3>Desglose de caja</h3>';
     // Datos de cabecera del corte (si existen)
-    if (r.fecha_inicio)  { html += `<p>Fecha inicio: ${r.fecha_inicio}</p>`; }
+    if (r.fecha_inicio) { html += `<p>Fecha inicio: ${r.fecha_inicio}</p>`; }
     if (r.folio_inicio != null) { html += `<p>Folio inicio: ${r.folio_inicio}</p>`; }
-    if (r.folio_fin != null)    { html += `<p>Folio fin: ${r.folio_fin}</p>`; }
+    if (r.folio_fin != null) { html += `<p>Folio fin: ${r.folio_fin}</p>`; }
     if (r.total_folios != null) { html += `<p>Total folios: ${r.total_folios}</p>`; }
-  
+
     html += `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>`;
     html += '<p>Fondo inicial: $<strong id="lblFondo"></strong></p>';
     html += '<p>Depósitos: $<strong id="lblTotalDepositos"></strong></p>';
     html += '<p>Retiros: $<strong id="lblTotalRetiros"></strong></p>';
     html += `<p>Total ingresado: $${totalIngresado.toFixed(2)}</p>`;
     html += `<p>Total productos: $${totalProductos.toFixed(2)}</p>`;
-        html += '<p>Totales por tipo de pago:</p><ul>';
+    html += '<p>Totales por tipo de pago:</p><ul>';
     metodosPago.forEach(tipo => {
         const p = r[tipo] || {};
         html += `<li>${tipo}: $${(Number.parseFloat(p.total) || 0).toFixed(2)}</li>`;
@@ -729,34 +729,34 @@ function mostrarModalDesglose(dataApi) {
     html += '</ul>';
     html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
     html += '<p>Propinas por tipo de pago:</p><ul>';
-    
+
     metodosPago.forEach(tipo => {
         const p = r[tipo] || {};
         html += `<li>${tipo}: $${(Number.parseFloat(p.propina) || 0).toFixed(2)}</li></ul>`;
     });
-    
+
 
 
     // Listado de ventas por mesero (si existe)
     if (Array.isArray(r.total_meseros) && r.total_meseros.length) {
-      html += '<h4>Ventas por mesero</h4><ul>';
-      r.total_meseros.forEach(m => {
-        const nombre = (m?.nombre ?? '').toString();
-        const total  = Number.parseFloat(m?.total) || 0;
-        html += `<li>${nombre}: $${total.toFixed(2)}</li>`;
-      });
-      html += '</ul>';
+        html += '<h4>Ventas por mesero</h4><ul>';
+        r.total_meseros.forEach(m => {
+            const nombre = (m?.nombre ?? '').toString();
+            const total = Number.parseFloat(m?.total) || 0;
+            html += `<li>${nombre}: $${total.toFixed(2)}</li>`;
+        });
+        html += '</ul>';
     }
 
     // Totales por repartidor (si existe)
     if (Array.isArray(r.total_repartidor) && r.total_repartidor.length) {
-      html += '<h4>Total por repartidor</h4><ul>';
-      r.total_repartidor.forEach(x => {
-        const nombre = (x?.nombre ?? '').toString();
-        const total  = Number.parseFloat(x?.total) || 0;
-        html += `<li>${nombre}: $${total.toFixed(2)}</li>`;
-      });
-      html += '</ul>';
+        html += '<h4>Total por repartidor</h4><ul>';
+        r.total_repartidor.forEach(x => {
+            const nombre = (x?.nombre ?? '').toString();
+            const total = Number.parseFloat(x?.total) || 0;
+            html += `<li>${nombre}: $${total.toFixed(2)}</li>`;
+        });
+        html += '</ul>';
     }
 
 
@@ -863,7 +863,7 @@ function mostrarModalDesglose(dataApi) {
             const data = await resp.json();
             if (data.success) {
                 // Mostrar vista previa del corte
-               
+
                 hideModal('#modalDesglose');
                 await finalizarCorte();
                 showCortePreview({ ...r, desglose: detalle });
@@ -923,26 +923,26 @@ async function cargarRepartidores() {
 
 // Carga el catálogo de meseros desde el backend de mesas
 async function cargarMeseros() {
-  try {
-    const resp = await fetch('../../api/mesas/meseros.php');
-    const data = await resp.json();
-    const select = document.getElementById('usuario_id');
-    if (!select) return;
-    select.innerHTML = '<option value="">--Selecciona--</option>';
+    try {
+        const resp = await fetch('../../api/mesas/meseros.php');
+        const data = await resp.json();
+        const select = document.getElementById('usuario_id');
+        if (!select) return;
+        select.innerHTML = '<option value="">--Selecciona--</option>';
 
-    if (data && data.success) {
-      (data.resultado || []).forEach(u => {
-        const opt = document.createElement('option');
-        opt.value = u.id;
-        opt.textContent = u.nombre;
-        select.appendChild(opt);
-      });
-    } else {
-      console.warn(data?.mensaje || 'No se pudieron cargar meseros.');
+        if (data && data.success) {
+            (data.resultado || []).forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = u.nombre;
+                select.appendChild(opt);
+            });
+        } else {
+            console.warn(data?.mensaje || 'No se pudieron cargar meseros.');
+        }
+    } catch (e) {
+        console.error('Error al cargar meseros:', e);
     }
-  } catch (e) {
-    console.error('Error al cargar meseros:', e);
-  }
 }
 
 async function cargarMesas() {
@@ -970,69 +970,69 @@ async function cargarMesas() {
 }
 
 function setLabelUsuario(texto) {
-  const lbl = document.querySelector('label[for="usuario_id"]');
-  if (lbl) lbl.textContent = texto;
+    const lbl = document.querySelector('label[for="usuario_id"]');
+    if (lbl) lbl.textContent = texto;
 }
 
 async function cargarUsuariosPorRol() {
-  try {
-    const resp = await fetch('../../api/usuarios/listar_repartidor.php');
-    const data = await resp.json();
-    const select = document.getElementById('usuario_id');
-    if (!select) return;
-    select.innerHTML = '<option value="">--Selecciona--</option>';
+    try {
+        const resp = await fetch('../../api/usuarios/listar_repartidor.php');
+        const data = await resp.json();
+        const select = document.getElementById('usuario_id');
+        if (!select) return;
+        select.innerHTML = '<option value="">--Selecciona--</option>';
 
-    if (data && data.success) {
-      (data.resultado || []).forEach(u => {
-        const opt = document.createElement('option');
-        opt.value = u.id;
-        opt.textContent = u.nombre;
-        select.appendChild(opt);
-      });
-    } else {
-      console.warn(data?.mensaje || 'No se pudieron cargar meseros.');
+        if (data && data.success) {
+            (data.resultado || []).forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = u.nombre;
+                select.appendChild(opt);
+            });
+        } else {
+            console.warn(data?.mensaje || 'No se pudieron cargar meseros.');
+        }
+    } catch (e) {
+        console.error('Error al cargar meseros:', e);
     }
-  } catch (e) {
-    console.error('Error al cargar meseros:', e);
-  }
 }
 
 function esRepartidorCasaSeleccionado() {
-  const sel = document.getElementById('repartidor_id');
-  if (!sel || sel.selectedIndex < 0) return false;
-  const txt = sel.options[sel.selectedIndex].textContent || '';
-  return txt.trim().toLowerCase() === 'repartidor casa';
+    const sel = document.getElementById('repartidor_id');
+    if (!sel || sel.selectedIndex < 0) return false;
+    const txt = sel.options[sel.selectedIndex].textContent || '';
+    return txt.trim().toLowerCase() === 'repartidor casa';
 }
 
 async function actualizarSelectorUsuario() {
-  const tipo = (document.getElementById('tipo_entrega')?.value || '').toLowerCase();
-  const usuarioSel = document.getElementById('usuario_id');
-  if (!usuarioSel) return;
+    const tipo = (document.getElementById('tipo_entrega')?.value || '').toLowerCase();
+    const usuarioSel = document.getElementById('usuario_id');
+    if (!usuarioSel) return;
 
-  if (tipo === 'domicilio') {
-    usuarioSel.disabled = false;
-    if (esRepartidorCasaSeleccionado()) {
-      setLabelUsuario('Usuario:');
-      await cargarUsuariosPorRol();
-    } else {
-      setLabelUsuario('Mesero:');
-      await cargarMeseros();
+    if (tipo === 'domicilio') {
+        usuarioSel.disabled = false;
+        if (esRepartidorCasaSeleccionado()) {
+            setLabelUsuario('Usuario:');
+            await cargarUsuariosPorRol();
+        } else {
+            setLabelUsuario('Mesero:');
+            await cargarMeseros();
+        }
+    } else if (tipo === 'mesa') {
+        setLabelUsuario('Mesero:');
+        usuarioSel.disabled = true;
+        if (typeof asignarMeseroPorMesa === 'function') {
+            asignarMeseroPorMesa();
+        }
+    } else { // 'rapido' u otros
+        setLabelUsuario('Mesero:');
+        usuarioSel.disabled = false;
+        await cargarMeseros();
     }
-  } else if (tipo === 'mesa') {
-    setLabelUsuario('Mesero:');
-    usuarioSel.disabled = true;
-    if (typeof asignarMeseroPorMesa === 'function') {
-      asignarMeseroPorMesa();
-    }
-  } else { // 'rapido' u otros
-    setLabelUsuario('Mesero:');
-    usuarioSel.disabled = false;
-    await cargarMeseros();
-  }
 
-  if (typeof verificarActivacionProductos === 'function') {
-    verificarActivacionProductos();
-  }
+    if (typeof verificarActivacionProductos === 'function') {
+        verificarActivacionProductos();
+    }
 }
 
 function asignarMeseroPorMesa() {
@@ -1119,26 +1119,62 @@ function inicializarBuscadorDetalle() {
         $lista.empty();
         if (!val) { $lista.hide(); return; }
         $.getJSON(API_BUSCAR_PRODUCTOS, { query: val }, function (resp) {
-            const arr = resp.resultado || resp;
-            arr.forEach(p => {
+            const arr = resp?.resultado || resp || [];
+            const q = normalizarTexto(val.trim());
+
+            // Filtro local (nombre y descripción)
+            const filtrados = arr.filter(p => {
+                const nombre = normalizarTexto(p?.nombre || '');
+                const desc = normalizarTexto(p?.descripcion || '');
+                return nombre.includes(q) || desc.includes(q);
+            });
+
+            // (Opcional) limitar resultados
+            const listaParaMostrar = filtrados.slice(0, 50);
+
+            listaParaMostrar.forEach(p => {
                 const $li = $('<li>')
                     .addClass('list-group-item list-group-item-action')
-                    .text(p.nombre);
-                $li.on('click', function () {
-                    $input.val(p.nombre);
-                    $select.html(`<option value="${p.id}" data-precio="${p.precio}">${p.nombre}</option>`).val(p.id);
-                    const prod = catalogo.find(c => parseInt(c.id) === parseInt(p.id));
-                    if (prod && prod.existencia) {
-                        $('#detalle_cantidad').attr('max', prod.existencia);
-                    } else {
-                        $('#detalle_cantidad').removeAttr('max');
-                    }
-                    $lista.empty().hide();
-                });
+                    .text(p.nombre)
+                    .on('click', function () {
+                        $input.val(p.nombre);
+                        $select.val(p.id).trigger('change');
+
+                        // actualizar max de cantidad con existencia si aplica
+                        const prod = (window.catalogo || []).find(c => parseInt(c.id) === parseInt(p.id));
+                        if (prod && prod.existencia) {
+                            $('#detalle_cantidad').attr('max', prod.existencia);
+                        } else {
+                            $('#detalle_cantidad').removeAttr('max');
+                        }
+
+                        $lista.empty().hide();
+                    });
+
+                $lista.append($li);
+            });
+
+            $lista.toggle($lista.children().length > 0);
+        }).fail(function () {
+            // Fallback: si el API falla, filtra contra el catálogo en memoria
+            const base = Array.isArray(window.catalogo) ? window.catalogo : [];
+            const q = normalizarTexto(val);
+            const filtrados = base.filter(p => normalizarTexto(p.nombre || '').includes(q) ||
+                normalizarTexto(p.descripcion || '').includes(q));
+            filtrados.slice(0, 50).forEach(p => {
+                const $li = $('<li>')
+                    .addClass('list-group-item list-group-item-action')
+                    .text(p.nombre)
+                    .on('click', function () {
+                        $input.val(p.nombre);
+                        $select.val(p.id).trigger('change');
+                        $lista.empty().hide();
+                    });
                 $lista.append($li);
             });
             $lista.toggle($lista.children().length > 0);
         });
+
     });
 
     $(document).on('click', function (e) {
@@ -1446,77 +1482,77 @@ async function registrarVenta() {
     }
 }
 async function resetFormularioVenta() {
-  // Limpiar selects visibles
-  const tipoEntrega = document.getElementById('tipo_entrega');
-  const mesa = document.getElementById('mesa_id');
-  const rep = document.getElementById('repartidor_id');
-  const mesero = document.getElementById('usuario_id');
-  const obs = document.getElementById('observacion');
+    // Limpiar selects visibles
+    const tipoEntrega = document.getElementById('tipo_entrega');
+    const mesa = document.getElementById('mesa_id');
+    const rep = document.getElementById('repartidor_id');
+    const mesero = document.getElementById('usuario_id');
+    const obs = document.getElementById('observacion');
 
-  if (tipoEntrega) tipoEntrega.value = '';         // vuelve al estado neutro
-  if (mesa) mesa.value = '';
-  if (rep) rep.value = '';
-  if (mesero) { mesero.disabled = false; mesero.value = ''; }
-  if (obs) obs.value = '';
+    if (tipoEntrega) tipoEntrega.value = '';         // vuelve al estado neutro
+    if (mesa) mesa.value = '';
+    if (rep) rep.value = '';
+    if (mesero) { mesero.disabled = false; mesero.value = ''; }
+    if (obs) obs.value = '';
 
-  // Oculta secciones dependientes y revalida
-  const campoMesa = document.getElementById('campoMesa');
-  const campoRep = document.getElementById('campoRepartidor');
-  const campoObs = document.getElementById('campoObservacion');
-  if (campoMesa) campoMesa.style.display = 'none';
-  if (campoRep) campoRep.style.display = 'none';
-  if (campoObs) campoObs.style.display = 'none';
+    // Oculta secciones dependientes y revalida
+    const campoMesa = document.getElementById('campoMesa');
+    const campoRep = document.getElementById('campoRepartidor');
+    const campoObs = document.getElementById('campoObservacion');
+    if (campoMesa) campoMesa.style.display = 'none';
+    if (campoRep) campoRep.style.display = 'none';
+    if (campoObs) campoObs.style.display = 'none';
 
-  // Reset de tabla de productos a UNA fila limpia
-  const tbody = document.querySelector('#productos tbody');
-  if (tbody) {
-    const base = tbody.querySelector('tr');
-    tbody.innerHTML = ''; // limpia todo
-    const fila = base.cloneNode(true);
-    // limpia inputs y precio unitario cacheado
-    fila.querySelectorAll('input').forEach(inp => {
-      inp.value = '';
-      if (inp.classList.contains('precio')) delete inp.dataset.unitario;
-    });
-    // repuebla el select de producto con el catálogo actual
-    const selProd = fila.querySelector('select.producto');
-    if (selProd) {
-      selProd.innerHTML = '<option value="">--Selecciona--</option>';
-      (catalogo || []).forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.nombre;
-        opt.dataset.precio = p.precio;
-        opt.dataset.existencia = p.existencia;
-        selProd.appendChild(opt);
-      });
-
-      // reengancha eventos de la fila
-      selProd.addEventListener('change', () => {
-        actualizarPrecio(selProd);
-        verificarActivacionProductos();
-      });
-      const cant = fila.querySelector('.cantidad');
-      if (cant) {
-        cant.value = '';
-        cant.addEventListener('input', () => {
-          manejarCantidad(cant, selProd);
-          validarInventario();
+    // Reset de tabla de productos a UNA fila limpia
+    const tbody = document.querySelector('#productos tbody');
+    if (tbody) {
+        const base = tbody.querySelector('tr');
+        tbody.innerHTML = ''; // limpia todo
+        const fila = base.cloneNode(true);
+        // limpia inputs y precio unitario cacheado
+        fila.querySelectorAll('input').forEach(inp => {
+            inp.value = '';
+            if (inp.classList.contains('precio')) delete inp.dataset.unitario;
         });
-      }
+        // repuebla el select de producto con el catálogo actual
+        const selProd = fila.querySelector('select.producto');
+        if (selProd) {
+            selProd.innerHTML = '<option value="">--Selecciona--</option>';
+            (catalogo || []).forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.nombre;
+                opt.dataset.precio = p.precio;
+                opt.dataset.existencia = p.existencia;
+                selProd.appendChild(opt);
+            });
+
+            // reengancha eventos de la fila
+            selProd.addEventListener('change', () => {
+                actualizarPrecio(selProd);
+                verificarActivacionProductos();
+            });
+            const cant = fila.querySelector('.cantidad');
+            if (cant) {
+                cant.value = '';
+                cant.addEventListener('input', () => {
+                    manejarCantidad(cant, selProd);
+                    validarInventario();
+                });
+            }
+        }
+        tbody.appendChild(fila);
     }
-    tbody.appendChild(fila);
-  }
 
-  // Recargar opciones desde el backend (mesas/repartidores/meseros) por si cambió algo
-  await Promise.allSettled([
-    cargarMesas(),
-    cargarRepartidores(),
-    cargarMeseros()
-  ]);
+    // Recargar opciones desde el backend (mesas/repartidores/meseros) por si cambió algo
+    await Promise.allSettled([
+        cargarMesas(),
+        cargarRepartidores(),
+        cargarMeseros()
+    ]);
 
-  verificarActivacionProductos();
-  if (tipoEntrega) tipoEntrega.focus();
+    verificarActivacionProductos();
+    if (tipoEntrega) tipoEntrega.focus();
 }
 
 async function verDetalles(id) {
@@ -1549,7 +1585,7 @@ async function verDetalles(id) {
                     : '';
                 const est = (p.estado_producto || '').replace('_', ' ');
                 html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${est}</td>` +
-                        `<td>${btnEliminar}${btnEntregar}</td></tr>`;
+                    `<td>${btnEliminar}${btnEntregar}</td></tr>`;
             });
             html += `<tr id="detalle_nuevo">
                 <td>
@@ -1739,49 +1775,49 @@ document.addEventListener("change", function (e) {
     }
 });
 function verificarActivacionProductos() {
-  const mesa = document.getElementById('mesa_id').value;
-  const repartidor = document.getElementById('repartidor_id').value;
-  const tipoEntrega = document.getElementById('tipo_entrega').value;
-  const seccionProductos = document.getElementById('seccionProductos');
+    const mesa = document.getElementById('mesa_id').value;
+    const repartidor = document.getElementById('repartidor_id').value;
+    const tipoEntrega = document.getElementById('tipo_entrega').value;
+    const seccionProductos = document.getElementById('seccionProductos');
 
-  // Mostrar si hay alguno seleccionado según tipo de entrega
-  if (
-    (tipoEntrega === 'mesa' && mesa) ||
-    (tipoEntrega === 'domicilio' && repartidor) ||
-    tipoEntrega === 'rapido'
-  ) {
-    seccionProductos.style.display = 'block';
-  } else {
-    seccionProductos.style.display = 'none';
-  }
+    // Mostrar si hay alguno seleccionado según tipo de entrega
+    if (
+        (tipoEntrega === 'mesa' && mesa) ||
+        (tipoEntrega === 'domicilio' && repartidor) ||
+        tipoEntrega === 'rapido'
+    ) {
+        seccionProductos.style.display = 'block';
+    } else {
+        seccionProductos.style.display = 'none';
+    }
 }
 
 // Listener tipo_entrega: deja tu lógica de mostrar/ocultar divs y AL FINAL llama a actualizarSelectorUsuario()
 const tipoEntregaEl = document.getElementById('tipo_entrega');
 if (tipoEntregaEl) {
-  tipoEntregaEl.addEventListener('change', function () {
-    const tipo = this.value;
-    const campoMesa = document.getElementById('campoMesa');
-    const campoRepartidor = document.getElementById('campoRepartidor');
-    const campoObservacion = document.getElementById('campoObservacion');
+    tipoEntregaEl.addEventListener('change', function () {
+        const tipo = this.value;
+        const campoMesa = document.getElementById('campoMesa');
+        const campoRepartidor = document.getElementById('campoRepartidor');
+        const campoObservacion = document.getElementById('campoObservacion');
 
-    if (campoMesa) campoMesa.style.display = (tipo === 'mesa') ? 'block' : 'none';
-    if (campoRepartidor) campoRepartidor.style.display = (tipo === 'domicilio') ? 'block' : 'none';
-    if (campoObservacion) campoObservacion.style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
+        if (campoMesa) campoMesa.style.display = (tipo === 'mesa') ? 'block' : 'none';
+        if (campoRepartidor) campoRepartidor.style.display = (tipo === 'domicilio') ? 'block' : 'none';
+        if (campoObservacion) campoObservacion.style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
 
-    actualizarSelectorUsuario();
-  });
+        actualizarSelectorUsuario();
+    });
 }
 
 // Detecta cambios en mesa o repartidor
 document.getElementById('mesa_id').addEventListener('change', () => {
-  asignarMeseroPorMesa();
-  verificarActivacionProductos();
+    asignarMeseroPorMesa();
+    verificarActivacionProductos();
 });
 // Listener repartidor_id: cada vez que cambie, recalcula si es "Repartidor casa"
 const repartidorEl = document.getElementById('repartidor_id');
 if (repartidorEl) {
-  repartidorEl.addEventListener('change', actualizarSelectorUsuario);
+    repartidorEl.addEventListener('change', actualizarSelectorUsuario);
 }
 
 function actualizarFechaMovimiento() {
