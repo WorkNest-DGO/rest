@@ -116,70 +116,6 @@ let ticketRequests = [];
 let ventaIdActual = null;
 let mesas = [];
 
-// Utilidades de búsqueda usadas también en kanbanMesas.js
-window.normalizarTexto = window.normalizarTexto || function (str) {
-    return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-};
-
-window.inicializarBuscadorDetalle = window.inicializarBuscadorDetalle || function () {
-    const $input = $('#detalle_buscador');
-    const $select = $('#detalle_producto');
-    const $lista = $('#detalle_lista');
-    if (!$input.length || !$lista.length || $input.data('autocompleteInitialized')) return;
-    $input.data('autocompleteInitialized', true);
-
-    const filtrar = () => {
-        const val = normalizarTexto($input.val().trim());
-        $lista.empty();
-        if (!val) {
-            $lista.hide();
-            return;
-        }
-        const arr = Array.isArray(window.catalogo) ? window.catalogo : [];
-        arr.filter(p => normalizarTexto(p.nombre).includes(val))
-            .slice(0, 50)
-            .forEach(p => {
-                const $li = $('<li/>', {
-                    class: 'list-group-item list-group-item-action',
-                    text: p.nombre
-                });
-                $li.on('click', () => {
-                    $input.val(p.nombre);
-                    if ($select.length) {
-                        let $opt = $select.find(`option[value="${p.id}"]`);
-                        if (!$opt.length) {
-                            $opt = $('<option/>', {
-                                value: p.id,
-                                'data-precio': p.precio,
-                                'data-existencia': p.existencia
-                            });
-                            $select.append($opt);
-                        }
-                        $select.val(p.id).trigger('change');
-                    }
-                    const prod = (window.catalogo || []).find(c => parseInt(c.id) === parseInt(p.id));
-                    const $cant = $('#detalle_cantidad');
-                    if (prod && prod.existencia && $cant.length) {
-                        $cant.attr('max', prod.existencia);
-                    } else if ($cant.length) {
-                        $cant.removeAttr('max');
-                    }
-                    $lista.empty().hide();
-                });
-                $lista.append($li);
-            });
-        $lista.toggle($lista.children().length > 0);
-    };
-
-    $input.on('input', filtrar);
-
-    $(document).off('click.buscadorDetalle').on('click.buscadorDetalle', e => {
-        if (!$(e.target).closest('.selector-producto').length) {
-            $lista.hide();
-        }
-    });
-};
-
 // ==== [INICIO BLOQUE valida: validación para cierre de corte] ====
 const VENTAS_URL = typeof API_LISTAR_VENTAS !== 'undefined' ? API_LISTAR_VENTAS : '../../api/ventas/listar_ventas.php';
 const MESAS_URL = typeof API_LISTAR_MESAS !== 'undefined' ? API_LISTAR_MESAS : '../../api/mesas/listar_mesas.php';
@@ -1632,24 +1568,50 @@ async function verDetalles(id) {
 
 async function eliminarDetalle(detalleId, ventaId) {
     if (!confirm('¿Eliminar producto?')) return;
+
     try {
         const resp = await fetch('../../api/mesas/eliminar_producto_venta.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ detalle_id: parseInt(detalleId) })
+            body: JSON.stringify({ detalle_id: Number(detalleId) })
         });
-        const data = await resp.json();
+
+        const contentType = resp.headers.get('content-type') || '';
+        const raw = await resp.text(); // leemos SIEMPRE como texto primero
+
+        if (!resp.ok) {
+            console.error('HTTP error:', resp.status, raw);
+            alert(`Error del servidor (HTTP ${resp.status}).`);
+            return;
+        }
+
+        let data;
+        if (contentType.includes('application/json')) {
+            try {
+                data = JSON.parse(raw);
+            } catch (e) {
+                console.error('JSON inválido:', raw);
+                alert('Respuesta no válida del servidor.');
+                return;
+            }
+        } else {
+            console.error('No es JSON, cuerpo:', raw);
+            alert('El servidor no devolvió JSON.');
+            return;
+        }
+
         if (data.success) {
             verDetalles(ventaId);
             await cargarHistorial();
         } else {
-            alert(data.mensaje);
+            alert(data.mensaje || 'Operación no exitosa.');
         }
     } catch (err) {
         console.error(err);
         alert('Error al eliminar');
     }
 }
+
 
 async function agregarDetalle(ventaId) {
     const select = document.getElementById('detalle_producto');
