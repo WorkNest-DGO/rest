@@ -594,7 +594,7 @@ async function cerrarCaja() {
 }
 
 function abrirCorteTemporal() {
-    fetch('../../api/corte_caja/resumen_corte_actual.php')
+    fetch('../../api/corte_caja/resumen_corte_temporal.php')
         .then(res => res.json())
         .then(data => {
             if (!data.success) {

@@ -302,6 +302,11 @@ async function eliminarDetalle(detalleId, ventaId) {
         alert('Error al eliminar');
     }
 }
+async function cargarHistorial() {
+  // esta función está vacía pero evita el error
+  // si luego quieres cargar algo tipo historial de movimientos, puedes implementarlo aquí
+}
+
 
 async function marcarEntregado(detalleId, ventaId) {
     try {
