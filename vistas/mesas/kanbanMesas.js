@@ -259,18 +259,43 @@ async function cargarCatalogo() {
 }
 async function eliminarDetalle(detalleId, ventaId) {
     if (!confirm('¿Eliminar producto?')) return;
+
     try {
         const resp = await fetch('../../api/mesas/eliminar_producto_venta.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ detalle_id: parseInt(detalleId) })
+            body: JSON.stringify({ detalle_id: Number(detalleId) })
         });
-        const data = await resp.json();
-        if (data.success) {
-            huboCambios = true;
-            verDetalles(ventaId, mesaIdActual, '', estadoMesaActual);
+
+        const contentType = resp.headers.get('content-type') || '';
+        const raw = await resp.text(); // leemos SIEMPRE como texto primero
+
+        if (!resp.ok) {
+            console.error('HTTP error:', resp.status, raw);
+            alert(`Error del servidor (HTTP ${resp.status}).`);
+            return;
+        }
+
+        let data;
+        if (contentType.includes('application/json')) {
+            try {
+                data = JSON.parse(raw);
+            } catch (e) {
+                console.error('JSON inválido:', raw);
+                alert('Respuesta no válida del servidor.');
+                return;
+            }
         } else {
-            alert(data.mensaje);
+            console.error('No es JSON, cuerpo:', raw);
+            alert('El servidor no devolvió JSON.');
+            return;
+        }
+
+        if (data.success) {
+            verDetalles(ventaId);
+            await cargarHistorial();
+        } else {
+            alert(data.mensaje || 'Operación no exitosa.');
         }
     } catch (err) {
         console.error(err);
