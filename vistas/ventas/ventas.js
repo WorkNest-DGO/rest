@@ -1109,18 +1109,18 @@ function inicializarBuscadorProducto(select) {
 
 // Buscador de productos para el detalle de venta usando jQuery y AJAX
 function inicializarBuscadorDetalle() {
-    const $input = $('#detalle_buscador');
+    const input = document.getElementById('detalle_buscador');
     const $select = $('#detalle_producto');
     const $lista = $('#detalle_lista');
-    if (!$input.length || !$lista.length) return;
+    if (!input || !$lista.length) return;
 
-    $input.on('input', function () {
-        const val = $.trim($input.val());
+    input.addEventListener('input', () => {
+        const val = input.value.trim();
         $lista.empty();
         if (!val) { $lista.hide(); return; }
         $.getJSON(API_BUSCAR_PRODUCTOS, { query: val }, function (resp) {
             const arr = resp?.resultado || resp || [];
-            const q = normalizarTexto(val.trim());
+            const q = normalizarTexto(val);
 
             // Filtro local (nombre y descripción)
             const filtrados = arr.filter(p => {
@@ -1137,7 +1137,7 @@ function inicializarBuscadorDetalle() {
                     .addClass('list-group-item list-group-item-action')
                     .text(p.nombre)
                     .on('click', function () {
-                        $input.val(p.nombre);
+                        input.value = p.nombre;
                         $select.val(p.id).trigger('change');
 
                         // actualizar max de cantidad con existencia si aplica
@@ -1166,7 +1166,7 @@ function inicializarBuscadorDetalle() {
                     .addClass('list-group-item list-group-item-action')
                     .text(p.nombre)
                     .on('click', function () {
-                        $input.val(p.nombre);
+                        input.value = p.nombre;
                         $select.val(p.id).trigger('change');
                         $lista.empty().hide();
                     });
@@ -1177,8 +1177,8 @@ function inicializarBuscadorDetalle() {
 
     });
 
-    $(document).on('click', function (e) {
-        if (!$(e.target).closest('.selector-producto').length) {
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.selector-producto')) {
             $lista.hide();
         }
     });
