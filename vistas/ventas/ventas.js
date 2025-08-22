@@ -105,7 +105,9 @@ function renderPagination(total, page) {
 const usuarioId = window.usuarioId || 1; // ID del cajero proveniente de la sesión
 const sedeId = window.sedeId || 1;
 let corteIdActual = window.corteId || null;
-let catalogo = [];
+// Catálogo global utilizado por utils/js/buscador.js
+let catalogo = window.catalogo || [];
+window.catalogo = catalogo;
 let productos = [];
 let productosData = [];
 let ventasData = {};
@@ -1109,6 +1111,7 @@ async function cargarProductos() {
         const data = await resp.json();
         if (data.success) {
             catalogo = data.resultado;
+            window.catalogo = catalogo;
             productos = data.resultado;
             const selects = document.querySelectorAll('#productos select.producto');
             selects.forEach(select => {
