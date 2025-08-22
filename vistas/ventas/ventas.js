@@ -1107,40 +1107,47 @@ function inicializarBuscadorProducto(select) {
     });
 }
 
-// Buscador de productos para el detalle de venta usando jQuery y AJAX
+// Buscador de productos para el detalle de venta usando fetch
 function inicializarBuscadorDetalle() {
-    const input = document.getElementById('detalle_buscador');
+    const $input = $('#detalle_buscador');
     const $select = $('#detalle_producto');
     const $lista = $('#detalle_lista');
-    if (!input || !$lista.length) return;
+    if (!$input.length || !$lista.length) return;
 
-    input.addEventListener('input', () => {
-        const val = input.value.trim();
+    let controller;
+    $input.on('input', () => {
+        const val = $input.val().trim();
         $lista.empty();
         if (!val) { $lista.hide(); return; }
-        $.getJSON(API_BUSCAR_PRODUCTOS, { query: val }, function (resp) {
-            const arr = resp?.resultado || resp || [];
-            const q = normalizarTexto(val);
 
-            // Filtro local (nombre y descripción)
-            const filtrados = arr.filter(p => {
+        if (controller) controller.abort();
+        controller = new AbortController();
+
+        fetch(`${API_BUSCAR_PRODUCTOS}?query=${encodeURIComponent(val)}`, { signal: controller.signal })
+            .then(r => r.json())
+            .then(resp => {
+                const arr = resp?.resultado || resp || [];
+                renderLista(arr);
+            })
+            .catch(() => {
+                const base = Array.isArray(window.catalogo) ? window.catalogo : [];
+                renderLista(base);
+            });
+
+        function renderLista(arr) {
+            const q = normalizarTexto(val);
+            arr.filter(p => {
                 const nombre = normalizarTexto(p?.nombre || '');
                 const desc = normalizarTexto(p?.descripcion || '');
                 return nombre.includes(q) || desc.includes(q);
-            });
-
-            // (Opcional) limitar resultados
-            const listaParaMostrar = filtrados.slice(0, 50);
-
-            listaParaMostrar.forEach(p => {
+            }).slice(0, 50).forEach(p => {
                 const $li = $('<li>')
                     .addClass('list-group-item list-group-item-action')
                     .text(p.nombre)
                     .on('click', function () {
-                        input.value = p.nombre;
+                        $input.val(p.nombre);
                         $select.val(p.id).trigger('change');
 
-                        // actualizar max de cantidad con existencia si aplica
                         const prod = (window.catalogo || []).find(c => parseInt(c.id) === parseInt(p.id));
                         if (prod && prod.existencia) {
                             $('#detalle_cantidad').attr('max', prod.existencia);
@@ -1155,30 +1162,11 @@ function inicializarBuscadorDetalle() {
             });
 
             $lista.toggle($lista.children().length > 0);
-        }).fail(function () {
-            // Fallback: si el API falla, filtra contra el catálogo en memoria
-            const base = Array.isArray(window.catalogo) ? window.catalogo : [];
-            const q = normalizarTexto(val);
-            const filtrados = base.filter(p => normalizarTexto(p.nombre || '').includes(q) ||
-                normalizarTexto(p.descripcion || '').includes(q));
-            filtrados.slice(0, 50).forEach(p => {
-                const $li = $('<li>')
-                    .addClass('list-group-item list-group-item-action')
-                    .text(p.nombre)
-                    .on('click', function () {
-                        input.value = p.nombre;
-                        $select.val(p.id).trigger('change');
-                        $lista.empty().hide();
-                    });
-                $lista.append($li);
-            });
-            $lista.toggle($lista.children().length > 0);
-        });
-
+        }
     });
 
-    document.addEventListener('click', e => {
-        if (!e.target.closest('.selector-producto')) {
+    $(document).on('click', e => {
+        if (!$(e.target).closest('.selector-producto').length) {
             $lista.hide();
         }
     });
