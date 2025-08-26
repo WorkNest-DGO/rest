@@ -48,33 +48,51 @@ if ($ventasActivas > 0 || $mesasOcupadas > 0) {
 // Obtener resumen de ventas agrupado por tipo de pago
 $sqlResumen = "SELECT
     t.tipo_pago,
-    SUM(t.total)   AS total,
-    SUM(t.propina) AS propina
+    SUM(t.total)   AS total
 FROM ventas v
 JOIN tickets t ON t.venta_id = v.id
 WHERE v.estatus = 'cerrada'
   AND v.corte_id = ?
 GROUP BY t.tipo_pago";
 
+$sqlResumen2 = "SELECT
+    SUM(v.total)   AS total,
+    SUM(v.propina_efectivo) as propina_efectivo,
+    SUM(v.propina_cheque) as propina_cheque,
+    SUM(v.propina_tarjeta) as propina_tarjeta 
+FROM ventas v
+WHERE v.estatus = 'cerrada' 
+  AND v.corte_id = ? LIMIT 1";
+
 $stmtResumen = $conn->prepare($sqlResumen);
 $stmtResumen->bind_param('i', $corte_id);
 $stmtResumen->execute();
 $resultResumen = $stmtResumen->get_result();
 
+
+$stmtResumen2 = $conn->prepare($sqlResumen2);
+$stmtResumen2->bind_param('i', $corte_id);
+$stmtResumen2->execute();
+$resultResumen2 = $stmtResumen2->get_result();
+$row2 = $resultResumen2->fetch_assoc();
 $resumen = [];
 $totalProductos = 0;
 $totalPropinas  = 0;
+$totalPropinaEfectivo=(float)$row2['propina_efectivo'];
+$totalPropinaCheque=(float)$row2['propina_cheque'];
+$totalPropinaTarjeta=(float)$row2['propina_tarjeta'];
+$totalPropinas=$totalPropinaEfectivo+$totalPropinaCheque+$totalPropinaTarjeta;
 while ($row = $resultResumen->fetch_assoc()) {
     $total   = (float)$row['total'];
-    $propina = (float)$row['propina'];
-    $productos = $total - $propina;
+   
+    $productos = $total;
     $resumen[$row['tipo_pago']] = [
         'productos' => $productos,
-        'propina'   => $propina,
+        
         'total'     => $total
     ];
     $totalProductos += $productos;
-    $totalPropinas  += $propina;
+   
 }
 $stmtResumen->close();
 
@@ -191,6 +209,9 @@ $stmtFolios->close();
 
 $resultado = $resumen;
 $resultado['total_productos'] = $totalProductos;
+$resultado['total_propina_efectivo']  = $totalPropinaEfectivo;
+$resultado['total_propina_cheque']  = $totalPropinaCheque;
+$resultado['total_propina_tarjeta']  = $totalPropinaTarjeta;
 $resultado['total_propinas']  = $totalPropinas;
 $resultado['totalEsperado']   = $totalEsperado;
 $resultado['fondo']           = $fondoInicial;

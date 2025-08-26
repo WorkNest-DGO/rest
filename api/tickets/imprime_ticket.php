@@ -43,6 +43,7 @@ class item
 }
 //$connector = new WindowsPrintConnector("smb://ip_maquina/nombre_impresora");
 $connector = new WindowsPrintConnector("smb://FUED/pos58");
+//$connector = new WindowsPrintConnector("smb://DESKTOP-O4CO4GV/58");
 //$connector = new FilePrintConnector("php://stdout");
 $printer = new Printer($connector);
 $printer -> initialize();
@@ -69,17 +70,14 @@ foreach ($recibos  as $recibo) {
 		array_push($items3, $prod->getAsString(32));
 	}
 	    
-	$filename="../../archivos/logo.png";
+	$printer -> setJustification(Printer::JUSTIFY_LEFT);
+	$filename="../../archivos/logo_login2.png";	
+	$logo = EscposImage::load($filename, true);
+	$printer -> bitImage($logo);
 
 
 
-	// /* Start the printer */
-	$logo = EscposImage::load($filename, false);
 
-
-	// /* Print top logo */
-	$printer -> setJustification(Printer::JUSTIFY_CENTER);
-	$printer -> graphics($logo);
 
 	// /* Name of shop */
 	$printer -> selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
@@ -114,7 +112,6 @@ foreach ($recibos  as $recibo) {
 
 	$printer -> feed();
 	$printer -> setEmphasis(true);
-	$printer -> text("Propina: " . $datosT['propina'] ."\n");
 	$printer -> text("Cambio: " . $datosT['cambio'] ."\n");
 	$printer -> text("Total: " . $datosT['total'] ."\n");
 	$printer -> text($datosT['total_letras'] ."\n");
@@ -173,7 +170,7 @@ function numeroALetras($numero) {
 }
 function obtenerDatos($ventaId,$conn){
 	 $cond = 't.venta_id = ?';
-	$stmt = $conn->prepare("SELECT t.id, t.folio, t.total, t.propina, t.fecha, t.venta_id,
+	$stmt = $conn->prepare("SELECT t.id, t.folio, t.total, (v.propina_efectivo + v.propina_cheque + v.propina_tarjeta) as propina , t.fecha, t.venta_id,
                                 t.mesa_nombre, t.mesero_nombre, t.fecha_inicio, t.fecha_fin,
                                 t.tiempo_servicio, t.nombre_negocio, t.direccion_negocio,
                                 t.rfc_negocio, t.telefono_negocio, t.sede_id,

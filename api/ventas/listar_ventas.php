@@ -45,7 +45,7 @@ $query = "SELECT v.id AS venta_id, v.fecha, v.estatus, vw.usuario, vw.mesa, vw.r
                  GROUP_CONCAT(t.tipo_pago ORDER BY t.id) AS tipo_pago,
                  MIN(t.fecha) AS ticket_fecha,
                  COALESCE(SUM(t.total), v.total) AS total,
-                 COALESCE(SUM(t.propina),0) AS propina,
+                 COALESCE(SUM(v.propina_efectivo + v.propina_cheque + v.propina_tarjeta),0) AS propina,
                  COUNT(t.id) AS num_tickets
           $baseFrom$where
           GROUP BY v.id
