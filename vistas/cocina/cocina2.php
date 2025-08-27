@@ -7,8 +7,10 @@ if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
     exit;
 }
 $title = 'Cocina (Kanban)';
+$rol_usuario = $_SESSION['rol'] ?? ($_SESSION['usuario']['rol'] ?? '');
 ob_start();
 ?>
+<div id="user-info" data-rol="<?= htmlspecialchars($rol_usuario, ENT_QUOTES); ?>" hidden></div>
 <div class="page-header mb-0">
   <div class="container">
     <div class="row"><div class="col-12"><h2>Módulo de Cocina (Kanban)</h2></div></div>

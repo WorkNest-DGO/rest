@@ -16,6 +16,8 @@ window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina'
     entregado: qs('#col-entregado')
   };
 
+  const rolUsuario = document.querySelector('#user-info')?.dataset.rol || '';
+
   const filtroInput = qs('#txtFiltro');
   const tipoEntregaSel = qs('#selTipoEntrega');
   const btnRefrescar = qs('#btnRefrescar');
@@ -45,6 +47,9 @@ window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina'
     const tipo = (tipoEntregaSel.value || '').toLowerCase();
 
     items.forEach(it => {
+      const cat = (it.categoria || '').toLowerCase();
+      if (rolUsuario === 'barra' && cat !== 'bebida') return;
+      if (rolUsuario === 'alimentos' && cat === 'bebida') return;
       if (txt){
         const hay = (it.producto + ' ' + it.destino).toLowerCase().includes(txt);
         if (!hay) return;
