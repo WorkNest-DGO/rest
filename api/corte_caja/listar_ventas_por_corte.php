@@ -7,7 +7,7 @@ if (!$corte_id) {
     error('corte_id requerido');
 }
 
-$query = $conn->prepare('SELECT v.id, v.fecha, v.tipo_entrega, SUM(t.total) AS total, u.nombre AS usuario, SUM((v.propina_efectivo + v.propina_cheque + v.propina_tarjeta)) AS propina
+$query = $conn->prepare('SELECT v.id, v.fecha, v.tipo_entrega, SUM(t.total) AS total, u.nombre AS usuario, SUM(t.propina) AS propina
                          FROM ventas v
                          LEFT JOIN tickets t ON t.venta_id = v.id
                          JOIN usuarios u ON v.usuario_id = u.id

@@ -61,7 +61,7 @@ if (isset($input['folio'])) {
     $param = (int)$input['venta_id'];
 }
 
-$stmt = $conn->prepare("SELECT t.id, t.folio, t.total, t.fecha, t.venta_id,
+$stmt = $conn->prepare("SELECT t.id, t.folio, t.total, t.propina, t.fecha, t.venta_id,
                                 t.mesa_nombre, t.mesero_nombre, t.fecha_inicio, t.fecha_fin,
                                 t.tiempo_servicio, t.nombre_negocio, t.direccion_negocio,
                                 t.rfc_negocio, t.telefono_negocio, t.sede_id,
@@ -128,6 +128,7 @@ while ($t = $res->fetch_assoc()) {
           'folio'            => (int)$t['folio'],
           'fecha'            => $t['fecha'] ?? 'N/A',
           'venta_id'         => (int)$t['venta_id'],
+          'propina'          => (float)$t['propina'],
           'total'            => (float)$t['total'],
           'mesa_nombre'      => $mesa_nombre,
           'mesero_nombre'    => $mesero_nombre,

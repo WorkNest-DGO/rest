@@ -56,7 +56,7 @@ $totalVentas = (float)($resTot['total'] ?? 0);
 $tot->close();
 
 // Total de propinas
-$prop = $conn->prepare("SELECT SUM((v.propina_efectivo + v.propina_cheque + v.propina_tarjeta)) AS propina FROM ventas v JOIN tickets t ON t.venta_id = v.id WHERE v.usuario_id = ? AND v.fecha >= ? AND v.fecha <= ? AND v.estatus = 'cerrada' AND v.corte_id IS NULL");
+$prop = $conn->prepare("SELECT SUM(t.propina) AS propina FROM ventas v JOIN tickets t ON t.venta_id = v.id WHERE v.usuario_id = ? AND v.fecha >= ? AND v.fecha <= ? AND v.estatus = 'cerrada' AND v.corte_id IS NULL");
 if (!$prop) {
     error('Error al calcular propinas: ' . $conn->error);
 }

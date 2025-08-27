@@ -24,17 +24,7 @@ async function cargarHistorial(page = currentPage) {
         const resp = await fetch(
             `../../api/ventas/listar_ventas.php?pagina=${currentPage}&limite=${limit}&orden=${encodeURIComponent(order)}&busqueda=${encodeURIComponent(searchQuery)}`
         );
-        const contentType = resp.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) {
-            throw new Error(`Respuesta no JSON al cargar historial: ${contentType}`);
-        }
-        let data;
-        try {
-            data = await resp.json();
-        } catch (e) {
-            console.error('Error parseando JSON de historial:', e);
-            throw new Error('JSON inválido en cargarHistorial');
-        }
+        const data = await resp.json();
         if (data.success) {
             const tbody = document.querySelector('#historial tbody');
             tbody.innerHTML = '';
@@ -132,48 +122,18 @@ const MESAS_URL = typeof API_LISTAR_MESAS !== 'undefined' ? API_LISTAR_MESAS : '
 
 // Devuelve { hayVentasActivas, hayMesasOcupadas, bloqueado }
 async function hayBloqueosParaCerrarCorte() {
-    try {
-        const [ventasResp, mesasResp] = await Promise.all([
-            fetch(VENTAS_URL, { cache: 'no-store' }),
-            fetch(MESAS_URL, { cache: 'no-store' })
-        ]);
+    const [ventasResp, mesasResp] = await Promise.all([
+        fetch(VENTAS_URL, { cache: 'no-store' }).then(r => r.json()),
+        fetch(MESAS_URL, { cache: 'no-store' }).then(r => r.json())
+    ]);
 
-        const ventasCT = ventasResp.headers.get('content-type') || '';
-        if (!ventasCT.includes('application/json')) {
-            throw new Error(`Respuesta de ventas no es JSON: ${ventasCT}`);
-        }
-        const mesasCT = mesasResp.headers.get('content-type') || '';
-        if (!mesasCT.includes('application/json')) {
-            throw new Error(`Respuesta de mesas no es JSON: ${mesasCT}`);
-        }
+    const ventas = (ventasResp && ventasResp.resultado && ventasResp.resultado.ventas) || [];
+    const hayVentasActivas = ventas.some(v => String(v.estatus || '').toLowerCase() === 'activa');
 
-        let ventasRespJson;
-        try {
-            ventasRespJson = await ventasResp.json();
-        } catch (e) {
-            console.error('Error parseando JSON de ventas:', e);
-            throw new Error('JSON inválido de ventas');
-        }
+    const mesas = (mesasResp && mesasResp.resultado) || [];
+    const hayMesasOcupadas = mesas.some(m => String(m.estado || '').toLowerCase() === 'ocupada');
 
-        let mesasRespJson;
-        try {
-            mesasRespJson = await mesasResp.json();
-        } catch (e) {
-            console.error('Error parseando JSON de mesas:', e);
-            throw new Error('JSON inválido de mesas');
-        }
-
-        const ventas = (ventasRespJson && ventasRespJson.resultado && ventasRespJson.resultado.ventas) || [];
-        const hayVentasActivas = ventas.some(v => String(v.estatus || '').toLowerCase() === 'activa');
-
-        const mesas = (mesasRespJson && mesasRespJson.resultado) || [];
-        const hayMesasOcupadas = mesas.some(m => String(m.estado || '').toLowerCase() === 'ocupada');
-
-        return { hayVentasActivas, hayMesasOcupadas, bloqueado: (hayVentasActivas || hayMesasOcupadas) };
-    } catch (e) {
-        console.error('Error en hayBloqueosParaCerrarCorte:', e);
-        throw e;
-    }
+    return { hayVentasActivas, hayMesasOcupadas, bloqueado: (hayVentasActivas || hayMesasOcupadas) };
 }
 
 function toggleBotonCerrarCorte(bloqueado, detalle = '') {
@@ -482,19 +442,13 @@ async function verificarCorte() {
     fetch('../../api/corte_caja/verificar_corte_abierto.php', {
         credentials: 'include'
     })
-        .then(resp => {
-            const ct = resp.headers.get('content-type') || '';
-            if (!ct.includes('application/json')) {
-                throw new Error('Respuesta no JSON en verificarCorte: ' + ct);
-            }
-            return resp.json();
-        })
+        .then(resp => resp.json())
         .then(data => {
             const cont = document.getElementById('controlCaja');
             cont.innerHTML = '';
 
             if (data.success && data.resultado.abierto) {
-                cont.innerHTML = '<button class="btn custom-btn" id="btnCerrarCorte">Cerrar corte</button> <button id="btnCorteTemporal" class="btn btn-warning">Corte Temporal</button>';
+                cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCorte">Cerrar corte</button> <button id="btnCorteTemporal" class="btn btn-warning">Corte Temporal</button>`;
                 const btnCerrar = document.getElementById('btnCerrarCorte');
                 if (btnCerrar) {
                     btnCerrar.addEventListener('click', (ev) => {
@@ -505,15 +459,13 @@ async function verificarCorte() {
                 document.getElementById('btnCorteTemporal').addEventListener('click', abrirCorteTemporal);
                 habilitarCobro();
             } else {
-                cont.innerHTML = '<button class="btn custom-btn" id="btnAbrirCaja">Abrir caja</button>';
+                cont.innerHTML = `<button class="btn custom-btn" id="btnAbrirCaja">Abrir caja</button>`;
                 document.getElementById('btnAbrirCaja').addEventListener('click', abrirCaja);
                 deshabilitarCobro();
             }
             actualizarEstadoBotonCerrarCorte();
-        })
-        .catch(err => {
-            console.error('Error al verificar corte:', err);
         });
+
 }
 
 async function abrirCaja() {
@@ -666,7 +618,7 @@ function generarHTMLCorte(r) {
             const productos = val.productos ?? 0;
             const propina = val.propina ?? 0;
             const total = val.total ?? 0;
-            displayVal = `Efectivo - Productos: ${productos}, Total: ${total}`;
+            displayVal = `Efectivo - Productos: ${productos}, Propina: ${propina}, Total: ${total}`;
         } else if (key === 'total_meseros' && Array.isArray(val)) {
             displayVal = val.map(m => `${m.nombre}: ${m.total}`).join('<br>');
         } else if (key === 'total_repartidor' && Array.isArray(val)) {
@@ -775,13 +727,11 @@ function mostrarModalDesglose(dataApi) {
     html += '</ul>';
     html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
     html += '<p>Propinas por tipo de pago:</p><ul>';
-    html += `<li>Efectivo: $${(Number.parseFloat(r.total_propina_efectivo) || 0).toFixed(2)}</li>`;
-    html += `<li>Cheque: $${(Number.parseFloat(r.total_propina_cheque) || 0).toFixed(2)}</li>`;
-    html += `<li>Tarjeta: $${(Number.parseFloat(r.total_propina_tarjeta) || 0).toFixed(2)}</li></ul>`;
-    // metodosPago.forEach(tipo => {
-    //     const p = r[tipo] || {};
-    //     html += `<li>${tipo}: $${(Number.parseFloat(p.propina) || 0).toFixed(2)}</li></ul>`;
-    // });
+
+    metodosPago.forEach(tipo => {
+        const p = r[tipo] || {};
+        html += `<li>${tipo}: $${(Number.parseFloat(p.propina) || 0).toFixed(2)}</li></ul>`;
+    });
 
 
 
@@ -996,17 +946,7 @@ async function cargarMeseros() {
 async function cargarMesas() {
     try {
         const resp = await fetch('../../api/mesas/mesas.php');
-        const contentType = resp.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) {
-            throw new Error(`Respuesta no JSON al cargar mesas: ${contentType}`);
-        }
-        let data;
-        try {
-            data = await resp.json();
-        } catch (e) {
-            console.error('Error parseando JSON de mesas:', e);
-            throw new Error('JSON inválido en cargarMesas');
-        }
+        const data = await resp.json();
         if (data.success) {
             mesas = data.resultado;
             const select = document.getElementById('mesa_id');
@@ -1610,9 +1550,6 @@ async function verDetalles(id) {
                     venta_id: parseInt(id),
                     usuario_id: venta.usuario_id || 1,
                     fecha: venta.fecha || '',
-                    propina_efectivo: info.propina_efectivo,
-                    propina_cheque: info.propina_cheque,
-                    propina_tarjeta: info.propina_tarjeta,
                     productos: info.productos,
                     total,
                     sede_id: sede

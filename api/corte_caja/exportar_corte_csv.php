@@ -12,7 +12,7 @@ if (!$corte_id) {
 $sql = "SELECT
     t.tipo_pago,
     SUM(t.total)   AS total,
-    SUM((v.propina_efectivo + v.propina_cheque + v.propina_tarjeta)) AS propina
+    SUM(t.propina) AS propina
 FROM ventas v
 JOIN tickets t ON t.venta_id = v.id
 WHERE v.estatus = 'cerrada'
