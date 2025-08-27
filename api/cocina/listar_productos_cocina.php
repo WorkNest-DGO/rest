@@ -1,6 +1,10 @@
 <?php
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+$rol = $_SESSION['rol'] ?? ($_SESSION['usuario']['rol'] ?? null);
 
 $sql = "SELECT
   d.id                          AS detalle_id,
@@ -79,14 +83,14 @@ WHERE
   (
     d.estado_producto <> 'entregado'
     OR (d.estado_producto = 'entregado' AND DATE(d.created_at) = CURDATE())
-  )
-ORDER BY
-  FIELD(d.estado_producto, 'pendiente','en_preparacion','listo','entregado'),
-  minutos_transcurridos DESC,
-  destino,
-  d.created_at;
+  )";
+if ($rol === 'barra') {
+    $sql .= " AND p.categoria_id = 1";
+} elseif ($rol === 'alimentos') {
+    $sql .= " AND p.categoria_id <> 1";
+}
+$sql .= "\nORDER BY\n  FIELD(d.estado_producto, 'pendiente','en_preparacion','listo','entregado'),\n  minutos_transcurridos DESC,\n  destino,\n  d.created_at;\n";
 
-";
 $res = $conn->query($sql);
 if (!$res) { error('Error al obtener productos: ' . $conn->error); }
 
