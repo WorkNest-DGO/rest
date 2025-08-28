@@ -41,6 +41,7 @@ $resultResumen = $stmtResumen->get_result();
 $resumen = [];
 $totalProductos = 0;
 $totalPropinas  = 0;
+$total_final_efectivo = 0;
 while ($row = $resultResumen->fetch_assoc()) {
     $total   = (float)$row['total'];
     $propina = (float)$row['propina'];
@@ -52,6 +53,9 @@ while ($row = $resultResumen->fetch_assoc()) {
     ];
     $totalProductos += $productos;
     $totalPropinas  += $propina;
+    if (strtolower($row['tipo_pago']) === 'efectivo') {
+        $total_final_efectivo += $total;
+    }
 }
 $stmtResumen->close();
 
@@ -174,6 +178,7 @@ $resultado['fondo']           = $fondoInicial;
 $resultado['total_depositos'] = $totalDepositos;
 $resultado['total_retiros']   = $totalRetiros;
 $resultado['totalFinal']      = $totalFinal;
+$resultado['totalFinalEfectivo'] = $total_final_efectivo+$fondoInicial;
 $resultado['corte_id']        = $corte_id;
 $resultado['total_meseros'] = $meseros;
 $resultado['total_rapido']    = $totalRapido;

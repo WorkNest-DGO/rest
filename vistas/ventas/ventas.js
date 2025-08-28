@@ -252,6 +252,7 @@ function buildCorteTicket(resultado, cajeroOpt) {
     const totalDepositos = Number(r.total_depositos || 0);
     const totalRetiros = Number(r.total_retiros || 0);
     const totalFinal = Number(r.totalFinal || 0);
+    const totalFinalEfectivo = Number(r.totalFinalEfectivo)|| 0;
     const dif = totalFinal - totalEsperado;
 
     const totalMeseros = Array.isArray(r.total_meseros) ? r.total_meseros : [];
@@ -804,7 +805,13 @@ function mostrarModalDesglose(dataApi) {
             totalEfectivo += subtotal;
         });
         document.getElementById('totalEfectivo').textContent = totalEfectivo.toFixed(2);
-        document.getElementById('difIngresado').textContent = (totalIngresado - totalEfectivo).toFixed(2);
+
+        // Excluir pagos no efectivos (boucher/cheque) del cálculo de diferencia
+        const totalBoucher = Number.parseFloat((r.boucher && r.boucher.total) || 0) || 0;
+        const totalCheque  = Number.parseFloat((r.cheque && r.cheque.total) || 0) || 0;
+        const totalNoEfectivo = totalBoucher + totalCheque;
+        const dif = (totalIngresado - totalNoEfectivo) - totalEfectivo;
+        document.getElementById('difIngresado').textContent = dif.toFixed(2);
     }
 
     modal.querySelectorAll('.cantidad').forEach(inp => inp.addEventListener('input', calcular));

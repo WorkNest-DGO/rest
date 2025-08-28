@@ -231,22 +231,8 @@ foreach ($subcuentas as $sub) {
     }
     $ticket_id = $insTicket->insert_id;
 
-    if ($tipo_pago === 'boucher' || $tipo_pago === 'cheque') {
-        $denom_id = $tipo_pago === 'boucher' ? 12 : 13;
-        $insDesglose = $conn->prepare('INSERT INTO desglose_corte (corte_id, denominacion, cantidad, tipo_pago, denominacion_id) VALUES (?, ?, ?, ?, ?)');
-        if (!$insDesglose) {
-            $conn->rollback();
-            error('Error al preparar desglose: ' . $conn->error);
-        }
-        $denom = 1.00;
-        $cant = $total;
-        $insDesglose->bind_param('iddsi', $corte_id, $denom, $cant, $tipo_pago, $denom_id);
-        if (!$insDesglose->execute()) {
-            $conn->rollback();
-            error('Error al guardar desglose: ' . $insDesglose->error);
-        }
-        $insDesglose->close();
-    }
+    // Eliminado: no insertar en desglose_corte aquí para evitar duplicados.
+    // El registro de boucher/cheque se realizará al guardar el desglose de corte.
 
     foreach ($sub['productos'] as $p) {
         $producto_id     = (int)$p['producto_id'];
