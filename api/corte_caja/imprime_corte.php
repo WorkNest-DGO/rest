@@ -84,6 +84,7 @@ $datos2 =json_decode($datos,true);
 
 //$connector = new WindowsPrintConnector("smb://ip_maquina/nombre_impresora");
 $connector = new WindowsPrintConnector("smb://FUED/pos58");
+//$connector = new WindowsPrintConnector("smb://DESKTOP-O4CO4GV/58");
 //$connector = new FilePrintConnector("php://stdout");
 $printer = new Printer($connector);
 $printer -> initialize();
@@ -138,10 +139,10 @@ $printer -> initialize();
 		
 	}
 // 	// $items3 = array();
-	$printer -> setJustification(Printer::JUSTIFY_CENTER);
-	$filename="../../archivos/logo.png";	
-	$logo = EscposImage::load($filename, false);
-	$printer -> graphics($logo);
+	$printer -> setJustification(Printer::JUSTIFY_LEFT);
+	$filename="../../archivos/logo_login2.png";	
+	$logo = EscposImage::load($filename, true);
+	$printer -> bitImage($logo);
 
 	$printer -> selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
 	$printer -> text("Corte / Cierre de caja \n");
@@ -168,9 +169,10 @@ $printer -> initialize();
 		$printer -> selectPrintMode();
 		$objeto = new item('Productos: ' ,$efectivo['productos'],True);
 		$printer -> text($objeto->getAsString(32));
-		$objeto = new item('Propina: ' ,$efectivo['propina'],True);
+		$objeto = new item('Propina ' ,$datosT['total_propina_efectivo'],True);
 		$printer -> text($objeto->getAsString(32));	
-		$objeto = new item('Total: ' ,$efectivo['total'],True);
+		$totalEf=$efectivo['total']+$datosT['total_propina_efectivo'];
+		$objeto = new item('Total ' ,$totalEf,True);
 		$printer -> text($objeto->getAsString(32));	
 		$printer -> feed();
 	}
@@ -182,9 +184,10 @@ $printer -> initialize();
 		$printer -> selectPrintMode();
 		$objeto = new item('Productos: ' ,$cheque['productos'],True);
 		$printer -> text($objeto->getAsString(32));
-		$objeto = new item('Propina: ' ,$cheque['propina'],True);
+		$objeto = new item('Propina ' ,$datosT['total_propina_cheque'],True);
 		$printer -> text($objeto->getAsString(32));
-		$objeto = new item('Total: ' ,$cheque['total'],True);
+		$totalCh=$cheque['total']+$datosT['total_propina_cheque'];
+		$objeto = new item('Total ' ,$totalCh,True);
 		$printer -> text($objeto->getAsString(32));	
 		$printer -> feed();		
 	}
@@ -196,9 +199,10 @@ $printer -> initialize();
 		$printer -> selectPrintMode();
 		$objeto = new item('Productos: ' ,$boucher['productos'],True);
 		$printer -> text($objeto->getAsString(32));
-		$objeto = new item('Propina: ' ,$boucher['propina'],True);
+		$objeto = new item('Propina ' ,$datosT['total_propina_tarjeta'],True);
 		$printer -> text($objeto->getAsString(32));
-		$objeto = new item('Total: ' ,$boucher['total'],True);
+		$totalTar=$boucher['total']+$datosT['total_propina_tarjeta'];
+		$objeto = new item('Total ' ,$totalTar,True);
 		$printer -> text($objeto->getAsString(32));	
 		$printer -> feed();
 		

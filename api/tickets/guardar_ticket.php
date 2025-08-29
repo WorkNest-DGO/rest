@@ -87,6 +87,45 @@ if (!$stmtSede->execute()) {
 $resSede = $stmtSede->get_result();
 $sede = $resSede->fetch_assoc();
 $stmtSede->close();
+$query =$conn->prepare("SELECT id FROM tickets WHERE venta_id = ? ORDER BY id asc");
+$query->bind_param('i', $venta_id);
+if (!$query->execute()) {
+    $query->close();
+    error('Error al obtener datos de sede: ' . $query->error);
+}
+$result2 = $query->get_result();
+$ticketsss = [];
+$contador=0;
+while ($row = $result2->fetch_assoc()) {
+    $contador=$contador+1;
+    $ticketsss[] = (int)$row['id'];
+}
+if($contador>0){
+    $placeholders = implode(',', array_fill(0, count($ticketsss), '?'));    
+    $types = str_repeat('i', count($ticketsss));
+    $sqlDel = "DELETE FROM ticket_detalles WHERE ticket_id in ($placeholders) ";
+    $del = $conn->prepare($sqlDel);
+    if (!$del) {
+        throw new RuntimeException('Prepare (delete) falló: ' . $conn->error);
+    }
+    $uno = (int)165;
+    $dos = (int)166;
+    $del->bind_param($types,...$ticketsss);
+    if (!$del->execute()) {
+        throw new RuntimeException('Execute (delete) falló: ' . $del->error);
+    }
+    $del->close();
+    $sqlDel2 = "DELETE FROM tickets WHERE id in ( " . $placeholders . ") ";
+    $del2 = $conn->prepare($sqlDel2);
+    if (!$del2) {
+        throw new RuntimeException('Prepare (delete) falló: ' . $conn->error);
+    }
+    $del2->bind_param($types,...$ticketsss);
+    if (!$del2->execute()) {
+        throw new RuntimeException('Execute (delete) falló: ' . $del2->error);
+    }
+    $del2->close();
+}
 if (!$sede || (isset($sede['activo']) && !$sede['activo'])) {
     $sede_id = 1;
     $stmtSede = $conn->prepare('SELECT nombre, direccion, rfc, telefono, activo FROM sedes WHERE id = ?');
@@ -118,7 +157,7 @@ $tipo_entrega     = $tipo_entrega     ?: 'N/A';
 
 $conn->begin_transaction();
 
-$insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, total, propina, fecha, usuario_id, monto_recibido, tipo_pago, sede_id, mesa_nombre, mesero_nombre, fecha_inicio, fecha_fin, tiempo_servicio, nombre_negocio, direccion_negocio, rfc_negocio, telefono_negocio, tipo_entrega, tarjeta_marca_id, tarjeta_banco_id, boucher, cheque_numero, cheque_banco_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+$insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, total, fecha, usuario_id, monto_recibido, tipo_pago, sede_id, mesa_nombre, mesero_nombre, fecha_inicio, fecha_fin, tiempo_servicio, nombre_negocio, direccion_negocio, rfc_negocio, telefono_negocio, tipo_entrega, tarjeta_marca_id, tarjeta_banco_id, boucher, cheque_numero, cheque_banco_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 $insDetalle = $conn->prepare('INSERT INTO ticket_detalles (ticket_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)');
 if (!$insTicket || !$insDetalle) {
     $conn->rollback();
@@ -156,7 +195,7 @@ foreach ($subcuentas as $sub) {
     $catalogo_id = (int)$row['id'];
     $folio_actual = (int)$row['folio_actual'] + 1;
 
-    $propina = isset($sub['propina']) ? (float)$sub['propina'] : 0;
+    // $propina = isset($sub['propina']) ? (float)$sub['propina'] : 0;
     $total = 0;
     foreach ($sub['productos'] as $p) {
         if (!isset($p['producto_id'], $p['cantidad'], $p['precio_unitario'])) {
@@ -167,7 +206,7 @@ foreach ($subcuentas as $sub) {
         $precio   = (float)$p['precio_unitario'];
         $total += $cantidad * $precio;
     }
-    $total += $propina;
+    //$total += $propina;
 
     $tipo_pago = $sub['tipo_pago'] ?? null;
     $monto_recibido = isset($sub['monto_recibido']) ? (float)$sub['monto_recibido'] : null;
@@ -199,11 +238,10 @@ foreach ($subcuentas as $sub) {
     }
     $fecha = date('Y-m-d H:i:s');
     $insTicket->bind_param(
-        'iiddsidsissssisssssiissi',
+        'iidsidsissssisssssiissi',
         $venta_id,
         $folio_actual,
         $total,
-        $propina,
         $fecha,
         $usuario_id,
         $monto_recibido,
@@ -231,8 +269,22 @@ foreach ($subcuentas as $sub) {
     }
     $ticket_id = $insTicket->insert_id;
 
-    // Eliminado: no insertar en desglose_corte aquí para evitar duplicados.
-    // El registro de boucher/cheque se realizará al guardar el desglose de corte.
+    if ($tipo_pago === 'boucher' || $tipo_pago === 'cheque') {
+        $denom_id = $tipo_pago === 'boucher' ? 12 : 13;
+        $insDesglose = $conn->prepare('INSERT INTO desglose_corte (corte_id, denominacion, cantidad, tipo_pago, denominacion_id) VALUES (?, ?, ?, ?, ?)');
+        if (!$insDesglose) {
+            $conn->rollback();
+            error('Error al preparar desglose: ' . $conn->error);
+        }
+        $denom = 1.00;
+        $cant = $total;
+        $insDesglose->bind_param('iddsi', $corte_id, $denom, $cant, $tipo_pago, $denom_id);
+        if (!$insDesglose->execute()) {
+            $conn->rollback();
+            error('Error al guardar desglose: ' . $insDesglose->error);
+        }
+        $insDesglose->close();
+    }
 
     foreach ($sub['productos'] as $p) {
         $producto_id     = (int)$p['producto_id'];
@@ -260,8 +312,7 @@ foreach ($subcuentas as $sub) {
     $ticketsResp[] = [
         'ticket_id' => $ticket_id,
         'folio'     => $folio_actual,
-        'total'     => $total,
-        'propina'   => $propina
+        'total'     => $total
     ];
 }
 

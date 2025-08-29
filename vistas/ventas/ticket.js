@@ -39,7 +39,7 @@ function llenarTicket(data) {
             tr.innerHTML = `<td>${p.nombre}</td><td>${p.cantidad} x ${p.precio_unitario} = ${subtotal}</td>`;
             tbody.appendChild(tr);
         });
-        document.getElementById('propina').textContent = '$' + parseFloat(data.propina || 0).toFixed(2);
+        // document.getElementById('propina').textContent = '$' + parseFloat(data.propina || 0).toFixed(2);
         document.getElementById('cambio').textContent = '$' + parseFloat(data.cambio || 0).toFixed(2);
         document.getElementById('totalVenta').textContent = 'Total: $' + parseFloat(data.total).toFixed(2);
         document.getElementById('totalLetras').textContent = data.total_letras || '';
@@ -70,9 +70,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (sinDatos) sinDatos.style.display = 'none';
     const datos = JSON.parse(almacenado);
-    if (imprimir) {
-        document.getElementById('imprimir').style.display = 'block';
-        llenarTicket(datos);
+    const totalPropinas = parseFloat(datos.propina_efectivo) + parseFloat(datos.propina_cheque) + parseFloat(datos.propina_tarjeta);
+    if (parseFloat(totalPropinas) > parseFloat(0.00)){
+        document.getElementById('divReimprimir').style.display = 'block';
+        const btnReimprimir = document.getElementById('btnReimprimir');
+        if (btnReimprimir){
+          btnReimprimir.addEventListener('click', reimprimirTicket);  
+        } 
         liberarMesa(datos.venta_id);
     } else {
         const ok = await cargarDenominacionesPago();
@@ -140,7 +144,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let productos = [];
     let numSub = 1;
-
+    let banderaEfec = false;
+    let banderaCheq = false;
+    let banderaTarj = false;
     function inicializarDividir(data) {
         document.getElementById('dividir').style.display = 'block';
         productos = data.productos.map(p => Object.assign({
@@ -154,7 +160,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderSubcuentas();
         });
         const btnGuardar = document.getElementById('btnGuardarTicket');
-        if (btnGuardar) btnGuardar.addEventListener('click', guardarSubcuentas);
+        if (btnGuardar) btnGuardar.addEventListener('click', capturaPropinas);
+        const btnCrear = document.getElementById('btnCrearTicket');
+        if (btnCrear) btnCrear.addEventListener('click', guardarSubcuentas);
     }
 
     function renderProductos() {
@@ -210,7 +218,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             html += '</tbody></table>';
             const serieDesc = serieActual ? serieActual.descripcion : '';
             html += `Serie: <span class="serie">${serieDesc}</span>`;
-            html += ` Propina: <input type="number" step="0.01" id="propina${i}" value="0">`;
+            // html += ` Propina: <input type="number" step="0.01" id="propina${i}" value="0">`;
             html += ` <select id="pago${i}" class="pago">
                         <option value="">Pago</option>
                         <option value="efectivo">Efectivo</option>
@@ -223,20 +231,52 @@ document.addEventListener('DOMContentLoaded', async () => {
             html += `<div id="tot${i}"></div>`;
             div.innerHTML = html;
             cont.appendChild(div);
-            div.querySelector('#propina' + i).addEventListener('input', mostrarTotal);
+            // div.querySelector('#propina' + i).addEventListener('input', mostrarTotal);
             div.querySelector('#pago' + i).addEventListener('change', () => { mostrarTotal(); mostrarCamposPago(i); });
             div.querySelector('#recibido' + i).addEventListener('input', mostrarTotal);
             mostrarCamposPago(i);
         }
         mostrarTotal();
     }
+    async function capturaPropinas() {
+        const cont = document.getElementById('regPropinas');
+        const info2 = JSON.parse(localStorage.getItem('ticketData'));
+        const propina_efectivo = parseFloat(document.getElementById('propinaEfectivo').value || 0.00);
+        const propina_cheque = parseFloat(document.getElementById('propinaCheque').value || 0.00);
+        const propina_tarjeta = parseFloat(document.getElementById('propinaTarjeta').value || 0.00);
+        const payload2 = {
+            venta_id: info2.venta_id,
+            propina_efectivo: propina_efectivo ,
+            propina_cheque: propina_cheque,
+            propina_tarjeta: propina_tarjeta
+        };
+        try {
+            const resp = await fetch('../../api/ventas/guardar_propina_venta.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload2)
+            });
+            const d = await resp.json();
+            if (d.success) {
+                document.getElementById('regPropinas').style.display = 'none';
+                alert('Propina actualizada correctamente');
+                await liberarMesa(info2.venta_id);
+            } else {
+                alert(d.mensaje);
+            }
+        } catch (e) {
+            alert('Error al guardar');
+        }
 
+    }
     function mostrarTotal() {
         for (let i = 1; i <= numSub; i++) {
             const prods = productos.filter(p => p.subcuenta === i);
             let total = prods.reduce((s, p) => s + p.cantidad * p.precio_unitario, 0);
-            const prop = parseFloat(document.getElementById('propina' + i).value || 0);
-            total += prop;
+            // const prop = parseFloat(document.getElementById('propina' + i).value || 0);
+            //total += prop;
             document.getElementById('tot' + i).textContent = 'Total: ' + total.toFixed(2);
             const tipo = document.getElementById('pago' + i).value;
             const inp = document.getElementById('recibido' + i);
@@ -337,7 +377,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     };
                 });
             if (prods.length === 0) continue;
-            const prop = parseFloat(document.getElementById('propina' + i).value || 0);
+            // const prop = parseFloat(document.getElementById('propina' + i).value || 0);
             if (!serieActual) {
                 serieActual = await obtenerSerieActual();
                 if (!serieActual) return;
@@ -345,7 +385,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const serie = serieActual.id;
             const tipo = document.getElementById('pago' + i).value;
             const recibido = parseFloat(document.getElementById('recibido' + i).value || 0);
-            const total = prods.reduce((s, p) => s + p.cantidad * p.precio_unitario, 0) + prop;
+            const total = prods.reduce((s, p) => s + p.cantidad * p.precio_unitario, 0) ;
             if (!tipo) {
                 alert('Selecciona tipo de pago en subcuenta ' + i);
                 return;
@@ -353,6 +393,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (tipo === 'efectivo' && recibido < total) {
                 alert('Monto insuficiente en subcuenta ' + i);
                 return;
+            }
+             if (tipo === 'efectivo' ) {
+                banderaEfec=true;
+                document.getElementById('propinaEfectivo').disabled = false;
+                document.getElementById('propinaEfectivoD').style.display ='block';
             }
             const extra = {};
             if (tipo === 'boucher') {
@@ -363,6 +408,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     alert('Completa datos de tarjeta en subcuenta ' + i);
                     return;
                 }
+                 banderaTarj=true;
+                 document.getElementById('propinaTarjeta').disabled = false;
+                 document.getElementById('propinaTarjetaD').style.display ='block';
             } else if (tipo === 'cheque') {
                 extra.cheque_numero = document.getElementById('chequeNumero' + i).value || '';
                 extra.cheque_banco_id = parseInt(document.getElementById('chequeBanco' + i).value) || null;
@@ -370,10 +418,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     alert('Completa datos de cheque en subcuenta ' + i);
                     return;
                 }
+                banderaCheq=true;
+                document.getElementById('propinaCheque').disabled = false;
+                document.getElementById('propinaChequeD').style.display ='block';
             }
             payload.subcuentas.push({
                 productos: prods,
-                propina: prop,
                 serie_id: serie,
                 tipo_pago: tipo,
                 monto_recibido: recibido,
@@ -390,9 +440,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             const d = await resp.json();
             if (d.success) {
+                document.getElementById('regPropinas').style.display = 'block';
                 await registrarDesglosePagos(payload.subcuentas);
                 await imprimirTicketsVenta(payload.venta_id);
-                await liberarMesa(payload.venta_id);
             } else {
                 alert(d.mensaje);
             }
@@ -404,7 +454,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function registrarDesglosePagos(subcuentas) {
         const totales = { boucher: 0, cheque: 0 };
         subcuentas.forEach(sc => {
-            const total = sc.productos.reduce((s, p) => s + p.cantidad * p.precio_unitario, 0) + (parseFloat(sc.propina || 0));
+            const total = sc.productos.reduce((s, p) => s + p.cantidad * p.precio_unitario, 0) ;
             if (sc.tipo_pago === 'boucher') totales.boucher += total;
             if (sc.tipo_pago === 'cheque') totales.cheque += total;
         });
@@ -460,6 +510,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('Error al imprimir tickets', err);
         }
     }
+   async function reimprimirTicket() {
+        const almacenado2 = localStorage.getItem('ticketData');
+        const datos2 = JSON.parse(almacenado2);
+        ventaId=datos2.venta_id;
+        try {
+            window.open('../../api/tickets/reimprime_ticket.php?venta_id='+ventaId);
+        } catch (err) {
+            console.error('Error al imprimir tickets', err);
+        }
+    }
 
     function generarTicketHTML(data) {
         const productosHtml = (data.productos || []).map(p => {
@@ -494,7 +554,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div><strong>Fin:</strong> ${data.fecha_fin || ''}</div>
             <div><strong>Tiempo:</strong> ${data.tiempo_servicio ? data.tiempo_servicio + ' min' : 'N/A'}</div>
             <table class="styled-table" style="margin-top: 10px;"><tbody>${productosHtml}</tbody></table>
-            <div class="mt-2"><strong>Propina:</strong> $${parseFloat(data.propina || 0).toFixed(2)}</div>
+            
             <div class="mt-2"><strong>Cambio:</strong> $${parseFloat(data.cambio || 0).toFixed(2)}</div>
             <div class="mt-2 mb-2">Total: $${parseFloat(data.total || 0).toFixed(2)}</div>
             <div>${data.total_letras || ''}</div>

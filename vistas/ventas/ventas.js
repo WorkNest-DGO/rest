@@ -619,7 +619,7 @@ function generarHTMLCorte(r) {
             const productos = val.productos ?? 0;
             const propina = val.propina ?? 0;
             const total = val.total ?? 0;
-            displayVal = `Efectivo - Productos: ${productos}, Propina: ${propina}, Total: ${total}`;
+            displayVal = `Efectivo - Productos: ${productos}, Total: ${total}`;
         } else if (key === 'total_meseros' && Array.isArray(val)) {
             displayVal = val.map(m => `${m.nombre}: ${m.total}`).join('<br>');
         } else if (key === 'total_repartidor' && Array.isArray(val)) {
@@ -728,11 +728,13 @@ function mostrarModalDesglose(dataApi) {
     html += '</ul>';
     html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
     html += '<p>Propinas por tipo de pago:</p><ul>';
-
-    metodosPago.forEach(tipo => {
-        const p = r[tipo] || {};
-        html += `<li>${tipo}: $${(Number.parseFloat(p.propina) || 0).toFixed(2)}</li></ul>`;
-    });
+    html += `<li>Efectivo: $${(Number.parseFloat(r.total_propina_efectivo) || 0).toFixed(2)}</li>`;
+    html += `<li>Cheque: $${(Number.parseFloat(r.total_propina_cheque) || 0).toFixed(2)}</li>`;
+    html += `<li>Tarjeta: $${(Number.parseFloat(r.total_propina_tarjeta) || 0).toFixed(2)}</li></ul>`;
+    // metodosPago.forEach(tipo => {
+    //     const p = r[tipo] || {};
+    //     html += `<li>${tipo}: $${(Number.parseFloat(p.propina) || 0).toFixed(2)}</li></ul>`;
+    // });
 
 
 
@@ -1557,6 +1559,9 @@ async function verDetalles(id) {
                     venta_id: parseInt(id),
                     usuario_id: venta.usuario_id || 1,
                     fecha: venta.fecha || '',
+                    propina_efectivo: info.propina_efectivo,
+                    propina_cheque: info.propina_cheque,
+                    propina_tarjeta: info.propina_tarjeta,
                     productos: info.productos,
                     total,
                     sede_id: sede
