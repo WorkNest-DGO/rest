@@ -4,6 +4,8 @@ function showAppMsg(msg) {
     showModal('#appMsgModal');
 }
 window.alert = showAppMsg;
+// Constante de envío en UI cocina
+window.ENVIO_CASA_PRODUCT_ID = window.ENVIO_CASA_PRODUCT_ID || 9001;
 window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina') || '0', 10);
 (() => {
   const qs = s => document.querySelector(s);
@@ -42,11 +44,13 @@ window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina'
   document.head.appendChild(style);
 
   function render(items){
+    const PID_ENVIO = Number(window.ENVIO_CASA_PRODUCT_ID || 9001);
     Object.values(cols).forEach(c => c.innerHTML = '');
     const txt = (filtroInput.value || '').toLowerCase();
     const tipo = (tipoEntregaSel.value || '').toLowerCase();
 
-    items.forEach(it => {
+    const visibles = (items || []).filter(it => Number(it.producto_id) !== PID_ENVIO);
+    visibles.forEach(it => {
       const cat = (it.categoria || '').toLowerCase();
       if (rolUsuario === 'barra' && cat !== 'bebida') return;
       if (rolUsuario === 'alimentos' && cat === 'bebida') return;
@@ -61,6 +65,7 @@ window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina'
       card.draggable = true;
       card.dataset.id = it.detalle_id;
       card.dataset.estado = it.estado;
+      card.dataset.productoId = it.producto_id;
       card.innerHTML = `
         <div class='title'>${it.producto} <small>x${it.cantidad}</small></div>
         <div class='meta'>
@@ -131,7 +136,10 @@ window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina'
       const id = ev.dataTransfer.getData('text/plain');
       const card = document.querySelector(`.kanban-item[data-id='${id}']`);
       if (!card) return;
-
+      const PID_ENVIO = Number(window.ENVIO_CASA_PRODUCT_ID || 9001);
+      if (Number(card.dataset.productoId || 0) === PID_ENVIO) {
+        return; // no-op sobre envío
+      }
       const current = card.dataset.estado;
       const nuevoEstado = zone.closest('.kanban-board').dataset.status;
       if (allowedNext[current] !== nuevoEstado){

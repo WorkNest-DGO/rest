@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
+if (!defined('ENVIO_CASA_PRODUCT_ID')) define('ENVIO_CASA_PRODUCT_ID', 9001);
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
@@ -89,6 +90,8 @@ if ($rol === 'barra') {
 } elseif ($rol === 'alimentos') {
     $sql .= " AND p.categoria_id <> 1";
 }
+// Excluir producto de envío en cocina
+$sql .= " AND d.producto_id <> " . (int)ENVIO_CASA_PRODUCT_ID;
 $sql .= "\nORDER BY\n  FIELD(d.estado_producto, 'pendiente','en_preparacion','listo','entregado'),\n  minutos_transcurridos DESC,\n  destino,\n  d.created_at;\n";
 
 $res = $conn->query($sql);
@@ -96,7 +99,8 @@ if (!$res) { error('Error al obtener productos: ' . $conn->error); }
 
 $out = [];
 while ($row = $res->fetch_assoc()) {
-$out[] = [
+    if ((int)$row['producto_id'] === (int)ENVIO_CASA_PRODUCT_ID) { continue; }
+    $out[] = [
   'venta_id'             => (int)$row['venta_id'],
   'tipo'                 => $row['tipo_entrega'],
   'destino'              => $row['destino'],
@@ -122,7 +126,7 @@ $out[] = [
   'insumos_requeridos'   => $row['insumos_requeridos'],
   'prioridad'            => $row['prioridad'],
   'detalle_id'           => (int)$row['detalle_id']
-];
+    ];
 
 }
 

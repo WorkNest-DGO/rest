@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/db.php';
 header('Content-Type: application/json');
+if (!defined('ENVIO_CASA_PRODUCT_ID')) define('ENVIO_CASA_PRODUCT_ID', 9001);
 
 if (session_status() === PHP_SESSION_ACTIVE) {
     session_write_close();
@@ -15,6 +16,7 @@ do {
                               FROM venta_detalles vd
                               JOIN productos p ON p.id = vd.producto_id
                               WHERE vd.id > ? AND vd.estado_producto IN ('pendiente','en_preparacion','listo')
+                                AND vd.producto_id <> " . (int)ENVIO_CASA_PRODUCT_ID . "
                               ORDER BY vd.id ASC");
     if (!$stmt) {
         echo json_encode(['nueva_venta' => false, 'error' => $conn->error]);

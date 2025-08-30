@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 require_once __DIR__ . '/../../utils/inventario.php';
+if (!defined('ENVIO_CASA_PRODUCT_ID')) define('ENVIO_CASA_PRODUCT_ID', 9001);
 
 // Antes se invocaba al procedimiento almacenado
 // `sp_descuento_insumos_por_detalle` para rebajar inventario.
@@ -39,6 +40,11 @@ if (!$result || $result->num_rows === 0) {
 $detalle = $result->fetch_assoc();
 $actual   = $detalle['estado_producto'];
 $stmt->close();
+
+// NO-OP para producto de envío: responder éxito sin cambiar estado
+if (isset($detalle['producto_id']) && (int)$detalle['producto_id'] === (int)ENVIO_CASA_PRODUCT_ID) {
+    success(['mensaje' => 'Línea de envío ya está entregada (bloqueada en cocina).']);
+}
 
 if ($actual === 'entregado') {
     error('No se puede modificar este producto');

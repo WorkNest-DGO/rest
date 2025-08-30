@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/../../utils/cargar_permisos.php';
+// Constante de producto de envío (para UI si se requiere)
+if (!defined('ENVIO_CASA_PRODUCT_ID')) define('ENVIO_CASA_PRODUCT_ID', 9001);
 $path_actual = str_replace('/rest', '', $_SERVER['PHP_SELF']);
 if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
     http_response_code(403);

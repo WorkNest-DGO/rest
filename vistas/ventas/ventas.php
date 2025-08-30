@@ -153,6 +153,39 @@ ob_start();
                 </tr>
               </tbody>
             </table>
+
+          <!-- Panel Envío (mostrar solo si: tipo_entrega=domicilio && repartidor=Repartidor casa) -->
+          <div id="panelEnvioCasa" style="display:none; margin-top:12px;">
+            <div class="card">
+              <div class="card-header" style="font-weight:600;">Envío</div>
+              <div class="card-body" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                <div>
+                  <label style="display:block; font-size:12px; opacity:.7;">Concepto</label>
+                  <span id="envioNombre" style="font-weight:600;">ENVÍO – Repartidor casa</span>
+                </div>
+                <div>
+                  <label for="envioCantidad" style="display:block; font-size:12px; opacity:.7;">Cantidad</label>
+                  <input id="envioCantidad" type="number" min="0" step="1" value="1" style="width:90px;">
+                </div>
+                <div>
+                  <label for="envioPrecio" style="display:block; font-size:12px; opacity:.7;">Precio unitario</label>
+                  <input id="envioPrecio" type="number" min="0" step="0.01" value="30.00" style="width:110px;">
+                </div>
+                <div>
+                  <label style="display:block; font-size:12px; opacity:.7;">Subtotal</label>
+                  <span id="envioSubtotal">0.00</span>
+                </div>
+                <button id="btnQuitarEnvio" type="button">Quitar envío</button>
+              </div>
+            </div>
+          </div>
+
+          <script>
+            // Defaults si no están definidos en otro lado
+            window.ENVIO_CASA_PRODUCT_ID = window.ENVIO_CASA_PRODUCT_ID || 9001;
+            window.ENVIO_CASA_DEFAULT_PRECIO = window.ENVIO_CASA_DEFAULT_PRECIO || 30.00;
+            window.ENVIO_CASA_NOMBRE = window.ENVIO_CASA_NOMBRE || 'ENVÍO – Repartidor casa';
+          </script>
           <div class="text-center">
             <button type="button" class="btn custom-btn" id="agregarProducto">Agregar Producto</button>
             <button type="button" class="btn custom-btn" id="registrarVenta">Registrar Venta</button>
@@ -360,6 +393,10 @@ ob_start();
     const catalogoDenominaciones = <?php echo json_encode($denominaciones); ?>;
     // Último ID de detalle enviado a cocina almacenado
     window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina') || '0', 10);
+
+    // Config ENVÍO automático (Repartidor casa)
+    window.ENVIO_CASA_PRODUCT_ID = 9001;
+    window.ENVIO_CASA_DEFAULT_PRECIO = 30.00;
 </script>
 <script src="../../utils/js/buscador.js"></script>
 <script src="ventas.js"></script>
