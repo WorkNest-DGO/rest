@@ -165,11 +165,76 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (btnCrear) btnCrear.addEventListener('click', guardarSubcuentas);
     }
 
+    // === Descuentos y cortesías ===
+    (function(){
+      const $porc = document.getElementById('descuentoPorcentaje');
+      const $lblC = document.getElementById('lblDescCortesias');
+      const $lblP = document.getElementById('lblDescPorcentaje');
+      const $lblMF = document.getElementById('lblDescMontoFijo');
+      const $lblT = document.getElementById('lblDescTotal');
+      const $lblE = document.getElementById('lblTotalEsperado');
+      const $montoFijo = document.getElementById('descuentoMontoFijo');
+      const cortesias = new Set();
+
+      function getTotalBruto(){
+        let sum = 0;
+        document.querySelectorAll('#tablaProductos tbody tr[data-subtotal]').forEach(tr=>{
+          sum += Number(tr.getAttribute('data-subtotal')||0);
+        });
+        return Number(sum.toFixed(2));
+      }
+      function getCortesiasTotal(){
+        let sum = 0;
+        cortesias.forEach(detId=>{
+          const tr = document.querySelector(`#tablaProductos tbody tr[data-detalle-id="${detId}"]`);
+          if (tr) sum += Number(tr.getAttribute('data-subtotal')||0);
+        });
+        return Number(sum.toFixed(2));
+      }
+      function clampPct(v){ v = Number(v||0); if (v<0) v=0; if (v>100) v=100; return v; }
+
+      function recalc(){
+        const totalBruto = getTotalBruto();
+        const cort = getCortesiasTotal();
+        const pct = clampPct($porc?.value);
+        const montoFijo = Math.max(0, Number($montoFijo?.value || 0));
+        const base = Math.max(0, totalBruto - cort);
+        const descPctMonto = Number((base * (pct/100)).toFixed(2));
+        const descTotal = Math.min(totalBruto, Number((cort + descPctMonto + montoFijo).toFixed(2)));
+        const totalEsperado = Math.max(0, Number((totalBruto - descTotal).toFixed(2)));
+
+        if ($lblC) $lblC.textContent = cort.toFixed(2);
+        if ($lblP) $lblP.textContent = descPctMonto.toFixed(2);
+        if ($lblMF) $lblMF.textContent = montoFijo.toFixed(2);
+        if ($lblT) $lblT.textContent = descTotal.toFixed(2);
+        if ($lblE) $lblE.textContent = totalEsperado.toFixed(2);
+
+        window.__DESC_DATA__ = { totalBruto, cort, pct, montoFijo, descPctMonto, descTotal, totalEsperado, cortesias: Array.from(cortesias) };
+      }
+
+      document.addEventListener('change', (e)=>{
+        const chk = e.target.closest('.chk-cortesia');
+        if (!chk) return;
+        const detId = Number(chk.getAttribute('data-detalle-id')||0);
+        if (!detId) return;
+        if (chk.checked) cortesias.add(detId); else cortesias.delete(detId);
+        recalc();
+      });
+      $porc && $porc.addEventListener('input', recalc);
+      $montoFijo && $montoFijo.addEventListener('input', recalc);
+      window.__ticketRecalcDescuentos = recalc; // hook para cuando se re-renderice
+      recalc();
+    })();
+
     function renderProductos() {
         const tbody = document.querySelector('#tablaProductos tbody');
         tbody.innerHTML = '';
         productos.forEach(p => {
             const tr = document.createElement('tr');
+            const detalleId = p.id || p.detalle_id || p.venta_detalle_id || null;
+            const subtotal = (parseFloat(p.cantidad) || 0) * (parseFloat(p.precio_unitario) || 0);
+            if (detalleId) tr.setAttribute('data-detalle-id', String(detalleId));
+            tr.setAttribute('data-subtotal', String(subtotal.toFixed(2)));
             const sel = document.createElement('select');
             for (let i = 1; i <= numSub; i++) {
                 const opt = document.createElement('option');
@@ -182,12 +247,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 p.subcuenta = parseInt(sel.value);
                 renderSubcuentas();
             });
-            tr.innerHTML = `<td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td>`;
+            const chkHtml = `<input type="checkbox" class="chk-cortesia" ${detalleId ? `data-detalle-id="${detalleId}"` : ''}>`;
+            tr.innerHTML = `<td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td class="text-center">${chkHtml}</td>`;
             const td = document.createElement('td');
             td.appendChild(sel);
             tr.appendChild(td);
             tbody.appendChild(tr);
         });
+        // Recalcular descuentos al renderizar
+        if (typeof window.__ticketRecalcDescuentos === 'function') {
+            window.__ticketRecalcDescuentos();
+        }
     }
 
     function actualizarSelects() {
@@ -211,9 +281,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             const div = document.createElement('div');
             div.id = 'sub' + i;
             const prods = productos.filter(p => p.subcuenta === i);
-            let html = `<h3>Subcuenta ${i}</h3><table><tbody>`;
+            window.__SUBS__ = window.__SUBS__ || [];
+            let html = `<h3>Subcuenta ${i}</h3><table><thead><tr><th>Producto</th><th>Cant x Precio</th><th>Cortesía</th></tr></thead><tbody>`;
             prods.forEach(p => {
-                html += `<tr><td>${p.nombre}</td><td>${p.cantidad} x ${p.precio_unitario}</td></tr>`;
+                const detId = p.id || p.detalle_id || p.venta_detalle_id || 0;
+                html += `<tr data-detalle-id="${detId}" data-subtotal="${(p.cantidad * p.precio_unitario).toFixed(2)}"><td>${p.nombre}</td><td>${p.cantidad} x ${p.precio_unitario}</td><td class=\"text-center\"><input type=\"checkbox\" class=\"chk-cortesia-sub\" data-sub=\"${i}\" data-detalle-id=\"${detId}\"></td></tr>`;
             });
             html += '</tbody></table>';
             const serieDesc = serieActual ? serieActual.descripcion : '';
@@ -225,7 +297,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <option value="boucher">Tarjeta</option>
                         <option value="cheque">Cheque</option>
                     </select>`;
-            html += ` <div id="extraPago${i}" class="mt-2"></div>`;
+            html += ` <div id=\"extraPago${i}\" class=\"mt-2\"></div>`;
+            html += `
+              <div class=\"descuentosPanel\" style=\"margin-top:8px;\">
+                <div>Subtotal cortesías: <span id=\"lblDescCortesias_sub${i}\">0.00</span></div>
+                <div>Descuento % (1-100): <input id=\"descuentoPorcentaje_sub${i}\" type=\"number\" min=\"0\" max=\"100\" step=\"0.01\" value=\"0\"></div>
+                <div>Descuento monto ($): <input id=\"descuentoMontoFijo_sub${i}\" type=\"number\" min=\"0\" step=\"0.01\" value=\"0.00\"></div>
+                <div>Descuento % monto: <span id=\"lblDescPorcentaje_sub${i}\">0.00</span></div>
+                <div>Descuento monto fijo: <span id=\"lblDescMontoFijo_sub${i}\">0.00</span></div>
+                <div><strong>Descuento total:</strong> <span id=\"lblDescTotal_sub${i}\">0.00</span></div>
+                <div><strong>Monto actual (a cobrar):</strong> <span id=\"lblTotalEsperado_sub${i}\">0.00</span></div>
+              </div>
+            `;
             html += ` <input type="number" step="0.01" id="recibido${i}" class="recibido" placeholder="Recibido">`;
             html += ` Cambio: <span id="cambio${i}">0</span>`;
             html += `<div id="tot${i}"></div>`;
@@ -234,9 +317,56 @@ document.addEventListener('DOMContentLoaded', async () => {
             // div.querySelector('#propina' + i).addEventListener('input', mostrarTotal);
             div.querySelector('#pago' + i).addEventListener('change', () => { mostrarTotal(); mostrarCamposPago(i); });
             div.querySelector('#recibido' + i).addEventListener('input', mostrarTotal);
+            div.querySelectorAll('.chk-cortesia-sub').forEach(chk => {
+                chk.addEventListener('change', () => { recalcSub(i); mostrarTotal(); });
+            });
+            const $pi = div.querySelector('#descuentoPorcentaje_sub'+i);
+            const $mi = div.querySelector('#descuentoMontoFijo_sub'+i);
+            if ($pi) $pi.addEventListener('input', () => { recalcSub(i); mostrarTotal(); });
+            if ($mi) $mi.addEventListener('input', () => { recalcSub(i); mostrarTotal(); });
             mostrarCamposPago(i);
+            recalcSub(i);
         }
         mostrarTotal();
+    }
+
+    function recalcSub(i){
+        const idx = Number(i);
+        const subDiv = document.getElementById('sub'+idx);
+        if (!subDiv) return;
+        const prods = productos.filter(p => p.subcuenta === idx);
+        const totalBruto = prods.reduce((s, p) => s + (Number(p.cantidad)||0) * (Number(p.precio_unitario)||0), 0);
+        const cortSet = new Set();
+        subDiv.querySelectorAll('.chk-cortesia-sub').forEach(chk => { if (chk.checked) cortSet.add(Number(chk.getAttribute('data-detalle-id')||0)); });
+        let cortTotal = 0;
+        cortSet.forEach(detId => {
+            const tr = subDiv.querySelector(`tr[data-detalle-id="${detId}"]`);
+            if (tr) cortTotal += Number(tr.getAttribute('data-subtotal')||0);
+        });
+        const pct = Math.max(0, Math.min(100, Number((subDiv.querySelector('#descuentoPorcentaje_sub'+idx)?.value)||0)));
+        const montoFijo = Math.max(0, Number((subDiv.querySelector('#descuentoMontoFijo_sub'+idx)?.value)||0));
+        const base = Math.max(0, totalBruto - cortTotal);
+        const descPctMonto = Number((base * (pct/100)).toFixed(2));
+        const descuentoTotal = Math.min(totalBruto, Number((cortTotal + descPctMonto + montoFijo).toFixed(2)));
+        const totalEsperado = Math.max(0, Number((totalBruto - descuentoTotal).toFixed(2)));
+        const setText = (sel, val) => { const el = subDiv.querySelector(sel); if (el) el.textContent = val.toFixed(2); };
+        setText('#lblDescCortesias_sub'+idx, cortTotal);
+        setText('#lblDescPorcentaje_sub'+idx, descPctMonto);
+        setText('#lblDescMontoFijo_sub'+idx, montoFijo);
+        setText('#lblDescTotal_sub'+idx, descuentoTotal);
+        setText('#lblTotalEsperado_sub'+idx, totalEsperado);
+        const detalleIds = prods.map(p => p.id || p.detalle_id || p.venta_detalle_id).filter(Boolean);
+        window.__SUBS__ = window.__SUBS__ || [];
+        window.__SUBS__[idx] = { idx, detalleIds, cortesias: Array.from(cortSet), pct, montoFijo, totalBruto: Number(totalBruto.toFixed(2)), descuentoTotal, totalEsperado };
+        // Actualizar monto actual global (suma de subcuentas)
+        try {
+            let suma = 0;
+            Object.values(window.__SUBS__).forEach(sub => { suma += Number(sub.totalEsperado || 0); });
+            const g = document.getElementById('lblMontoActualGlobal');
+            if (g) g.textContent = Number(suma.toFixed(2)).toFixed(2);
+        } catch(_) {}
+        // Sincroniza input recibido según tipo de pago
+        try { mostrarTotal(); } catch(_) {}
     }
     async function capturaPropinas() {
         const cont = document.getElementById('regPropinas');
@@ -271,29 +401,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
     }
-    function mostrarTotal() {
-        for (let i = 1; i <= numSub; i++) {
-            const prods = productos.filter(p => p.subcuenta === i);
-            let total = prods.reduce((s, p) => s + p.cantidad * p.precio_unitario, 0);
-            // const prop = parseFloat(document.getElementById('propina' + i).value || 0);
-            //total += prop;
-            document.getElementById('tot' + i).textContent = 'Total: ' + total.toFixed(2);
-            const tipo = document.getElementById('pago' + i).value;
-            const inp = document.getElementById('recibido' + i);
-            if (tipo !== 'efectivo') {
-                inp.disabled = true;
-                document.getElementById('cambio' + i).textContent = '0.00';
-            } else {
-                inp.disabled = false;
-                const rec = parseFloat(inp.value || 0);
-                const cambio = rec - total;
-                document.getElementById('cambio' + i).textContent = cambio >= 0 ? cambio.toFixed(2) : '0.00';
-                if (rec < total) {
-                    inp.style.background = '#fdd';
-                } else {
-                    inp.style.background = '';
-                }
+function mostrarTotal() {
+    for (let i = 1; i <= numSub; i++) {
+        const prods = productos.filter(p => p.subcuenta === i);
+        const state = window.__SUBS__ && window.__SUBS__[i] ? window.__SUBS__[i] : null;
+        let total = state ? Number(state.totalEsperado || 0) : prods.reduce((s, p) => s + p.cantidad * p.precio_unitario, 0);
+        // const prop = parseFloat(document.getElementById('propina' + i).value || 0);
+        //total += prop;
+        document.getElementById('tot' + i).textContent = 'Total (a cobrar): ' + total.toFixed(2);
+        const tipo = document.getElementById('pago' + i).value;
+        const inp = document.getElementById('recibido' + i);
+        if (tipo !== 'efectivo') {
+            // Autollenar y bloquear con Total Esperado por subcuenta
+            if (inp) {
+                inp.readOnly = true;
+                inp.value = total.toFixed(2);
+                inp.classList.add('readonly');
             }
+            document.getElementById('cambio' + i).textContent = '0.00';
+        } else {
+            if (inp) {
+                inp.readOnly = false;
+                inp.classList.remove('readonly');
+            }
+            const rec = parseFloat(inp?.value || 0);
+            const cambio = rec - total;
+            document.getElementById('cambio' + i).textContent = cambio >= 0 ? cambio.toFixed(2) : '0.00';
+            if (rec < total) {
+                if (inp) inp.style.background = '#fdd';
+            } else {
+                if (inp) inp.style.background = '';
+            }
+        }
         }
     }
 
@@ -356,26 +495,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             alert('No hay denominaciones configuradas para tarjeta o cheque');
             return;
         }
+        // Recalcular descuentos antes de armar payload
+        if (typeof window.__ticketRecalcDescuentos === 'function') {
+            window.__ticketRecalcDescuentos();
+        }
         const payload = {
             venta_id: info.venta_id,
             usuario_id: info.usuario_id || 1,
             sede_id: info.sede_id || null,
-            subcuentas: []
+            subcuentas: [],
+            // Extras de descuentos
+            descuento_porcentaje: window.__DESC_DATA__?.pct || 0,
+            descuento_total: window.__DESC_DATA__?.descTotal || 0,
+            cortesias: window.__DESC_DATA__?.cortesias || []
         };
         for (let i = 1; i <= numSub; i++) {
-            const prods = productos
-                .filter(p => p.subcuenta === i)
-                .map(p => {
-                    if (!p.producto_id) {
-                        alert('Producto sin ID en subcuenta ' + i);
-                        throw new Error('Producto sin id');
-                    }
-                    return {
-                        producto_id: Number(p.producto_id),
-                        cantidad: p.cantidad,
-                        precio_unitario: p.precio_unitario
-                    };
-                });
+            const prodsRaw = productos.filter(p => p.subcuenta === i);
+            const prods = prodsRaw.map(p => {
+                if (!p.producto_id) {
+                    alert('Producto sin ID en subcuenta ' + i);
+                    throw new Error('Producto sin id');
+                }
+                return {
+                    producto_id: Number(p.producto_id),
+                    cantidad: p.cantidad,
+                    precio_unitario: p.precio_unitario
+                };
+            });
             if (prods.length === 0) continue;
             // const prop = parseFloat(document.getElementById('propina' + i).value || 0);
             if (!serieActual) {
@@ -384,8 +530,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             const serie = serieActual.id;
             const tipo = document.getElementById('pago' + i).value;
-            const recibido = parseFloat(document.getElementById('recibido' + i).value || 0);
-            const total = prods.reduce((s, p) => s + p.cantidad * p.precio_unitario, 0) ;
+            let recibido = parseFloat(document.getElementById('recibido' + i).value || 0);
+            const stateSub = window.__SUBS__ && window.__SUBS__[i] ? window.__SUBS__[i] : null;
+            const total = stateSub ? Number(stateSub.totalEsperado || 0) : prods.reduce((s, p) => s + p.cantidad * p.precio_unitario, 0) ;
             if (!tipo) {
                 alert('Selecciona tipo de pago en subcuenta ' + i);
                 return;
@@ -422,8 +569,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById('propinaCheque').disabled = false;
                 document.getElementById('propinaChequeD').style.display ='block';
             }
+            // Asegura IDs de detalle reales desde los productos crudos de la subcuenta
+            const detalleIds = prodsRaw
+              .map(p => p.id || p.detalle_id || p.venta_detalle_id)
+              .filter(Boolean);
+            // Toma la selección de cortesías calculada en recalcSub(i)
+            const cortesiasSub = (window.__SUBS__ && window.__SUBS__[i]) ? (window.__SUBS__[i].cortesias || []) : [];
+            // Asegura que las cortesías pertenezcan a esta subcuenta
+            const cortesiasSubFiltradas = cortesiasSub.filter(id => detalleIds.includes(id));
+            const pctSub = (window.__SUBS__ && window.__SUBS__[i]) ? (window.__SUBS__[i].pct || 0) : 0;
+            const montoFijoSub = (window.__SUBS__ && window.__SUBS__[i]) ? (window.__SUBS__[i].montoFijo || 0) : 0;
+            // monto recibido autollenado/locked para boucher/cheque vía UI; no reasignar aquí
             payload.subcuentas.push({
                 productos: prods,
+                detalle_ids: detalleIds,
+                cortesias: cortesiasSubFiltradas,
+                descuento_porcentaje: pctSub,
+                descuento_monto_fijo: montoFijoSub,
                 serie_id: serie,
                 tipo_pago: tipo,
                 monto_recibido: recibido,

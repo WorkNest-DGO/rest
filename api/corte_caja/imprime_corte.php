@@ -93,7 +93,34 @@ $printer -> initialize();
 
 // //imprime corte
 
- 	$datosT = $datos2;
+    // Normaliza: algunas APIs devuelven el payload dentro de "resultado"
+    $datosT = $datos2['resultado'] ?? $datos2;
+
+    // Aliases y defaults seguros
+    $total_bruto      = $datosT['total_bruto'] ?? ($datosT['total_productos'] ?? 0);
+    $__totalEsperado  = $datosT['total_esperado'] ?? ($datosT['totalEsperado'] ?? null);
+    $total_descuentos = $datosT['total_descuentos'] ?? (
+        ($__totalEsperado !== null) ? max(0, $total_bruto - $__totalEsperado) : 0
+    );
+    $total_esperado   = $__totalEsperado ?? max(0, $total_bruto - $total_descuentos);
+
+    // Esperados por método (si no vienen, se omiten al imprimir)
+    $esperado_efectivo = $datosT['esperado_efectivo'] ?? null;
+    $esperado_boucher  = $datosT['esperado_boucher']  ?? null;
+    $esperado_cheque   = $datosT['esperado_cheque']   ?? null;
+
+    // Propinas (compat)
+    $total_propina_efectivo = $datosT['total_propina_efectivo'] ?? 0;
+    $total_propina_tarjeta  = $datosT['total_propina_tarjeta']  ?? 0;
+    $total_propina_cheque   = $datosT['total_propina_cheque']   ?? 0;
+    $total_propinas         = $datosT['total_propinas'] ?? ($total_propina_efectivo + $total_propina_tarjeta + $total_propina_cheque);
+
+    // Folios: usa total_folios si viene; si no, calcula
+    $total_folios = $datosT['total_folios'] ?? (
+        (isset($datosT['folio_inicio'], $datosT['folio_fin']))
+            ? ((int)$datosT['folio_fin'] - (int)$datosT['folio_inicio'] + 1)
+            : null
+    );
 	
 	$meseros=$datosT['total_meseros'];
 	$repartidores = $datosT['total_repartidor'];
@@ -153,7 +180,10 @@ $printer -> initialize();
 	$printer -> text($objeto->getAsString(32));
 	$printer -> text("Inicio: " . $datosT['fecha_inicio'] ."\n");
 	$printer -> text("Fin: " . $date ."\n");
-	$printer -> text("Folios: " . $datosT['folio_inicio'] . "-" . $datosT['folio_fin'] . " (" . $datosT['folio_fin'] .")\n");
+	$printer->text(
+		"Folios: " . $datosT['folio_inicio'] . " - " . $datosT['folio_fin'] .
+		($total_folios !== null ? " (" . $total_folios . ")" : "") . "\n"
+	);
 	$printer -> feed();
 
 
@@ -207,15 +237,34 @@ $printer -> initialize();
 		$printer -> feed();
 		
 	}
-	$diferencia = (float)$datosT['totalFinal'] - (float)$datosT['totalEsperado'];
+	$diferencia = (float)$datosT['totalFinal'] - (float)$total_esperado;
 	$diferencia = '' . $diferencia;
 
 	$objeto = new item('Total productos: ' ,$datosT['total_productos'],True);
 	$printer -> text($objeto->getAsString(32));
 	$objeto = new item('Total propinas: ' ,$datosT['total_propinas'],True);
 	$printer -> text($objeto->getAsString(32));
-	$objeto = new item('Total esperado: ' ,$datosT['totalEsperado'],True);
+	// Agregados
+	$objeto = new item('Total bruto: '      , $total_bruto, True);
+	$printer->text($objeto->getAsString(32));
+	$objeto = new item('Total descuentos: ' , $total_descuentos, True);
+	$printer->text($objeto->getAsString(32));
+	// Preferir total_esperado normalizado
+	$objeto = new item('Total esperado: '   , $total_esperado, True);
 	$printer -> text($objeto->getAsString(32));
+	// Esperado por método (si aplica)
+	if ($esperado_efectivo !== null) {
+		$objeto = new item('Esperado efectivo: ' , $esperado_efectivo, True);
+		$printer->text($objeto->getAsString(32));
+	}
+	if ($esperado_boucher !== null) {
+		$objeto = new item('Esperado boucher: '  , $esperado_boucher, True);
+		$printer->text($objeto->getAsString(32));
+	}
+	if ($esperado_cheque !== null) {
+		$objeto = new item('Esperado cheque: '   , $esperado_cheque, True);
+		$printer->text($objeto->getAsString(32));
+	}
 	$objeto = new item('Fondo inicial: ' ,$datosT['fondo'],True);
 	$printer -> text($objeto->getAsString(32));
 	$objeto = new item('Depósitos: ' ,$datosT['total_depositos'],True);

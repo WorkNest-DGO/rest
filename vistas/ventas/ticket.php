@@ -40,15 +40,22 @@ ob_start();
                     <th>Producto</th>
                     <th>Cant</th>
                     <th>Precio</th>
+                    <th>Cortesía</th>
                     <th>Subcuenta</th>
                 </tr>
             </thead>
             <tbody></tbody>
         </table>
     </div>
+    <!-- Panel de descuentos global oculto (los descuentos se aplican por subcuenta) -->
+    <div id="descuentosPanel" style="display:none;"></div>
     <button id="agregarSub" class="btn custom-btn">Agregar subcuenta</button>
     <button id="btnCrearTicket" class="btn custom-btn">imprimir Tickets</button>
     <div id="subcuentas"></div>
+    <div style="margin-top:10px;">
+      <strong>Monto actual (suma de subcuentas):</strong>
+      <span id="lblMontoActualGlobal">0.00</span>
+    </div>
     <br>
     <div id="regPropinas" style="display:none;">
         <h3>Propinas:</h3>

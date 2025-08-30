@@ -60,6 +60,52 @@ foreach ($recibos  as $recibo) {
 
 	$datosT = $recibo;
 	$desglose=$recibo['productos'];
+
+	// === Utilidades locales ===
+	$fmt = function($n){ return number_format((float)$n, 2, '.', ','); };
+	$ticketId = isset($datosT['ticket_id']) ? (int)$datosT['ticket_id'] : 0;
+
+	// Total bruto desde los detalles impresos del ticket
+	$totalBruto = 0.0;
+	if (is_array($desglose)) {
+		foreach ($desglose as $produc) { $totalBruto += (float)($produc['subtotal'] ?? 0); }
+	}
+
+	// Descuentos del ticket + detalle de producto si aplica
+	$descuentos = [];
+	$descuentoTotal = 0.0;
+	if ($ticketId > 0) {
+		if ($q = $conn->prepare("SELECT td.tipo, td.porcentaje, td.monto, td.motivo, td.venta_detalle_id,
+		                               vd.cantidad, vd.precio_unitario, p.nombre AS producto
+		                        FROM ticket_descuentos td
+		                        LEFT JOIN venta_detalles vd ON vd.id = td.venta_detalle_id
+		                        LEFT JOIN productos p ON p.id = vd.producto_id
+		                        WHERE td.ticket_id = ?
+		                        ORDER BY td.id ASC")) {
+			$q->bind_param('i', $ticketId);
+			if ($q->execute()) {
+				$resD = $q->get_result();
+				while ($row = $resD->fetch_assoc()) { $descuentos[] = $row; $descuentoTotal += (float)($row['monto'] ?? 0); }
+			}
+			$q->close();
+		}
+		// Fallback si no hay filas pero el ticket trae descuento acumulado
+		if (empty($descuentos)) {
+			$ticketDescuentoCampo = 0.0;
+			if ($q2 = $conn->prepare('SELECT descuento FROM tickets WHERE id = ?')) {
+				$q2->bind_param('i', $ticketId);
+				if ($q2->execute()) { $r2 = $q2->get_result()->fetch_assoc(); $ticketDescuentoCampo = (float)($r2['descuento'] ?? 0); }
+				$q2->close();
+			}
+			if ($ticketDescuentoCampo > 0) {
+				$descuentos[] = ['tipo'=>'monto_fijo','porcentaje'=>null,'monto'=>$ticketDescuentoCampo,'motivo'=>null,'venta_detalle_id'=>null,'cantidad'=>null,'precio_unitario'=>null,'producto'=>null];
+				$descuentoTotal = $ticketDescuentoCampo;
+			}
+		}
+	}
+
+	// Total final a pagar
+	$totalAPagar = max(0, $totalBruto - $descuentoTotal);
 	
 
 	$items3 = array();
@@ -71,7 +117,7 @@ foreach ($recibos  as $recibo) {
 	}
 	    
 	$printer -> setJustification(Printer::JUSTIFY_LEFT);
-	$filename="../../archivos/logo_login2.png";	
+	$filename="../../archivos/logo_login.png";	
 	$logo = EscposImage::load($filename, true);
 	$printer -> bitImage($logo);
 
@@ -112,10 +158,49 @@ foreach ($recibos  as $recibo) {
 
 	$printer -> feed();
 	$printer -> setEmphasis(true);
+	// ----- Subtotal -----
+	$printer->text(str_pad('Subtotal:', 20) . '$ ' . $fmt($totalBruto) . "\n");
+
+	// ----- Descuentos (si hay) -----
+	if (!empty($descuentos)) {
+		$printer->text("------------------------------\n");
+		$printer->text("DESCUENTOS APLICADOS\n");
+		foreach ($descuentos as $d) {
+			$linea = '';
+			$tipo = $d['tipo'] ?? '';
+			if ($tipo === 'cortesia') {
+				$prod = !empty($d['producto']) ? $d['producto'] : 'Producto';
+				$cant = !empty($d['cantidad']) ? (' x' . (int)$d['cantidad']) : '';
+				$linea = "Cortesía: {$prod}{$cant}";
+			} elseif ($tipo === 'porcentaje') {
+				$porc  = ($d['porcentaje'] !== null) ? $fmt($d['porcentaje']) : '0';
+				$linea = "Descuento {$porc}%";
+			} else {
+				$linea = "Descuento monto fijo";
+			}
+			$importe = '$ ' . $fmt($d['monto'] ?? 0);
+			$texto  = function_exists('mb_substr') ? mb_substr($linea, 0, 30) : substr($linea, 0, 30);
+			$lenT   = function_exists('mb_strlen') ? mb_strlen($texto) : strlen($texto);
+			$printer->text($texto . str_repeat(' ', max(1, 32 - $lenT - strlen($importe))) . $importe . "\n");
+			if (!empty($d['motivo'])) { $printer->text("Motivo: " . $d['motivo'] . "\n"); }
+		}
+		$printer->text(str_pad('Total descuento:', 20) . "-$ " . $fmt($descuentoTotal) . "\n");
+	}
+
+	// ----- Total a pagar -----
+	$printer -> text(str_pad('Total:', 20) . '$ ' . $fmt($totalAPagar) . "\n");
+	// Mantener campos existentes
 	$printer -> text("Cambio: " . $datosT['cambio'] ."\n");
-	$printer -> text("Total: " . $datosT['total'] ."\n");
 	$printer -> text($datosT['total_letras'] ."\n");
 	$printer -> feed();
+	// Leyendas adicionales
+	$printer->text("\nPara facturación visita nuestro sitio\n");
+	$printer->text("https://tokyosushiprime.com/tokyo/vistas/facturacion.php\n");
+	//$printer->text("------------------------------\n");
+	//$printer->text("Obtén un descuento en tu próxima compra.\n");
+	//$printer->text("Contesta una encuesta de satisfacción en\nnuestro sitio y obtén una sorpresa en tu\npróxima visita (aplica en todos nuestros\nrestaurantes).\n");
+	//$printer->text("Entra a:\nhttps://tokyosushiprime.com/tokyo/vistas/encuesta.php\n");
+
 	$printer -> text("Gracias por su compra \n");
 	$printer -> feed();
 

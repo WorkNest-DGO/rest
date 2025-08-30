@@ -72,6 +72,26 @@ $stmtResumen->close();
 
 $totalEsperado = $totalProductos + $totalPropinas;
 
+// Agregados de descuentos y esperado (con tickets)
+$sqlAgg = "SELECT
+  COALESCE(SUM(t.total), 0) AS total_bruto,
+  COALESCE(SUM(COALESCE(t.descuento,0)), 0) AS total_descuentos,
+  COALESCE(SUM(t.total - COALESCE(t.descuento,0)), 0) AS total_esperado,
+  COALESCE(SUM(CASE WHEN t.tipo_pago='efectivo' THEN t.total - COALESCE(t.descuento,0) ELSE 0 END), 0) AS esperado_efectivo,
+  COALESCE(SUM(CASE WHEN t.tipo_pago='boucher'  THEN t.total - COALESCE(t.descuento,0) ELSE 0 END), 0) AS esperado_boucher,
+  COALESCE(SUM(CASE WHEN t.tipo_pago='cheque'   THEN t.total - COALESCE(t.descuento,0) ELSE 0 END), 0) AS esperado_cheque
+FROM ventas v
+JOIN tickets t ON t.venta_id = v.id
+WHERE v.estatus = 'cerrada' AND v.corte_id = ?";
+$stmtAgg = $conn->prepare($sqlAgg);
+if ($stmtAgg) {
+    $stmtAgg->bind_param('i', $corte_id);
+    if ($stmtAgg->execute()) {
+        $rowAgg = $stmtAgg->get_result()->fetch_assoc() ?: [];
+    }
+    $stmtAgg->close();
+}
+
 // Obtener fondo inicial y fecha de inicio del corte
 $stmtFondo = $conn->prepare('SELECT c.fondo_inicial, c.fecha_inicio, u.nombre AS cajero
              FROM corte_caja c
@@ -200,6 +220,13 @@ $resultado['fecha_inicio']    = $fechaInicio;
 $resultado['folio_inicio']    = $folioInicio;
 $resultado['folio_fin']       = $folioFin;
 $resultado['total_folios']    = $totalFolios;
+// Nuevos agregados (no rompen compatibilidad)
+$resultado['total_bruto']       = (float)($rowAgg['total_bruto']       ?? 0);
+$resultado['total_descuentos']  = (float)($rowAgg['total_descuentos']  ?? 0);
+$resultado['total_esperado']    = (float)($rowAgg['total_esperado']    ?? 0);
+$resultado['esperado_efectivo'] = (float)($rowAgg['esperado_efectivo'] ?? 0);
+$resultado['esperado_boucher']  = (float)($rowAgg['esperado_boucher']  ?? 0);
+$resultado['esperado_cheque']   = (float)($rowAgg['esperado_cheque']   ?? 0);
 
 echo json_encode([
     'success'   => true,

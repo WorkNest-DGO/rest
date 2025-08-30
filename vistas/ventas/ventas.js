@@ -586,8 +586,9 @@ async function cerrarCaja() {
             alert("No hay ventas registradas en este corte.");
             return;
         }
-
+        
         mostrarModalDesglose(resumen);
+        if (typeof pintarCorteActual === 'function') pintarCorteActual(resumen);
     } catch (error) {
         console.error("Error al obtener resumen:", error);
         alert("Ocurrió un error inesperado al consultar el corte.");
@@ -604,6 +605,7 @@ function abrirCorteTemporal() {
             }
             const r = data.resultado;
             document.getElementById('corteTemporalDatos').innerHTML = generarHTMLCorte(r);
+            if (typeof mostrarCorteTemporalBonito === 'function') mostrarCorteTemporalBonito(data);
             showModal('#modalCorteTemporal');
             document.getElementById('guardarCorteTemporal').onclick = function () {
                 guardarCorteTemporal(r);
@@ -700,7 +702,12 @@ function mostrarModalDesglose(dataApi) {
     const totalPropinas = Number.parseFloat(r.total_propinas) ||
         metodosPago.reduce((acc, m) => acc + (Number.parseFloat(r[m]?.propina) || 0), 0);
 
-    const totalEsperado = Number.parseFloat(r.totalEsperado) || (totalProductos + totalPropinas);
+    const totalBrutoTickets = Number.parseFloat(r.total_bruto ?? 0);
+    const totalDescuentos   = Number.parseFloat(r.total_descuentos ?? 0);
+    const totalEsperadoNew  = Number.parseFloat(r.total_esperado ?? (totalBrutoTickets - totalDescuentos));
+    const totalEsperado = (isNaN(totalEsperadoNew) || totalEsperadoNew === 0)
+        ? (Number.parseFloat(r.totalEsperado) || (totalProductos + totalPropinas))
+        : totalEsperadoNew;
     const fondoInicial = Number.parseFloat(r.fondo) || 0;
     const totalIngresado = Number.parseFloat(r.totalFinal) || (totalEsperado + fondoInicial);
 
@@ -714,7 +721,12 @@ function mostrarModalDesglose(dataApi) {
     if (r.folio_fin != null) { html += `<p>Folio fin: ${r.folio_fin}</p>`; }
     if (r.total_folios != null) { html += `<p>Total folios: ${r.total_folios}</p>`; }
 
-    html += `<p>Total esperado: $${totalEsperado.toFixed(2)}</p>`;
+    // Totales incluyendo descuentos por tickets
+    if (!isNaN(totalBrutoTickets) && (totalBrutoTickets > 0 || totalDescuentos >= 0)) {
+        html += `<p>Total bruto (tickets): $${(totalBrutoTickets || 0).toFixed(2)}</p>`;
+        html += `<p>Descuentos acumulados: $<span id="lblCorteActualDescuentos">${(totalDescuentos || 0).toFixed(2)}</span></p>`;
+    }
+    html += `<p><strong>Total esperado:</strong> $${totalEsperado.toFixed(2)}</p>`;
     html += '<p>Fondo inicial: $<strong id="lblFondo"></strong></p>';
     html += '<p>Depósitos: $<strong id="lblTotalDepositos"></strong></p>';
     html += '<p>Retiros: $<strong id="lblTotalRetiros"></strong></p>';
@@ -726,6 +738,17 @@ function mostrarModalDesglose(dataApi) {
         html += `<li>${tipo}: $${(Number.parseFloat(p.total) || 0).toFixed(2)}</li>`;
     });
     html += '</ul>';
+    // Esperado por tipo de pago (post-descuentos) si viene del API
+    const esperadoEfec   = Number.parseFloat(r.esperado_efectivo || 0);
+    const esperadoBouch  = Number.parseFloat(r.esperado_boucher  || 0);
+    const esperadoCheque = Number.parseFloat(r.esperado_cheque   || 0);
+    if (esperadoEfec || esperadoBouch || esperadoCheque) {
+        html += '<p>Esperado post-descuentos por tipo de pago:</p><ul>';
+        html += `<li>efectivo: $${esperadoEfec.toFixed(2)}</li>`;
+        html += `<li>boucher: $${esperadoBouch.toFixed(2)}</li>`;
+        html += `<li>cheque: $${esperadoCheque.toFixed(2)}</li>`;
+        html += '</ul>';
+    }
     html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
     html += '<p>Propinas por tipo de pago:</p><ul>';
     html += `<li>Efectivo: $${(Number.parseFloat(r.total_propina_efectivo) || 0).toFixed(2)}</li>`;
@@ -1011,6 +1034,76 @@ function esRepartidorCasaSeleccionado() {
     const txt = sel.options[sel.selectedIndex].textContent || '';
     return txt.trim().toLowerCase() === 'repartidor casa';
 }
+
+// Pintar valor de descuentos en corte actual
+function pintarCorteActual(data) {
+    if (!data || !data.resultado) return;
+    const r = data.resultado;
+    const descuentos = Number(r.total_descuentos ?? 0);
+    const elDesc = document.getElementById('lblCorteActualDescuentos');
+    if (elDesc) elDesc.textContent = n2(descuentos);
+}
+
+function pintarTablaSimple(tbodySel, rows, cols) {
+    const tb = document.querySelector(tbodySel);
+    if (!tb) return;
+    tb.innerHTML = '';
+    (rows || []).forEach(row => {
+        const tr = document.createElement('tr');
+        cols.forEach(c => {
+            const td = document.createElement('td');
+            td.textContent = c.format ? c.format(row[c.key], row) : (row[c.key] ?? '');
+            tr.appendChild(td);
+        });
+        tb.appendChild(tr);
+    });
+}
+
+function mostrarCorteTemporalBonito(data) {
+    const cont = document.getElementById('corteTemporalBonito');
+    if (!cont) return;
+    const pre = document.querySelector('#modalCorteTemporal pre, #corteTemporalDatos');
+    if (pre) pre.style.display = 'none';
+    cont.style.display = '';
+    const r = (data && data.resultado) ? data.resultado : {};
+
+    const totalBruto      = Number(r.total_bruto      ?? r.total ?? 0);
+    const totalDescuentos = Number(r.total_descuentos ?? 0);
+    const totalEsperado   = Number(r.total_esperado   ?? (totalBruto - totalDescuentos) ?? 0);
+
+    setText('#lblTmpTotalBruto', fmtMoneda(totalBruto));
+    setText('#lblTmpTotalDescuentos', fmtMoneda(totalDescuentos));
+    setText('#lblTmpTotalEsperado', fmtMoneda(totalEsperado));
+
+    setText('#lblTmpEsperadoEfectivo', fmtMoneda(Number(r.esperado_efectivo || 0)));
+    setText('#lblTmpEsperadoBoucher',  fmtMoneda(Number(r.esperado_boucher  || 0)));
+    setText('#lblTmpEsperadoCheque',   fmtMoneda(Number(r.esperado_cheque   || 0)));
+
+    const meseros = Array.isArray(r.total_meseros) ? r.total_meseros : [];
+    pintarTablaSimple('#tblTmpMeseros tbody', meseros, [
+        { key: 'nombre' },
+        { key: 'total', format: (v) => fmtMoneda(v) }
+    ]);
+    const reps = Array.isArray(r.total_repartidor) ? r.total_repartidor : [];
+    pintarTablaSimple('#tblTmpRepartidores tbody', reps, [
+        { key: 'nombre' },
+        { key: 'total', format: (v) => fmtMoneda(v) }
+    ]);
+}
+
+// ====== Helpers de formato para corte ======
+function n2(v) {
+    const x = Number(v ?? 0);
+    return Number.isFinite(x) ? x.toFixed(2) : '0.00';
+}
+function fmtMoneda(v) {
+    try {
+        return (Number(v ?? 0)).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+    } catch(e) {
+        return '$ ' + n2(v);
+    }
+}
+function setText(sel, val){ const el = document.querySelector(sel); if (el) el.textContent = String(val); }
 
 // ====== Envío automático: helpers ======
 function esDomicilioConRepartidorCasa() {

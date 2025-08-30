@@ -283,6 +283,37 @@ ob_start();
       </div>
       <div class="modal-body">
         <div id="corteTemporalDatos"></div>
+        <!-- Vista formateada del corte temporal -->
+        <div id="corteTemporalBonito" style="display:none;">
+          <div class="tarjeta">
+            <div><strong>Total bruto:</strong> <span id="lblTmpTotalBruto">0.00</span></div>
+            <div><strong>Descuentos:</strong> <span id="lblTmpTotalDescuentos">0.00</span></div>
+            <div><strong>Total esperado:</strong> <span id="lblTmpTotalEsperado">0.00</span></div>
+          </div>
+
+          <div class="tarjeta" style="margin-top:8px;">
+            <div style="opacity:.8">Esperado por tipo de pago</div>
+            <div>Efectivo: <span id="lblTmpEsperadoEfectivo">0.00</span></div>
+            <div>Boucher:  <span id="lblTmpEsperadoBoucher">0.00</span></div>
+            <div>Cheque:   <span id="lblTmpEsperadoCheque">0.00</span></div>
+          </div>
+
+          <div class="tarjeta" style="margin-top:8px;">
+            <div style="opacity:.8">Totales por mesero</div>
+            <table id="tblTmpMeseros" class="tabla-compacta">
+              <thead><tr><th>Mesero</th><th>Total</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="tarjeta" style="margin-top:8px;">
+            <div style="opacity:.8">Totales por repartidor</div>
+            <table id="tblTmpRepartidores" class="tabla-compacta">
+              <thead><tr><th>Repartidor</th><th>Total</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
         <label for="observacionesCorteTemp">Observaciones:</label>
         <textarea id="observacionesCorteTemp" class="form-control" rows="3"></textarea>
       </div>
