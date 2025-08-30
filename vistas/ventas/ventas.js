@@ -1558,6 +1558,15 @@ async function resetFormularioVenta() {
     if (mesero) { mesero.disabled = false; mesero.value = ''; }
     if (obs) obs.value = '';
 
+    // Forzar placeholder y repintar selects clave
+    ;['tipo_entrega','mesa_id','repartidor_id','usuario_id'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.querySelector && el.querySelector('option[value=""]')) el.value = '';
+      try { el.dispatchEvent(new Event('change')); } catch(_) {}
+      if (typeof actualizarEstiloSelect === 'function') try { actualizarEstiloSelect(el); } catch(_) {}
+    });
+
     // Oculta secciones dependientes y revalida
     const campoMesa = document.getElementById('campoMesa');
     const campoRep = document.getElementById('campoRepartidor');
@@ -1572,11 +1581,14 @@ async function resetFormularioVenta() {
         const base = tbody.querySelector('tr');
         tbody.innerHTML = ''; // limpia todo
         const fila = base.cloneNode(true);
-        // limpia inputs y precio unitario cacheado
+        // limpia inputs, cache de precio y flags de autocomplete
         fila.querySelectorAll('input').forEach(inp => {
             inp.value = '';
             if (inp.classList.contains('precio')) delete inp.dataset.unitario;
+            if (inp.classList.contains('buscador-producto')) delete inp.dataset.autocompleteInitialized;
         });
+        const listaAuto = fila.querySelector('.lista-productos');
+        if (listaAuto) { listaAuto.innerHTML = ''; listaAuto.style.display = 'none'; }
         // repuebla el select de producto con el catálogo actual
         const selProd = fila.querySelector('select.producto');
         if (selProd) {
@@ -1595,6 +1607,8 @@ async function resetFormularioVenta() {
                 actualizarPrecio(selProd);
                 verificarActivacionProductos();
             });
+            // re-activa autocomplete en la fila base
+            inicializarBuscadorProducto(selProd);
             const cant = fila.querySelector('.cantidad');
             if (cant) {
                 cant.value = '';

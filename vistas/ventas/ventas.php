@@ -90,9 +90,10 @@ ob_start();
         <div class="form-group">
           <label for="tipo_entrega" class="text-white">Tipo de venta:</label>
           <select id="tipo_entrega" name="tipo_entrega" class="form-control">
+            <option value="" disabled selected>Seleccione</option>
             <option value="mesa">En restaurante</option>
             <option value="domicilio">A domicilio</option>
-            <option value="rapido">Rapido</option>
+            <option value="rapido">Rápido</option>
           </select>
         </div>
 

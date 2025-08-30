@@ -56,7 +56,7 @@ ob_start();
 	<h4>Tokyo Sushy Prime </h4>
 </section>
 
-<div class="drag-container">
+<div class="kanban-container" id="kanbanMesas">
         <ul class="drag-list" id="kanban-list"></ul>
 </div>
 

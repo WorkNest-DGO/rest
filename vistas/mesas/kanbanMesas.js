@@ -50,15 +50,16 @@ function crearColumnas(container, listaMeseros) {
     listaMeseros.forEach(me => {
         const li = document.createElement('li');
         li.className = 'drag-column drag-column-on-hold';
+        li.classList.add('kanban-board');
         li.dataset.meseroId = me.id;
 
         const header = document.createElement('span');
         header.className = 'drag-column-header';
-        header.innerHTML = `<h2>${me.nombre}</h2>`;
+        header.innerHTML = `<h3>${me.nombre}</h3>`;
         li.appendChild(header);
 
         const ul = document.createElement('ul');
-        ul.className = 'drag-inner-list';
+        ul.className = 'drag-inner-list kanban-dropzone';
         li.appendChild(ul);
 
         container.appendChild(li);
@@ -66,13 +67,14 @@ function crearColumnas(container, listaMeseros) {
 
     const liSin = document.createElement('li');
     liSin.className = 'drag-column drag-column-on-hold';
+    liSin.classList.add('kanban-board');
     liSin.dataset.meseroId = 'sin';
     const headerSin = document.createElement('span');
     headerSin.className = 'drag-column-header';
-    headerSin.innerHTML = '<h2>No asignado</h2>';
+    headerSin.innerHTML = '<h3>No asignado</h3>';
     liSin.appendChild(headerSin);
     const ulSin = document.createElement('ul');
-    ulSin.className = 'drag-inner-list';
+    ulSin.className = 'drag-inner-list kanban-dropzone';
     liSin.appendChild(ulSin);
     container.appendChild(liSin);
 }
@@ -109,7 +111,7 @@ function renderKanban(listaMeseros, mesas) {
         }
         if (!col) return;
         const card = document.createElement('li');
-        card.className = 'drag-item mesa';
+        card.className = 'drag-item mesa kanban-item';
         card.classList.add(`estado-${m.estado}`);
         card.dataset.mesa = m.id;
         card.dataset.venta = m.venta_id || '';
@@ -135,19 +137,24 @@ function renderKanban(listaMeseros, mesas) {
             ocupacionTxt = `Ocupada hace ${diff} min`;
         }
 
-        card.innerHTML = `
-            <input type="checkbox" class="seleccionar" data-id="${m.id}" hidden>
-            <h3>${m.nombre}</h3>
-            <p>Estado: ${m.estado}</p>
-            <p>${ventaTxt}</p>
-            <p>${meseroTxt}</p>
-            <p>${unionTxt}</p>
-            <p>${reservaTxt}</p>
-            <p>${ocupacionTxt}</p>
+        const botoneraHTML = `
             <button class="detalles">Detalles</button>
             <button class="dividir" data-id="${m.id}">Dividir</button>
             <button class="cambiar" data-id="${m.id}">Cambiar estado</button>
-            <button class="ticket" data-mesa="${m.id}" data-nombre="${m.nombre}" data-venta="${m.venta_id || ''}">Enviar ticket</button>
+            <button class="ticket" data-mesa="${m.id}" data-nombre="${m.nombre}" data-venta="${m.venta_id || ''}">Enviar ticket</button>`;
+
+        card.innerHTML = `
+            <input type="checkbox" class="seleccionar" data-id="${m.id}" hidden>
+            <div class="title">Mesa ${m.nombre}</div>
+            <div class="meta">
+                <span>Estado: ${m.estado}</span>
+                <span>${ventaTxt}</span>
+                <span>${meseroTxt}</span>
+                ${unionTxt ? `<span>${unionTxt}</span>` : ''}
+                ${reservaTxt ? `<span>${reservaTxt}</span>` : ''}
+                ${ocupacionTxt ? `<span>${ocupacionTxt}</span>` : ''}
+            </div>
+            <div class="acciones">${botoneraHTML}</div>
         `;
 
         const puedeEditar = usuarioActual.rol === 'admin' || (m.usuario_id && parseInt(m.usuario_id) === usuarioActual.id);
@@ -168,20 +175,31 @@ function renderKanban(listaMeseros, mesas) {
         const btnDetalles = card.querySelector('button.detalles');
         btnDetalles.addEventListener('click', ev => {
             ev.stopPropagation();
-            verDetalles(card.dataset.venta, card.dataset.mesa, card.querySelector('h3').textContent, card.dataset.estado);
+            verDetalles(card.dataset.venta, card.dataset.mesa, card.querySelector('.title').textContent, card.dataset.estado);
         });
 
         const btnTicket = card.querySelector('button.ticket');
         btnTicket.addEventListener('click', ev => {
             ev.stopPropagation();
-            solicitarTicket(card.dataset.mesa, card.querySelector('h3').textContent, card.dataset.venta);
+            solicitarTicket(card.dataset.mesa, card.querySelector('.title').textContent, card.dataset.venta);
         });
 
         col.appendChild(card);
     });
 
     activarDrag();
+    try { ajustarAlturasKanban(); } catch(_) {}
 }
+
+// Ajuste de alturas responsive para columnas
+function debounce(fn, wait){ let t; return function(){ const ctx=this, args=arguments; clearTimeout(t); t=setTimeout(()=>fn.apply(ctx,args), wait); }; }
+function ajustarAlturasKanban(){
+  const headerH = document.querySelector('.navbar')?.offsetHeight || 0;
+  const hdr = document.querySelector('.page-header')?.offsetHeight || 0;
+  const maxH = Math.max(260, window.innerHeight - (headerH + hdr + 80));
+  document.querySelectorAll('.kanban-dropzone').forEach(z=>{ z.style.maxHeight = maxH + 'px'; });
+}
+window.addEventListener('resize', debounce(ajustarAlturasKanban, 150));
 
 function activarDrag() {
     const lists = Array.from(document.querySelectorAll('.drag-inner-list'));

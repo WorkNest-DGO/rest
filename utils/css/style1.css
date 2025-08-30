@@ -8,10 +8,10 @@ body {
 }
 
 h1,
-h2, 
-h3, 
+h2,
+h3,
 h4,
-h5, 
+h5,
 h6 {
     color: #fff;
     font-family: 'Nunito', sans-serif;
@@ -84,8 +84,10 @@ a:focus {
     background: #fff;
 }
 
-[class^="flaticon-"]:before, [class*=" flaticon-"]:before,
-[class^="flaticon-"]:after, [class*=" flaticon-"]:after {   
+[class^="flaticon-"]:before,
+[class*=" flaticon-"]:before,
+[class^="flaticon-"]:after,
+[class*=" flaticon-"]:after {
     font-size: inherit;
     margin-left: 0;
 }
@@ -115,7 +117,7 @@ a:focus {
     font-weight: 700;
     font-family: 'Nunito', sans-serif;
     transition: .5s;
-    
+
 }
 
 .navbar .navbar-brand span {
@@ -150,16 +152,16 @@ a:focus {
         background: transparent !important;
         z-index: 9;
     }
-    
+
     .navbar.nav-sticky {
         padding: 10px 60px;
         background: #ffffff !important;
     }
-    
+
     .navbar .navbar-brand {
         color: #b80000;
     }
-    
+
     .navbar.nav-sticky .navbar-brand {
         color: #b80000;
     }
@@ -172,7 +174,7 @@ a:focus {
         font-size: 18px;
         font-weight: 600;
     }
-    
+
     .navbar-light.nav-sticky .navbar-nav .nav-link,
     .navbar-light.nav-sticky .navbar-nav .nav-link:focus {
         color: #666666;
@@ -182,31 +184,31 @@ a:focus {
     .navbar-light .navbar-nav .nav-link.active {
         color: #b80000;
     }
-    
+
     .navbar-light.nav-sticky .navbar-nav .nav-link:hover,
     .navbar-light.nav-sticky .navbar-nav .nav-link.active {
         color: #b80000;
     }
 }
 
-@media (max-width: 991.98px) {   
+@media (max-width: 991.98px) {
     .navbar {
         padding: 15px;
         background: #ffffff !important;
     }
-    
+
     .navbar .navbar-brand {
         color: #b80000;
     }
-    
+
     .navbar .navbar-nav {
         margin-top: 15px;
     }
-    
+
     .navbar a.nav-link {
         padding: 5px;
     }
-    
+
     .navbar .dropdown-menu {
         box-shadow: none;
     }
@@ -310,20 +312,21 @@ a:focus {
 }
 
 @media (max-width: 991.98px) {
+
     .carousel,
     .carousel .carousel-item,
     .carousel .carousel-text {
         height: calc(100vh - 105px);
     }
-    
+
     .carousel .carousel-text h1 {
         font-size: 35px;
     }
-    
+
     .carousel .carousel-text p {
         font-size: 16px;
     }
-    
+
     .carousel .carousel-text .btn {
         padding: 12px 30px;
         font-size: 15px;
@@ -332,16 +335,17 @@ a:focus {
 }
 
 @media (max-width: 767.98px) {
+
     .carousel,
     .carousel .carousel-item,
     .carousel .carousel-text {
         height: calc(100vh - 70px);
     }
-    
+
     .carousel .carousel-text h1 {
         font-size: 30px;
     }
-    
+
     .carousel .carousel-text .btn {
         padding: 10px 25px;
         font-size: 15px;
@@ -353,7 +357,7 @@ a:focus {
     .carousel .carousel-text h1 {
         font-size: 25px;
     }
-    
+
     .carousel .carousel-text .btn {
         padding: 8px 20px;
         font-size: 14px;
@@ -414,7 +418,7 @@ a:focus {
     .page-header h2 {
         font-size: 35px;
     }
-    
+
     .page-header a {
         font-size: 18px;
     }
@@ -724,14 +728,15 @@ a:focus {
 }
 
 @keyframes pulse-border {
-  0% {
-    transform: translateX(-50%) translateY(-50%) translateZ(0) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(-50%) translateY(-50%) translateZ(0) scale(1.5);
-    opacity: 0;
-  }
+    0% {
+        transform: translateX(-50%) translateY(-50%) translateZ(0) scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateX(-50%) translateY(-50%) translateZ(0) scale(1.5);
+        opacity: 0;
+    }
 }
 
 #videoModal {
@@ -964,6 +969,7 @@ a:focus {
 }
 
 @media(max-width: 575.98px) {
+
     .menu .menu-text p,
     .menu .menu-text h3,
     .menu .menu-text h3 span,
@@ -973,16 +979,16 @@ a:focus {
         padding: 0;
         margin: 0;
     }
-    
+
     .menu .menu-text h3 {
         font-size: 18px;
         margin-bottom: 0;
     }
-    
+
     .menu .menu-text h3 span {
         margin-bottom: 3px;
     }
-    
+
     .menu .menu-text h3::after {
         display: none;
     }
@@ -1287,7 +1293,7 @@ a:focus {
     color: #999999;
 }
 
-@media(max-width: 575.98px){
+@media(max-width: 575.98px) {
     .blog .blog-meta p {
         flex: 50%;
         font-size: 13px;
@@ -1299,30 +1305,30 @@ a:focus {
 /*******************************/
 
 /*repartos*/
- .styled-table {
-  width: 100%;
-  border-collapse: collapse;
-  background-color: #111;
-  color: #fff;
-  font-family: 'Arial', sans-serif;
-  border: 1px solid #cc0000;
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #111;
+    color: #fff;
+    font-family: 'Arial', sans-serif;
+    border: 1px solid #cc0000;
 }
 
 .styled-table th {
-  background-color: #cc0000;
-  color: #fff;
-  padding: 10px;
-  border-bottom: 2px solid #fff;
-  text-align: left;
+    background-color: #cc0000;
+    color: #fff;
+    padding: 10px;
+    border-bottom: 2px solid #fff;
+    text-align: left;
 }
 
 .styled-table td {
-  padding: 8px 12px;
-  border-bottom: 1px solid #333;
+    padding: 8px 12px;
+    border-bottom: 1px solid #333;
 }
 
 .styled-table tr:hover {
-  background-color: #222;
+    background-color: #222;
 }
 
 /*******************************/
@@ -1530,205 +1536,342 @@ a:focus {
 }
 
 .custom-modal2 {
-  background: #010101;
-  border: 1px solid #ccc;
-  padding: 20px;
-  max-width: 600px;
-  margin: 40px auto;
-  box-shadow: 0 0 10px rgba(0,0,0,0.25);
-  z-index: 999;
+    background: #010101;
+    border: 1px solid #ccc;
+    padding: 20px;
+    max-width: 600px;
+    margin: 40px auto;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
+    z-index: 999;
 }
 
 #tablaHorarios {
-  width: 100%;
-  margin-top: 20px;
-  border-collapse: collapse;
-  background-color: #111;
-  color: #fff;
-  border: 1px solid #cc0000;
-  font-family: 'Arial', sans-serif;
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+    background-color: #111;
+    color: #fff;
+    border: 1px solid #cc0000;
+    font-family: 'Arial', sans-serif;
 }
 
 #tablaHorarios th {
-  background-color: #cc0000;
-  color: #fff;
-  padding: 10px;
-  text-align: left;
-  border-bottom: 2px solid #fff;
+    background-color: #cc0000;
+    color: #fff;
+    padding: 10px;
+    text-align: left;
+    border-bottom: 2px solid #fff;
 }
 
 #tablaHorarios td {
-  padding: 8px 12px;
-  border-bottom: 1px solid #333;
+    padding: 8px 12px;
+    border-bottom: 1px solid #333;
 }
 
 #tablaHorarios tr:hover {
-  background-color: #222;
-  cursor: default;
+    background-color: #222;
+    cursor: default;
 }
 
 .filtros-container {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-  background-color: #111;
-  padding: 10px;
-  border-radius: 5px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    background-color: #111;
+    padding: 10px;
+    border-radius: 5px;
 }
 
 .filtros-container label {
-  color: #fff;
-  font-weight: bold;
+    color: #fff;
+    font-weight: bold;
 }
 
 .form-control-sm {
-  padding: 5px;
-  background-color: #222;
-  border: 1px solid #cc0000;
-  color: #fff;
-  border-radius: 3px;
+    padding: 5px;
+    background-color: #222;
+    border: 1px solid #cc0000;
+    color: #fff;
+    border-radius: 3px;
 }
 
 .btn.custom-btn-sm {
-  background-color: #cc0000;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 3px;
-  transition: background 0.3s;
+    background-color: #cc0000;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 3px;
+    transition: background 0.3s;
 }
 
 .btn.custom-btn-sm:hover {
-  background-color: #a30000;
+    background-color: #a30000;
 }
 
 .acciones-corte {
-  text-align: center;
+    text-align: center;
 }
 
 .custom-modal {
-  background: #222;
-  color: white;
-  border: 2px solid #cc0000;
-  padding: 20px;
-  border-radius: 8px;
-  margin-top: 20px;
+    background: #222;
+    color: white;
+    border: 2px solid #cc0000;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
 }
 
 #tablaCortes {
-  width: 100%;
-  margin-top: 20px;
-  border-collapse: collapse;
-  background-color: #111;
-  color: #fff;
-  border: 1px solid #cc0000;
-  font-family: 'Arial', sans-serif;
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+    background-color: #111;
+    color: #fff;
+    border: 1px solid #cc0000;
+    font-family: 'Arial', sans-serif;
 }
 
 #tablaCortes th {
-  background-color: #cc0000;
-  color: #fff;
-  padding: 10px;
-  text-align: left;
-  border-bottom: 2px solid #fff;
+    background-color: #cc0000;
+    color: #fff;
+    padding: 10px;
+    text-align: left;
+    border-bottom: 2px solid #fff;
 }
 
 #tablaCortes td {
-  padding: 8px 12px;
-  border-bottom: 1px solid #333;
+    padding: 8px 12px;
+    border-bottom: 1px solid #333;
 }
 
 #tablaCortes tr:hover {
-  background-color: #222;
-  cursor: default;
+    background-color: #222;
+    cursor: default;
 }
 
 /*recetas*/
 .section-header {
-  color: #cc0000;
-  font-weight: bold;
-  text-shadow: 1px 1px #000;
-  margin-bottom: 20px;
+    color: #cc0000;
+    font-weight: bold;
+    text-shadow: 1px 1px #000;
+    margin-bottom: 20px;
 }
 
 .product-view {
-  background-color: #1a1a1a;
-  border: 1px solid #cc0000;
-  padding: 15px;
-  border-radius: 8px;
-  margin-top: 15px;
-  color: #fff;
+    background-color: #1a1a1a;
+    border: 1px solid #cc0000;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+    color: #fff;
 }
 
 .product-name {
-  font-size: 1.2em;
-  font-weight: bold;
-  margin-bottom: 10px;
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 10px;
 }
 
 .product-image {
-  display: block;
-  max-width: 200px;
-  border: 2px solid #cc0000;
-  border-radius: 5px;
-  margin-bottom: 15px;
+    display: block;
+    max-width: 200px;
+    border: 2px solid #cc0000;
+    border-radius: 5px;
+    margin-bottom: 15px;
 }
 
 .custom-btn {
-  background-color: #cc0000;
-  color: #fff;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 5px;
-  cursor: pointer;
+    background-color: #cc0000;
+    color: #fff;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
 .custom-btn:hover {
-  background-color: #ff1a1a;
+    background-color: #ff1a1a;
 }
 
 /*ingredientes */
 .section-subheader {
-  color: #fff;
-  background-color: #cc0000;
-  padding: 10px;
-  border-radius: 4px;
-  font-size: 1.3em;
-  margin-bottom: 20px;
-  text-align: center;
-  text-shadow: 1px 1px #000;
+    color: #fff;
+    background-color: #cc0000;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 1.3em;
+    margin-bottom: 20px;
+    text-align: center;
+    text-shadow: 1px 1px #000;
 }
 
 .table {
-  
-  color: #fff;
-  border-collapse: collapse;
-  width: 100%;
+
+    color: #fff;
+    border-collapse: collapse;
+    width: 100%;
 }
 
 
-.kanban-container { display:grid; gap:12px; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 0 16px 24px; }
-  @media (max-width: 1200px){ .kanban-container { grid-template-columns: repeat(2, 1fr);} }
-  @media (max-width: 700px){ .kanban-container { grid-template-columns: 1fr;} }
+.kanban-container {
+    display: grid;
+    gap: 12px;
+    padding: 0 16px 24px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    align-items: start;
+}
 
-  .kanban-board { background:#fff; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.08); display:flex; flex-direction:column; min-height: 65vh; }
-  .kanban-board h3 { margin:0; padding:12px 14px; font-size:16px; font-weight:700; color:#222; border-bottom:1px solid #eee; border-top-left-radius:10px; border-top-right-radius:10px; }
-  .kanban-dropzone { flex:1; padding:10px; min-height:200px; overflow:auto; }
+@media (min-width:1600px) {
+    .kanban-container {
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+}
 
-  .kanban-item { background:#fafafa; border:1px solid #e9e9e9; border-left:4px solid transparent; border-radius:8px; padding:10px; margin-bottom:8px; cursor:grab; }
-  .kanban-item:active { cursor:grabbing; }
-  .kanban-item .title { font-weight:600; line-height:1.2; color:#0a0a0a;}
-  .kanban-item .meta { font-size:12px; color:#666; display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
-  .drag-over { outline:2px dashed #999; outline-offset: -6px; }
+.kanban-board {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+    display: flex;
+    flex-direction: column;
+    min-height: 50vh;
+}
 
-  /* colores por estado */
-  .board-pendiente h3 { background:#f17f15; border-color:#ffd4d4; }
-  .board-pendiente .kanban-item { border-left-color:#e74c3c; }
-  .board-preparacion h3 { background:#c6ee50; border-color:#ffd9a6; }
-  .board-preparacion .kanban-item { border-left-color:#a8f312; }
-  .board-listo h3 { background:#13ec74; border-color:#c8f0d9; }
-  .board-listo .kanban-item { border-left-color:#27ae60; }
-  .board-entregado h3 { background:#f5f5f5; border-color:#e5e5e5; }
-  .board-entregado .kanban-item { border-left-color:#7f8c8d; opacity:.85; }
+.kanban-board h3 {
+    margin: 0;
+    padding: 12px 14px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #222;
+    border-bottom: 1px solid #eee;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #fff;
+}
+
+/* Compat: header antiguo */
+.kanban-board .drag-column-header {
+    display: block;
+    margin: 0;
+    padding: 12px 14px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #222;
+    border-bottom: 1px solid #eee;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #fff;
+}
+
+.kanban-dropzone {
+    flex: 1;
+    padding: 12px;
+    min-height: 200px;
+    max-height: calc(100vh - 280px);
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.kanban-item {
+    background: #fafafa;
+    border: 1px solid #e9e9e9;
+    border-left: 4px solid transparent;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    cursor: grab;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.kanban-item:active {
+    cursor: grabbing;
+}
+
+.kanban-item .title {
+    font-weight: 600;
+    line-height: 1.2;
+    color: #f7f4f4;
+}
+
+.kanban-item .meta {
+    font-size: 12px;
+    color: #666;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.kanban-item .btn,
+.kanban-item button {
+    white-space: normal;
+}
+
+.drag-over {
+    outline: 2px dashed #999;
+    outline-offset: -6px;
+}
+
+/* colores por estado */
+.board-pendiente h3 {
+    background: #f17f15;
+    border-color: #ffd4d4;
+}
+
+.board-pendiente .kanban-item {
+    border-left-color: #e74c3c;
+}
+
+.board-preparacion h3 {
+    background: #c6ee50;
+    border-color: #ffd9a6;
+}
+
+.board-preparacion .kanban-item {
+    border-left-color: #a8f312;
+}
+
+.board-listo h3 {
+    background: #13ec74;
+    border-color: #c8f0d9;
+}
+
+.board-listo .kanban-item {
+    border-left-color: #27ae60;
+}
+
+.board-entregado h3 {
+    background: #f5f5f5;
+    border-color: #e5e5e5;
+}
+
+.board-entregado .kanban-item {
+    border-left-color: #7f8c8d;
+    opacity: .85;
+}
+
+/* Estados adicionales para Mesas */
+.board-ocupada .kanban-item {
+    border-left-color: #e74c3c;
+}
+
+.board-libre .kanban-item {
+    border-left-color: #27ae60;
+}
+
+.board-cuenta .kanban-item {
+    border-left-color: #8e44ad;
+}
+
+/* Permite que los li hijos del UL sean grid-items del wrapper */
+#kanbanMesas .drag-list {
+    display: contents;
+}
