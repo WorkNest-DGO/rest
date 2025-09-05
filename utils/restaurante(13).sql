@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 29-08-2025 a las 03:07:59
+-- Tiempo de generación: 03-09-2025 a las 00:42:33
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -20,111 +20,13 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `restaurante`
 --
+CREATE DATABASE IF NOT EXISTS `restaurante` DEFAULT CHARACTER SET utf16le COLLATE utf16le_bin;
+USE `restaurante`;
 
 DELIMITER $$
 --
 -- Procedimientos
 --
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_archivar_transaccion` (IN `p_venta_id` INT, IN `p_destino_schema` VARCHAR(64))   BEGIN
-  DECLARE v_dst VARCHAR(64) DEFAULT IFNULL(p_destino_schema,'restaurante_espejo');
-
-  -- Evitar efectos secundarios de triggers (ver sección 3)
-  SET @ARCHIVE_MODE = 1;
-
-  START TRANSACTION;
-
-  -- Preparar sets de IDs relacionados
-  DROP TEMPORARY TABLE IF EXISTS tmp_detalles;
-  CREATE TEMPORARY TABLE tmp_detalles (PRIMARY KEY(id)) AS
-    SELECT id FROM restaurante.venta_detalles WHERE venta_id = p_venta_id;
-
-  DROP TEMPORARY TABLE IF EXISTS tmp_tickets;
-  CREATE TEMPORARY TABLE tmp_tickets (PRIMARY KEY(id)) AS
-    SELECT id FROM restaurante.tickets WHERE venta_id = p_venta_id;
-
-  /* ======================= COPIAS AL ESPEJO ======================= */
-
-  -- Venta
-  SET @sql = CONCAT('INSERT IGNORE INTO ', v_dst, '.ventas SELECT * FROM restaurante.ventas WHERE id=?');
-  PREPARE s1 FROM @sql; SET @p := p_venta_id; EXECUTE s1 USING @p; DEALLOCATE PREPARE s1;
-
-  -- Detalles (sin subtotal: columna generada)
-  SET @sql = CONCAT(
-    'INSERT IGNORE INTO ', v_dst, '.venta_detalles ',
-    '(id, venta_id, producto_id, cantidad, precio_unitario, insumos_descargados, created_at, entregado_hr, estado_producto, observaciones) ',
-    'SELECT id, venta_id, producto_id, cantidad, precio_unitario, insumos_descargados, created_at, entregado_hr, estado_producto, observaciones ',
-    'FROM restaurante.venta_detalles WHERE venta_id=?'
-  );
-  PREPARE s2 FROM @sql; SET @p := p_venta_id; EXECUTE s2 USING @p; DEALLOCATE PREPARE s2;
-
-  -- Log de estados por detalle
-  SET @sql = CONCAT(
-    'INSERT IGNORE INTO ', v_dst, '.venta_detalles_log ',
-    'SELECT l.* FROM restaurante.venta_detalles_log l JOIN tmp_detalles d ON d.id=l.venta_detalle_id'
-  );
-  PREPARE s3 FROM @sql; EXECUTE s3; DEALLOCATE PREPARE s3;
-
-  -- Respaldo de detalles cancelados que pertenezcan a la venta
-  SET @sql = CONCAT(
-    'INSERT IGNORE INTO ', v_dst, '.venta_detalles_cancelados ',
-    'SELECT * FROM restaurante.venta_detalles_cancelados WHERE venta_id=?'
-  );
-  PREPARE s4 FROM @sql; SET @p := p_venta_id; EXECUTE s4 USING @p; DEALLOCATE PREPARE s4;
-
-  -- Tickets de la venta
-  SET @sql = CONCAT('INSERT IGNORE INTO ', v_dst, '.tickets SELECT * FROM restaurante.tickets WHERE venta_id=?');
-  PREPARE s5 FROM @sql; SET @p := p_venta_id; EXECUTE s5 USING @p; DEALLOCATE PREPARE s5;
-
-  -- Detalles de ticket (sin subtotal: columna generada)
-  SET @sql = CONCAT(
-    'INSERT IGNORE INTO ', v_dst, '.ticket_detalles ',
-    '(id, ticket_id, producto_id, cantidad, precio_unitario) ',
-    'SELECT id, ticket_id, producto_id, cantidad, precio_unitario ',
-    'FROM restaurante.ticket_detalles WHERE ticket_id IN (SELECT id FROM tmp_tickets)'
-  );
-  PREPARE s6 FROM @sql; EXECUTE s6; DEALLOCATE PREPARE s6;
-
-  -- Log de cancelaciones (venta o cualquiera de sus detalles)
-  SET @sql = CONCAT(
-    'INSERT IGNORE INTO ', v_dst, '.log_cancelaciones ',
-    'SELECT lc.* FROM restaurante.log_cancelaciones lc ',
-    'LEFT JOIN tmp_detalles d ON lc.venta_detalle_id = d.id ',
-    'WHERE lc.venta_id = ? OR d.id IS NOT NULL'
-  );
-  PREPARE s7 FROM @sql; SET @p := p_venta_id; EXECUTE s7 USING @p; DEALLOCATE PREPARE s7;
-
-  
-  /* ======================= BORRADO EN OPERATIVO ======================= */
-
-  -- Logs de cancelaciones (los asociados a la venta o a sus detalles)
-  DELETE lc FROM restaurante.log_cancelaciones lc
-  LEFT JOIN tmp_detalles d ON lc.venta_detalle_id = d.id
-  WHERE lc.venta_id = p_venta_id OR d.id IS NOT NULL;
-
-  -- Logs por detalle
-  DELETE l FROM restaurante.venta_detalles_log l JOIN tmp_detalles d ON d.id = l.venta_detalle_id;
-
-  -- Respaldo de detalles cancelados de esa venta
-  DELETE dc FROM restaurante.venta_detalles_cancelados dc WHERE dc.venta_id = p_venta_id;
-
-  -- Detalles de ticket
-  DELETE td FROM restaurante.ticket_detalles td WHERE td.ticket_id IN (SELECT id FROM tmp_tickets);
-
-  -- Tickets
-  DELETE t FROM restaurante.tickets t WHERE t.venta_id = p_venta_id;
-
-  -- Detalles de venta
-  DELETE d FROM restaurante.venta_detalles d WHERE d.venta_id = p_venta_id;
-
-  -- Venta
-  DELETE v FROM restaurante.ventas v WHERE v.id = p_venta_id;
-
-  COMMIT;
-
-  -- Limpieza
-  SET @ARCHIVE_MODE = NULL;
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_cerrar_corte` (IN `p_usuario_id` INT)   BEGIN
     DECLARE v_corte_id INT;
     DECLARE total_ventas DECIMAL(10,2);
@@ -341,7 +243,7 @@ CREATE TABLE `catalogo_folios` (
 
 INSERT INTO `catalogo_folios` (`id`, `descripcion`, `folio_actual`) VALUES
 (1, 'Serie Restaurante', 1000),
-(2, 'Serie Domicilio', 2019);
+(2, 'Serie Domicilio', 2048);
 
 -- --------------------------------------------------------
 
@@ -419,10 +321,9 @@ CREATE TABLE `corte_caja` (
 --
 
 INSERT INTO `corte_caja` (`id`, `usuario_id`, `fecha_inicio`, `folio_inicio`, `folio_fin`, `total_folios`, `fecha_fin`, `total`, `observaciones`, `fondo_inicial`) VALUES
-(58, 1, '2025-08-27 19:11:28', 2010, 2013, 3, '2025-08-27 19:01:33', 500.00, '', 500.00),
-(59, 1, '2025-08-28 03:14:02', 2013, 2016, 3, '2025-08-27 19:17:23', 4000.00, '', 4000.00),
-(60, 1, '2025-08-28 03:25:15', 2016, 2017, 1, '2025-08-27 19:27:33', 4000.00, '', 4000.00),
-(61, 1, '2025-08-28 03:29:49', 2017, 2019, 2, '2025-08-28 18:54:48', 6000.00, '', 6000.00);
+(67, 1, '2025-08-30 21:22:33', 2040, 2047, 7, '2025-08-30 13:34:26', 1000.00, '', 1000.00),
+(68, 1, '2025-08-30 21:57:46', 2047, 2047, 0, '2025-08-30 13:59:36', 50.00, '', 50.00),
+(69, 1, '2025-09-02 19:04:28', 2047, 2048, 1, '2025-09-02 11:07:30', 400.00, '', 400.00);
 
 -- --------------------------------------------------------
 
@@ -445,7 +346,7 @@ CREATE TABLE `corte_caja_historial` (
 --
 
 INSERT INTO `corte_caja_historial` (`id`, `corte_id`, `usuario_id`, `fecha`, `total`, `observaciones`, `datos_json`) VALUES
-(11, 58, 1, '2025-08-27 19:01:06', 6701.00, '', '{\"efectivo\":{\"productos\":476,\"propina\":0,\"total\":476},\"boucher\":{\"productos\":725,\"propina\":0,\"total\":725},\"total_productos\":1201,\"total_propinas\":0,\"totalEsperado\":1201,\"fondo\":500,\"total_depositos\":5000,\"total_retiros\":0,\"totalFinal\":6701,\"corte_id\":58,\"total_meseros\":[{\"nombre\":\"alinne Guadalupe Gurrola ramirez\",\"total\":0},{\"nombre\":\"gilberto ozuna carrillo\",\"total\":476},{\"nombre\":\"Javier Emanuel lopez lozano\",\"total\":725},{\"nombre\":\"Jesus\",\"total\":0},{\"nombre\":\"juan hernesto ortega Almanza\",\"total\":0},{\"nombre\":\"Mesas general\",\"total\":0}],\"total_rapido\":1201,\"total_repartidor\":[{\"nombre\":\"Didi\",\"total\":0},{\"nombre\":\"Rappi\",\"total\":0},{\"nombre\":\"Repartidor casa\",\"total\":0},{\"nombre\":\"Uber\",\"total\":0}],\"fecha_inicio\":\"2025-08-27 19:11:28\",\"folio_inicio\":2012,\"folio_fin\":2013,\"total_folios\":2}');
+(14, 67, 1, '2025-08-30 13:31:28', 2218.00, '', '{\"efectivo\":{\"productos\":424,\"total\":424},\"boucher\":{\"productos\":794,\"total\":794},\"total_productos\":1218,\"total_propina_efectivo\":0,\"total_propina_cheque\":0,\"total_propina_tarjeta\":0,\"total_propinas\":0,\"totalEsperado\":1218,\"fondo\":1000,\"total_depositos\":0,\"total_retiros\":0,\"totalFinal\":2218,\"corte_id\":67,\"total_meseros\":[{\"nombre\":\"alinne Guadalupe Gurrola ramirez\",\"total\":130},{\"nombre\":\"gilberto ozuna carrillo\",\"total\":520},{\"nombre\":\"Javier Emanuel lopez lozano\",\"total\":230},{\"nombre\":\"Jesus\",\"total\":125},{\"nombre\":\"juan hernesto ortega Almanza\",\"total\":0},{\"nombre\":\"Mesas general\",\"total\":0}],\"total_rapido\":230,\"total_repartidor\":[{\"nombre\":\"Didi\",\"total\":130},{\"nombre\":\"Rappi\",\"total\":125},{\"nombre\":\"Repartidor casa\",\"total\":213},{\"nombre\":\"Uber\",\"total\":326}],\"fecha_inicio\":\"2025-08-30 21:22:33\",\"folio_inicio\":2041,\"folio_fin\":2046,\"total_folios\":6,\"total_bruto\":1218,\"total_descuentos\":72,\"total_esperado\":1146,\"esperado_efectivo\":401,\"esperado_boucher\":745,\"esperado_cheque\":0}');
 
 -- --------------------------------------------------------
 
@@ -467,26 +368,24 @@ CREATE TABLE `desglose_corte` (
 --
 
 INSERT INTO `desglose_corte` (`id`, `corte_id`, `denominacion`, `cantidad`, `tipo_pago`, `denominacion_id`) VALUES
-(232, 58, 1.00, 725, 'boucher', 12),
-(233, 58, 1.00, 1, 'efectivo', 2),
-(234, 58, 200.00, 1, 'efectivo', 9),
-(235, 58, 500.00, 1, 'efectivo', 10),
-(236, 58, 1000.00, 6, 'efectivo', 11),
-(237, 58, 725.00, 1, 'boucher', NULL),
-(238, 59, 1.00, 115, 'efectivo', 12),
-(239, 59, 1.00, 145, 'efectivo', 13),
-(240, 59, 2.00, 2, 'efectivo', 3),
-(241, 59, 5.00, 1, 'efectivo', 4),
-(242, 59, 20.00, 2, 'efectivo', 6),
-(243, 59, 50.00, 1, 'efectivo', 7),
-(244, 59, 1000.00, 4, 'efectivo', 11),
-(245, 59, 115.00, 1, 'boucher', NULL),
-(246, 59, 145.00, 1, 'cheque', NULL),
-(247, 60, 1.00, 49, 'boucher', 12),
-(248, 60, 1000.00, 4, 'efectivo', 11),
-(249, 60, 49.00, 1, 'boucher', NULL),
-(250, 61, 1000.00, 6, 'efectivo', 11),
-(251, 61, 10.00, 1, 'boucher', NULL);
+(280, 67, 1.00, 213, 'boucher', 12),
+(281, 67, 1.00, 110, 'boucher', 12),
+(282, 67, 1.00, 125, 'boucher', 12),
+(283, 67, 1.00, 297, 'boucher', 12),
+(284, 67, 1.00, 1, 'efectivo', 2),
+(285, 67, 2.00, 1, 'efectivo', 3),
+(286, 67, 5.00, 1, 'efectivo', 4),
+(287, 67, 20.00, 1, 'efectivo', 6),
+(288, 67, 100.00, 1, 'efectivo', 8),
+(289, 67, 200.00, 1, 'efectivo', 9),
+(290, 67, 500.00, 1, 'efectivo', 10),
+(291, 67, 1000.00, 1, 'efectivo', 11),
+(292, 67, 794.00, 1, 'boucher', NULL),
+(293, 68, 5.00, 10, 'efectivo', 4),
+(294, 69, 5.00, 1, 'efectivo', 4),
+(295, 69, 10.00, 1, 'efectivo', 5),
+(296, 69, 50.00, 1, 'efectivo', 7),
+(297, 69, 500.00, 1, 'efectivo', 10);
 
 -- --------------------------------------------------------
 
@@ -570,7 +469,7 @@ CREATE TABLE `fondo` (
 --
 
 INSERT INTO `fondo` (`usuario_id`, `monto`) VALUES
-(1, 6000.00);
+(1, 400.00);
 
 -- --------------------------------------------------------
 
@@ -619,119 +518,119 @@ CREATE TABLE `insumos` (
 --
 
 INSERT INTO `insumos` (`id`, `nombre`, `unidad`, `existencia`, `tipo_control`, `imagen`) VALUES
-(1, 'Arroz', 'gramos', 1140.00, 'por_receta', 'ins_68717301313ad.jpg'),
-(2, 'Alga', 'piezas', 2995.00, 'por_receta', 'ins_6871716a72681.jpg'),
-(3, 'Salmón fresco', 'gramos', 3000.00, 'por_receta', 'ins_6871777fa2c56.png'),
-(4, 'Refresco en lata', 'piezas', 2987.00, 'unidad_completa', 'ins_6871731d075cb.webp'),
-(7, 'Surimi', 'gramos', 3000.00, 'uso_general', 'ins_688a521dcd583.jpg'),
-(8, 'Tocino', 'gramos', 2970.00, 'uso_general', 'ins_688a4dc84c002.jpg'),
-(9, 'Pollo', 'gramos', 2965.00, 'desempaquetado', 'ins_688a4e4bd5999.jpg'),
-(10, 'Camarón', 'gramos', 2925.00, 'desempaquetado', 'ins_688a4f5c873c6.jpg'),
-(11, 'Queso Chihuahua', 'gramos', 3000.00, 'unidad_completa', 'ins_688a4feca9865.jpg'),
-(12, 'Philadelphia', 'gramos', 2740.00, 'uso_general', 'ins_688a504f9cb40.jpg'),
-(13, 'Arroz blanco', 'gramos', 2990.00, 'por_receta', 'ins_689f82d674c65.jpg'),
-(14, 'Carne', 'gramos', 2690.00, 'uso_general', 'ins_688a528d1261a.jpg'),
-(15, 'Queso Amarillo', 'piezas', 3000.00, 'uso_general', 'ins_688a53246c1c2.jpg'),
-(16, 'Ajonjolí', 'gramos', 2978.00, 'uso_general', 'ins_689f824a23343.jpg'),
-(17, 'Panko', 'gramos', 3000.00, 'por_receta', 'ins_688a53da64b5f.jpg'),
+(1, 'Arroz', 'gramos', 26130.00, 'por_receta', 'ins_68717301313ad.jpg'),
+(2, 'Alga', 'piezas', 29989.50, 'por_receta', 'ins_6871716a72681.jpg'),
+(3, 'Salmón fresco', 'gramos', 30000.00, 'por_receta', 'ins_6871777fa2c56.png'),
+(4, 'Refresco en lata', 'piezas', 29999.00, 'unidad_completa', 'ins_6871731d075cb.webp'),
+(7, 'Surimi', 'gramos', 30000.00, 'uso_general', 'ins_688a521dcd583.jpg'),
+(8, 'Tocino', 'gramos', 29650.00, 'uso_general', 'ins_688a4dc84c002.jpg'),
+(9, 'Pollo', 'gramos', 29970.00, 'desempaquetado', 'ins_688a4e4bd5999.jpg'),
+(10, 'Camarón', 'gramos', 29935.00, 'desempaquetado', 'ins_688a4f5c873c6.jpg'),
+(11, 'Queso Chihuahua', 'gramos', 30000.00, 'unidad_completa', 'ins_688a4feca9865.jpg'),
+(12, 'Philadelphia', 'gramos', 29440.00, 'uso_general', 'ins_688a504f9cb40.jpg'),
+(13, 'Arroz blanco', 'gramos', 30000.00, 'por_receta', 'ins_689f82d674c65.jpg'),
+(14, 'Carne', 'gramos', 29860.00, 'uso_general', 'ins_688a528d1261a.jpg'),
+(15, 'Queso Amarillo', 'piezas', 29998.00, 'uso_general', 'ins_688a53246c1c2.jpg'),
+(16, 'Ajonjolí', 'gramos', 29994.00, 'uso_general', 'ins_689f824a23343.jpg'),
+(17, 'Panko', 'gramos', 30000.00, 'por_receta', 'ins_688a53da64b5f.jpg'),
 (18, 'Salsa tampico', 'mililitros', 30000.00, 'no_controlado', 'ins_688a54cf1872b.jpg'),
-(19, 'Anguila', 'oz', 2990.00, 'por_receta', 'ins_689f828638aa9.jpg'),
-(20, 'BBQ', 'oz', 3000.00, 'no_controlado', 'ins_688a557431fce.jpg'),
-(21, 'Serrano', 'gramos', 3000.00, 'uso_general', 'ins_688a55c66f09d.jpg'),
-(22, 'Chile Morrón', 'gramos', 3000.00, 'por_receta', 'ins_688a5616e8f25.jpg'),
-(23, 'Kanikama', 'gramos', 3000.00, 'por_receta', 'ins_688a5669e24a8.jpg'),
-(24, 'Aguacate', 'gramos', 2715.00, 'por_receta', 'ins_689f8254c2e71.jpg'),
-(25, 'Dedos de queso', 'pieza', 3000.00, 'unidad_completa', 'ins_688a56fda3221.jpg'),
-(26, 'Mango', 'gramos', 2970.00, 'por_receta', 'ins_688a573c762f4.jpg'),
-(27, 'Tostadas', 'pieza', 3000.00, 'uso_general', 'ins_688a57a499b35.jpg'),
-(28, 'Papa', 'gramos', 3000.00, 'por_receta', 'ins_688a580061ffd.jpg'),
-(29, 'Cebolla Morada', 'gramos', 3000.00, 'por_receta', 'ins_688a5858752a0.jpg'),
+(19, 'Anguila', 'oz', 30000.00, 'por_receta', 'ins_689f828638aa9.jpg'),
+(20, 'BBQ', 'oz', 30000.00, 'no_controlado', 'ins_688a557431fce.jpg'),
+(21, 'Serrano', 'gramos', 29975.00, 'uso_general', 'ins_688a55c66f09d.jpg'),
+(22, 'Chile Morrón', 'gramos', 30000.00, 'por_receta', 'ins_688a5616e8f25.jpg'),
+(23, 'Kanikama', 'gramos', 29990.00, 'por_receta', 'ins_688a5669e24a8.jpg'),
+(24, 'Aguacate', 'gramos', 29450.00, 'por_receta', 'ins_689f8254c2e71.jpg'),
+(25, 'Dedos de queso', 'pieza', 30000.00, 'unidad_completa', 'ins_688a56fda3221.jpg'),
+(26, 'Mango', 'gramos', 30000.00, 'por_receta', 'ins_688a573c762f4.jpg'),
+(27, 'Tostadas', 'pieza', 30000.00, 'uso_general', 'ins_688a57a499b35.jpg'),
+(28, 'Papa', 'gramos', 30000.00, 'por_receta', 'ins_688a580061ffd.jpg'),
+(29, 'Cebolla Morada', 'gramos', 30000.00, 'por_receta', 'ins_688a5858752a0.jpg'),
 (30, 'Salsa de soya', 'mililitros', 30000.00, 'no_controlado', 'ins_688a58cc6cb6c.jpg'),
-(31, 'Naranja', 'gramos', 3000.00, 'por_receta', 'ins_688a590bca275.jpg'),
-(32, 'Chile Caribe', 'gramos', 2985.00, 'por_receta', 'ins_688a59836c32e.jpg'),
-(33, 'Pulpo', 'gramos', 2970.00, 'por_receta', 'ins_688a59c9a1d0b.jpg'),
-(34, 'Zanahoria', 'gramos', 3000.00, 'por_receta', 'ins_688a5a0a3a959.jpg'),
-(35, 'Apio', 'gramos', 2990.00, 'por_receta', 'ins_688a5a52af990.jpg'),
-(36, 'Pepino', 'gramos', 2690.00, 'uso_general', 'ins_688a5aa0cbaf5.jpg'),
-(37, 'Masago', 'gramos', 3000.00, 'por_receta', 'ins_688a5b3f0dca6.jpg'),
-(38, 'Nuez de la india', 'gramos', 2990.00, 'por_receta', 'ins_688a5be531e11.jpg'),
-(39, 'Cátsup', 'mililitros', 2990.00, 'por_receta', 'ins_688a5c657eb83.jpg'),
-(40, 'Atún fresco', 'gramos', 2970.00, 'por_receta', 'ins_688a5ce18adc5.jpg'),
-(41, 'Callo almeja', 'gramos', 2970.00, 'por_receta', 'ins_688a5d28de8a5.jpg'),
-(42, 'Calabacin', 'gramos', 3000.00, 'por_receta', 'ins_688a5d6b2bca1.jpg'),
-(43, 'Fideo chino transparente', 'gramos', 3000.00, 'por_receta', 'ins_688a5dd3b406d.jpg'),
-(44, 'Brócoli', 'gramos', 3000.00, 'por_receta', 'ins_688a5e2736870.jpg'),
-(45, 'Chile de árbol', 'gramos', 2990.00, 'por_receta', 'ins_688a5e6f08ccd.jpg'),
-(46, 'Pasta udon', 'gramos', 3000.00, 'por_receta', 'ins_688a5eb627f38.jpg'),
-(47, 'Huevo', 'pieza', 3000.00, 'por_receta', 'ins_688a5ef9b575e.jpg'),
-(48, 'Cerdo', 'gramos', 3000.00, 'por_receta', 'ins_688a5f3915f5e.jpg'),
-(49, 'Masa para gyozas', 'pieza', 3000.00, 'por_receta', 'ins_688a5fae2e7f1.jpg'),
-(50, 'Naruto', 'gramos', 3000.00, 'por_receta', 'ins_688a5ff57f62d.jpg'),
-(51, 'Atún ahumado', 'gramos', 3000.00, 'por_receta', 'ins_68adcd62c5a19.jpg'),
-(52, 'Cacahuate con salsa (salado)', 'gramos', 3000.00, 'por_receta', 'ins_68adcf253bd1d.jpg'),
-(53, 'Calabaza', 'gramos', 3000.00, 'por_receta', 'ins_68add0ff781fb.jpg'),
-(54, 'Camarón gigante para pelar', 'pieza', 3000.00, 'por_receta', 'ins_68add3264c465.jpg'),
-(55, 'Cebolla', 'gramos', 2989.80, 'por_receta', 'ins_68add38beff59.jpg'),
-(56, 'Chile en polvo', 'gramos', 3000.00, 'por_receta', 'ins_68add4a750a0e.jpg'),
-(57, 'Coliflor', 'gramos', 3000.00, 'por_receta', 'ins_68add5291130e.jpg'),
-(59, 'Dedos de surimi', 'pieza', 3000.00, 'unidad_completa', 'ins_68add5c575fbb.jpg'),
-(60, 'Fideos', 'gramos', 3000.00, 'por_receta', 'ins_68add629d094b.jpg'),
-(61, 'Fondo de res', 'mililitros', 30000.00, 'no_controlado', 'ins_68add68d317d5.jpg'),
-(62, 'Gravy Naranja', 'oz', 3000.00, 'no_controlado', 'ins_68add7bb461b3.jpg'),
-(63, 'Salsa Aguachil', 'oz', 2996.00, 'no_controlado', 'ins_68ae000034b31.jpg'),
-(64, 'Julianas de zanahoria', 'gramos', 2990.00, 'por_receta', 'ins_68add82c9c245.jpg'),
-(65, 'Limón', 'gramos', 3000.00, 'por_receta', 'ins_68add890ee640.jpg'),
-(66, 'Queso Mix', 'gramos', 2600.00, 'uso_general', 'ins_68ade1625f489.jpg'),
-(67, 'Morrón', 'gramos', 3000.00, 'por_receta', 'ins_68addcbc6d15a.jpg'),
-(69, 'Pasta chukasoba', 'gramos', 3000.00, 'por_receta', 'ins_68addd277fde6.jpg'),
-(70, 'Pasta frita', 'gramos', 3000.00, 'por_receta', 'ins_68addd91a005e.jpg'),
-(71, 'Queso crema', 'gramos', 3000.00, 'uso_general', 'ins_68ade11cdadcb.jpg'),
-(72, 'Refresco embotellado', 'pieza', 2990.00, 'unidad_completa', 'ins_68adfdd53f04e.jpg'),
-(73, 'res', 'gramos', 3000.00, 'uso_general', 'ins_68adfe2e49580.jpg'),
-(74, 'Rodajas de naranja', 'gramos', 3000.00, 'por_receta', 'ins_68adfeccd68d8.jpg'),
-(75, 'Salmón', 'gramos', 3000.00, 'por_receta', 'ins_68adffa2a2db0.jpg'),
+(31, 'Naranja', 'gramos', 30000.00, 'por_receta', 'ins_688a590bca275.jpg'),
+(32, 'Chile Caribe', 'gramos', 30000.00, 'por_receta', 'ins_688a59836c32e.jpg'),
+(33, 'Pulpo', 'gramos', 29870.00, 'por_receta', 'ins_688a59c9a1d0b.jpg'),
+(34, 'Zanahoria', 'gramos', 30000.00, 'por_receta', 'ins_688a5a0a3a959.jpg'),
+(35, 'Apio', 'gramos', 30000.00, 'por_receta', 'ins_688a5a52af990.jpg'),
+(36, 'Pepino', 'gramos', 29325.00, 'uso_general', 'ins_688a5aa0cbaf5.jpg'),
+(37, 'Masago', 'gramos', 30000.00, 'por_receta', 'ins_688a5b3f0dca6.jpg'),
+(38, 'Nuez de la india', 'gramos', 30000.00, 'por_receta', 'ins_688a5be531e11.jpg'),
+(39, 'Cátsup', 'mililitros', 30000.00, 'por_receta', 'ins_688a5c657eb83.jpg'),
+(40, 'Atún fresco', 'gramos', 30000.00, 'por_receta', 'ins_688a5ce18adc5.jpg'),
+(41, 'Callo almeja', 'gramos', 30000.00, 'por_receta', 'ins_688a5d28de8a5.jpg'),
+(42, 'Calabacin', 'gramos', 30000.00, 'por_receta', 'ins_688a5d6b2bca1.jpg'),
+(43, 'Fideo chino transparente', 'gramos', 30000.00, 'por_receta', 'ins_688a5dd3b406d.jpg'),
+(44, 'Brócoli', 'gramos', 30000.00, 'por_receta', 'ins_688a5e2736870.jpg'),
+(45, 'Chile de árbol', 'gramos', 29970.00, 'por_receta', 'ins_688a5e6f08ccd.jpg'),
+(46, 'Pasta udon', 'gramos', 29970.00, 'por_receta', 'ins_688a5eb627f38.jpg'),
+(47, 'Huevo', 'pieza', 30000.00, 'por_receta', 'ins_688a5ef9b575e.jpg'),
+(48, 'Cerdo', 'gramos', 29940.00, 'por_receta', 'ins_688a5f3915f5e.jpg'),
+(49, 'Masa para gyozas', 'pieza', 30000.00, 'por_receta', 'ins_688a5fae2e7f1.jpg'),
+(50, 'Naruto', 'gramos', 30000.00, 'por_receta', 'ins_688a5ff57f62d.jpg'),
+(51, 'Atún ahumado', 'gramos', 30000.00, 'por_receta', 'ins_68adcd62c5a19.jpg'),
+(52, 'Cacahuate con salsa (salado)', 'gramos', 30000.00, 'por_receta', 'ins_68adcf253bd1d.jpg'),
+(53, 'Calabaza', 'gramos', 30000.00, 'por_receta', 'ins_68add0ff781fb.jpg'),
+(54, 'Camarón gigante para pelar', 'pieza', 30000.00, 'por_receta', 'ins_68add3264c465.jpg'),
+(55, 'Cebolla', 'gramos', 30000.00, 'por_receta', 'ins_68add38beff59.jpg'),
+(56, 'Chile en polvo', 'gramos', 30000.00, 'por_receta', 'ins_68add4a750a0e.jpg'),
+(57, 'Coliflor', 'gramos', 30000.00, 'por_receta', 'ins_68add5291130e.jpg'),
+(59, 'Dedos de surimi', 'pieza', 30000.00, 'unidad_completa', 'ins_68add5c575fbb.jpg'),
+(60, 'Fideos', 'gramos', 30000.00, 'por_receta', 'ins_68add629d094b.jpg'),
+(61, 'Fondo de res', 'mililitros', 29880.00, 'no_controlado', 'ins_68add68d317d5.jpg'),
+(62, 'Gravy Naranja', 'oz', 30000.00, 'no_controlado', 'ins_68add7bb461b3.jpg'),
+(63, 'Salsa Aguachil', 'oz', 29990.00, 'no_controlado', 'ins_68ae000034b31.jpg'),
+(64, 'Julianas de zanahoria', 'gramos', 30000.00, 'por_receta', 'ins_68add82c9c245.jpg'),
+(65, 'Limón', 'gramos', 30000.00, 'por_receta', 'ins_68add890ee640.jpg'),
+(66, 'Queso Mix', 'gramos', 29360.00, 'uso_general', 'ins_68ade1625f489.jpg'),
+(67, 'Morrón', 'gramos', 30000.00, 'por_receta', 'ins_68addcbc6d15a.jpg'),
+(69, 'Pasta chukasoba', 'gramos', 30000.00, 'por_receta', 'ins_68addd277fde6.jpg'),
+(70, 'Pasta frita', 'gramos', 30000.00, 'por_receta', 'ins_68addd91a005e.jpg'),
+(71, 'Queso crema', 'gramos', 30000.00, 'uso_general', 'ins_68ade11cdadcb.jpg'),
+(72, 'Refresco embotellado', 'pieza', 29987.00, 'unidad_completa', 'ins_68adfdd53f04e.jpg'),
+(73, 'res', 'gramos', 30000.00, 'uso_general', 'ins_68adfe2e49580.jpg'),
+(74, 'Rodajas de naranja', 'gramos', 30000.00, 'por_receta', 'ins_68adfeccd68d8.jpg'),
+(75, 'Salmón', 'gramos', 30000.00, 'por_receta', 'ins_68adffa2a2db0.jpg'),
 (76, 'Salsa de anguila', 'mililitros', 30000.00, 'no_controlado', 'ins_68ae005f1b3cd.jpg'),
 (77, 'Salsa teriyaki (dulce)', 'mililitros', 30000.00, 'no_controlado', 'ins_68ae00c53121a.jpg'),
-(78, 'Salsas orientales', 'mililitros', 30000.00, 'no_controlado', 'ins_68ae01341e7b1.jpg'),
-(79, 'Shisimi', 'gramos', 3000.00, 'uso_general', 'ins_68ae018d22a63.jpg'),
-(80, 'Siracha', 'mililitros', 2930.00, 'no_controlado', 'ins_68ae03413da26.jpg'),
-(81, 'Tampico', 'mililitros', 2990.00, 'uso_general', 'ins_68ae03f65bd71.jpg'),
-(82, 'Tortilla de harina', 'pieza', 3000.00, 'unidad_completa', 'ins_68ae04b46d24a.jpg'),
-(83, 'Tostada', 'pieza', 3000.00, 'unidad_completa', 'ins_68ae05924a02a.jpg'),
-(85, 'Yakimeshi mini', 'gramos', 3000.00, 'por_receta', 'ins_68ae061b1175b.jpg'),
-(86, 'Sal con Ajo', 'pieza', 3000.00, 'por_receta', 'ins_68adff6dbf111.jpg'),
-(87, 'Aderezo Chipotle', 'mililitros', 2740.00, 'por_receta', 'ins_68adcabeb1ee9.jpg'),
-(88, 'Mezcla de Horneado', 'gramos', 2920.00, 'por_receta', 'ins_68addaa3e53f7.jpg'),
-(89, 'Aderezo', 'gramos', 2880.00, 'uso_general', 'ins_68adcc0771a3c.jpg'),
-(90, 'Camarón Empanizado', 'gramos', 2765.00, 'por_receta', 'ins_68add1de1aa0e.jpg'),
-(91, 'Pollo Empanizado', 'gramos', 3000.00, 'por_receta', 'ins_68adde81c6be3.jpg'),
-(92, 'Cebollín', 'gramos', 2995.00, 'por_receta', 'ins_68add3e38d04b.jpg'),
-(93, 'Aderezo Cebolla Dul.', 'oz', 3000.00, 'uso_general', 'ins_68adcb8fa562e.jpg'),
-(94, 'Camaron Enchiloso', 'gramos', 3000.00, 'por_receta', 'ins_68add2db69e2e.jpg'),
-(95, 'Pastel chocoflan', 'pieza', 199.00, 'unidad_completa', 'ins_68adddfa22fe2.jpg'),
-(96, 'Pay de queso', 'pieza', 199.00, 'unidad_completa', 'ins_68adde4fa8275.jpg'),
-(97, 'Helado tempura', 'pieza', 200.00, 'unidad_completa', 'ins_68add7e53c6fe.jpg'),
-(98, 'Postre especial', 'pieza', 199.00, 'unidad_completa', 'ins_68addee98fdf0.jpg'),
-(99, 'Búfalo', 'mililitros', 3000.00, 'no_controlado', 'ins_68adce63dd347.jpg'),
-(101, 'Corona 1/2', 'pieza', 300.00, 'unidad_completa', 'ins_68add55a1e3b7.jpg'),
-(102, 'Golden Light 1/2', 'pieza', 300.00, 'unidad_completa', 'ins_68add76481f22.jpg'),
-(103, 'Negra Modelo', 'pieza', 300.00, 'unidad_completa', 'ins_68addc59c2ea9.jpg'),
-(104, 'Modelo Especial', 'pieza', 300.00, 'unidad_completa', 'ins_68addb9d59000.jpg'),
-(105, 'Bud Light', 'pieza', 296.00, 'unidad_completa', 'ins_68adcdf3295e8.jpg'),
-(106, 'Stella Artois', 'pieza', 300.00, 'unidad_completa', 'ins_68ae0397afb2f.jpg'),
-(107, 'Ultra 1/2', 'pieza', 300.00, 'unidad_completa', 'ins_68ae05466a8e2.jpg'),
-(108, 'Michelob 1/2', 'pieza', 300.00, 'unidad_completa', 'ins_68addb2d00c85.jpg'),
-(109, 'Alitas de pollo', 'gramos', 3000.00, 'unidad_completa', 'ins_68adccf5a1147.jpg'),
-(110, 'Ranch', 'mililitros', 3000.00, 'no_controlado', 'ins_68adfcddef7e3.jpg'),
-(111, 'Buffalo', 'gramos', 3000.00, 'no_controlado', ''),
-(112, 'Chichimi', 'gramos', 3000.00, 'no_controlado', 'ins_68add45bdb306.jpg'),
-(113, 'Calpico', 'pieza', 300.00, 'unidad_completa', 'ins_68add19570673.jpg'),
-(114, 'Vaina de soja', 'gramos', 3000.00, 'uso_general', 'ins_68ae05de869d1.jpg'),
-(115, 'Boneless', 'gramos', 2000.00, 'por_receta', 'ins_68adcdbb6b5b4.jpg'),
-(116, 'Agua members', 'pieza', 299.00, 'unidad_completa', 'ins_68adcc5feaee1.jpg'),
-(117, 'Agua mineral', 'pieza', 3000.00, 'unidad_completa', 'ins_68adcca85ae2c.jpg'),
-(118, 'Cilantro', 'gramos', 3000.00, 'por_receta', 'ins_68add4edab118.jpg'),
-(119, 'Té de jazmin', 'mililitros', 29000.00, 'por_receta', 'ins_68ae0474dfc36.jpg');
+(78, 'Salsas orientales', 'mililitros', 29980.00, 'no_controlado', 'ins_68ae01341e7b1.jpg'),
+(79, 'Shisimi', 'gramos', 30000.00, 'uso_general', 'ins_68ae018d22a63.jpg'),
+(80, 'Siracha', 'mililitros', 29970.00, 'no_controlado', 'ins_68ae03413da26.jpg'),
+(81, 'Tampico', 'mililitros', 29970.00, 'uso_general', 'ins_68ae03f65bd71.jpg'),
+(82, 'Tortilla de harina', 'pieza', 30000.00, 'unidad_completa', 'ins_68ae04b46d24a.jpg'),
+(83, 'Tostada', 'pieza', 30000.00, 'unidad_completa', 'ins_68ae05924a02a.jpg'),
+(85, 'Yakimeshi mini', 'gramos', 30000.00, 'por_receta', 'ins_68ae061b1175b.jpg'),
+(86, 'Sal con Ajo', 'pieza', 30000.00, 'por_receta', 'ins_68adff6dbf111.jpg'),
+(87, 'Aderezo Chipotle', 'mililitros', 29660.00, 'por_receta', 'ins_68adcabeb1ee9.jpg'),
+(88, 'Mezcla de Horneado', 'gramos', 30000.00, 'por_receta', 'ins_68addaa3e53f7.jpg'),
+(89, 'Aderezo', 'gramos', 30000.00, 'uso_general', 'ins_68adcc0771a3c.jpg'),
+(90, 'Camarón Empanizado', 'gramos', 29365.00, 'por_receta', 'ins_68add1de1aa0e.jpg'),
+(91, 'Pollo Empanizado', 'gramos', 30000.00, 'por_receta', 'ins_68adde81c6be3.jpg'),
+(92, 'Cebollín', 'gramos', 30000.00, 'por_receta', 'ins_68add3e38d04b.jpg'),
+(93, 'Aderezo Cebolla Dul.', 'oz', 30000.00, 'uso_general', 'ins_68adcb8fa562e.jpg'),
+(94, 'Camaron Enchiloso', 'gramos', 29880.00, 'por_receta', 'ins_68add2db69e2e.jpg'),
+(95, 'Pastel chocoflan', 'pieza', 30000.00, 'unidad_completa', 'ins_68adddfa22fe2.jpg'),
+(96, 'Pay de queso', 'pieza', 30000.00, 'unidad_completa', 'ins_68adde4fa8275.jpg'),
+(97, 'Helado tempura', 'pieza', 30000.00, 'unidad_completa', 'ins_68add7e53c6fe.jpg'),
+(98, 'Postre especial', 'pieza', 30000.00, 'unidad_completa', 'ins_68addee98fdf0.jpg'),
+(99, 'Búfalo', 'mililitros', 29990.00, 'no_controlado', 'ins_68adce63dd347.jpg'),
+(101, 'Corona 1/2', 'pieza', 30000.00, 'unidad_completa', 'ins_68add55a1e3b7.jpg'),
+(102, 'Golden Light 1/2', 'pieza', 30000.00, 'unidad_completa', 'ins_68add76481f22.jpg'),
+(103, 'Negra Modelo', 'pieza', 30000.00, 'unidad_completa', 'ins_68addc59c2ea9.jpg'),
+(104, 'Modelo Especial', 'pieza', 29996.00, 'unidad_completa', 'ins_68addb9d59000.jpg'),
+(105, 'Bud Light', 'pieza', 30000.00, 'unidad_completa', 'ins_68adcdf3295e8.jpg'),
+(106, 'Stella Artois', 'pieza', 30000.00, 'unidad_completa', 'ins_68ae0397afb2f.jpg'),
+(107, 'Ultra 1/2', 'pieza', 30000.00, 'unidad_completa', 'ins_68ae05466a8e2.jpg'),
+(108, 'Michelob 1/2', 'pieza', 30000.00, 'unidad_completa', 'ins_68addb2d00c85.jpg'),
+(109, 'Alitas de pollo', 'gramos', 30000.00, 'unidad_completa', 'ins_68adccf5a1147.jpg'),
+(110, 'Ranch', 'mililitros', 30000.00, 'no_controlado', 'ins_68adfcddef7e3.jpg'),
+(111, 'Buffalo', 'gramos', 30000.00, 'no_controlado', ''),
+(112, 'Chichimi', 'gramos', 30000.00, 'no_controlado', 'ins_68add45bdb306.jpg'),
+(113, 'Calpico', 'pieza', 30000.00, 'unidad_completa', 'ins_68add19570673.jpg'),
+(114, 'Vaina de soja', 'gramos', 30000.00, 'uso_general', 'ins_68ae05de869d1.jpg'),
+(115, 'Boneless', 'gramos', 30000.00, 'por_receta', 'ins_68adcdbb6b5b4.jpg'),
+(116, 'Agua members', 'pieza', 30000.00, 'unidad_completa', 'ins_68adcc5feaee1.jpg'),
+(117, 'Agua mineral', 'pieza', 30000.00, 'unidad_completa', 'ins_68adcca85ae2c.jpg'),
+(118, 'Cilantro', 'gramos', 30000.00, 'por_receta', 'ins_68add4edab118.jpg'),
+(119, 'Té de jazmin', 'mililitros', 30000.00, 'por_receta', 'ins_68ae0474dfc36.jpg');
 
 --
 -- Disparadores `insumos`
@@ -811,7 +710,125 @@ INSERT INTO `logs_accion` (`id`, `usuario_id`, `modulo`, `accion`, `fecha`, `ref
 (689, 5, 'ventas', 'Alta de venta', '2025-08-28 16:59:24', 130),
 (690, NULL, 'cocina', 'Producto iniciado', '2025-08-28 16:59:43', 250),
 (691, NULL, 'cocina', 'Producto marcado como listo', '2025-08-28 16:59:46', 250),
-(692, 1, 'corte_caja', 'Cierre de corte', '2025-08-28 18:54:48', 61);
+(692, 1, 'corte_caja', 'Cierre de corte', '2025-08-28 18:54:48', 61),
+(693, 1, 'corte_caja', 'Creación de corte', '2025-08-29 10:03:01', 62),
+(694, 36, 'ventas', 'Alta de venta', '2025-08-29 15:53:17', 132),
+(695, 36, 'ventas', 'Alta de venta', '2025-08-29 16:04:24', 133),
+(696, NULL, 'cocina', 'Producto iniciado', '2025-08-29 16:18:27', 251),
+(697, NULL, 'cocina', 'Producto iniciado', '2025-08-29 16:18:28', 253),
+(698, NULL, 'cocina', 'Producto iniciado', '2025-08-29 16:18:29', 255),
+(699, NULL, 'cocina', 'Producto marcado como listo', '2025-08-29 16:18:30', 253),
+(700, NULL, 'cocina', 'Producto marcado como listo', '2025-08-29 16:18:31', 251),
+(701, NULL, 'cocina', 'Producto marcado como listo', '2025-08-29 16:18:32', 255),
+(702, NULL, 'cocina', 'Producto iniciado', '2025-08-29 21:37:04', 257),
+(703, NULL, 'cocina', 'Producto marcado como listo', '2025-08-29 21:37:05', 257),
+(704, 6, 'ventas', 'Alta de venta', '2025-08-29 21:46:04', 134),
+(705, NULL, 'cocina', 'Producto iniciado', '2025-08-29 21:46:12', 258),
+(706, NULL, 'cocina', 'Producto iniciado', '2025-08-29 21:46:14', 259),
+(707, NULL, 'cocina', 'Producto iniciado', '2025-08-29 21:46:14', 260),
+(708, NULL, 'cocina', 'Producto iniciado', '2025-08-29 21:46:15', 261),
+(709, NULL, 'cocina', 'Producto iniciado', '2025-08-29 21:46:19', 262),
+(710, NULL, 'cocina', 'Producto marcado como listo', '2025-08-29 21:46:20', 258),
+(711, NULL, 'cocina', 'Producto marcado como listo', '2025-08-29 21:46:21', 259),
+(712, NULL, 'cocina', 'Producto marcado como listo', '2025-08-29 21:46:22', 260),
+(713, NULL, 'cocina', 'Producto marcado como listo', '2025-08-29 21:46:23', 261),
+(714, NULL, 'cocina', 'Producto marcado como listo', '2025-08-29 21:46:24', 262),
+(715, 5, 'ventas', 'Alta de venta', '2025-08-29 21:58:00', 135),
+(716, NULL, 'cocina', 'Producto iniciado', '2025-08-29 21:58:07', 263),
+(717, NULL, 'cocina', 'Producto marcado como listo', '2025-08-29 21:58:08', 263),
+(718, 17, 'ventas', 'Alta de venta', '2025-08-29 22:03:04', 136),
+(719, NULL, 'cocina', 'Producto iniciado', '2025-08-29 22:03:10', 264),
+(720, NULL, 'cocina', 'Producto marcado como listo', '2025-08-29 22:03:12', 264),
+(721, 5, 'ventas', 'Alta de venta', '2025-08-29 22:26:06', 137),
+(722, NULL, 'cocina', 'Producto iniciado', '2025-08-29 22:26:10', 265),
+(723, NULL, 'cocina', 'Producto marcado como listo', '2025-08-29 22:26:11', 265),
+(724, 1, 'corte_caja', 'Cierre de corte', '2025-08-29 22:30:17', 62),
+(725, 1, 'corte_caja', 'Creación de corte', '2025-08-29 22:40:21', 63),
+(726, 6, 'ventas', 'Alta de venta', '2025-08-29 22:40:49', 138),
+(727, NULL, 'cocina', 'Producto iniciado', '2025-08-29 22:40:53', 266),
+(728, NULL, 'cocina', 'Producto marcado como listo', '2025-08-29 22:40:54', 266),
+(729, NULL, 'cocina', 'Producto iniciado', '2025-08-29 22:40:56', 267),
+(730, NULL, 'cocina', 'Producto marcado como listo', '2025-08-29 22:40:57', 267),
+(731, 1, 'corte_caja', 'Cierre de corte', '2025-08-29 23:08:55', 63),
+(732, 1, 'corte_caja', 'Creación de corte', '2025-08-30 11:32:10', 64),
+(733, 5, 'ventas', 'Alta de venta', '2025-08-30 11:32:31', 139),
+(734, NULL, 'cocina', 'Producto iniciado', '2025-08-30 11:32:45', 268),
+(735, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 11:32:46', 268),
+(736, 1, 'corte_caja', 'Creación de corte', '2025-08-30 11:49:11', 65),
+(737, 17, 'ventas', 'Alta de venta', '2025-08-30 11:52:16', 140),
+(738, NULL, 'cocina', 'Producto iniciado', '2025-08-30 11:52:22', 269),
+(739, NULL, 'cocina', 'Producto iniciado', '2025-08-30 11:52:23', 270),
+(740, NULL, 'cocina', 'Producto iniciado', '2025-08-30 11:52:26', 271),
+(741, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 11:52:28', 269),
+(742, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 11:52:30', 270),
+(743, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 11:52:31', 271),
+(744, 1, 'corte_caja', 'Cierre de corte', '2025-08-30 11:57:24', 65),
+(745, 1, 'corte_caja', 'Creación de corte', '2025-08-30 12:39:13', 66),
+(746, 2, 'ventas', 'Alta de venta', '2025-08-30 12:39:37', 141),
+(747, NULL, 'cocina', 'Producto iniciado', '2025-08-30 12:39:42', 272),
+(748, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 12:39:43', 272),
+(749, 6, 'ventas', 'Alta de venta', '2025-08-30 12:47:45', 142),
+(750, NULL, 'cocina', 'Producto iniciado', '2025-08-30 12:47:54', 273),
+(751, NULL, 'cocina', 'Producto iniciado', '2025-08-30 12:47:55', 274),
+(752, NULL, 'cocina', 'Producto iniciado', '2025-08-30 12:47:55', 275),
+(753, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 12:47:56', 273),
+(754, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 12:51:02', 274),
+(755, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 12:51:49', 275),
+(756, 2, 'ventas', 'Alta de venta', '2025-08-30 13:13:09', 143),
+(757, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:13:12', 276),
+(758, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:13:13', 276),
+(759, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:13:14', 277),
+(760, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:13:15', 278),
+(761, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:13:16', 277),
+(762, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:13:17', 278),
+(763, 1, 'corte_caja', 'Cierre de corte', '2025-08-30 13:19:16', 66),
+(764, 1, 'corte_caja', 'Creación de corte', '2025-08-30 13:22:33', 67),
+(765, 5, 'ventas', 'Alta de venta', '2025-08-30 13:22:58', 144),
+(766, 2, 'ventas', 'Alta de venta', '2025-08-30 13:23:24', 145),
+(767, 35, 'ventas', 'Alta de venta', '2025-08-30 13:25:18', 146),
+(768, 6, 'ventas', 'Alta de venta', '2025-08-30 13:25:45', 147),
+(769, 17, 'ventas', 'Alta de venta', '2025-08-30 13:26:02', 148),
+(770, 5, 'ventas', 'Alta de venta', '2025-08-30 13:26:23', 149),
+(771, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:26:27', 279),
+(772, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:26:28', 280),
+(773, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:26:28', 281),
+(774, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:26:29', 282),
+(775, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:26:30', 279),
+(776, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:26:30', 280),
+(777, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:26:32', 283),
+(778, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:26:33', 286),
+(779, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:26:34', 287),
+(780, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:26:35', 285),
+(781, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:26:36', 288),
+(782, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:26:36', 282),
+(783, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:26:37', 281),
+(784, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:26:38', 283),
+(785, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:26:39', 287),
+(786, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:26:43', 285),
+(787, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:26:44', 286),
+(788, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:26:46', 288),
+(789, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:30:45', 289),
+(790, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:30:45', 289),
+(791, 4, 'ventas', 'Alta de venta', '2025-08-30 13:32:06', 150),
+(792, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:32:09', 290),
+(793, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:32:10', 291),
+(794, NULL, 'cocina', 'Producto iniciado', '2025-08-30 13:32:11', 292),
+(795, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:32:11', 290),
+(796, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:32:13', 291),
+(797, NULL, 'cocina', 'Producto marcado como listo', '2025-08-30 13:32:15', 292),
+(798, 1, 'corte_caja', 'Cierre de corte', '2025-08-30 13:34:26', 67),
+(799, 1, 'corte_caja', 'Creación de corte', '2025-08-30 13:57:46', 68),
+(800, 5, 'ventas', 'Alta de venta', '2025-08-30 13:58:06', 151),
+(801, 5, 'ventas', 'Alta de venta', '2025-08-30 13:58:46', 152),
+(802, 5, 'ventas', 'Alta de venta', '2025-08-30 13:58:55', 153),
+(803, 1, 'corte_caja', 'Cierre de corte', '2025-08-30 13:59:36', 68),
+(804, 1, 'corte_caja', 'Creación de corte', '2025-09-02 11:04:28', 69),
+(805, 35, 'ventas', 'Alta de venta', '2025-09-02 11:05:55', 154),
+(806, NULL, 'cocina', 'Producto iniciado', '2025-09-02 11:06:17', 296),
+(807, NULL, 'cocina', 'Producto iniciado', '2025-09-02 11:06:18', 297),
+(808, NULL, 'cocina', 'Producto marcado como listo', '2025-09-02 11:06:19', 296),
+(809, NULL, 'cocina', 'Producto marcado como listo', '2025-09-02 11:06:20', 297),
+(810, 1, 'corte_caja', 'Cierre de corte', '2025-09-02 11:07:30', 69);
 
 -- --------------------------------------------------------
 
@@ -851,12 +868,12 @@ CREATE TABLE `log_cancelaciones` (
 --
 
 INSERT INTO `log_cancelaciones` (`id`, `tipo`, `venta_id`, `venta_detalle_id`, `usuario_id`, `motivo`, `total_anterior`, `subtotal_detalle`, `fecha`) VALUES
-(1, 'detalle', 122, 233, NULL, 'Eliminación de producto', NULL, 155.00, '2025-08-27 11:59:33'),
-(2, 'detalle', 122, 232, NULL, 'Eliminación de producto', NULL, 29.00, '2025-08-27 12:06:39'),
-(3, 'venta', 122, NULL, 6, '', 0.00, NULL, '2025-08-27 12:06:39'),
-(8, 'detalle', 124, 238, NULL, 'Eliminación de producto', NULL, 10.00, '2025-08-27 16:21:49'),
-(9, 'detalle', 124, 239, NULL, 'Eliminación de producto', NULL, 35.00, '2025-08-27 16:21:49'),
-(10, 'venta', 124, NULL, 5, '', 0.00, NULL, '2025-08-27 16:21:49');
+(11, 'detalle', 151, 293, NULL, 'Eliminación de producto', NULL, 29.00, '2025-08-30 13:58:22'),
+(12, 'venta', 151, NULL, 5, '', 0.00, NULL, '2025-08-30 13:58:25'),
+(13, 'detalle', 153, 295, NULL, 'Eliminación de producto', NULL, 29.00, '2025-08-30 13:59:17'),
+(14, 'venta', 153, NULL, 5, '', 0.00, NULL, '2025-08-30 13:59:17'),
+(15, 'detalle', 152, 294, NULL, 'Eliminación de producto', NULL, 29.00, '2025-08-30 13:59:20'),
+(16, 'venta', 152, NULL, 5, '', 0.00, NULL, '2025-08-30 13:59:20');
 
 -- --------------------------------------------------------
 
@@ -926,7 +943,7 @@ INSERT INTO `mesas` (`id`, `nombre`, `estado`, `capacidad`, `mesa_principal_id`,
 (1, 'Mesa 1', 'libre', 4, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, 6, 1, 0, NULL),
 (2, 'Mesa 2', 'libre', 4, NULL, 'Ala derecha', NULL, 'ninguna', NULL, NULL, 2, 2, 0, 3),
 (3, 'Mesa 3', 'libre', 6, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, 5, 1, 0, 4),
-(4, 'Mesa 4', 'libre', 4, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, 4, 1, 0, NULL),
+(4, 'Mesa 4', 'libre', 4, NULL, 'Ala izquierda', '2025-08-30 13:32:06', 'ninguna', NULL, NULL, 4, 1, 0, NULL),
 (5, 'Mesa 5', 'libre', 4, NULL, 'Ala derecha', NULL, 'ninguna', NULL, NULL, 17, 2, 0, NULL),
 (6, 'Mesa 6', 'libre', 6, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, 5, 1, 0, 3),
 (7, 'Mesa 7', 'libre', 2, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, 5, 1, 0, NULL),
@@ -984,13 +1001,6 @@ CREATE TABLE `movimientos_caja` (
   `motivo` text NOT NULL,
   `fecha` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `movimientos_caja`
---
-
-INSERT INTO `movimientos_caja` (`id`, `corte_id`, `usuario_id`, `tipo_movimiento`, `monto`, `motivo`, `fecha`) VALUES
-(6, 58, 1, 'deposito', 5000.00, 'deposito', '2025-08-28 03:00:37');
 
 -- --------------------------------------------------------
 
@@ -1053,132 +1063,133 @@ CREATE TABLE `productos` (
 --
 
 INSERT INTO `productos` (`id`, `nombre`, `precio`, `descripcion`, `existencia`, `activo`, `imagen`, `categoria_id`) VALUES
-(4, 'Refresco 600ml', 20.00, 'Refresco embotellado', 298, 1, NULL, 1),
-(5, 'Rollo California', 120.00, 'Salmón, arroz, alga nori', 6, 1, NULL, 3),
-(6, 'Guamuchilito', 109.00, 'Surimi, camarón empanizado, salsa de anguila', 6, 1, NULL, 8),
-(7, 'Guerra', 125.00, 'Camarón, ajonjolí, aguacate, salsa de anguila', 6, 1, NULL, 8),
-(8, 'Triton Roll', 125.00, 'Philadelphia, pepino, aguacate, surimi, atún ahumado, anguila, siracha', 6, 1, 'prod_68add2ff11cc1.jpg', 8),
-(9, 'Mechas', 139.00, 'Philadelphia, pepino, aguacate, camarón, ajonjolí, kanikama, camarón empanizado,limón, sirracha, anguila, shisimi', 6, 1, NULL, 8),
-(10, 'Supremo', 135.00, 'Surimi, philadelphia, ajonjolí, tampico,  pollo capeado, salsa de anguila', 6, 1, NULL, 8),
-(11, 'Roka Crunch Roll', 119.00, 'Philadelphia, pepino, aguacate, camarón, surimi empanizado, zanahoria rallada, salsa de anguila', 6, 1, NULL, 8),
-(12, 'Mar y Tierra', 105.00, 'Rollo relleno de carne y camarón.', 6, 1, NULL, 9),
-(13, 'Cielo, Mar y Tierra', 109.00, 'Pollo, carne, camarón', 6, 1, NULL, 9),
-(14, '3 Quesos', 115.00, 'Rollo de camarón, carne, base, queso americano\n y gratinado con queso chihuahua.', 6, 1, 'prod_68adcf8c73757.jpg', 9),
-(15, 'Chiquilin Roll', 115.00, 'Relleno de base (philadelphia, pepino y\n aguacate) Por fuera topping de camarón\n empanizado especial, bañado en salsa de anguila\n y ajonjolí.', 5, 1, NULL, 9),
-(16, 'Maki roll', 105.00, 'Rollo de 1 ingrediente a elegir (carne, tampico,\n pollo y camarón)', 6, 1, NULL, 9),
-(17, 'Beef cheese', 119.00, 'Rollo de carne gratinado con queso spicy y\n ajonjolí.', 6, 1, NULL, 9),
-(18, 'Cordon Blue', 115.00, 'Rollo relleno de carne y tocino forrado con\n philadelphia y gratinado con queso.', 6, 1, NULL, 9),
-(19, 'Culichi Roll', 125.00, 'Rollo de carne con topping especial de tampico\n Tokyo empanizado coronado con camarón.', 6, 1, NULL, 9),
-(20, 'Bacon Cheese', 125.00, 'Rollo de pollo por fuera gratinado con tocino.', 6, 1, 'prod_68add11ce2483.jpg', 9),
-(21, 'Crunch Chicken', 125.00, 'Pollo empanizado, tocino, chile serrano, salsa bbq, salsa de anguila', 6, 1, NULL, 9),
-(22, 'Kito', 119.00, 'Carne, tocino, queso, tampico', 6, 1, 'prod_68add69fe703c.jpg', 9),
-(23, 'Norteño', 115.00, 'Camarón, tampico, queso, tocino, chile serrano', 6, 1, NULL, 9),
-(24, 'Goloso Roll', 135.00, 'Res, pollo, tocino, queso o tampico', 6, 1, 'prod_68add37a08889.jpg', 9),
-(25, 'Demon roll', 135.00, 'Res, tocino, toping demon (camarón enchiloso)', 6, 1, 'prod_68add435d40b1.jpg', 9),
-(26, 'Nano Max', 245.00, 'Dedos de queso, dedos de surimi, carne, pollo, tocino, tampico, empanizado', 296, 1, NULL, 12),
-(27, 'Nano XL', 325.00, 'Dedos de queso, dedosde surimi, carne pollo, tocino, queso, tampico, 1.5 kg', 297, 1, 'prod_68add3af36463.jpg', 12),
-(28, 'Nano T-plus', 375.00, 'Dedos de queso, dedosde surimi, carne pollo, tocino, queso, tampico, 2 kg', 297, 1, NULL, 12),
-(29, 'Chile Volcán', 85.00, 'Chile, 1 ingrediente a elegir, arroz, queso chihuahua,philadelphia', 274, 1, NULL, 10),
-(30, 'Kushiagues', 75.00, 'Par de brochetas (camarón, pollo o surimi)', 292, 1, NULL, 10),
-(31, 'Dedos de Queso', 69.00, 'Queso, empanizado (5 piezas)', 86, 1, NULL, 10),
-(32, 'Tostada Culichi', 75.00, 'Tostada, camarón, pulpo, callo, pepino, cebolla morada, masago, chile serrano, chile en polvo, jugo de aguachile', 75, 1, 'prod_68add491b6f90.jpg', 10),
-(33, 'Tostada tropical', 75.00, 'Tostada, atún, mango, camarón, callo, cebolla morada, chile en polvo, jugo de aguachile', 292, 1, NULL, 10),
-(34, 'Empanada Horneada', 115.00, 'Tortilla de harina, carne, pollo, camarón,  mezcla de quesos, tampico, anguila y sirracha', 260, 1, NULL, 10),
-(35, 'Rollitos', 75.00, 'Orden de 2 piezas, rellenos de philadelphia,\n queso chihuahua e ingrediente a elegir (res, pollo\n o camarón).', 274, 1, 'prod_68add227e7037.jpg', 10),
-(36, 'Gyozas', 95.00, 'Orden con 6 piezas pequeñas (Pueden ser de\n philadelphia y camarón o de pollo y verduras)', 274, 1, NULL, 10),
-(37, 'Papas a la francesa', 65.00, 'Papas a la francesa y cátsup ó aderezo especial', 298, 1, NULL, 10),
-(38, 'Papas gajo', 75.00, 'Papas gajo y cátsup ó aderezo especial', 299, 1, NULL, 10),
-(39, 'Ceviche Tokyo', 165.00, 'Cama de pepino, kanikama, camarón, aguacate, pulpo, jugo de aguachile', 271, 1, 'prod_68add2c342bb0.jpg', 3),
-(40, 'Teriyaki krispy', 135.00, 'pollo empanizado, chile morrón, chile de arból, zanahoria, cebolla morada, cacahuate con salsa (salado)', 300, 1, NULL, 3),
-(41, 'Teriyaki', 139.00, 'Ingrediente a elegir, salteado de cebolla, zanahoria, calabaza, brócoli y coliflor, salsa teriyaki (dulce)', 300, 1, NULL, 3),
-(42, 'Pollo Mongol', 135.00, 'Pollo capeado, cebolla, zanahoria, apio, chile serrano, chile morrón, chile de arból, salsas orientales, montado en arroz blanco', 298, 1, 'prod_68add8fa7fb9e.jpg', 3),
-(43, 'Chow Mein Especial', 155.00, 'Pasta frita, camarón, carne, pollo, vegetales, salsas orientales', 292, 1, 'prod_68adcfaa08c5a.jpg', 4),
-(44, 'Chukasoba', 149.00, 'Camarón, pulpo, vegetales, pasta chukasoba', 292, 1, NULL, 4),
-(45, 'Fideo Yurey', 165.00, 'Fideo chino transparente, julianas de zanahoria y apio, cebolla, chile caribe y morrón y la proteína de tu elección', 298, 1, NULL, 4),
-(46, 'Udon spicy', 179.00, 'Julianas de zanahoria y cebolla, chile caribe, apio, chile de árbol, nuez de la india, ajonjolí, camarones capeados', 297, 1, 'prod_68add7d1cd5d9.jpg', 4),
-(47, 'Orange Chiken Tokyo', 149.00, 'Pollo capeado (300gr), graby de naranja, pepino, zanahoria, rodajas de naranja, ajonjolíPollo capeando (300gr) rebosado con graby de\n naranja con zanahoria, pepino y rodajas de naranja\n y ajonjolí', 269, 1, NULL, 3),
-(48, 'Udon Muchi', 125.00, 'Pasta udon, vegetales, camarón y pollo', 292, 1, NULL, 4),
-(49, 'Tokyo ramen', 125.00, 'Pasta, vegetales, naruto, huevo, carne, camarón, fondo de res y cerdo', 292, 1, NULL, 4),
-(50, 'Ramen Gran Meat', 125.00, 'Pasta, vegetales, trozos de carne sazonada con salsas orientales', 99, 1, NULL, 4),
-(51, 'Ramen yasai', 115.00, 'Pasta, vegetales, fondo de res y cerdo', 300, 1, NULL, 4),
-(52, 'Baby Ramen', 119.00, 'Pasta, vegetales, pollo a la plancha, salsas orientales, fondo de res y cerdo', 50, 1, NULL, 4),
-(53, 'Cajun Ramen', 155.00, 'Fideos, vegetales, camarón gigante para pelar, fondo de res y cerdo, ajonjolí', 297, 1, NULL, 4),
-(54, 'Gohan', 125.00, 'Arroz blanco, res y pollo, base de philadelphia y tampico con rodajas de aguacate, camarones empanizados, ajonjolí', 296, 1, NULL, 5),
-(55, 'Gohan Krispy', 115.00, 'Arroz blanco, base de philadelphia, tampico y cubitos de aguacate, pollo y cebolla capeados, salsa de anguila, ajonjolí', 296, 1, 'prod_68add4bf039d2.jpg', 5),
-(56, 'Yakimeshi', 115.00, 'Arroz frito, vegetales, carne, pollo y tocino, philadelphia, tampico, aguacate, ajonjolí', 271, 1, 'prod_68add0ace9c67.jpg', 5),
-(57, 'Rollo Aguachile Especial', 125.00, 'Arroz frito, pollo empanizado, philadelphia, aguacate y tampico', 271, 1, 'prod_68add7b73652c.jpg', 5),
-(58, 'Bomba', 115.00, 'Bola de arroz, res, pollo, philadelphia, queso chihuahua, tampico , empanizada y cubierta de salsa de anguila', 274, 1, 'prod_68add5bb666f3.jpg', 5),
+(4, 'Refresco 600ml', 20.00, 'Refresco embotellado', 2997, 1, NULL, 1),
+(5, 'Rollo California', 120.00, 'Salmón, arroz, alga nori', 137, 1, NULL, 3),
+(6, 'Guamuchilito', 109.00, 'Surimi, camarón empanizado, salsa de anguila', 137, 1, NULL, 8),
+(7, 'Guerra', 125.00, 'Camarón, ajonjolí, aguacate, salsa de anguila', 137, 1, NULL, 8),
+(8, 'Triton Roll', 125.00, 'Philadelphia, pepino, aguacate, surimi, atún ahumado, anguila, siracha', 137, 1, 'prod_68add2ff11cc1.jpg', 8),
+(9, 'Mechas', 139.00, 'Philadelphia, pepino, aguacate, camarón, ajonjolí, kanikama, camarón empanizado,limón, sirracha, anguila, shisimi', 137, 1, NULL, 8),
+(10, 'Supremo', 135.00, 'Surimi, philadelphia, ajonjolí, tampico,  pollo capeado, salsa de anguila', 137, 1, NULL, 8),
+(11, 'Roka Crunch Roll', 119.00, 'Philadelphia, pepino, aguacate, camarón, surimi empanizado, zanahoria rallada, salsa de anguila', 137, 1, NULL, 8),
+(12, 'Mar y Tierra', 105.00, 'Rollo relleno de carne y camarón.', 137, 1, NULL, 9),
+(13, 'Cielo, Mar y Tierra', 109.00, 'Pollo, carne, camarón', 137, 1, NULL, 9),
+(14, '3 Quesos', 115.00, 'Rollo de camarón, carne, base, queso americano\n y gratinado con queso chihuahua.', 137, 1, 'prod_68adcf8c73757.jpg', 9),
+(15, 'Chiquilin Roll', 115.00, 'Relleno de base (philadelphia, pepino y\n aguacate) Por fuera topping de camarón\n empanizado especial, bañado en salsa de anguila\n y ajonjolí.', 136, 1, NULL, 9),
+(16, 'Maki roll', 105.00, 'Rollo de 1 ingrediente a elegir (carne, tampico,\n pollo y camarón)', 137, 1, NULL, 9),
+(17, 'Beef cheese', 119.00, 'Rollo de carne gratinado con queso spicy y\n ajonjolí.', 137, 1, NULL, 9),
+(18, 'Cordon Blue', 115.00, 'Rollo relleno de carne y tocino forrado con\n philadelphia y gratinado con queso.', 137, 1, NULL, 9),
+(19, 'Culichi Roll', 125.00, 'Rollo de carne con topping especial de tampico\n Tokyo empanizado coronado con camarón.', 137, 1, NULL, 9),
+(20, 'Bacon Cheese', 125.00, 'Rollo de pollo por fuera gratinado con tocino.', 137, 1, 'prod_68add11ce2483.jpg', 9),
+(21, 'Crunch Chicken', 125.00, 'Pollo empanizado, tocino, chile serrano, salsa bbq, salsa de anguila', 137, 1, NULL, 9),
+(22, 'Kito', 119.00, 'Carne, tocino, queso, tampico', 137, 1, 'prod_68add69fe703c.jpg', 9),
+(23, 'Norteño', 115.00, 'Camarón, tampico, queso, tocino, chile serrano', 137, 1, NULL, 9),
+(24, 'Goloso Roll', 135.00, 'Res, pollo, tocino, queso o tampico', 137, 1, 'prod_68add37a08889.jpg', 9),
+(25, 'Demon roll', 135.00, 'Res, tocino, toping demon (camarón enchiloso)', 137, 1, 'prod_68add435d40b1.jpg', 9),
+(26, 'Nano Max', 245.00, 'Dedos de queso, dedos de surimi, carne, pollo, tocino, tampico, empanizado', 2965, 1, NULL, 12),
+(27, 'Nano XL', 325.00, 'Dedos de queso, dedosde surimi, carne pollo, tocino, queso, tampico, 1.5 kg', 2965, 1, 'prod_68add3af36463.jpg', 12),
+(28, 'Nano T-plus', 375.00, 'Dedos de queso, dedosde surimi, carne pollo, tocino, queso, tampico, 2 kg', 2965, 1, NULL, 12),
+(29, 'Chile Volcán', 85.00, 'Chile, 1 ingrediente a elegir, arroz, queso chihuahua,philadelphia', 2944, 1, NULL, 10),
+(30, 'Kushiagues', 75.00, 'Par de brochetas (camarón, pollo o surimi)', 2993, 1, NULL, 10),
+(31, 'Dedos de Queso', 69.00, 'Queso, empanizado (5 piezas)', 978, 1, NULL, 10),
+(32, 'Tostada Culichi', 75.00, 'Tostada, camarón, pulpo, callo, pepino, cebolla morada, masago, chile serrano, chile en polvo, jugo de aguachile', 750, 1, 'prod_68add491b6f90.jpg', 10),
+(33, 'Tostada tropical', 75.00, 'Tostada, atún, mango, camarón, callo, cebolla morada, chile en polvo, jugo de aguachile', 2993, 1, NULL, 10),
+(34, 'Empanada Horneada', 115.00, 'Tortilla de harina, carne, pollo, camarón,  mezcla de quesos, tampico, anguila y sirracha', 2936, 1, NULL, 10),
+(35, 'Rollitos', 75.00, 'Orden de 2 piezas, rellenos de philadelphia,\n queso chihuahua e ingrediente a elegir (res, pollo\n o camarón).', 2944, 1, 'prod_68add227e7037.jpg', 10),
+(36, 'Gyozas', 95.00, 'Orden con 6 piezas pequeñas (Pueden ser de\n philadelphia y camarón o de pollo y verduras)', 2944, 1, NULL, 10),
+(37, 'Papas a la francesa', 65.00, 'Papas a la francesa y cátsup ó aderezo especial', 3000, 1, NULL, 10),
+(38, 'Papas gajo', 75.00, 'Papas gajo y cátsup ó aderezo especial', 3000, 1, NULL, 10),
+(39, 'Ceviche Tokyo', 165.00, 'Cama de pepino, kanikama, camarón, aguacate, pulpo, jugo de aguachile', 2945, 1, 'prod_68add2c342bb0.jpg', 3),
+(40, 'Teriyaki krispy', 135.00, 'pollo empanizado, chile morrón, chile de arból, zanahoria, cebolla morada, cacahuate con salsa (salado)', 3000, 1, NULL, 3),
+(41, 'Teriyaki', 139.00, 'Ingrediente a elegir, salteado de cebolla, zanahoria, calabaza, brócoli y coliflor, salsa teriyaki (dulce)', 3000, 1, NULL, 3),
+(42, 'Pollo Mongol', 135.00, 'Pollo capeado, cebolla, zanahoria, apio, chile serrano, chile morrón, chile de arból, salsas orientales, montado en arroz blanco', 2997, 1, 'prod_68add8fa7fb9e.jpg', 3),
+(43, 'Chow Mein Especial', 155.00, 'Pasta frita, camarón, carne, pollo, vegetales, salsas orientales', 2993, 1, 'prod_68adcfaa08c5a.jpg', 4),
+(44, 'Chukasoba', 149.00, 'Camarón, pulpo, vegetales, pasta chukasoba', 2987, 1, NULL, 4),
+(45, 'Fideo Yurey', 165.00, 'Fideo chino transparente, julianas de zanahoria y apio, cebolla, chile caribe y morrón y la proteína de tu elección', 3000, 1, NULL, 4),
+(46, 'Udon spicy', 179.00, 'Julianas de zanahoria y cebolla, chile caribe, apio, chile de árbol, nuez de la india, ajonjolí, camarones capeados', 2997, 1, 'prod_68add7d1cd5d9.jpg', 4),
+(47, 'Orange Chiken Tokyo', 149.00, 'Pollo capeado (300gr), graby de naranja, pepino, zanahoria, rodajas de naranja, ajonjolíPollo capeando (300gr) rebosado con graby de\n naranja con zanahoria, pepino y rodajas de naranja\n y ajonjolí', 2932, 1, NULL, 3),
+(48, 'Udon Muchi', 125.00, 'Pasta udon, vegetales, camarón y pollo', 2993, 1, NULL, 4),
+(49, 'Tokyo ramen', 125.00, 'Pasta, vegetales, naruto, huevo, carne, camarón, fondo de res y cerdo', 2988, 1, NULL, 4),
+(50, 'Ramen Gran Meat', 125.00, 'Pasta, vegetales, trozos de carne sazonada con salsas orientales', 1000, 1, NULL, 4),
+(51, 'Ramen yasai', 115.00, 'Pasta, vegetales, fondo de res y cerdo', 2988, 1, NULL, 4),
+(52, 'Baby Ramen', 119.00, 'Pasta, vegetales, pollo a la plancha, salsas orientales, fondo de res y cerdo', 248, 1, NULL, 4),
+(53, 'Cajun Ramen', 155.00, 'Fideos, vegetales, camarón gigante para pelar, fondo de res y cerdo, ajonjolí', 2988, 1, NULL, 4),
+(54, 'Gohan', 125.00, 'Arroz blanco, res y pollo, base de philadelphia y tampico con rodajas de aguacate, camarones empanizados, ajonjolí', 2997, 1, NULL, 5),
+(55, 'Gohan Krispy', 115.00, 'Arroz blanco, base de philadelphia, tampico y cubitos de aguacate, pollo y cebolla capeados, salsa de anguila, ajonjolí', 2997, 1, 'prod_68add4bf039d2.jpg', 5),
+(56, 'Yakimeshi', 115.00, 'Arroz frito, vegetales, carne, pollo y tocino, philadelphia, tampico, aguacate, ajonjolí', 2944, 1, 'prod_68add0ace9c67.jpg', 5),
+(57, 'Rollo Aguachile Especial', 125.00, 'Arroz frito, pollo empanizado, philadelphia, aguacate y tampico', 2944, 1, 'prod_68add7b73652c.jpg', 5),
+(58, 'Bomba', 115.00, 'Bola de arroz, res, pollo, philadelphia, queso chihuahua, tampico , empanizada y cubierta de salsa de anguila', 2944, 1, 'prod_68add5bb666f3.jpg', 5),
 (59, 'Menú kids 1', 79.00, '1/2 Rollo de pollo (6 piezas) y papas a la francesa', 100, 1, NULL, 3),
-(60, 'Menú kids 2', 85.00, 'Yakimeshi mini y papas a la francesa', 300, 1, NULL, 3),
+(60, 'Menú kids 2', 85.00, 'Yakimeshi mini y papas a la francesa', 3000, 1, NULL, 3),
 (61, 'Menú Kids 3', 79.00, 'Dedos de queso (3 piezas) y papas a la francesa', 100, 1, NULL, 3),
-(62, 'Chocoflan', 49.00, 'Porción de chocoflan', 198, 1, NULL, 2),
-(63, 'Pay de Queso', 49.00, 'Porción de pay de queso', 198, 1, 'prod_68ae01fd0820f.jpg', 2),
-(64, 'Helado Tempura', 79.00, 'Helado tempura', 200, 1, NULL, 2),
-(65, 'Postre Especial', 79.00, NULL, 198, 1, 'prod_68ae00d2cd4af.jpg', 2),
-(66, 'Té de Jazmín (Litro)', 33.00, 'Té verde con aroma a jazmín, servido en litro.', 29, 1, NULL, 1),
-(67, 'Té de Jazmín (Refil)', 35.00, 'Té verde aromatizado con flores de jazmín.', 28, 1, NULL, 1),
-(68, 'Limonada Natural', 35.00, 'Bebida de limón exprimido con agua y azúcar.', 200, 1, NULL, 1),
-(69, 'Limonada Mineral', 38.00, 'Bebida de limón con agua mineral y azúcar.', 200, 1, NULL, 1),
-(70, 'Naranjada Natural', 35.00, 'Bebida de jugo de naranja con agua y azúcar.', 200, 1, NULL, 1),
-(71, 'Naranjada Mineral', 38.00, 'Refresco de naranja con agua mineral.', 150, 1, NULL, 1),
-(72, 'Agua de Tamarindo', 35.00, 'Bebida dulce y ácida de tamarindo.', 298, 1, NULL, 1),
-(73, 'Agua Mineral (355ml)', 35.00, 'Agua con gas en envase pequeño.', 3000, 1, 'prod_68ae05aa8d01f.jpg', 1),
-(74, 'Calpico', 35.00, 'Bebida japonesa dulce y láctea de yogur.', 300, 1, 'prod_68ae01959fac5.jpg', 1),
+(62, 'Chocoflan', 49.00, 'Porción de chocoflan', 30000, 1, NULL, 2),
+(63, 'Pay de Queso', 49.00, 'Porción de pay de queso', 30000, 1, 'prod_68ae01fd0820f.jpg', 2),
+(64, 'Helado Tempura', 79.00, 'Helado tempura', 30000, 1, NULL, 2),
+(65, 'Postre Especial', 79.00, NULL, 30000, 1, 'prod_68ae00d2cd4af.jpg', 2),
+(66, 'Té de Jazmín (Litro)', 33.00, 'Té verde con aroma a jazmín, servido en litro.', 30, 1, NULL, 1),
+(67, 'Té de Jazmín (Refil)', 35.00, 'Té verde aromatizado con flores de jazmín.', 30, 1, NULL, 1),
+(68, 'Limonada Natural', 35.00, 'Bebida de limón exprimido con agua y azúcar.', 2000, 1, NULL, 1),
+(69, 'Limonada Mineral', 38.00, 'Bebida de limón con agua mineral y azúcar.', 2000, 1, NULL, 1),
+(70, 'Naranjada Natural', 35.00, 'Bebida de jugo de naranja con agua y azúcar.', 2000, 1, NULL, 1),
+(71, 'Naranjada Mineral', 38.00, 'Refresco de naranja con agua mineral.', 1500, 1, NULL, 1),
+(72, 'Agua de Tamarindo', 35.00, 'Bebida dulce y ácida de tamarindo.', 30000, 1, NULL, 1),
+(73, 'Agua Mineral (355ml)', 35.00, 'Agua con gas en envase pequeño.', 30000, 1, 'prod_68ae05aa8d01f.jpg', 1),
+(74, 'Calpico', 35.00, 'Bebida japonesa dulce y láctea de yogur.', 30000, 1, 'prod_68ae01959fac5.jpg', 1),
 (75, 'Calpitamarindo', 39.00, NULL, 9, 1, NULL, 1),
-(76, 'Refresco (335ml)', 29.00, 'Refresco embotellado', 2990, 1, 'prod_68ae07bd9ef3c.jpg', 1),
-(77, 'Aderezo de Chipotle', 10.00, 'Salsa cremosa picante de chipotle.', 274, 1, 'prod_68ae00b788642.jpg', 6),
-(78, 'Aderezo de Cilantro', 15.00, 'Salsa cremosa con cilantro fresco.', 288, 1, NULL, 6),
-(79, 'Salsa Sriracha', 10.00, 'Alsa picante de chile, ajo y vinagre.', 195, 1, 'prod_68ae083f538d5.jpg', 6),
+(76, 'Refresco (335ml)', 29.00, 'Refresco embotellado', 29987, 1, 'prod_68ae07bd9ef3c.jpg', 1),
+(77, 'Aderezo de Chipotle', 10.00, 'Salsa cremosa picante de chipotle.', 2966, 1, 'prod_68ae00b788642.jpg', 6),
+(78, 'Aderezo de Cilantro', 15.00, 'Salsa cremosa con cilantro fresco.', 3000, 1, NULL, 6),
+(79, 'Salsa Sriracha', 10.00, 'Alsa picante de chile, ajo y vinagre.', 1998, 1, 'prod_68ae083f538d5.jpg', 6),
 (80, 'Jugo de Aguachile', 15.00, 'Salsa líquida de limón, chile y especias usada para marinar mariscos.', 0, 1, NULL, 6),
-(81, 'Ranch', 15.00, 'Aderezo cremoso de hierbas y especias.', 300, 1, 'prod_68ae011cd828d.jpg', 6),
-(82, 'Búfalo', 15.00, 'Salsa picante de chile y mantequilla.', 300, 1, 'prod_68ae0164e5f57.jpg', 6),
-(83, 'BBQ', 15.00, 'Salsa dulce y ahumada para carnes.', 300, 1, NULL, 6),
+(81, 'Ranch', 15.00, 'Aderezo cremoso de hierbas y especias.', 3000, 1, 'prod_68ae011cd828d.jpg', 6),
+(82, 'Búfalo', 15.00, 'Salsa picante de chile y mantequilla.', 2998, 1, 'prod_68ae0164e5f57.jpg', 6),
+(83, 'BBQ', 15.00, 'Salsa dulce y ahumada para carnes.', 3000, 1, NULL, 6),
 (84, 'Soya Extra', 10.00, 'Salsa de soja concentrada o adicional', 2000, 1, NULL, 6),
-(85, 'Salsa de Anguila', 10.00, 'Salsa dulce y salada hecha con anguila y soja.', 199, 1, NULL, 6),
-(86, 'Cebollitas o Chiles', 10.00, NULL, 29898, 1, NULL, 6),
-(87, 'Topping Horneado Especial', 20.00, 'Aderezo de chipotle, anguila y sriracha', 182, 1, NULL, 7),
-(88, 'Topping Kanikama', 35.00, '(Ensalada de cangrejo)', 96, 1, NULL, 7),
-(89, 'Topping Tampico', 15.00, '(Ensalada de surimi)', 96, 1, NULL, 7),
-(90, 'Topping Demon', 35.00, 'Camarón, tocino, quesos, serrano y chichimi', 48, 1, NULL, 7),
-(91, 'Topping Chiquilín', 30.00, 'Camarón empanizado, anguila y ajonjolí', 46, 1, NULL, 7),
-(92, 'Gladiador Roll', 139.00, 'Por dentro philadelphia, pepino y aguacate. Por fuera trozos de pulpo, queso spicy, shishimi y cebolla, bañado en salsa de anguila y ajonjolí. Rollo natural.', 6, 1, NULL, 9),
-(93, 'Güerito Roll', 145.00, 'Por dentro camarón. Forrado con philadelphia y manchego, bañado en aderezo de chipotle, coronado con tocino, caribe y bañado en salsa sriracha. Empanizado.', 6, 1, 'prod_68add1fe92388.jpg', 9),
-(94, 'Ebby Especial Roll', 145.00, 'Por dentro base, forrado con tampico cheese, bañado en aderezo de chipotle y coronado con camarón mariposa, aguacate, anguila y ajonjolí. Empanizado.', 6, 1, NULL, 9),
-(95, 'Pakun Roll', 135.00, 'Relleno de tocino, por fuera topping de pollo y queso spicy, zanahoria. Acompañado de salsa anguila. Rollo natural.', 6, 1, NULL, 9),
-(96, 'Rorris Roll', 135.00, 'Camarón y caribe por dentro, topping de tampico cheese, aguacate y bañados en salsa de anguila y ajonjolí. Empanizado.', 6, 1, NULL, 9),
-(97, 'Royal Roll', 139.00, 'Carne y tocino por dentro, con topping de pollo. Empanizado, bañado con aderezo de chipotle, salsa de anguila y ajonjolí.', 6, 1, 'prod_68adcf0749621.jpg', 9),
-(98, 'Larry Roll', 155.00, 'Rollo relleno de camarón, forrado con salmón. Topping de surimi finamente picado, spicy, coronado con atún fresco y bañado en salsa de anguila y ajonjolí.', 6, 1, 'prod_68add883e8ce7.jpg', 11),
-(99, 'Aguachile Especial Roll', 155.00, 'Rollo relleno de philadelphia, pepino y aguacate. Forrado de chile serrano finamente picado, coronado con un aguachile especial de camarón, pulpo, callo y aguacate.', 6, 1, NULL, 11),
-(100, 'Mordick Roll', 145.00, 'Rollo relleno de tocino, montado doble con queso gratinado, mezcla de quesos spicy, coronado con camarones empanizados y bañado en salsa de anguila y ajonjolí.', 6, 1, 'prod_68add0ea0033c.jpg', 11),
-(101, 'Maney Roll', 165.00, 'Relleno de philadelphia, pepino y aguacate. Forrado de aguacate fresco y topping con camarón, medallón de atún, callo, mango y cebolla morada. Acompañado de salsa aguachile. Rollo natural.', 6, 1, 'prod_68add31666451.jpg', 11),
-(102, 'Onigiri', 59.00, '1 Pieza de triángulo de arroz blanco, con un toque ligero de philadelphia, forrado de alga, cubierto de ajonjolí y relleno opcional de pollo con verduras (col morada y zanahoria) o atún con aderezo especial de mayonesa y cebollín.', 9, 1, 'prod_68add35c53114.jpg', 3),
-(103, 'Dumplings', 95.00, 'Orden de 6 piezas de dumplings, rellenos de carne molida de cerdo. Sazonados orientalmente y acompañado con salsa macha.', 300, 1, 'prod_68add5b64497c.jpg', 3),
-(104, 'Boneless', 135.00, '250gr. De boneless con salsa a elegir (búfalo, bbq, mango habanero, mostaza miel o mermelada de chipotle).', 4, 1, 'prod_68ae02330ae4d.jpg', 3),
-(105, 'Alitas', 135.00, '250gr. De alitas con salsa a elegir (búfalo, bbq, mango habanero, mostaza miel ó mermelada de chipotle).', 12, 1, 'prod_68add564480c8.jpg', 3),
-(106, 'Sopa Pho', 149.00, 'Rico fondo de pollo con vegetales, pechuga de pollo, fideos chinos y chile de árbol. Coronado con 4 piezas de dumplings.', 50, 1, 'prod_68adce4f32265.jpg', 3),
-(107, 'Yummy Roll', 159.00, 'Alga por fuera, relleno de camarón, philadelphia, pepino y aguacate. Gratinado con queso spicy de la casa. Coronado con camarón, aguacate y bañado en salsa de anguila y ajonjolí.', 6, 1, 'prod_68add0c25fd53.jpg', 3),
-(108, 'Cebolla Caramelizada', 10.00, 'Cebolla Caramelizada', 14948, 1, NULL, 6),
-(109, 'Kintaro', 102.00, 'Plato de sushi con atún graso picado toro y cebollín', 6, 1, NULL, NULL),
-(110, 'Guamuchilito Especial', 123.00, 'Bebida preparada con jugo de guamúchil, combinada con alcohol, salsas y especias.', 6, 1, 'prod_68add0071ee2a.jpg', 11),
-(111, 'Juny', 333.00, 'Juny', 6, 1, NULL, NULL),
-(112, 'Pork Spicy', 122.00, 'Platillo de cerdo picante.', 6, 1, 'prod_68adcf27bc6a4.jpg', 8),
-(120, 'Corona 1/2', 35.00, 'Cerveza helada', 300, 1, 'prod_68adff38848ad.jpg', 1),
-(121, 'Corona Golden Light 1/2', 35.00, 'Cerveza Golden helada', 300, 1, 'prod_68adff1b2eb67.jpg', 1),
-(122, 'Negra Modelo', 40.00, 'Cerveza negra helada', 300, 1, 'prod_68adffa389931.jpg', 1),
-(123, 'Modelo Especial', 40.00, 'Cerveza helada', 300, 1, 'prod_68adfeeac5c57.jpg', 1),
-(124, 'Bud Light', 35.00, 'Cerveza helada', 292, 1, 'prod_68ae0111e5f9d.jpg', 1),
-(125, 'Stella Artois', 45.00, 'Cerveza Helada', 300, 1, 'prod_68ae081b893ed.jpg', 1),
-(126, 'Ultra 1/2', 45.00, 'Cerveza helada', 300, 1, 'prod_68ae015b16f22.jpg', 1),
-(127, 'Michelob 1/2', 45.00, 'Cerveza helada', 300, 1, NULL, 1),
-(128, 'Vaso Chelado', 10.00, 'Vaso chelado', 200, 1, NULL, 6),
-(129, 'Vaso Michelado', 15.00, 'Vaso michelado', 200, 1, NULL, 6),
-(130, 'Vaso Clamato', 25.00, 'Vaso michelado', 200, 1, NULL, 6),
-(131, 'Cheese Fries', 109.00, 'Concha de papa gajo sazonada, bañada en delicioso queso y tozos de tocino; al horno', 30, 1, 'prod_68add54669456.jpg', 3),
-(132, 'Charola Kyoyu Suru', 189.00, 'Camaron capeado, aros de cebolla y gyosas de carne de cerdo, acompañado de delicioso dip especial de la casa y salsa oriental', 48, 1, 'prod_68add217dc164.jpg', 3),
-(133, 'Alitas Nuts', 149.00, 'Deliciosos 300grs De alitas, bañadas en salsa dulce con chile, sabor cacahuate y ajonjolí', 12, 1, NULL, 3),
-(134, 'Edemamaes', 79.00, 'Vaina de frijol de soja preparado con picante, soya,sal y limon en una cama de zanahoria', 75, 1, 'prod_68add3a313461.jpg', 3),
-(135, 'Crispy Chesse', 99.00, 'Rollo de 6 a 7 pz relleno de carne, philadelphia, pepino y aguacate, empanizado, gratinado spicy y trozos de tocino frito.', 7, 1, NULL, 9),
-(136, 'Chummy Roll', 99.00, 'Rollo de 6 a 7 pz relleno de philadelphia, pepino y aguacate, coronado con tampico y camarón Empanizado, bando en salsa de Anguila y ajonjoli.', 7, 1, NULL, 9);
+(85, 'Salsa de Anguila', 10.00, 'Salsa dulce y salada hecha con anguila y soja.', 2000, 1, NULL, 6),
+(86, 'Cebollitas o Chiles', 10.00, NULL, 299700, 1, NULL, 6),
+(87, 'Topping Horneado Especial', 20.00, 'Aderezo de chipotle, anguila y sriracha', 1977, 1, NULL, 7),
+(88, 'Topping Kanikama', 35.00, '(Ensalada de cangrejo)', 999, 1, NULL, 7),
+(89, 'Topping Tampico', 15.00, '(Ensalada de surimi)', 1000, 1, NULL, 7),
+(90, 'Topping Demon', 35.00, 'Camarón, tocino, quesos, serrano y chichimi', 498, 1, NULL, 7),
+(91, 'Topping Chiquilín', 30.00, 'Camarón empanizado, anguila y ajonjolí', 489, 1, NULL, 7),
+(92, 'Gladiador Roll', 139.00, 'Por dentro philadelphia, pepino y aguacate. Por fuera trozos de pulpo, queso spicy, shishimi y cebolla, bañado en salsa de anguila y ajonjolí. Rollo natural.', 137, 1, NULL, 9),
+(93, 'Güerito Roll', 145.00, 'Por dentro camarón. Forrado con philadelphia y manchego, bañado en aderezo de chipotle, coronado con tocino, caribe y bañado en salsa sriracha. Empanizado.', 137, 1, 'prod_68add1fe92388.jpg', 9),
+(94, 'Ebby Especial Roll', 145.00, 'Por dentro base, forrado con tampico cheese, bañado en aderezo de chipotle y coronado con camarón mariposa, aguacate, anguila y ajonjolí. Empanizado.', 137, 1, NULL, 9),
+(95, 'Pakun Roll', 135.00, 'Relleno de tocino, por fuera topping de pollo y queso spicy, zanahoria. Acompañado de salsa anguila. Rollo natural.', 137, 1, NULL, 9),
+(96, 'Rorris Roll', 135.00, 'Camarón y caribe por dentro, topping de tampico cheese, aguacate y bañados en salsa de anguila y ajonjolí. Empanizado.', 137, 1, NULL, 9),
+(97, 'Royal Roll', 139.00, 'Carne y tocino por dentro, con topping de pollo. Empanizado, bañado con aderezo de chipotle, salsa de anguila y ajonjolí.', 137, 1, 'prod_68adcf0749621.jpg', 9),
+(98, 'Larry Roll', 155.00, 'Rollo relleno de camarón, forrado con salmón. Topping de surimi finamente picado, spicy, coronado con atún fresco y bañado en salsa de anguila y ajonjolí.', 137, 1, 'prod_68add883e8ce7.jpg', 11),
+(99, 'Aguachile Especial Roll', 155.00, 'Rollo relleno de philadelphia, pepino y aguacate. Forrado de chile serrano finamente picado, coronado con un aguachile especial de camarón, pulpo, callo y aguacate.', 137, 1, NULL, 11),
+(100, 'Mordick Roll', 145.00, 'Rollo relleno de tocino, montado doble con queso gratinado, mezcla de quesos spicy, coronado con camarones empanizados y bañado en salsa de anguila y ajonjolí.', 137, 1, 'prod_68add0ea0033c.jpg', 11),
+(101, 'Maney Roll', 165.00, 'Relleno de philadelphia, pepino y aguacate. Forrado de aguacate fresco y topping con camarón, medallón de atún, callo, mango y cebolla morada. Acompañado de salsa aguachile. Rollo natural.', 137, 1, 'prod_68add31666451.jpg', 11),
+(102, 'Onigiri', 59.00, '1 Pieza de triángulo de arroz blanco, con un toque ligero de philadelphia, forrado de alga, cubierto de ajonjolí y relleno opcional de pollo con verduras (col morada y zanahoria) o atún con aderezo especial de mayonesa y cebollín.', 217, 1, 'prod_68add35c53114.jpg', 3),
+(103, 'Dumplings', 95.00, 'Orden de 6 piezas de dumplings, rellenos de carne molida de cerdo. Sazonados orientalmente y acompañado con salsa macha.', 3000, 1, 'prod_68add5b64497c.jpg', 3),
+(104, 'Boneless', 135.00, '250gr. De boneless con salsa a elegir (búfalo, bbq, mango habanero, mostaza miel o mermelada de chipotle).', 120, 1, 'prod_68ae02330ae4d.jpg', 3),
+(105, 'Alitas', 135.00, '250gr. De alitas con salsa a elegir (búfalo, bbq, mango habanero, mostaza miel ó mermelada de chipotle).', 120, 1, 'prod_68add564480c8.jpg', 3),
+(106, 'Sopa Pho', 149.00, 'Rico fondo de pollo con vegetales, pechuga de pollo, fideos chinos y chile de árbol. Coronado con 4 piezas de dumplings.', 500, 1, 'prod_68adce4f32265.jpg', 3),
+(107, 'Yummy Roll', 159.00, 'Alga por fuera, relleno de camarón, philadelphia, pepino y aguacate. Gratinado con queso spicy de la casa. Coronado con camarón, aguacate y bañado en salsa de anguila y ajonjolí.', 137, 1, 'prod_68add0c25fd53.jpg', 3),
+(108, 'Cebolla Caramelizada', 10.00, 'Cebolla Caramelizada', 150000, 1, NULL, 6),
+(109, 'Kintaro', 102.00, 'Plato de sushi con atún graso picado toro y cebollín', 137, 1, NULL, NULL),
+(110, 'Guamuchilito Especial', 123.00, 'Bebida preparada con jugo de guamúchil, combinada con alcohol, salsas y especias.', 137, 1, 'prod_68add0071ee2a.jpg', 11),
+(111, 'Juny', 333.00, 'Juny', 137, 1, NULL, NULL),
+(112, 'Pork Spicy', 122.00, 'Platillo de cerdo picante.', 137, 1, 'prod_68adcf27bc6a4.jpg', 8),
+(120, 'Corona 1/2', 35.00, 'Cerveza helada', 30000, 1, 'prod_68adff38848ad.jpg', 1),
+(121, 'Corona Golden Light 1/2', 35.00, 'Cerveza Golden helada', 30000, 1, 'prod_68adff1b2eb67.jpg', 1),
+(122, 'Negra Modelo', 40.00, 'Cerveza negra helada', 30000, 1, 'prod_68adffa389931.jpg', 1),
+(123, 'Modelo Especial', 40.00, 'Cerveza helada', 29993, 1, 'prod_68adfeeac5c57.jpg', 1),
+(124, 'Bud Light', 35.00, 'Cerveza helada', 30000, 1, 'prod_68ae0111e5f9d.jpg', 1),
+(125, 'Stella Artois', 45.00, 'Cerveza Helada', 30000, 1, 'prod_68ae081b893ed.jpg', 1),
+(126, 'Ultra 1/2', 45.00, 'Cerveza helada', 30000, 1, 'prod_68ae015b16f22.jpg', 1),
+(127, 'Michelob 1/2', 45.00, 'Cerveza helada', 30000, 1, NULL, 1),
+(128, 'Vaso Chelado', 10.00, 'Vaso chelado', 2000, 1, NULL, 6),
+(129, 'Vaso Michelado', 15.00, 'Vaso michelado', 2000, 1, NULL, 6),
+(130, 'Vaso Clamato', 25.00, 'Vaso michelado', 2000, 1, NULL, 6),
+(131, 'Cheese Fries', 109.00, 'Concha de papa gajo sazonada, bañada en delicioso queso y tozos de tocino; al horno', 300, 1, 'prod_68add54669456.jpg', 3),
+(132, 'Charola Kyoyu Suru', 189.00, 'Camaron capeado, aros de cebolla y gyosas de carne de cerdo, acompañado de delicioso dip especial de la casa y salsa oriental', 498, 1, 'prod_68add217dc164.jpg', 3),
+(133, 'Alitas Nuts', 149.00, 'Deliciosos 300grs De alitas, bañadas en salsa dulce con chile, sabor cacahuate y ajonjolí', 120, 1, NULL, 3),
+(134, 'Edemamaes', 79.00, 'Vaina de frijol de soja preparado con picante, soya,sal y limon en una cama de zanahoria', 750, 1, 'prod_68add3a313461.jpg', 3),
+(135, 'Crispy Chesse', 99.00, 'Rollo de 6 a 7 pz relleno de carne, philadelphia, pepino y aguacate, empanizado, gratinado spicy y trozos de tocino frito.', 174, 1, NULL, 9),
+(136, 'Chummy Roll', 99.00, 'Rollo de 6 a 7 pz relleno de philadelphia, pepino y aguacate, coronado con tampico y camarón Empanizado, bando en salsa de Anguila y ajonjoli.', 174, 1, NULL, 9),
+(9001, 'ENVÍO – Repartidor casa', 30.00, 'Cargo por envío a domicilio (repartidor casa)', 99999, 1, NULL, 6);
 
 -- --------------------------------------------------------
 
@@ -1925,6 +1936,7 @@ CREATE TABLE `tickets` (
   `venta_id` int(11) NOT NULL,
   `folio` int(11) NOT NULL,
   `total` decimal(10,2) NOT NULL,
+  `descuento` decimal(10,2) NOT NULL DEFAULT 0.00,
   `fecha` datetime DEFAULT current_timestamp(),
   `usuario_id` int(11) DEFAULT NULL,
   `monto_recibido` decimal(10,2) DEFAULT 0.00,
@@ -1951,14 +1963,42 @@ CREATE TABLE `tickets` (
 -- Volcado de datos para la tabla `tickets`
 --
 
-INSERT INTO `tickets` (`id`, `venta_id`, `folio`, `total`, `fecha`, `usuario_id`, `monto_recibido`, `tipo_pago`, `sede_id`, `mesa_nombre`, `mesero_nombre`, `fecha_inicio`, `fecha_fin`, `tiempo_servicio`, `nombre_negocio`, `direccion_negocio`, `rfc_negocio`, `telefono_negocio`, `tipo_entrega`, `tarjeta_marca_id`, `tarjeta_banco_id`, `boucher`, `cheque_numero`, `cheque_banco_id`) VALUES
-(138, 125, 2012, 476.00, '2025-08-28 02:56:22', NULL, 476.00, 'efectivo', 1, 'Venta rápida', 'gilberto ozuna carrillo', NULL, '2025-08-28 02:56:22', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'rapido', NULL, NULL, NULL, NULL, NULL),
-(140, 127, 2014, 145.00, '2025-08-28 03:15:56', NULL, 145.00, 'cheque', 1, 'Venta rápida', 'juan hernesto ortega Almanza', NULL, '2025-08-28 03:15:56', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'rapido', NULL, NULL, NULL, 'dseww', 6),
-(141, 127, 2015, 99.00, '2025-08-28 03:15:56', NULL, 100.00, 'efectivo', 1, 'Venta rápida', 'juan hernesto ortega Almanza', NULL, '2025-08-28 03:15:56', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'rapido', NULL, NULL, NULL, NULL, NULL),
-(142, 127, 2016, 115.00, '2025-08-28 03:15:56', NULL, 115.00, 'boucher', 1, 'Venta rápida', 'juan hernesto ortega Almanza', NULL, '2025-08-28 03:15:56', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'rapido', 1, 2, '20003343', NULL, NULL),
-(143, 128, 2017, 49.00, '2025-08-28 03:26:43', NULL, 49.00, 'boucher', 1, 'Venta rápida', 'juan hernesto ortega Almanza', NULL, '2025-08-28 03:26:43', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'rapido', 1, 6, '4366', NULL, NULL),
-(144, 129, 2018, 10.00, '2025-08-28 03:31:14', NULL, 10.00, 'boucher', 1, 'Venta rápida', 'gilberto ozuna carrillo', NULL, '2025-08-28 03:31:14', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'rapido', 2, 8, '3453443342', NULL, NULL),
-(145, 130, 2019, 115.00, '2025-08-29 01:01:09', NULL, 120.00, 'efectivo', 1, 'Venta rápida', 'gilberto ozuna carrillo', NULL, '2025-08-29 01:01:09', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'rapido', NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `tickets` (`id`, `venta_id`, `folio`, `total`, `descuento`, `fecha`, `usuario_id`, `monto_recibido`, `tipo_pago`, `sede_id`, `mesa_nombre`, `mesero_nombre`, `fecha_inicio`, `fecha_fin`, `tiempo_servicio`, `nombre_negocio`, `direccion_negocio`, `rfc_negocio`, `telefono_negocio`, `tipo_entrega`, `tarjeta_marca_id`, `tarjeta_banco_id`, `boucher`, `cheque_numero`, `cheque_banco_id`) VALUES
+(167, 144, 2041, 194.00, 0.00, '2025-08-30 21:27:39', NULL, 200.00, 'efectivo', 1, 'Mesa 3', 'gilberto ozuna carrillo', NULL, '2025-08-30 21:27:39', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'mesa', NULL, NULL, NULL, NULL, NULL),
+(168, 145, 2042, 230.00, 23.00, '2025-08-30 21:28:29', NULL, 230.00, 'efectivo', 1, 'Venta rápida', 'Javier Emanuel lopez lozano', NULL, '2025-08-30 21:28:29', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'rapido', NULL, NULL, NULL, NULL, NULL),
+(169, 146, 2043, 213.00, 0.00, '2025-08-30 21:29:07', NULL, 213.00, 'boucher', 1, 'N/A', 'repartidor 1', NULL, '2025-08-30 21:29:07', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'domicilio', 2, 1, '678436', NULL, NULL),
+(170, 147, 2044, 130.00, 20.00, '2025-08-30 21:29:44', NULL, 110.00, 'boucher', 1, 'N/A', 'alinne Guadalupe Gurrola ramirez', NULL, '2025-08-30 21:29:44', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'domicilio', 1, 1, '646664', NULL, NULL),
+(171, 148, 2045, 125.00, 0.00, '2025-08-30 21:30:16', NULL, 125.00, 'boucher', 1, 'N/A', 'Jesus', NULL, '2025-08-30 21:30:16', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'domicilio', 1, 6, '5775', NULL, NULL),
+(172, 149, 2046, 326.00, 29.00, '2025-08-30 21:31:07', NULL, 297.00, 'boucher', 1, 'N/A', 'gilberto ozuna carrillo', NULL, '2025-08-30 21:31:07', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'domicilio', 1, 2, '452354', NULL, NULL),
+(173, 150, 2047, 404.00, 0.00, '2025-08-30 21:32:31', NULL, 500.00, 'efectivo', 1, 'Mesa 4', 'juan hernesto ortega Almanza', NULL, '2025-08-30 21:32:31', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'mesa', NULL, NULL, NULL, NULL, NULL),
+(174, 154, 2048, 165.00, 0.00, '2025-09-02 19:06:59', NULL, 165.00, 'efectivo', 1, 'N/A', 'repartidor 1', NULL, '2025-09-02 19:06:59', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '618 322 2352', 'domicilio', NULL, NULL, NULL, NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `ticket_descuentos`
+--
+
+CREATE TABLE `ticket_descuentos` (
+  `id` int(11) NOT NULL,
+  `ticket_id` int(11) NOT NULL,
+  `tipo` enum('cortesia','porcentaje','monto_fijo') NOT NULL,
+  `venta_detalle_id` int(11) DEFAULT NULL,
+  `porcentaje` decimal(5,2) DEFAULT NULL,
+  `monto` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `motivo` varchar(255) DEFAULT NULL,
+  `usuario_id` int(11) DEFAULT NULL,
+  `creado_en` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `ticket_descuentos`
+--
+
+INSERT INTO `ticket_descuentos` (`id`, `ticket_id`, `tipo`, `venta_detalle_id`, `porcentaje`, `monto`, `motivo`, `usuario_id`, `creado_en`) VALUES
+(26, 168, 'porcentaje', NULL, 10.00, 23.00, NULL, NULL, '2025-08-30 13:28:29'),
+(27, 170, 'monto_fijo', NULL, NULL, 20.00, NULL, NULL, '2025-08-30 13:29:44'),
+(28, 172, 'cortesia', 289, NULL, 29.00, NULL, NULL, '2025-08-30 13:31:07');
 
 -- --------------------------------------------------------
 
@@ -1980,13 +2020,23 @@ CREATE TABLE `ticket_detalles` (
 --
 
 INSERT INTO `ticket_detalles` (`id`, `ticket_id`, `producto_id`, `cantidad`, `precio_unitario`) VALUES
-(206, 138, 17, 4, 119.00),
-(211, 140, 93, 1, 145.00),
-(212, 141, 136, 1, 99.00),
-(213, 142, 15, 1, 115.00),
-(214, 143, 62, 1, 49.00),
-(215, 144, 77, 1, 10.00),
-(216, 145, 15, 1, 115.00);
+(244, 167, 99, 1, 155.00),
+(245, 167, 77, 1, 10.00),
+(246, 167, 76, 1, 29.00),
+(247, 168, 15, 2, 115.00),
+(248, 169, 99, 1, 155.00),
+(249, 169, 9001, 1, 58.00),
+(250, 170, 82, 1, 15.00),
+(251, 170, 14, 1, 115.00),
+(252, 171, 20, 1, 125.00),
+(253, 172, 136, 3, 99.00),
+(254, 172, 76, 1, 29.00),
+(255, 173, 17, 1, 119.00),
+(256, 173, 39, 1, 165.00),
+(257, 173, 123, 3, 40.00),
+(258, 174, 15, 1, 115.00),
+(259, 174, 4, 1, 20.00),
+(260, 174, 9001, 1, 30.00);
 
 -- --------------------------------------------------------
 
@@ -2029,7 +2079,9 @@ INSERT INTO `usuarios` (`id`, `nombre`, `usuario`, `contrasena`, `rol`, `activo`
 (31, 'Andrea ontivero escalera', 'AndreaO', 'admin', 'cajero', 1),
 (32, 'Cajero General', 'CajeroG', 'admin', 'cajero', 1),
 (33, 'Cocina General', 'CocinaG', 'admin', 'alimentos', 1),
-(34, 'Barra General', 'BarraG', 'admin', 'barra', 1);
+(34, 'Barra General', 'BarraG', 'admin', 'barra', 1),
+(35, 'repartidor 1', 'Repartidor1', 'admin', 'repartidor', 1),
+(36, 'Repartidor2', 'Repartidor2', 'admin', 'repartidor', 1);
 
 -- --------------------------------------------------------
 
@@ -2138,15 +2190,17 @@ CREATE TABLE `ventas` (
 --
 
 INSERT INTO `ventas` (`id`, `fecha`, `mesa_id`, `repartidor_id`, `tipo_entrega`, `usuario_id`, `total`, `estatus`, `entregado`, `estado_entrega`, `fecha_asignacion`, `fecha_inicio`, `fecha_entrega`, `seudonimo_entrega`, `foto_entrega`, `corte_id`, `cajero_id`, `observacion`, `sede_id`, `propina_efectivo`, `propina_cheque`, `propina_tarjeta`) VALUES
-(120, '2025-08-27 11:12:37', NULL, NULL, 'rapido', 6, 0.00, 'cancelada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 58, 1, '', 1, 0.00, 0.00, 0.00),
-(121, '2025-08-27 11:33:50', NULL, NULL, 'rapido', 2, 0.00, 'cancelada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 58, 1, '', 1, 0.00, 0.00, 0.00),
-(122, '2025-08-27 11:58:47', NULL, NULL, 'rapido', 6, 0.00, 'cancelada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 58, 1, '', 1, 0.00, 0.00, 0.00),
-(124, '2025-08-27 16:09:28', NULL, NULL, 'rapido', 5, 0.00, 'cancelada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 58, 1, '', 1, 0.00, 0.00, 0.00),
-(125, '2025-08-27 18:55:53', NULL, NULL, 'rapido', 5, 476.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 58, 1, '', 1, 0.00, 0.00, 0.00),
-(127, '2025-08-27 19:14:36', NULL, NULL, 'rapido', 4, 359.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 59, 1, '', 1, 0.00, 0.00, 0.00),
-(128, '2025-08-27 19:25:29', NULL, NULL, 'rapido', 4, 49.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 60, 1, '', 1, 0.00, 0.00, 0.00),
-(129, '2025-08-27 19:30:40', NULL, NULL, 'rapido', 5, 10.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 61, 1, '', 1, 0.00, 0.00, 0.00),
-(130, '2025-08-28 16:59:24', NULL, NULL, 'rapido', 5, 115.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, NULL, 1, '', 1, 0.00, 0.00, 0.00);
+(144, '2025-08-30 13:22:58', 3, NULL, 'mesa', 5, 194.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 67, 1, '', 1, 0.00, 0.00, 0.00),
+(145, '2025-08-30 13:23:24', NULL, NULL, 'rapido', 2, 230.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 67, 1, '', 1, 0.00, 0.00, 0.00),
+(146, '2025-08-30 13:25:18', NULL, 4, 'domicilio', 35, 213.00, 'cerrada', 0, 'pendiente', '2025-08-30 13:25:18', NULL, NULL, NULL, NULL, 67, 1, '', 1, 0.00, 0.00, 0.00),
+(147, '2025-08-30 13:25:45', NULL, 1, 'domicilio', 6, 130.00, 'cerrada', 0, 'pendiente', '2025-08-30 13:25:45', NULL, NULL, NULL, NULL, 67, 1, '', 1, 0.00, 0.00, 0.00),
+(148, '2025-08-30 13:26:02', NULL, 2, 'domicilio', 17, 125.00, 'cerrada', 0, 'pendiente', '2025-08-30 13:26:02', NULL, NULL, NULL, NULL, 67, 1, '', 1, 0.00, 0.00, 0.00),
+(149, '2025-08-30 13:26:23', NULL, 3, 'domicilio', 5, 326.00, 'cerrada', 0, 'pendiente', '2025-08-30 13:26:23', NULL, NULL, NULL, NULL, 67, 1, '', 1, 0.00, 0.00, 0.00),
+(150, '2025-08-30 13:32:06', 4, NULL, 'mesa', 4, 404.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 67, 1, '', 1, 0.00, 0.00, 0.00),
+(151, '2025-08-30 13:58:06', NULL, NULL, 'rapido', 5, 0.00, 'cancelada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 68, 1, '', 1, 0.00, 0.00, 0.00),
+(152, '2025-08-30 13:58:46', NULL, NULL, 'rapido', 5, 0.00, 'cancelada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 68, 1, '', 1, 0.00, 0.00, 0.00),
+(153, '2025-08-30 13:58:55', NULL, NULL, 'rapido', 5, 0.00, 'cancelada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 68, 1, '', 1, 0.00, 0.00, 0.00),
+(154, '2025-09-02 11:05:55', NULL, 4, 'domicilio', 35, 165.00, 'cerrada', 0, 'pendiente', '2025-09-02 11:05:55', NULL, NULL, NULL, NULL, 69, 1, '', 1, 0.00, 0.00, 0.00);
 
 --
 -- Disparadores `ventas`
@@ -2186,13 +2240,23 @@ CREATE TABLE `venta_detalles` (
 --
 
 INSERT INTO `venta_detalles` (`id`, `venta_id`, `producto_id`, `cantidad`, `precio_unitario`, `insumos_descargados`, `created_at`, `entregado_hr`, `estado_producto`, `observaciones`) VALUES
-(240, 125, 17, 4, 119.00, 1, '2025-08-27 18:55:53', '2025-08-27 18:56:03', 'entregado', NULL),
-(245, 127, 136, 1, 99.00, 1, '2025-08-27 19:14:36', '2025-08-27 19:14:47', 'entregado', NULL),
-(246, 127, 15, 1, 115.00, 1, '2025-08-27 19:14:36', '2025-08-27 19:14:49', 'entregado', NULL),
-(247, 127, 93, 1, 145.00, 1, '2025-08-27 19:14:36', '2025-08-27 19:14:50', 'entregado', NULL),
-(248, 128, 62, 1, 49.00, 1, '2025-08-27 19:25:29', '2025-08-27 19:26:22', 'entregado', NULL),
-(249, 129, 77, 1, 10.00, 1, '2025-08-27 19:30:40', '2025-08-27 19:30:46', 'entregado', NULL),
-(250, 130, 15, 1, 115.00, 1, '2025-08-28 16:59:24', '2025-08-28 16:59:47', 'entregado', NULL);
+(279, 144, 99, 1, 155.00, 1, '2025-08-30 13:22:58', '2025-08-30 13:26:31', 'entregado', NULL),
+(280, 144, 77, 1, 10.00, 1, '2025-08-30 13:22:58', '2025-08-30 13:26:40', 'entregado', NULL),
+(281, 144, 76, 1, 29.00, 1, '2025-08-30 13:22:58', '2025-08-30 13:26:42', 'entregado', NULL),
+(282, 145, 15, 2, 115.00, 1, '2025-08-30 13:23:24', '2025-08-30 13:26:39', 'entregado', NULL),
+(283, 146, 99, 1, 155.00, 1, '2025-08-30 13:25:18', '2025-08-30 13:26:41', 'entregado', NULL),
+(284, 146, 9001, 1, 58.00, 0, '2025-08-30 13:25:18', NULL, 'entregado', NULL),
+(285, 147, 82, 1, 15.00, 1, '2025-08-30 13:25:45', '2025-08-30 13:26:45', 'entregado', NULL),
+(286, 147, 14, 1, 115.00, 1, '2025-08-30 13:25:45', '2025-08-30 13:26:47', 'entregado', NULL),
+(287, 148, 20, 1, 125.00, 1, '2025-08-30 13:26:02', '2025-08-30 13:26:45', 'entregado', NULL),
+(288, 149, 136, 3, 99.00, 1, '2025-08-30 13:26:23', '2025-08-30 13:26:48', 'entregado', NULL),
+(289, 149, 76, 1, 29.00, 1, '2025-08-30 13:30:40', '2025-08-30 13:30:46', 'entregado', NULL),
+(290, 150, 17, 1, 119.00, 1, '2025-08-30 13:32:06', '2025-08-30 13:32:12', 'entregado', NULL),
+(291, 150, 39, 1, 165.00, 1, '2025-08-30 13:32:06', '2025-08-30 13:32:14', 'entregado', NULL),
+(292, 150, 123, 3, 40.00, 1, '2025-08-30 13:32:06', '2025-08-30 13:32:16', 'entregado', NULL),
+(296, 154, 15, 1, 115.00, 1, '2025-09-02 11:05:55', '2025-09-02 11:06:20', 'entregado', NULL),
+(297, 154, 4, 1, 20.00, 1, '2025-09-02 11:05:55', '2025-09-02 11:06:21', 'entregado', NULL),
+(298, 154, 9001, 1, 30.00, 0, '2025-09-02 11:05:55', NULL, 'entregado', NULL);
 
 --
 -- Disparadores `venta_detalles`
@@ -2262,8 +2326,9 @@ CREATE TABLE `venta_detalles_cancelados` (
 --
 
 INSERT INTO `venta_detalles_cancelados` (`id`, `venta_detalle_id_original`, `venta_id`, `producto_id`, `cantidad`, `precio_unitario`, `insumos_descargados`, `created_at`, `entregado_hr`, `estado_producto`, `observaciones`, `cancelado_por`, `fecha_cancelacion`, `motivo`) VALUES
-(4, 238, 124, 77, 1, 10.00, 0, '2025-08-27 16:09:28', NULL, 'pendiente', NULL, NULL, '2025-08-27 16:21:49', NULL),
-(5, 239, 124, 72, 1, 35.00, 0, '2025-08-27 16:09:28', NULL, 'pendiente', NULL, NULL, '2025-08-27 16:21:49', NULL);
+(6, 293, 151, 76, 1, 29.00, 0, '2025-08-30 13:58:06', NULL, 'pendiente', NULL, NULL, '2025-08-30 13:58:22', NULL),
+(7, 295, 153, 76, 1, 29.00, 0, '2025-08-30 13:58:55', NULL, 'pendiente', NULL, NULL, '2025-08-30 13:59:17', NULL),
+(8, 294, 152, 76, 1, 29.00, 0, '2025-08-30 13:58:46', NULL, 'pendiente', NULL, NULL, '2025-08-30 13:59:20', NULL);
 
 -- --------------------------------------------------------
 
@@ -2284,27 +2349,53 @@ CREATE TABLE `venta_detalles_log` (
 --
 
 INSERT INTO `venta_detalles_log` (`id`, `venta_detalle_id`, `estado_anterior`, `estado_nuevo`, `cambiado_en`) VALUES
-(229, 240, 'pendiente', 'en_preparacion', '2025-08-27 18:56:01'),
-(230, 240, 'en_preparacion', 'listo', '2025-08-27 18:56:02'),
-(231, 240, 'listo', 'entregado', '2025-08-27 18:56:03'),
-(244, 245, 'pendiente', 'en_preparacion', '2025-08-27 19:14:42'),
-(245, 246, 'pendiente', 'en_preparacion', '2025-08-27 19:14:43'),
-(246, 247, 'pendiente', 'en_preparacion', '2025-08-27 19:14:44'),
-(247, 245, 'en_preparacion', 'listo', '2025-08-27 19:14:44'),
-(248, 245, 'listo', 'entregado', '2025-08-27 19:14:47'),
-(249, 246, 'en_preparacion', 'listo', '2025-08-27 19:14:48'),
-(250, 247, 'en_preparacion', 'listo', '2025-08-27 19:14:49'),
-(251, 246, 'listo', 'entregado', '2025-08-27 19:14:49'),
-(252, 247, 'listo', 'entregado', '2025-08-27 19:14:50'),
-(253, 248, 'pendiente', 'en_preparacion', '2025-08-27 19:26:20'),
-(254, 248, 'en_preparacion', 'listo', '2025-08-27 19:26:21'),
-(255, 248, 'listo', 'entregado', '2025-08-27 19:26:22'),
-(256, 249, 'pendiente', 'en_preparacion', '2025-08-27 19:30:45'),
-(257, 249, 'en_preparacion', 'listo', '2025-08-27 19:30:45'),
-(258, 249, 'listo', 'entregado', '2025-08-27 19:30:46'),
-(259, 250, 'pendiente', 'en_preparacion', '2025-08-28 16:59:43'),
-(260, 250, 'en_preparacion', 'listo', '2025-08-28 16:59:46'),
-(261, 250, 'listo', 'entregado', '2025-08-28 16:59:47');
+(339, 284, 'pendiente', 'entregado', '2025-08-30 13:25:18'),
+(340, 279, 'pendiente', 'en_preparacion', '2025-08-30 13:26:27'),
+(341, 280, 'pendiente', 'en_preparacion', '2025-08-30 13:26:28'),
+(342, 281, 'pendiente', 'en_preparacion', '2025-08-30 13:26:28'),
+(343, 282, 'pendiente', 'en_preparacion', '2025-08-30 13:26:29'),
+(344, 279, 'en_preparacion', 'listo', '2025-08-30 13:26:30'),
+(345, 280, 'en_preparacion', 'listo', '2025-08-30 13:26:30'),
+(346, 279, 'listo', 'entregado', '2025-08-30 13:26:31'),
+(347, 283, 'pendiente', 'en_preparacion', '2025-08-30 13:26:32'),
+(348, 286, 'pendiente', 'en_preparacion', '2025-08-30 13:26:33'),
+(349, 287, 'pendiente', 'en_preparacion', '2025-08-30 13:26:34'),
+(350, 285, 'pendiente', 'en_preparacion', '2025-08-30 13:26:35'),
+(351, 288, 'pendiente', 'en_preparacion', '2025-08-30 13:26:36'),
+(352, 282, 'en_preparacion', 'listo', '2025-08-30 13:26:36'),
+(353, 281, 'en_preparacion', 'listo', '2025-08-30 13:26:37'),
+(354, 283, 'en_preparacion', 'listo', '2025-08-30 13:26:38'),
+(355, 287, 'en_preparacion', 'listo', '2025-08-30 13:26:39'),
+(356, 282, 'listo', 'entregado', '2025-08-30 13:26:39'),
+(357, 280, 'listo', 'entregado', '2025-08-30 13:26:40'),
+(358, 283, 'listo', 'entregado', '2025-08-30 13:26:41'),
+(359, 281, 'listo', 'entregado', '2025-08-30 13:26:42'),
+(360, 285, 'en_preparacion', 'listo', '2025-08-30 13:26:43'),
+(361, 286, 'en_preparacion', 'listo', '2025-08-30 13:26:44'),
+(362, 285, 'listo', 'entregado', '2025-08-30 13:26:45'),
+(363, 287, 'listo', 'entregado', '2025-08-30 13:26:45'),
+(364, 288, 'en_preparacion', 'listo', '2025-08-30 13:26:46'),
+(365, 286, 'listo', 'entregado', '2025-08-30 13:26:47'),
+(366, 288, 'listo', 'entregado', '2025-08-30 13:26:48'),
+(367, 289, 'pendiente', 'en_preparacion', '2025-08-30 13:30:45'),
+(368, 289, 'en_preparacion', 'listo', '2025-08-30 13:30:45'),
+(369, 289, 'listo', 'entregado', '2025-08-30 13:30:46'),
+(370, 290, 'pendiente', 'en_preparacion', '2025-08-30 13:32:09'),
+(371, 291, 'pendiente', 'en_preparacion', '2025-08-30 13:32:10'),
+(372, 292, 'pendiente', 'en_preparacion', '2025-08-30 13:32:11'),
+(373, 290, 'en_preparacion', 'listo', '2025-08-30 13:32:11'),
+(374, 290, 'listo', 'entregado', '2025-08-30 13:32:12'),
+(375, 291, 'en_preparacion', 'listo', '2025-08-30 13:32:13'),
+(376, 291, 'listo', 'entregado', '2025-08-30 13:32:14'),
+(377, 292, 'en_preparacion', 'listo', '2025-08-30 13:32:15'),
+(378, 292, 'listo', 'entregado', '2025-08-30 13:32:16'),
+(379, 298, 'pendiente', 'entregado', '2025-09-02 11:05:55'),
+(380, 296, 'pendiente', 'en_preparacion', '2025-09-02 11:06:17'),
+(381, 297, 'pendiente', 'en_preparacion', '2025-09-02 11:06:18'),
+(382, 296, 'en_preparacion', 'listo', '2025-09-02 11:06:19'),
+(383, 297, 'en_preparacion', 'listo', '2025-09-02 11:06:20'),
+(384, 296, 'listo', 'entregado', '2025-09-02 11:06:20'),
+(385, 297, 'listo', 'entregado', '2025-09-02 11:06:21');
 
 -- --------------------------------------------------------
 
@@ -2479,6 +2570,24 @@ CREATE TABLE `vw_productos_recetas_agrupado` (
 -- --------------------------------------------------------
 
 --
+-- Estructura Stand-in para la vista `vw_tickets_con_descuentos`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `vw_tickets_con_descuentos` (
+`ticket_id` int(11)
+,`venta_id` int(11)
+,`total_bruto` decimal(10,2)
+,`descuento_total` decimal(10,2)
+,`total_esperado` decimal(11,2)
+,`descuento_cortesias` decimal(32,2)
+,`porcentaje_aplicado` decimal(5,2)
+,`descuento_porcentaje` decimal(32,2)
+,`descuento_monto_fijo` decimal(32,2)
+);
+
+-- --------------------------------------------------------
+
+--
 -- Estructura Stand-in para la vista `vw_tiempos_producto`
 -- (Véase abajo para la vista actual)
 --
@@ -2610,6 +2719,15 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 DROP TABLE IF EXISTS `vw_productos_recetas_agrupado`;
 
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_productos_recetas_agrupado`  AS SELECT `p`.`id` AS `producto_id`, `p`.`nombre` AS `producto`, group_concat(concat(`i`.`nombre`,' (',`r`.`cantidad`,' ',`i`.`unidad`,')') order by `i`.`nombre` ASC separator ' | ') AS `receta` FROM ((`recetas` `r` join `productos` `p` on(`p`.`id` = `r`.`producto_id`)) join `insumos` `i` on(`i`.`id` = `r`.`insumo_id`)) GROUP BY `p`.`id`, `p`.`nombre` ORDER BY `p`.`nombre` ASC ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vw_tickets_con_descuentos`
+--
+DROP TABLE IF EXISTS `vw_tickets_con_descuentos`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_tickets_con_descuentos`  AS SELECT `t`.`id` AS `ticket_id`, `t`.`venta_id` AS `venta_id`, `t`.`total` AS `total_bruto`, `t`.`descuento` AS `descuento_total`, `t`.`total`- `t`.`descuento` AS `total_esperado`, sum(case when `td`.`tipo` = 'cortesia' then `td`.`monto` else 0 end) AS `descuento_cortesias`, max(case when `td`.`tipo` = 'porcentaje' then `td`.`porcentaje` end) AS `porcentaje_aplicado`, sum(case when `td`.`tipo` = 'porcentaje' then `td`.`monto` else 0 end) AS `descuento_porcentaje`, sum(case when `td`.`tipo` = 'monto_fijo' then `td`.`monto` else 0 end) AS `descuento_monto_fijo` FROM (`tickets` `t` left join `ticket_descuentos` `td` on(`td`.`ticket_id` = `t`.`id`)) GROUP BY `t`.`id`, `t`.`venta_id`, `t`.`total`, `t`.`descuento` ;
 
 -- --------------------------------------------------------
 
@@ -2881,6 +2999,14 @@ ALTER TABLE `tickets`
   ADD KEY `fk_ticket_cheque_banco` (`cheque_banco_id`);
 
 --
+-- Indices de la tabla `ticket_descuentos`
+--
+ALTER TABLE `ticket_descuentos`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `ticket_id` (`ticket_id`),
+  ADD KEY `venta_detalle_id` (`venta_detalle_id`);
+
+--
 -- Indices de la tabla `ticket_detalles`
 --
 ALTER TABLE `ticket_detalles`
@@ -2992,19 +3118,19 @@ ALTER TABLE `clientes_facturacion`
 -- AUTO_INCREMENT de la tabla `corte_caja`
 --
 ALTER TABLE `corte_caja`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
 
 --
 -- AUTO_INCREMENT de la tabla `corte_caja_historial`
 --
 ALTER TABLE `corte_caja_historial`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT de la tabla `desglose_corte`
 --
 ALTER TABLE `desglose_corte`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=252;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=298;
 
 --
 -- AUTO_INCREMENT de la tabla `entradas_detalle`
@@ -3022,13 +3148,13 @@ ALTER TABLE `entradas_insumo`
 -- AUTO_INCREMENT de la tabla `facturas`
 --
 ALTER TABLE `facturas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `factura_detalles`
 --
 ALTER TABLE `factura_detalles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `horarios`
@@ -3046,7 +3172,7 @@ ALTER TABLE `insumos`
 -- AUTO_INCREMENT de la tabla `logs_accion`
 --
 ALTER TABLE `logs_accion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=693;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=811;
 
 --
 -- AUTO_INCREMENT de la tabla `log_asignaciones_mesas`
@@ -3058,7 +3184,7 @@ ALTER TABLE `log_asignaciones_mesas`
 -- AUTO_INCREMENT de la tabla `log_cancelaciones`
 --
 ALTER TABLE `log_cancelaciones`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT de la tabla `log_mesas`
@@ -3100,7 +3226,7 @@ ALTER TABLE `ofertas_dia`
 -- AUTO_INCREMENT de la tabla `productos`
 --
 ALTER TABLE `productos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=137;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9002;
 
 --
 -- AUTO_INCREMENT de la tabla `proveedores`
@@ -3142,19 +3268,25 @@ ALTER TABLE `sedes`
 -- AUTO_INCREMENT de la tabla `tickets`
 --
 ALTER TABLE `tickets`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=146;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=175;
+
+--
+-- AUTO_INCREMENT de la tabla `ticket_descuentos`
+--
+ALTER TABLE `ticket_descuentos`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT de la tabla `ticket_detalles`
 --
 ALTER TABLE `ticket_detalles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=217;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=261;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT de la tabla `usuario_ruta`
@@ -3166,25 +3298,25 @@ ALTER TABLE `usuario_ruta`
 -- AUTO_INCREMENT de la tabla `ventas`
 --
 ALTER TABLE `ventas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=131;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=155;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalles`
 --
 ALTER TABLE `venta_detalles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=251;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=299;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalles_cancelados`
 --
 ALTER TABLE `venta_detalles_cancelados`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalles_log`
 --
 ALTER TABLE `venta_detalles_log`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=262;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=386;
 
 --
 -- Restricciones para tablas volcadas
@@ -3304,6 +3436,13 @@ ALTER TABLE `tickets`
   ADD CONSTRAINT `fk_tickets_sede` FOREIGN KEY (`sede_id`) REFERENCES `sedes` (`id`),
   ADD CONSTRAINT `tickets_ibfk_1` FOREIGN KEY (`venta_id`) REFERENCES `ventas` (`id`),
   ADD CONSTRAINT `tickets_ibfk_2` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
+
+--
+-- Filtros para la tabla `ticket_descuentos`
+--
+ALTER TABLE `ticket_descuentos`
+  ADD CONSTRAINT `fk_td_ticket` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`),
+  ADD CONSTRAINT `fk_td_vd` FOREIGN KEY (`venta_detalle_id`) REFERENCES `venta_detalles` (`id`);
 
 --
 -- Filtros para la tabla `ticket_detalles`

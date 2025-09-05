@@ -31,7 +31,11 @@ ob_start();
   <div class="mb-3 text-end">
     <button class="btn custom-btn" id="agregarProducto">Agregar producto</button>
   </div>
-
+  <div class="row mt-3">
+    <div class="col-12">
+      <ul id="paginadorInv" class="pagination justify-content-center"></ul>
+    </div>
+  </div>
   <div class="table-responsive">
     <table id="tablaProductos" class="styled-table">
       <thead>
@@ -48,6 +52,7 @@ ob_start();
       <tbody></tbody>
     </table>
   </div>
+
 </div>
 
 <!-- MODAL NORMALIZED 2025-08-14 -->

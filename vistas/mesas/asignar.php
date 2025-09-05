@@ -25,6 +25,15 @@ ob_start();
 
 
 <h1 class="section-header">Asignar meseros a mesas</h1>
+<div class="filtros-container mb-2">
+  <label for="buscarAsignacion" class="me-2">Buscar:</label>
+  <input type="text" id="buscarAsignacion" class="form-control" placeholder="Mesa o mesero">
+  </div>
+  <div class="row mt-2">
+  <div class="col-12">
+    <ul id="paginadorAsignar" class="pagination justify-content-center"></ul>
+  </div>
+</div>
 <div class="table-responsive">
 <table id="tablaAsignacion" class="styled-table">
     <thead>
@@ -33,6 +42,7 @@ ob_start();
     <tbody></tbody>
 </table>
 </div>
+
 <!-- Modal global de mensajes -->
 <div class="modal fade" id="appMsgModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog" role="document">

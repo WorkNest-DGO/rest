@@ -112,3 +112,62 @@ async function eliminarUsuario(id) {
 }
 
 window.addEventListener('DOMContentLoaded', cargarUsuarios);
+
+// Paginador + buscador (20 por página) para Usuarios
+(function(){
+  let ALL = [];
+  let FIL = [];
+  let PAGE = 1;
+  const PP = 20;
+
+  function render(){
+    const tbody = document.querySelector('#tablaUsuarios tbody');
+    const pag = document.getElementById('paginadorUsuarios');
+    if (!tbody || !pag) return;
+    const total = Math.max(1, Math.ceil(FIL.length / PP));
+    if (PAGE > total) PAGE = total;
+    const ini = (PAGE - 1) * PP, fin = ini + PP;
+    ALL.forEach(tr => tr.style.display = 'none');
+    FIL.forEach((tr, idx) => tr.style.display = (idx>=ini && idx<fin) ? '' : 'none');
+
+    pag.innerHTML = '';
+    const prevLi = document.createElement('li');
+    prevLi.className = 'page-item' + (PAGE === 1 ? ' disabled' : '');
+    const prevA = document.createElement('a'); prevA.className='page-link'; prevA.href='#'; prevA.textContent='Anterior';
+    prevA.addEventListener('click', e => { e.preventDefault(); if (PAGE>1){ PAGE--; render(); }});
+    prevLi.appendChild(prevA); pag.appendChild(prevLi);
+    for (let i=1;i<=total;i++){
+      const li=document.createElement('li'); li.className='page-item'+(i===PAGE?' active':'');
+      const a=document.createElement('a'); a.className='page-link'; a.href='#'; a.textContent=String(i);
+      a.addEventListener('click', e=>{ e.preventDefault(); PAGE=i; render(); });
+      li.appendChild(a); pag.appendChild(li);
+    }
+    const nextLi = document.createElement('li');
+    nextLi.className = 'page-item' + (PAGE === total ? ' disabled' : '');
+    const nextA = document.createElement('a'); nextA.className='page-link'; nextA.href='#'; nextA.textContent='Siguiente';
+    nextA.addEventListener('click', e => { e.preventDefault(); if (PAGE<total){ PAGE++; render(); }});
+    nextLi.appendChild(nextA); pag.appendChild(nextLi);
+  }
+
+  function init(){
+    ALL = Array.from(document.querySelectorAll('#tablaUsuarios tbody tr'));
+    FIL = ALL.slice(); PAGE = 1; render();
+  }
+
+  const tbody = document.querySelector('#tablaUsuarios tbody');
+  if (tbody) {
+    const obs = new MutationObserver(() => { init(); });
+    obs.observe(tbody, { childList: true });
+  }
+  const buscar = document.getElementById('buscarUsuario');
+  if (buscar) {
+    let t; buscar.addEventListener('input', e => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        const q = (e.target.value || '').toLowerCase();
+        FIL = ALL.filter(tr => tr.innerText.toLowerCase().includes(q));
+        PAGE = 1; render();
+      }, 250);
+    });
+  }
+})();

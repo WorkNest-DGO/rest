@@ -14,34 +14,7 @@ $denominaciones = $conn->query("SELECT id, descripcion, valor FROM catalogo_deno
 $title = 'Ventas';
 ob_start();
 ?>
-<style>
-  .ticket-mono {
-    font-family: "Courier New", ui-monospace, Menlo, Consolas, monospace;
-    white-space: pre; line-height: 1.25; font-size: 13px;
-    width: 80mm; max-width: 100%; margin: 0 auto; background: #fff; padding: 8px;
-    border: 1px dashed #ddd; border-radius: 6px;
-  }
-  @media print {
-    body * { visibility: hidden !important; }
-    #modalCortePreview, #modalCortePreview * { visibility: visible !important; }
-    #modalCortePreview { position: static; inset: auto; background: none; }
-    #modalCortePreview .modal-dialog { box-shadow: none; }
-    #modalCortePreview .modal-header, #modalCortePreview .modal-footer { display: none; }
-    .ticket-mono { border: none; }
-  }
 
-  /* Estilos para el buscador de productos (inspirado en codepen NPLbpP) */
-  .selector-producto {
-    position: relative;
-  }
-
-  .lista-productos {
-    max-height: 200px;
-    overflow-y: auto;
-    display: none;
-    z-index: 1000;
-  }
-</style>
 <!-- Page Header Start -->
 <div class="page-header mb-0">
   <div class="container">
@@ -62,7 +35,7 @@ ob_start();
     <p>Control de ventas</p>
     <h2>Registro de Venta</h2>
   </div>
-<div class="container mt-5">
+<div class="container mt-5" hidden>
   <h2 class="section-header">Solicitudes de Ticket</h2>
   <div class="table-responsive">
     <table id="solicitudes" class="styled-table">
@@ -156,7 +129,7 @@ ob_start();
             </table>
 
           <!-- Panel Envío (mostrar solo si: tipo_entrega=domicilio && repartidor=Repartidor casa) -->
-          <div id="panelEnvioCasa" style="display:none; margin-top:12px;">
+          <div id="panelEnvioCasa" style="display:none; margin-top:12px;     color: #000000ff;">
             <div class="card">
               <div class="card-header" style="font-weight:600;">Envío</div>
               <div class="card-body" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
@@ -164,7 +137,7 @@ ob_start();
                   <label style="display:block; font-size:12px; opacity:.7;">Concepto</label>
                   <span id="envioNombre" style="font-weight:600;">ENVÍO – Repartidor casa</span>
                 </div>
-                <div>
+                <div hidden>
                   <label for="envioCantidad" style="display:block; font-size:12px; opacity:.7;">Cantidad</label>
                   <input id="envioCantidad" type="number" min="0" step="1" value="1" style="width:90px;">
                 </div>

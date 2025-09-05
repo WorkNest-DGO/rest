@@ -7,6 +7,9 @@ window.alert = showAppMsg;
 
 let mesas = [];
 let meseros = [];
+let filtradas = [];
+let paginaAsig = 1;
+const itemsPorPaginaAsig = 20;
 const usuarioId = window.usuarioId || 0;
 
 async function cargarDatos() {
@@ -16,15 +19,26 @@ async function cargarDatos() {
         alert('Error al cargar datos');
         return;
     }
-    mesas = m.resultado;
-    meseros = u.resultado;
-    renderTabla();
+    mesas = m.resultado || [];
+    meseros = u.resultado || [];
+    filtradas = mesas;
+    renderTabla(1);
 }
 
-function renderTabla() {
+function renderTabla(pagina = 1) {
     const tbody = document.querySelector('#tablaAsignacion tbody');
+    const pag = document.getElementById('paginadorAsignar');
+    if (!tbody || !pag) return;
+
+    paginaAsig = pagina;
+    const totalPag = Math.max(1, Math.ceil(filtradas.length / itemsPorPaginaAsig));
+    if (paginaAsig > totalPag) paginaAsig = totalPag;
+    const ini = (paginaAsig - 1) * itemsPorPaginaAsig;
+    const fin = ini + itemsPorPaginaAsig;
+    const visibles = filtradas.slice(ini, fin);
+
     tbody.innerHTML = '';
-    mesas.forEach(mesa => {
+    visibles.forEach(mesa => {
         const tr = document.createElement('tr');
         const tdMesa = document.createElement('td');
         tdMesa.textContent = mesa.nombre;
@@ -51,6 +65,25 @@ function renderTabla() {
         tr.appendChild(tdSel);
         tbody.appendChild(tr);
     });
+
+    // paginador
+    pag.innerHTML = '';
+    const prevLi = document.createElement('li');
+    prevLi.className = 'page-item' + (paginaAsig === 1 ? ' disabled' : '');
+    const prevA = document.createElement('a'); prevA.className='page-link'; prevA.href='#'; prevA.textContent='Anterior';
+    prevA.addEventListener('click', e => { e.preventDefault(); if (paginaAsig > 1) renderTabla(paginaAsig - 1); });
+    prevLi.appendChild(prevA); pag.appendChild(prevLi);
+    for (let i=1;i<=totalPag;i++){
+        const li=document.createElement('li'); li.className='page-item'+(i===paginaAsig?' active':'');
+        const a=document.createElement('a'); a.className='page-link'; a.href='#'; a.textContent=String(i);
+        a.addEventListener('click', e=>{e.preventDefault(); renderTabla(i);});
+        li.appendChild(a); pag.appendChild(li);
+    }
+    const nextLi = document.createElement('li');
+    nextLi.className = 'page-item' + (paginaAsig === totalPag ? ' disabled' : '');
+    const nextA = document.createElement('a'); nextA.className='page-link'; nextA.href='#'; nextA.textContent='Siguiente';
+    nextA.addEventListener('click', e => { e.preventDefault(); if (paginaAsig < totalPag) renderTabla(paginaAsig + 1); });
+    nextLi.appendChild(nextA); pag.appendChild(nextLi);
 }
 
 async function asignarMesero(mesaId, meseroId) {
@@ -67,4 +100,21 @@ async function asignarMesero(mesaId, meseroId) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', cargarDatos);
+document.addEventListener('DOMContentLoaded', () => {
+  cargarDatos();
+  const buscar = document.getElementById('buscarAsignacion');
+  if (buscar) {
+    let t;
+    buscar.addEventListener('input', e => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        const q = (e.target.value || '').toLowerCase();
+        filtradas = mesas.filter(m => {
+          const nombreMesero = (meseros.find(x => x.id === m.usuario_id)?.nombre || '').toLowerCase();
+          return (m.nombre || '').toLowerCase().includes(q) || nombreMesero.includes(q);
+        });
+        renderTabla(1);
+      }, 250);
+    });
+  }
+});

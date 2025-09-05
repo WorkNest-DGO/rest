@@ -109,16 +109,102 @@ async function cargarEntregas() {
 }
 
 async function marcarEntregada(id) {
-    const seudonimo = prompt('Seud\u00f3nimo del cliente:') || '';
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.addEventListener('change', async () => {
+    let modal = document.getElementById('modalMarcarEntregado');
+
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modalMarcarEntregado';
+        modal.className = 'modal fade';
+        modal.setAttribute('tabindex', '-1');
+
+        const dialog = document.createElement('div');
+        dialog.className = 'modal-dialog';
+
+        const content = document.createElement('div');
+        content.className = 'modal-content';
+
+        const body = document.createElement('div');
+        body.className = 'modal-body';
+
+        // Campo Seudónimo
+        const lblSeudo = document.createElement('label');
+        lblSeudo.setAttribute('for', 'seudonimoCliente');
+        lblSeudo.textContent = 'Seudónimo del cliente:';
+
+        const inSeudo = document.createElement('input');
+        inSeudo.type = 'text';
+        inSeudo.id = 'seudonimoCliente';
+        inSeudo.className = 'form-control';
+        inSeudo.placeholder = 'Opcional';
+
+        // Espaciador
+        const spacer = document.createElement('div');
+        spacer.style.height = '10px';
+
+        // Campo Foto evidencia
+        const lblFoto = document.createElement('label');
+        lblFoto.setAttribute('for', 'fotoEntrega');
+        lblFoto.textContent = 'Foto evidencia (opcional):';
+
+        const inFoto = document.createElement('input');
+        inFoto.type = 'file';
+        inFoto.id = 'fotoEntrega';
+        inFoto.accept = 'image/*';
+
+        body.appendChild(lblSeudo);
+        body.appendChild(inSeudo);
+        body.appendChild(spacer);
+        body.appendChild(lblFoto);
+        body.appendChild(inFoto);
+
+        const footer = document.createElement('div');
+        footer.className = 'modal-footer';
+
+        const btnConfirmar = document.createElement('button');
+        btnConfirmar.id = 'btnConfirmarEntregado';
+        btnConfirmar.className = 'btn custom-btn';
+        btnConfirmar.textContent = 'Confirmar entrega';
+
+        const btnCancelar = document.createElement('button');
+        btnCancelar.className = 'btn custom-btn';
+        btnCancelar.textContent = 'Cancelar';
+
+        footer.appendChild(btnConfirmar);
+        footer.appendChild(btnCancelar);
+
+        content.appendChild(body);
+        content.appendChild(footer);
+        dialog.appendChild(content);
+        modal.appendChild(dialog);
+        document.body.appendChild(modal);
+
+        // Estilo de footer como en ventas (fondo caja)
+        if (!document.getElementById('modalMarcarEntregadoStyles')) {
+            const style = document.createElement('style');
+            style.id = 'modalMarcarEntregadoStyles';
+            style.textContent = '#modalMarcarEntregado .modal-footer{display:flex;justify-content:flex-end;gap:0.5rem;}';
+            document.head.appendChild(style);
+        }
+
+        btnCancelar.addEventListener('click', () => hideModal(modal));
+    }
+
+    // Limpiar valores previos
+    modal.querySelector('#seudonimoCliente').value = '';
+    const fotoEl = modal.querySelector('#fotoEntrega');
+    if (fotoEl) fotoEl.value = '';
+
+    const btnOk = modal.querySelector('#btnConfirmarEntregado');
+    btnOk.onclick = async () => {
+        const seudonimo = modal.querySelector('#seudonimoCliente').value || '';
+        const foto = modal.querySelector('#fotoEntrega').files[0];
+
         const fd = new FormData();
         fd.append('venta_id', id);
         fd.append('accion', 'entregado');
         fd.append('seudonimo', seudonimo);
-        if (input.files[0]) fd.append('foto', input.files[0]);
+        if (foto) fd.append('foto', foto);
+
         try {
             const resp = await fetch('../../api/repartidores/marcar_entregado.php', {
                 method: 'POST',
@@ -126,6 +212,7 @@ async function marcarEntregada(id) {
             });
             const data = await resp.json();
             if (data.success) {
+                hideModal(modal);
                 cargarEntregas();
             } else {
                 alert(data.mensaje);
@@ -134,8 +221,9 @@ async function marcarEntregada(id) {
             console.error(err);
             alert('Error al actualizar');
         }
-    });
-    input.click();
+    };
+
+    showModal(modal);
 }
 
 async function marcarEnCamino(id) {

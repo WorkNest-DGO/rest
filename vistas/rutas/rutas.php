@@ -30,6 +30,10 @@ ob_start();
     <div class="d-flex justify-content-end mb-3">
         <button class="btn custom-btn" id="btnAgregar">Agregar</button>
     </div>
+    <div class="filtros-container mb-2">
+        <label for="buscarRuta" class="me-2">Buscar:</label>
+        <input type="text" id="buscarRuta" class="form-control" placeholder="Nombre, path o grupo">
+    </div>
     <div class="table-responsive">
         <table id="tablaRutas" class="styled-table">
             <thead>
@@ -44,6 +48,11 @@ ob_start();
             </thead>
             <tbody></tbody>
         </table>
+    </div>
+    <div class="row mt-2">
+        <div class="col-12">
+            <ul id="paginadorRutas" class="pagination justify-content-center"></ul>
+        </div>
     </div>
 </div>
 

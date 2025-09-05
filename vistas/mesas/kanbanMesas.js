@@ -139,13 +139,13 @@ function renderKanban(listaMeseros, mesas) {
 
         const botoneraHTML = `
             <button class="detalles">Detalles</button>
-            <button class="dividir" data-id="${m.id}">Dividir</button>
+            <button class="dividir" data-id="${m.id}" hidden>Dividir</button>
             <button class="cambiar" data-id="${m.id}">Cambiar estado</button>
-            <button class="ticket" data-mesa="${m.id}" data-nombre="${m.nombre}" data-venta="${m.venta_id || ''}">Enviar ticket</button>`;
+            <button class="ticket" data-mesa="${m.id}" data-nombre="${m.nombre}" data-venta="${m.venta_id || ''}" HIDDEN>Enviar ticket</button>`;
 
         card.innerHTML = `
             <input type="checkbox" class="seleccionar" data-id="${m.id}" hidden>
-            <div class="title">Mesa ${m.nombre}</div>
+            <div class="title" style="color:#fff"> ${m.nombre}</div>
             <div class="meta">
                 <span>Estado: ${m.estado}</span>
                 <span>${ventaTxt}</span>

@@ -95,7 +95,7 @@ ob_start();
 
     <div id="reportesLoader" style="display:none;">Cargando...</div>
 
-    <table id="tablaReportes" class="mt-3">
+    <table id="tablaReportes" class="styled-table mt-3">
         <thead></thead>
         <tbody></tbody>
     </table>

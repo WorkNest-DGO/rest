@@ -112,4 +112,59 @@ async function eliminarRuta(nombre) {
     }
 }
 
-window.addEventListener('DOMContentLoaded', cargarRutas);
+// Paginador + buscador (20 por página) para Rutas
+let __RT_ALL = [];
+let __RT_FIL = [];
+let __RT_PAGE = 1;
+const __RT_PP = 20;
+
+function __rtRender(){
+    const pag = document.getElementById('paginadorRutas');
+    const total = Math.max(1, Math.ceil(__RT_FIL.length / __RT_PP));
+    if (__RT_PAGE > total) __RT_PAGE = total;
+    const ini = (__RT_PAGE - 1) * __RT_PP, fin = ini + __RT_PP;
+    __RT_ALL.forEach(tr => tr.style.display = 'none');
+    __RT_FIL.forEach((tr, idx) => tr.style.display = (idx>=ini && idx<fin) ? '' : 'none');
+    if (!pag) return; pag.innerHTML = '';
+    const prevLi = document.createElement('li');
+    prevLi.className = 'page-item' + (__RT_PAGE === 1 ? ' disabled' : '');
+    const prevA = document.createElement('a'); prevA.className='page-link'; prevA.href='#'; prevA.textContent='Anterior';
+    prevA.addEventListener('click', e => { e.preventDefault(); if (__RT_PAGE>1){ __RT_PAGE--; __rtRender(); }});
+    prevLi.appendChild(prevA); pag.appendChild(prevLi);
+    for (let i=1;i<=total;i++){
+        const li=document.createElement('li'); li.className='page-item'+(i===__RT_PAGE?' active':'');
+        const a=document.createElement('a'); a.className='page-link'; a.href='#'; a.textContent=String(i);
+        a.addEventListener('click', e=>{ e.preventDefault(); __RT_PAGE=i; __rtRender(); });
+        li.appendChild(a); pag.appendChild(li);
+    }
+    const nextLi = document.createElement('li');
+    nextLi.className = 'page-item' + (__RT_PAGE === total ? ' disabled' : '');
+    const nextA = document.createElement('a'); nextA.className='page-link'; nextA.href='#'; nextA.textContent='Siguiente';
+    nextA.addEventListener('click', e => { e.preventDefault(); if (__RT_PAGE<total){ __RT_PAGE++; __rtRender(); }});
+    nextLi.appendChild(nextA); pag.appendChild(nextLi);
+}
+
+function __rtInit(){
+    __RT_ALL = Array.from(document.querySelectorAll('#tablaRutas tbody tr'));
+    __RT_FIL = __RT_ALL.slice(); __RT_PAGE = 1; __rtRender();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    cargarRutas();
+    const tbody = document.querySelector('#tablaRutas tbody');
+    if (tbody) {
+        const obs = new MutationObserver(() => { __rtInit(); });
+        obs.observe(tbody, { childList: true });
+    }
+    const buscar = document.getElementById('buscarRuta');
+    if (buscar) {
+        let t; buscar.addEventListener('input', e => {
+            clearTimeout(t);
+            t = setTimeout(() => {
+                const q = (e.target.value || '').toLowerCase();
+                __RT_FIL = __RT_ALL.filter(tr => tr.innerText.toLowerCase().includes(q));
+                __RT_PAGE = 1; __rtRender();
+            }, 250);
+        });
+    }
+});

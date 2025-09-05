@@ -13,8 +13,9 @@ async function cargarUsuarios() {
     const r = await fetch('../../api/usuarios/listar_usuarios.php');
     const d = await r.json();
     sel.innerHTML = '<option value="">--Todos--</option>';
-    if (d.success) {
-        d.resultado.forEach(u => {
+    if (d && (d.success || Array.isArray(d.usuarios))) {
+        const arr = Array.isArray(d.resultado) ? d.resultado : (Array.isArray(d.usuarios) ? d.usuarios : []);
+        arr.forEach(u => {
             const opt = document.createElement('option');
             opt.value = u.id;
             opt.textContent = u.nombre;
@@ -38,7 +39,10 @@ async function cargarHistorial() {
         const data = await resp.json();
         if (data.success) {
             tbody.innerHTML = '';
-            data.resultado.forEach(c => {
+            const lista = Array.isArray(data.resultado)
+                ? data.resultado
+                : (Array.isArray(data.resultado?.cortes) ? data.resultado.cortes : []);
+            lista.forEach(c => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${c.id}</td>
@@ -151,6 +155,62 @@ let ordenCol = '';
 let ordenDir = 'asc';
 let debounceTimer;
 
+// Helpers de formato/estilo
+function isNumericStr(v) { return typeof v === 'string' && /^-?\d+(?:\.\d+)?$/.test(v.trim()); }
+function isNumeric(v) { return typeof v === 'number' || isNumericStr(v); }
+function toNumber(v) { return typeof v === 'number' ? v : parseFloat(v); }
+function isMoneyColumn(colLower) {
+    return /(total|monto|precio|importe|subtotal|propina|fondo|saldo)/.test(colLower);
+}
+function isCountColumn(colLower) {
+    return /(cantidad|numero|número|folio|id|existencia)/.test(colLower);
+}
+function isDateLike(val) {
+    if (val == null) return false;
+    if (typeof val !== 'string') return false;
+    return /^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?$/.test(val);
+}
+function formatDate(val) {
+    // Mantén formato YYYY-MM-DD HH:mm
+    if (!val) return '';
+    const s = String(val);
+    if (s.length >= 16) return s.slice(0,16).replace('T',' ');
+    if (s.length >= 10) return s.slice(0,10);
+    return s;
+}
+function formatMoney(n) {
+    const num = toNumber(n);
+    if (!isFinite(num)) return String(n ?? '');
+    return '$' + num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function formatNumber(n, dec = 0) {
+    const num = toNumber(n);
+    if (!isFinite(num)) return String(n ?? '');
+    return num.toLocaleString('es-MX', dec > 0 ? { minimumFractionDigits: dec, maximumFractionDigits: dec } : undefined);
+}
+function formatCellValue(col, raw) {
+    const colL = (col || '').toLowerCase();
+    if (raw == null) return '';
+    if (isDateLike(raw)) return formatDate(raw);
+    if (isMoneyColumn(colL) && isNumeric(raw)) return formatMoney(raw);
+    if (isCountColumn(colL) && isNumeric(raw)) return formatNumber(raw, 0);
+    if (isNumeric(raw)) {
+        // Si tiene decimales, muestra 2; si no, entero
+        const hasDec = String(raw).includes('.');
+        return formatNumber(raw, hasDec ? 2 : 0);
+    }
+    const s = String(raw);
+    if (s.length > 120) return s.slice(0, 117) + '…';
+    return s;
+}
+function alignForCol(col, raw) {
+    const colL = (col || '').toLowerCase();
+    if (isDateLike(raw)) return 'center';
+    if (isMoneyColumn(colL) || (isNumeric(raw) && !/\D/.test(String(raw)))) return 'right';
+    if (/^fecha/.test(colL)) return 'center';
+    return 'left';
+}
+
 async function listarFuentes() {
     const select = document.getElementById('selectFuente');
     if (!select) return;
@@ -219,15 +279,41 @@ async function cargarFuente() {
             document.getElementById('infoReportes').textContent = '';
             return;
         }
-        thead.innerHTML = '<tr>' + data.columns.map(c => `<th data-col="${c}">${c}</th>`).join('') + '</tr>';
+        // Header
+        thead.innerHTML = '';
+        const trHead = document.createElement('tr');
+        data.columns.forEach(c => {
+            const th = document.createElement('th');
+            th.dataset.col = c;
+            th.textContent = c;
+            trHead.appendChild(th);
+        });
+        thead.appendChild(trHead);
+
+        // Body con formato
         if (!data.rows.length) {
-            tbody.innerHTML = `<tr><td colspan="${data.columns.length}">Sin resultados</td></tr>`;
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = data.columns.length;
+            td.textContent = 'Sin resultados';
+            tr.appendChild(td);
+            tbody.appendChild(tr);
         } else {
+            const frag = document.createDocumentFragment();
             data.rows.forEach(r => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = data.columns.map(c => `<td>${r[c] !== null ? r[c] : ''}</td>`).join('');
-                tbody.appendChild(tr);
+                data.columns.forEach(c => {
+                    const td = document.createElement('td');
+                    const val = r[c];
+                    td.textContent = formatCellValue(c, val);
+                    const align = alignForCol(c, val);
+                    if (align === 'right') td.style.textAlign = 'right';
+                    else if (align === 'center') td.style.textAlign = 'center';
+                    tr.appendChild(td);
+                });
+                frag.appendChild(tr);
             });
+            tbody.appendChild(frag);
         }
         const inicio = data.total ? ((data.page - 1) * data.pageSize + 1) : 0;
         const fin = Math.min(data.page * data.pageSize, data.total);

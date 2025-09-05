@@ -1798,7 +1798,7 @@ a:focus {
 .kanban-item .title {
     font-weight: 600;
     line-height: 1.2;
-    color: #f7f4f4;
+    color: #030303;
 }
 
 .kanban-item .meta {
@@ -1875,3 +1875,29 @@ a:focus {
 #kanbanMesas .drag-list {
     display: contents;
 }
+.ticket-mono {
+    font-family: "Courier New", ui-monospace, Menlo, Consolas, monospace;
+    white-space: pre; line-height: 1.25; font-size: 13px;
+    width: 80mm; max-width: 100%; margin: 0 auto; background: #fff; padding: 8px;
+    border: 1px dashed #ddd; border-radius: 6px;
+  }
+  @media print {
+    body * { visibility: hidden !important; }
+    #modalCortePreview, #modalCortePreview * { visibility: visible !important; }
+    #modalCortePreview { position: static; inset: auto; background: none; }
+    #modalCortePreview .modal-dialog { box-shadow: none; }
+    #modalCortePreview .modal-header, #modalCortePreview .modal-footer { display: none; }
+    .ticket-mono { border: none; }
+  }
+
+  /* Estilos para el buscador de productos (inspirado en codepen NPLbpP) */
+  .selector-producto {
+    position: relative;
+  }
+
+  .lista-productos {
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1000;
+  }
