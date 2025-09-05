@@ -336,6 +336,18 @@ function initReportesDinamicos() {
         pagina = 1;
         cargarFuente();
     });
+    const btnExport = document.getElementById('btnExportCSV');
+    if (btnExport) {
+        btnExport.addEventListener('click', () => {
+            if (!fuenteActual) return;
+            const params = new URLSearchParams({ action: 'export_csv', source: fuenteActual });
+            if (termino) params.append('q', termino);
+            if (ordenCol) { params.append('sortBy', ordenCol); params.append('sortDir', ordenDir); }
+            const url = `${apiReportes}?${params.toString()}`;
+            // Abrir en nueva pestaña para descargar
+            window.open(url, '_blank');
+        });
+    }
     document.getElementById('buscarFuente').addEventListener('input', e => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {

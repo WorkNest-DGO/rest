@@ -91,6 +91,7 @@ ob_start();
             <option value="25">25</option>
             <option value="50">50</option>
         </select>
+        <button id="btnExportCSV" class="btn custom-btn-sm" style="margin-left:8px;">Exportar CSV</button>
     </div>
 
     <div id="reportesLoader" style="display:none;">Cargando...</div>

@@ -126,6 +126,73 @@ try {
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
+    if ($action === 'export_csv') {
+        $source = $_GET['source'] ?? '';
+        if (!in_array($source, $whitelist, true)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Fuente no permitida']);
+            exit;
+        }
+        $search = trim($_GET['q'] ?? '');
+        $sortBy = $_GET['sortBy'] ?? '';
+        $sortDir = strtolower($_GET['sortDir'] ?? 'asc');
+        $sortDir = $sortDir === 'desc' ? 'DESC' : 'ASC';
+
+        $stmt = $pdo->prepare("SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t ORDER BY ORDINAL_POSITION");
+        $stmt->execute([':t' => $source]);
+        $columnsInfo = $stmt->fetchAll();
+        if (!$columnsInfo) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Fuente no encontrada']);
+            exit;
+        }
+        $columns = array_column($columnsInfo, 'COLUMN_NAME');
+        if (!in_array($sortBy, $columns, true)) $sortBy = '';
+
+        $allowedTypes = ['char','varchar','text','tinytext','mediumtext','longtext','int','bigint','smallint','mediumint','decimal','float','double','date','datetime','timestamp','time','year'];
+        $where = '';
+        $params = [];
+        if ($search !== '') {
+            $parts = [];
+            foreach ($columnsInfo as $idx => $col) {
+                if (in_array(strtolower($col['DATA_TYPE']), $allowedTypes, true)) {
+                    $ph = ":s{$idx}";
+                    $parts[] = "`{$col['COLUMN_NAME']}` LIKE {$ph}";
+                    $params[$ph] = "%{$search}%";
+                }
+            }
+            if ($parts) $where = ' WHERE ' . implode(' OR ', $parts);
+        }
+
+        $sql = "SELECT * FROM `{$source}`{$where}";
+        if ($sortBy) $sql .= " ORDER BY `{$sortBy}` {$sortDir}";
+        $st = $pdo->prepare($sql);
+        foreach ($params as $ph => $val) $st->bindValue($ph, $val);
+        $st->execute();
+        $rows = $st->fetchAll();
+
+        // CSV headers
+        header('Content-Type: text/csv; charset=utf-8');
+        $fname = $source . '-' . date('Ymd_His') . '.csv';
+        header('Content-Disposition: attachment; filename="' . $fname . '"');
+
+        $out = fopen('php://output', 'w');
+        // BOM for Excel UTF-8
+        fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
+        fputcsv($out, $columns);
+        foreach ($rows as $row) {
+            $line = [];
+            foreach ($columns as $c) {
+                $v = isset($row[$c]) ? $row[$c] : '';
+                // Normalize newlines to spaces
+                if (is_string($v)) { $v = preg_replace('/\r?\n/', ' ', $v); }
+                $line[] = $v;
+            }
+            fputcsv($out, $line);
+        }
+        fclose($out);
+        exit;
+    }
 
     // Compatibilidad con vistas_db.js (parámetros: view, per_page, search, sort_by, sort_dir)
     $view = $_GET['view'] ?? '';
