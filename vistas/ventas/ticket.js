@@ -90,6 +90,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
+// PROMOS: ejemplo de integración futura desde ticket (no activo)
+// fetch('../../api/tickets/guardar_ticket.php?accion=aplicar_promo_catalogo', {
+//   method: 'POST',
+//   headers: { 'Content-Type': 'application/json' },
+//   body: JSON.stringify({ ticket_id: 123, catalogo_promo_id: 45, usuario_id: 1 })
+// }).then(r=>r.json()).then(d=>{ /* manejar respuesta */ });
+
+
     let serieActual = null;
     let denomBoucherId = null;
     let denomChequeId = null;

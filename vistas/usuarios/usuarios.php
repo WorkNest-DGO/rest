@@ -34,6 +34,11 @@ ob_start();
         <label for="buscarUsuario" class="me-2">Buscar:</label>
         <input type="text" id="buscarUsuario" class="form-control" placeholder="Nombre, usuario o rol">
     </div>
+        <div class="row mt-2">
+        <div class="col-12">
+            <ul id="paginadorUsuarios" class="pagination justify-content-center"></ul>
+        </div>
+    </div>
     <div class="table-responsive">
         <table id="tablaUsuarios" class="styled-table">
             <thead>
@@ -49,11 +54,7 @@ ob_start();
             <tbody></tbody>
         </table>
     </div>
-    <div class="row mt-2">
-        <div class="col-12">
-            <ul id="paginadorUsuarios" class="pagination justify-content-center"></ul>
-        </div>
-    </div>
+
 </div>
 
 <div class="modal fade" id="modalUsuario" tabindex="-1" role="dialog" aria-hidden="true">

@@ -34,6 +34,11 @@ ob_start();
         <label for="buscarRuta" class="me-2">Buscar:</label>
         <input type="text" id="buscarRuta" class="form-control" placeholder="Nombre, path o grupo">
     </div>
+        <div class="row mt-2">
+        <div class="col-12">
+            <ul id="paginadorRutas" class="pagination justify-content-center"></ul>
+        </div>
+    </div>
     <div class="table-responsive">
         <table id="tablaRutas" class="styled-table">
             <thead>
@@ -49,11 +54,7 @@ ob_start();
             <tbody></tbody>
         </table>
     </div>
-    <div class="row mt-2">
-        <div class="col-12">
-            <ul id="paginadorRutas" class="pagination justify-content-center"></ul>
-        </div>
-    </div>
+
 </div>
 
 <div class="modal fade" id="modalRuta" tabindex="-1" role="dialog" aria-hidden="true">

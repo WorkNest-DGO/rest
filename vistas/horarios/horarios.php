@@ -73,6 +73,11 @@ ob_start();
         <label for="buscarHorario" class="me-2">Buscar:</label>
         <input type="text" id="buscarHorario" class="form-control" placeholder="Día, serie...">
     </div>
+        <div class="row mt-2">
+        <div class="col-12">
+            <ul id="paginadorHorarios" class="pagination justify-content-center"></ul>
+        </div>
+    </div>
     <div class="table-responsive">
         <table id="tablaHorarios" class="table table-bordered custom-table">
             <thead class="thead-dark">
@@ -87,11 +92,7 @@ ob_start();
             <tbody></tbody>
         </table>
     </div>
-    <div class="row mt-2">
-        <div class="col-12">
-            <ul id="paginadorHorarios" class="pagination justify-content-center"></ul>
-        </div>
-    </div>
+
 </div>
 <!-- Modal global de mensajes -->
 <div class="modal fade" id="appMsgModal" tabindex="-1" role="dialog" aria-hidden="true">

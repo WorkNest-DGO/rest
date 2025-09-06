@@ -30,6 +30,8 @@ ob_start();
 <div id="divReimprimir" style="display:none;">
 <br>
 <button id="btnReimprimir" class="btn custom-btn">Re-Imprimir tickets</button>
+<!-- PROMOS: acceso al módulo de promociones en nueva pestaña -->
+<a href="../promociones/index.php" target="_blank" class="btn btn-secondary" style="margin-left:8px;">Promociones</a>
 </div>
 <div id="dividir" style="display:none;" class="container mt-5">
     <h2 class="section-subheader">Dividir venta</h2>

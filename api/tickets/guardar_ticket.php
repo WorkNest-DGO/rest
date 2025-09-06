@@ -193,7 +193,7 @@ $tipo_entrega     = $tipo_entrega     ?: 'N/A';
 
 $conn->begin_transaction();
 
-$insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, total, fecha, usuario_id, monto_recibido, tipo_pago, sede_id, mesa_nombre, mesero_nombre, fecha_inicio, fecha_fin, tiempo_servicio, nombre_negocio, direccion_negocio, rfc_negocio, telefono_negocio, tipo_entrega, tarjeta_marca_id, tarjeta_banco_id, boucher, cheque_numero, cheque_banco_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+$insTicket  = $conn->prepare('INSERT INTO tickets (venta_id, folio, serie_id, total, fecha, usuario_id, monto_recibido, tipo_pago, sede_id, mesa_nombre, mesero_nombre, fecha_inicio, fecha_fin, tiempo_servicio, nombre_negocio, direccion_negocio, rfc_negocio, telefono_negocio, tipo_entrega, tarjeta_marca_id, tarjeta_banco_id, boucher, cheque_numero, cheque_banco_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 $insDetalle = $conn->prepare('INSERT INTO ticket_detalles (ticket_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)');
 if (!$insTicket || !$insDetalle) {
     $conn->rollback();
@@ -207,9 +207,19 @@ foreach ($subcuentas as $sub) {
         error('Subcuenta inválida');
     }
     $serie = isset($sub['serie_id']) ? (int)$sub['serie_id'] : null;
+    if (!$serie && isset($input['serie_id'])) {
+        $serie = (int)$input['serie_id'];
+    }
+    // Si no viene serie en el payload, derivarla por negocio (horario actual)
+    if (!$serie) {
+        @require_once __DIR__ . '/../corte_caja/helpers.php';
+        if (function_exists('getSerieActiva')) {
+            $serie = (int) getSerieActiva($conn);
+        }
+    }
     $folioStmt = $serie
-        ? $conn->prepare('SELECT id, folio_actual FROM catalogo_folios WHERE id = ? FOR UPDATE')
-        : $conn->prepare('SELECT id, folio_actual FROM catalogo_folios LIMIT 1 FOR UPDATE');
+        ? $conn->prepare('SELECT id, folio_actual, descripcion FROM catalogo_folios WHERE id = ? FOR UPDATE')
+        : $conn->prepare('SELECT id, folio_actual, descripcion FROM catalogo_folios LIMIT 1 FOR UPDATE');
     if (!$folioStmt) {
         $conn->rollback();
         error('Error al preparar folio: ' . $conn->error);
@@ -229,7 +239,10 @@ foreach ($subcuentas as $sub) {
         error('Serie de folios no encontrada');
     }
     $catalogo_id = (int)$row['id'];
-    $folio_actual = (int)$row['folio_actual'] + 1;
+    $serie_desc  = $row['descripcion'] ?? '';
+    // folio a usar = folio_actual actual; luego incrementarlo en tabla
+    $folio_insert = (int)$row['folio_actual'];
+    $folio_siguiente = $folio_insert + 1;
 
     // $propina = isset($sub['propina']) ? (float)$sub['propina'] : 0;
     $total = 0;
@@ -305,9 +318,10 @@ foreach ($subcuentas as $sub) {
     }
     $fecha = date('Y-m-d H:i:s');
     $insTicket->bind_param(
-        'iidsidsissssisssssiissi',
+        'iiidsidsissssisssssiissi',
         $venta_id,
-        $folio_actual,
+        $folio_insert,
+        $catalogo_id,
         $total,
         $fecha,
         $usuario_id,
@@ -400,7 +414,7 @@ foreach ($subcuentas as $sub) {
         $conn->rollback();
         error('Error al preparar actualización de folio: ' . $conn->error);
     }
-    $updFolio->bind_param('ii', $folio_actual, $catalogo_id);
+    $updFolio->bind_param('ii', $folio_siguiente, $catalogo_id);
     if (!$updFolio->execute()) {
         $conn->rollback();
         error('Error al actualizar folio: ' . $updFolio->error);
@@ -409,7 +423,9 @@ foreach ($subcuentas as $sub) {
 
     $ticketsResp[] = [
         'ticket_id' => $ticket_id,
-        'folio'     => $folio_actual,
+        'folio'     => $folio_insert,
+        'serie_id'  => $catalogo_id,
+        'folio_str' => $serie_desc ? ($serie_desc . '-' . $folio_insert) : (string)$folio_insert,
         'total'     => $total
     ];
 }
