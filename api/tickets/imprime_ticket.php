@@ -1,4 +1,4 @@
-<?php 
+﻿<?php 
 require __DIR__ . '/../../vendor/autoload.php';
 require __DIR__ . '/../../config/db.php';
 use Mike42\Escpos\Printer;
@@ -52,11 +52,13 @@ $ventaId= $_GET['venta_id'];
 $elementos = obtenerDatos($ventaId,$conn);
 $desglose = array();
 $datosT = $elementos[0];
-
+$promocion_descuento2 = $datosT['promocion_descuento'];
+$promocion_nombre2    = isset($datosT['promocion_nombre']) ? $datosT['promocion_nombre'] : '';
 $recibos = $elementos;
 //var_dump($recibos);
 
-foreach ($recibos  as $recibo) {
+$error_msg = null;
+try { foreach ($recibos  as $recibo) {
 
 	$datosT = $recibo;
 	$desglose=$recibo['productos'];
@@ -105,7 +107,7 @@ foreach ($recibos  as $recibo) {
 	}
 
 	// Total final a pagar
-	$totalAPagar = max(0, $totalBruto - $descuentoTotal);
+	$totalAPagar = max(0, $totalBruto - $descuentoTotal- $promocion_descuento2);
 	
 
 	$items3 = array();
@@ -171,7 +173,7 @@ foreach ($recibos  as $recibo) {
 			if ($tipo === 'cortesia') {
 				$prod = !empty($d['producto']) ? $d['producto'] : 'Producto';
 				$cant = !empty($d['cantidad']) ? (' x' . (int)$d['cantidad']) : '';
-				$linea = "Cortesía: {$prod}{$cant}";
+				$linea = "Cortesí­a: {$prod}{$cant}";
 			} elseif ($tipo === 'porcentaje') {
 				$porc  = ($d['porcentaje'] !== null) ? $fmt($d['porcentaje']) : '0';
 				$linea = "Descuento {$porc}%";
@@ -185,6 +187,18 @@ foreach ($recibos  as $recibo) {
 			if (!empty($d['motivo'])) { $printer->text("Motivo: " . $d['motivo'] . "\n"); }
 		}
 		$printer->text(str_pad('Total descuento:', 20) . "-$ " . $fmt($descuentoTotal) . "\n");
+	}
+	// Promociones aplicadas (por venta). Imprime leyenda y, debajo, el/los nombres.
+	if ($promocion_descuento2 > 0 || !empty($promocion_nombre2)) {
+		$printer->text("------------------------------\n");
+		$printer->text("PROMOCIONES APLICADAS\n");
+		if ($promocion_descuento2 > 0) {
+			$printer->text("Acumulado Promociones : " . $promocion_descuento2 . "\n");
+		}
+		if (!empty($promocion_nombre2)) {
+			// Imprimir nombre de la promoción asociada a la venta
+			$printer->text("- " . $promocion_nombre2 . "\n");
+		}
 	}
 
 	// ----- Total a pagar -----
@@ -208,8 +222,17 @@ foreach ($recibos  as $recibo) {
 	// /* Cut the receipt and open the cash drawer */
 	$printer -> cut();
 }
+} catch (Throwable $e) {
+    $error_msg = $e->getMessage();
+}
 $printer -> close();
-echo "enviado";
+// Mostrar modal de confirmación y regresar a ventas
+header('Content-Type: text/html; charset=utf-8');
+$ok = true;
+$msg = 'Ticket enviado a la impresora';
+echo '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Imprimir ticket</title><style>body{margin:0;background:#f1f5f9;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center}.modal{width:min(520px,90vw);background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);overflow:hidden}.hdr{padding:14px 18px;color:#fff;font-weight:800;background:#16a34a}.cnt{padding:18px;color:#0f172a}.ftr{padding:14px 18px;background:#f8fafc;display:flex;justify-content:flex-end}button{padding:10px 16px;border:0;border-radius:10px;font-weight:800;cursor:pointer;color:#fff;background:#0ea5e9}</style></head><body>';
+echo '<div class="overlay"><div class="modal"><div class="hdr">Enviado</div><div class="cnt"><div style="font-size:1.1rem;font-weight:800;margin-bottom:6px">' . $msg . '</div></div><div class="ftr"><button id="btnOk">Aceptar</button></div></div></div>';
+echo '<script>(function(){var btn=document.getElementById("btnOk");function go(){var url="../../vistas/ventas/ventas.php";try{if(window.opener&&!window.opener.closed){window.opener.location.href=url;window.close();return;}}catch(e){}window.location.href=url;}if(btn)btn.addEventListener("click",go);document.addEventListener("keydown",function(e){if(e.key==="Enter")go();});})();</script></body></html>';
 		
 
 function convertirNumero($num) {
@@ -255,7 +278,7 @@ function numeroALetras($numero) {
 }
 function obtenerDatos($ventaId,$conn){
 	 $cond = 't.venta_id = ?';
-	$stmt = $conn->prepare("SELECT t.id, t.folio, t.total, (v.propina_efectivo + v.propina_cheque + v.propina_tarjeta) as propina , t.fecha, t.venta_id,
+    $stmt = $conn->prepare("SELECT t.id, t.folio, t.total, (v.propina_efectivo + v.propina_cheque + v.propina_tarjeta) as propina , v.promocion_descuento, v.promocion_id, t.fecha, t.venta_id,
                                 t.mesa_nombre, t.mesero_nombre, t.fecha_inicio, t.fecha_fin,
                                 t.tiempo_servicio, t.nombre_negocio, t.direccion_negocio,
                                 t.rfc_negocio, t.telefono_negocio, t.sede_id,
@@ -265,12 +288,14 @@ function obtenerDatos($ventaId,$conn){
                                 t.boucher,
                                 b2.nombre AS banco_cheque,
                                 t.cheque_numero,
-                                v.tipo_entrega
+                                v.tipo_entrega,
+                                cp.nombre AS promocion_nombre
                          FROM tickets t
                          LEFT JOIN catalogo_tarjetas tm ON tm.id = t.tarjeta_marca_id
                          LEFT JOIN catalogo_bancos b1 ON b1.id = t.tarjeta_banco_id
                          LEFT JOIN catalogo_bancos b2 ON b2.id = t.cheque_banco_id
                          LEFT JOIN ventas v ON t.venta_id = v.id
+                         LEFT JOIN catalogo_promos cp ON cp.id = v.promocion_id
                          WHERE $cond");
 	if (!$stmt) {
 	    error('Error al preparar consulta: ' . $conn->error);
@@ -323,6 +348,9 @@ function obtenerDatos($ventaId,$conn){
 	          'fecha'            => $t['fecha'] ?? 'N/A',
 	          'venta_id'         => (int)$t['venta_id'],
 	          'propina'          => (float)$t['propina'],
+          'promocion_descuento'          => (float)$t['promocion_descuento'],
+          'promocion_id'        => isset($t['promocion_id']) ? (int)$t['promocion_id'] : null,
+          'promocion_nombre'    => $t['promocion_nombre'] ?? null,
 	          'total'            => (float)$t['total'],
 	          'mesa_nombre'      => $mesa_nombre,
 	          'mesero_nombre'    => $mesero_nombre,
@@ -357,3 +385,6 @@ function obtenerDatos($ventaId,$conn){
 
 
  ?>
+
+
+

@@ -61,12 +61,13 @@ $printer -> initialize();
 	$datosT = $datos2['resultado'] ?? $datos2;
 
 	// Aliases y defaults seguros
+	$total_promos = $datosT['total_descuento_promos'];
 	$total_bruto      = $datosT['total_bruto'] ?? ($datosT['total_productos'] ?? 0);
 	$__totalEsperado  = $datosT['total_esperado'] ?? ($datosT['totalEsperado'] ?? null);
 	$total_descuentos = $datosT['total_descuentos'] ?? (
 		($__totalEsperado !== null) ? max(0, $total_bruto - $__totalEsperado) : 0
 	);
-	$total_esperado   = $__totalEsperado ?? max(0, $total_bruto - $total_descuentos);
+	$total_esperado   = $__totalEsperado ?? max(0, $total_bruto - $total_descuentos -$total_promos);
 
 	// Esperados por método (si no vienen, se omiten al imprimir)
 	$esperado_efectivo = $datosT['esperado_efectivo'] ?? null;
@@ -162,6 +163,10 @@ $printer -> initialize();
 	$objeto = new item('Total descuentos: ' , $total_descuentos, True);
 	$printer->text($objeto->getAsString(32));
 	// Preferir total_esperado normalizado
+	if($total_promos > 0){
+		$objeto = new item('Total promociones: ' , $total_promos, True);
+		$printer->text($objeto->getAsString(32));
+	}
 	$objeto = new item('Total esperado: '   , $total_esperado, True);
 	$printer -> text($objeto->getAsString(32));
 	// Esperado por método (si aplica)

@@ -1,4 +1,4 @@
-function showAppMsg(msg) {
+﻿function showAppMsg(msg) {
     const body = document.querySelector('#appMsgModal .modal-body');
     if (body) body.textContent = String(msg);
     showModal('#appMsgModal');
@@ -279,7 +279,7 @@ function buildCorteTicket(resultado, cajeroOpt) {
     out += lineKV(`Inicio: ${fechaInicio}`, '') + '\n';
     out += lineKV(`Fin:    ${fechaFin}`, '') + '\n';
     if (folInicio || folFin || folCount) {
-        const folText = `Folios: ${folInicio}–${folFin} (${folCount})`;
+        const folText = `Folios: ${folInicio}â€“${folFin} (${folCount})`;
         out += lineKV(folText, '') + '\n';
     }
     out += '\n';
@@ -748,12 +748,23 @@ function mostrarModalDesglose(dataApi) {
         html += `<li>boucher: $${esperadoBouch.toFixed(2)}</li>`;
         html += `<li>cheque: $${esperadoCheque.toFixed(2)}</li>`;
         html += '</ul>';
-    }
+    }  
+   
     html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
     html += '<p>Propinas por tipo de pago:</p><ul>';
     html += `<li>Efectivo: $${(Number.parseFloat(r.total_propina_efectivo) || 0).toFixed(2)}</li>`;
     html += `<li>Cheque: $${(Number.parseFloat(r.total_propina_cheque) || 0).toFixed(2)}</li>`;
     html += `<li>Tarjeta: $${(Number.parseFloat(r.total_propina_tarjeta) || 0).toFixed(2)}</li></ul>`;
+
+    var totalPromos = Number(r.total_descuento_promos ?? 0);
+     if (totalPromos > 0) {
+        totalIngresado2 = totalIngresado-totalPromos;
+        html += '<p>Promociones:</p><ul>';
+        html += `<li>Descuento Total Promociones: $${totalPromos.toFixed(2)}</li>`;
+        html += `<li>Total ingresado Post-Promociones: $${totalIngresado2.toFixed(2)}</li>`;        
+        html += '</ul>';
+    }
+
     // metodosPago.forEach(tipo => {
     //     const p = r[tipo] || {};
     //     html += `<li>${tipo}: $${(Number.parseFloat(p.propina) || 0).toFixed(2)}</li></ul>`;
@@ -782,6 +793,8 @@ function mostrarModalDesglose(dataApi) {
         });
         html += '</ul>';
     }
+
+
 
 
     html += '<div id="camposDesglose"></div>';
@@ -835,7 +848,7 @@ function mostrarModalDesglose(dataApi) {
         const totalBoucher = Number.parseFloat((r.boucher && r.boucher.total) || 0) || 0;
         const totalCheque  = Number.parseFloat((r.cheque && r.cheque.total) || 0) || 0;
         const totalNoEfectivo = totalBoucher + totalCheque;
-        const dif = (totalIngresado - totalNoEfectivo) - totalEfectivo;
+        const dif = (totalIngresado - totalNoEfectivo -totalPromos) - totalEfectivo;
         document.getElementById('difIngresado').textContent = dif.toFixed(2);
     }
 
@@ -909,6 +922,7 @@ function mostrarModalDesglose(dataApi) {
 
 async function finalizarCorte() {
     try {
+        const corteIdPrevio = corteIdActual || window.corteId || null;
         const resp = await fetch('../../api/corte_caja/cerrar_corte.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -917,7 +931,21 @@ async function finalizarCorte() {
         const data = await resp.json();
         if (data.success) {
             corteIdActual = null;
-            alert('Caja cerrada correctamente');
+            // Mostrar modal de corte enviado con botón continuar
+            try {
+              if (typeof showModal === 'function') {
+                showModal('#modalCorteEnviado');
+              } else if (window.$) {
+                $('#modalCorteEnviado').modal('show');
+              } else {
+                alert('Corte enviado, que tengas un buen día.');
+              }
+              const btn = document.getElementById('btnContinuarCorte');
+              if (btn) {
+                btn.onclick = function(){ window.location.href = 'ventas.php'; };
+              }
+
+            } catch { console.warn; }
             await verificarCorte();
         } else {
             alert(data.mensaje);
@@ -1079,6 +1107,17 @@ function mostrarCorteTemporalBonito(data) {
     setText('#lblTmpEsperadoBoucher',  fmtMoneda(Number(r.esperado_boucher  || 0)));
     setText('#lblTmpEsperadoCheque',   fmtMoneda(Number(r.esperado_cheque   || 0)));
 
+    var totalPromos = Number(r.total_descuento_promos ?? 0);
+    if (totalPromos > 0){
+         var totalEsperado2  = totalEsperado-totalPromos;
+         setText('#lblTmpTotalEsperado', fmtMoneda(totalEsperado2));
+         setText('#lblTmpTotalPromociones', fmtMoneda(totalPromos));         
+         document.getElementById('promocionesA').style.display ='block';
+    }
+    else{
+        document.getElementById('promocionesA').style.display ='none';
+        setText('#lblTmpTotalEsperado', fmtMoneda(totalEsperado));
+    }
     const meseros = Array.isArray(r.total_meseros) ? r.total_meseros : [];
     pintarTablaSimple('#tblTmpMeseros tbody', meseros, [
         { key: 'nombre' },
@@ -1105,7 +1144,7 @@ function fmtMoneda(v) {
 }
 function setText(sel, val){ const el = document.querySelector(sel); if (el) el.textContent = String(val); }
 
-// ====== Envío automático: helpers ======
+// ====== Enví­o automático: helpers ======
 function esDomicilioConRepartidorCasa() {
     const tipo = (document.getElementById('tipo_entrega')?.value || '').toLowerCase();
     return tipo === 'domicilio' && esRepartidorCasaSeleccionado();
@@ -1230,13 +1269,13 @@ async function cargarProductos() {
             window.catalogo = catalogo;
             productos = data.resultado;
 
-            // Inyectar producto de envío si no viene del catálogo
+            // Inyectar producto de enví­o si no viene del catálogo
             try {
                 const pidEnvio = Number(window.ENVIO_CASA_PRODUCT_ID || 9001);
                 const precioEnvio = Number(window.ENVIO_CASA_DEFAULT_PRECIO || 30);
                 const yaExiste = (catalogo || []).some(p => parseInt(p.id) === pidEnvio);
                 if (!yaExiste) {
-                    const envioProd = { id: pidEnvio, nombre: 'ENVÍO – Repartidor casa', precio: precioEnvio, existencia: 99999, activo: 1 };
+                    const envioProd = { id: pidEnvio, nombre: 'ENVíO â€“ Repartidor casa', precio: precioEnvio, existencia: 99999, activo: 1 };
                     catalogo.push(envioProd);
                     productos.push(envioProd);
                 }
@@ -1246,7 +1285,7 @@ async function cargarProductos() {
                 select.innerHTML = '<option value="">--Selecciona--</option>';
                 const PID = Number(window.ENVIO_CASA_PRODUCT_ID || 9001);
                 catalogo.forEach(p => {
-                    if (parseInt(p.id) === PID) return; // ocultar envío
+                    if (parseInt(p.id) === PID) return; // ocultar enví­o
                     const opt = document.createElement('option');
                     opt.value = p.id;
                     opt.textContent = p.nombre;
@@ -1322,7 +1361,7 @@ function actualizarEstiloSelect(select) {
 function manejarCantidad(input, select) {
     let val = parseInt(input.value) || 0;
     if (val === 0) {
-        const quitar = confirm('Cantidad es 0. ¿Quitar producto?');
+        const quitar = confirm('Cantidad es 0. Â¿Quitar producto?');
         if (quitar) {
             input.closest('tr').remove();
             return;
@@ -1397,7 +1436,7 @@ function agregarFilaProducto() {
     }
     const PID = Number(window.ENVIO_CASA_PRODUCT_ID || 9001);
     catalogo.forEach(p => {
-        if (parseInt(p.id) === PID) return; // ocultar envío
+        if (parseInt(p.id) === PID) return; // ocultar enví­o
         const opt = document.createElement('option');
         opt.value = p.id;
         opt.textContent = p.nombre;
@@ -1458,7 +1497,7 @@ async function registrarVenta() {
     const repartidor_id = parseInt(document.getElementById('repartidor_id').value);
     const usuario_id = parseInt(document.getElementById('usuario_id').value);
     const observacion = document.getElementById('observacion').value.trim();
-    // Obtener carrito (incluye envío si el panel está activo)
+    // Obtener carrito (incluye enví­o si el panel está activo)
     const productos = obtenerCarritoActual();
 
     if (!validarInventario()) {
@@ -1499,7 +1538,7 @@ async function registrarVenta() {
         sede_id: sedeId
     };
 
-    // Si el panel de envío está activo, incluir precio_envio y envio_cantidad explícitos para blindaje en backend
+    // Si el panel de enví­o está activo, incluir precio_envio y envio_cantidad explí­citos para blindaje en backend
     try {
         const panel = document.getElementById('panelEnvioCasa');
         const PID = Number(window.ENVIO_CASA_PRODUCT_ID || 9001);
@@ -1513,7 +1552,7 @@ async function registrarVenta() {
                 // pero si ya está en productos (por alguna razón), el backend actualizará flags/valores.
                 const ya = productos.find(it => Number(it.producto_id) === PID);
                 if (!ya) {
-                    // Opcional: podríamos empujar al array, pero delegamos al backend para insertar/actualizar
+                    // Opcional: podrí­amos empujar al array, pero delegamos al backend para insertar/actualizar
                 }
             }
         }
@@ -1645,6 +1684,9 @@ async function verDetalles(id) {
             const info = data.resultado || data;
             const modal = document.getElementById('modal-detalles');
             const contenedor = modal.querySelector('.modal-body');
+            const ventaListado = ventasData[id] || {};
+            const estatusVenta = String(ventaListado.estatus || info.estatus || '').toLowerCase();
+            const ventaCerrada = estatusVenta === 'cerrada';
             const destino = info.tipo_entrega === 'mesa'
                 ? info.mesa
                 : info.tipo_entrega === 'domicilio'
@@ -1655,7 +1697,9 @@ async function verDetalles(id) {
             html += `<table class="styled-table" border="1"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th></th></tr></thead><tbody>`;
             info.productos.forEach(p => {
                 const btnEliminar = p.estado_producto !== 'entregado'
-                    ? `<button class="btn custom-btn delDetalle" data-id="${p.id}">Eliminar</button>`
+                    ? (ventaCerrada
+                        ? `<button class="btn custom-btn delDetalle" data-id="${p.id}" disabled title="Venta cerrada">Eliminar</button>`
+                        : `<button class="btn custom-btn delDetalle" data-id="${p.id}">Eliminar</button>`)
                     : '';
                 const btnEntregar = p.estado_producto === 'listo'
                     ? ` <button class="btn btn-success btn-entregar" data-id="${p.id}">Entregar</button>`
@@ -1672,11 +1716,14 @@ async function verDetalles(id) {
                     <ul id="detalle_lista" class="list-group lista-productos position-absolute w-100"></ul>
                   </div>
                 </td>
-                <td><input type="number" id="detalle_cantidad" class="form-control" min="0.01" step="0.01"></td>
+                <td><input type="number" id="detalle_cantidad" class="form-control" min="1" step="1" value="1"></td>
                 <td colspan="3"></td>
-                <td><button class="btn custom-btn" id="addDetalle">Agregar</button></td>
+                <td><button class="btn custom-btn" id="addDetalle" ${ventaCerrada ? 'disabled title="Venta cerrada: no se puede agregar"' : ''}>Agregar</button></td>
             </tr>`;
             html += `</tbody></table>`;
+            if (ventaCerrada) {
+                html += `<div class="mt-2 alert alert-warning">La venta está <strong>cerrada</strong>. No es posible agregar productos.</div>`;
+            }
             if (info.foto_entrega) {
                 html += `<p>Evidencia:<br><img src="../../uploads/evidencias/${info.foto_entrega}" width="300"></p>`;
             }
@@ -1689,7 +1736,18 @@ async function verDetalles(id) {
                 btn.addEventListener('click', () => eliminarDetalle(btn.dataset.id, id));
             });
             inicializarBuscadorDetalle();
-            $('#addDetalle').on('click', () => agregarDetalle(id));
+            const addBtn = document.getElementById('addDetalle');
+            const qtyInput = document.getElementById('detalle_cantidad');
+            if (qtyInput) {
+                qtyInput.addEventListener('input', () => {
+                    let v = parseInt(qtyInput.value, 10);
+                    if (isNaN(v) || v < 1) v = 1;
+                    qtyInput.value = String(v);
+                });
+            }
+            if (addBtn) {
+                addBtn.addEventListener('click', () => agregarDetalle(id));
+            }
             $('#cerrarDetalle').on('click', () => {
                 hideModal('#modal-detalles');
             });
@@ -1725,6 +1783,12 @@ async function verDetalles(id) {
 }
 
 async function eliminarDetalle(detalleId, ventaId) {
+    const ventaListado = ventasData[ventaId] || {};
+    const estatusVenta = String(ventaListado.estatus || '').toLowerCase();
+    if (estatusVenta === 'cerrada') {
+        alert('Venta cerrada: no se pueden eliminar productos');
+        return;
+    }
     if (!confirm('¿Eliminar producto?')) return;
 
     try {
@@ -1773,11 +1837,18 @@ async function eliminarDetalle(detalleId, ventaId) {
 
 async function agregarDetalle(ventaId) {
     const select = document.getElementById('detalle_producto');
-    const cantidad = parseFloat(document.getElementById('detalle_cantidad').value);
+    // Bloqueo si la venta está cerrada
+    const ventaListado = ventasData[ventaId] || {};
+    const estatusVenta = String(ventaListado.estatus || '').toLowerCase();
+    if (estatusVenta === 'cerrada') {
+        alert('Venta cerrada: no se pueden agregar productos');
+        return;
+    }
+    const cantidad = parseInt(document.getElementById('detalle_cantidad').value, 10);
     const productoId = parseInt(select.value);
     const prod = catalogo.find(p => parseInt(p.id) === productoId);
     const precio = prod ? parseFloat(prod.precio) : parseFloat(select.selectedOptions[0]?.dataset.precio || 0);
-    if (isNaN(productoId) || isNaN(cantidad) || cantidad <= 0) {
+    if (isNaN(productoId) || isNaN(cantidad) || cantidad < 1) {
         alert('Producto o cantidad inválida');
         return;
     }
@@ -1820,7 +1891,7 @@ function cargarSolicitudes() {
             ticketRequests = d.resultado.filter(m => m.ticket_enviado);
             ticketRequests.forEach(req => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>⚠️ ${req.nombre}</td><td><button class="btn custom-btn" data-action="imprimir-ticket" data-venta-id="${req.venta_id}" data-mesa-id="${req.id}">Imprimir</button></td>`;
+                tr.innerHTML = `<td>âš ï¸ ${req.nombre}</td><td><button class="btn custom-btn" data-action="imprimir-ticket" data-venta-id="${req.venta_id}" data-mesa-id="${req.id}">Imprimir</button></td>`;
                 tbody.appendChild(tr);
             });
         })
@@ -1916,7 +1987,7 @@ if (tipoEntregaEl) {
     });
 }
 
-// ===== Panel de Envío: helpers de carrito mínimos =====
+// ===== Panel de Enví­o: helpers de carrito mí­nimos =====
 function obtenerCarritoActual() {
     const PID = Number(window.ENVIO_CASA_PRODUCT_ID || 9001);
     const items = [];
@@ -1932,7 +2003,7 @@ function obtenerCarritoActual() {
             items.push({ producto_id, cantidad, precio_unitario: unit });
         }
     });
-    // Añadir envío desde panel si activo
+    // Añadir enví­o desde panel si activo
     const panel = document.getElementById('panelEnvioCasa');
     if (panel && panel.style.display !== 'none') {
         const c = Math.max(0, Number(document.getElementById('envioCantidad')?.value || 0));
@@ -1940,7 +2011,7 @@ function obtenerCarritoActual() {
         if (c > 0) {
             items.push({
                 producto_id: PID,
-                nombre: window.ENVIO_CASA_NOMBRE || 'ENVÍO – Repartidor casa',
+                nombre: window.ENVIO_CASA_NOMBRE || 'ENVíO â€“ Repartidor casa',
                 cantidad: c,
                 precio_unitario: p,
                 es_envio: true
@@ -1987,7 +2058,7 @@ window.recalcularTotalesUI = window.recalcularTotalesUI || function() {
     if (c && p && s) s.textContent = (Math.max(0, Number(c.value||0)) * Math.max(0, Number(p.value||0))).toFixed(2);
 };
 
-// ===== Lógica del panel de envío y sincronización =====
+// ===== Lógica del panel de enví­o y sincronización =====
 (function(){
   const PID = Number(window.ENVIO_CASA_PRODUCT_ID || 9001);
 
@@ -2009,7 +2080,7 @@ window.recalcularTotalesUI = window.recalcularTotalesUI || function() {
   const $subtot = document.getElementById('envioSubtotal');
   const $btnQuitar = document.getElementById('btnQuitarEnvio');
 
-  if ($nombre) $nombre.textContent = window.ENVIO_CASA_NOMBRE || 'ENVÍO – Repartidor casa';
+  if ($nombre) $nombre.textContent = window.ENVIO_CASA_NOMBRE || 'ENVíO â€“ Repartidor casa';
 
   function actualizarSubtotalEnvioUI(){
     const c = Math.max(0, Number($cant?.value || 0));
@@ -2025,7 +2096,7 @@ window.recalcularTotalesUI = window.recalcularTotalesUI || function() {
       if (!item) {
         agregarItemAlCarrito({
           producto_id: PID,
-          nombre: window.ENVIO_CASA_NOMBRE || 'ENVÍO – Repartidor casa',
+          nombre: window.ENVIO_CASA_NOMBRE || 'ENVíO â€“ Repartidor casa',
           cantidad: 1,
           precio_unitario: Number(window.ENVIO_CASA_DEFAULT_PRECIO || 30),
           es_envio: true
@@ -2061,7 +2132,7 @@ window.recalcularTotalesUI = window.recalcularTotalesUI || function() {
     const items = obtenerCarritoActual();
     const existe = buscarItemEnvio(items);
     if (!existe) {
-      agregarItemAlCarrito({ producto_id: PID, nombre: window.ENVIO_CASA_NOMBRE || 'ENVÍO – Repartidor casa', cantidad: c, precio_unitario: p, es_envio: true });
+      agregarItemAlCarrito({ producto_id: PID, nombre: window.ENVIO_CASA_NOMBRE || 'ENVíO â€“ Repartidor casa', cantidad: c, precio_unitario: p, es_envio: true });
     } else {
       existe.cantidad = c;
       existe.precio_unitario = p;
@@ -2081,7 +2152,7 @@ window.recalcularTotalesUI = window.recalcularTotalesUI || function() {
       if (c === 0) existe.cantidad = 1;
     } else {
       if (c > 0) {
-        agregarItemAlCarrito({ producto_id: PID, nombre: window.ENVIO_CASA_NOMBRE || 'ENVÍO – Repartidor casa', cantidad: Math.max(1, c), precio_unitario: p, es_envio: true });
+        agregarItemAlCarrito({ producto_id: PID, nombre: window.ENVIO_CASA_NOMBRE || 'ENVíO â€“ Repartidor casa', cantidad: Math.max(1, c), precio_unitario: p, es_envio: true });
       }
     }
     actualizarSubtotalEnvioUI();
@@ -2176,7 +2247,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('registrarVenta').addEventListener('click', registrarVenta);
     document.getElementById('agregarProducto').addEventListener('click', agregarFilaProducto);
     actualizarSelectorUsuario();
-    // Sincronizar panel de envío al iniciar
+    // Sincronizar panel de enví­o al iniciar
     setTimeout(() => aplicarEnvioSiCorresponde(), 0);
 
     document.getElementById('recordsPerPage').addEventListener('change', e => {
@@ -2253,3 +2324,5 @@ document.addEventListener('click', function (e) {
             .catch(() => alert('Error al actualizar estado'));
     }
 });
+
+

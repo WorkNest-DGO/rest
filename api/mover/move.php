@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/_util.php';
 require_once __DIR__ . '/_auth.php';
-require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../../config/db.php';
 
 try {
   require_auth();

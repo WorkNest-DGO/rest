@@ -1,6 +1,10 @@
 <?php
 require_once __DIR__ . '/../utils/cargar_permisos.php';
-$path_actual = str_replace('/rest', '', $_SERVER['PHP_SELF']);
+// Determina la base del app de forma dinámica (dos niveles arriba del script)
+$__sn = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+$__app_base = rtrim(dirname(dirname($__sn)), '/');
+// Normaliza ruta actual relativa al app (ej. /vistas/ayuda.php)
+$path_actual = preg_replace('#^' . preg_quote($__app_base, '#') . '#', '', ($__sn ?: $_SERVER['PHP_SELF']));
 if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
     http_response_code(403);
     echo 'Acceso no autorizado';
@@ -39,6 +43,22 @@ ob_start();
   </div>
 </div>
 
+<!-- Video Modal (mismo formato que index) -->
+<div class="modal fade" id="videoModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-body">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <div class="embed-responsive embed-responsive-16by9">
+          <iframe class="embed-responsive-item" src="" id="video" allowscriptaccess="always" allow="autoplay"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
 <?php require_once __DIR__ . '/footer.php'; ?>
 <script src="ayuda/ayuda.js"></script>
 </body>
@@ -47,4 +67,3 @@ ob_start();
 $content = ob_get_clean();
 include __DIR__ . '/nav.php';
 ?>
-

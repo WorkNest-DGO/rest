@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 if (!defined('ENVIO_CASA_PRODUCT_ID')) define('ENVIO_CASA_PRODUCT_ID', 9001);
+if (!defined('CARGO_PLATAFORMA_PRODUCT_ID')) define('CARGO_PLATAFORMA_PRODUCT_ID', 9000);
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
@@ -91,7 +92,9 @@ if ($rol === 'barra') {
     $sql .= " AND p.categoria_id <> 1";
 }
 // Excluir producto de envío en cocina
+$conn->query("UPDATE venta_detalles SET estado_producto='entregado', entregado_hr=NOW() WHERE producto_id IN (".(int)ENVIO_CASA_PRODUCT_ID.",".(int)CARGO_PLATAFORMA_PRODUCT_ID.") AND estado_producto <> 'entregado'");
 $sql .= " AND d.producto_id <> " . (int)ENVIO_CASA_PRODUCT_ID;
+$sql .= " AND d.producto_id <> " . (int)CARGO_PLATAFORMA_PRODUCT_ID;
 $sql .= "\nORDER BY\n  FIELD(d.estado_producto, 'pendiente','en_preparacion','listo','entregado'),\n  minutos_transcurridos DESC,\n  destino,\n  d.created_at;\n";
 
 $res = $conn->query($sql);
@@ -100,6 +103,7 @@ if (!$res) { error('Error al obtener productos: ' . $conn->error); }
 $out = [];
 while ($row = $res->fetch_assoc()) {
     if ((int)$row['producto_id'] === (int)ENVIO_CASA_PRODUCT_ID) { continue; }
+    if ((int)$row['producto_id'] === (int)CARGO_PLATAFORMA_PRODUCT_ID) { continue; }
     $out[] = [
   'venta_id'             => (int)$row['venta_id'],
   'tipo'                 => $row['tipo_entrega'],
