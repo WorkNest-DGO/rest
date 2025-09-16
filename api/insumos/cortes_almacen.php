@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
-require_once __DIR__ . '/../../utils/SimpleXLSXGen.php';
+// require_once __DIR__ . '/../../utils/SimpleXLSXGen.php'; // Migrado a CSV
 require_once __DIR__ . '/../../utils/pdf_simple.php';
 
 
@@ -309,45 +309,37 @@ function obtenerDetalleCorte($corteId) {
 
 
 function exportarExcel($corte_id) {
+    // Exportación CSV (compat con endpoints existentes)
     global $conn;
-
+    if (!$corte_id) { error('corte_id requerido'); }
     $query = "SELECT i.nombre AS insumo, i.unidad, d.existencia_inicial, d.entradas, d.salidas, d.mermas, d.existencia_final
               FROM cortes_almacen_detalle d
               JOIN insumos i ON i.id = d.insumo_id
               WHERE d.corte_id = ?";
-
     $stmt = $conn->prepare($query);
+    if(!$stmt){ error('Error al preparar consulta'); }
     $stmt->bind_param("i", $corte_id);
     $stmt->execute();
     $result = $stmt->get_result();
 
-    $data = [
-        ['Insumo', 'Unidad', 'Inicial', 'Entradas', 'Salidas', 'Mermas', 'Final']
-    ];
+    // Ruta CSV en uploads/reportes
+    $dir = realpath(__DIR__ . '/../../uploads/reportes');
+    if (!$dir) { $dir = __DIR__ . '/../../uploads/reportes'; @mkdir($dir, 0777, true); }
+    $filename = "corte_almacen_{$corte_id}.csv";
+    $ruta = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR . $filename;
 
+    $out = fopen($ruta, 'w');
+    // BOM UTF-8 para compatibilidad con Excel
+    fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
+    fputcsv($out, ['Insumo', 'Unidad', 'Inicial', 'Entradas', 'Salidas', 'Mermas', 'Final']);
     while ($row = $result->fetch_assoc()) {
-        $data[] = [
-            $row['insumo'],
-            $row['unidad'],
-            $row['existencia_inicial'],
-            $row['entradas'],
-            $row['salidas'],
-            $row['mermas'],
-            $row['existencia_final']
-        ];
+        fputcsv($out, [
+            $row['insumo'], $row['unidad'], $row['existencia_inicial'],
+            $row['entradas'], $row['salidas'], $row['mermas'], $row['existencia_final']
+        ]);
     }
-
-    $xlsx = SimpleXLSXGen::fromArray($data);
-    $ruta = "../../uploads/reportes/corte_almacen_{$corte_id}.xlsx";
-
-    // Crear carpeta si no existe
-    if (!file_exists(dirname($ruta))) {
-        mkdir(dirname($ruta), 0777, true);
-    }
-
-    $xlsx->saveAs($ruta);
-
-    echo json_encode(["success" => true, "resultado" => ["archivo" => $ruta]]);
+    fclose($out);
+    echo json_encode(["success" => true, "resultado" => ["archivo" => str_replace(__DIR__ . '/..' . '/..', '', $ruta)]]);
 }
 
 function exportarPdf($corteId) {

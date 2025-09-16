@@ -10,7 +10,9 @@ $input = json_decode(file_get_contents('php://input'), true);
 if (!$input || !isset($input['venta_id'], $input['subcuentas']) || !is_array($input['subcuentas'])) {
     error('Datos incompletos');
 }
-
+$banderaPromo = $input['bandera_promo'];
+$descuentoPromo = 0.00;
+$promoId=0;
 $venta_id   = (int)$input['venta_id'];
 $subcuentas = $input['subcuentas'];
 $sede_id    = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$input['sede_id'] : 1;
@@ -429,6 +431,17 @@ foreach ($subcuentas as $sub) {
         'total'     => $total
     ];
 }
+if ($banderaPromo) {
+    $promoId = (int)$input['promocion_id'];
+    $descuentoPromo = (float)$input['promocion_descuento'];
+    $updPromoDesc = $conn->prepare('UPDATE ventas SET promocion_id = ? , promocion_descuento = ? WHERE id = ?');
+    if ($updPromoDesc) { 
+            $updPromoDesc->bind_param('idi', $promoId, $descuentoPromo ,$venta_id); 
+            $updPromoDesc->execute(); 
+            $updPromoDesc->close(); 
+    }
+
+}
 
 $cerrar = $conn->prepare("UPDATE ventas SET estatus = 'cerrada' WHERE id = ?");
 if (!$cerrar) {
@@ -441,6 +454,43 @@ if (!$cerrar->execute()) {
     error('Error al cerrar venta: ' . $cerrar->error);
 }
 
+// Liberar mesa si la venta fue en mesa (después de cerrar la venta y antes del commit)
+if (($venta['tipo_entrega'] ?? null) === 'mesa' && !empty($venta['mesa_id'])) {
+    // Poner mesa en libre y limpiar banderas de ocupación
+    $updMesa = $conn->prepare("
+        UPDATE mesas
+           SET estado = 'libre',
+               usuario_id = NULL,
+               tiempo_ocupacion_inicio = NULL,
+               ticket_enviado = 0
+         WHERE id = ?
+    ");
+    if (!$updMesa) {
+        $conn->rollback();
+        error('Error al preparar liberación de mesa: ' . $conn->error);
+    }
+    $updMesa->bind_param('i', $venta['mesa_id']);
+    if (!$updMesa->execute()) {
+        $conn->rollback();
+        error('Error al liberar mesa: ' . $updMesa->error);
+    }
+    $updMesa->close();
+
+    // Cerrar el registro de ocupación en log_mesas
+    if ($updLog = $conn->prepare("
+        UPDATE log_mesas
+           SET fecha_fin = NOW()
+         WHERE mesa_id = ? AND venta_id = ? AND fecha_fin IS NULL
+    ")) {
+        $updLog->bind_param('ii', $venta['mesa_id'], $venta_id);
+        if (!$updLog->execute()) {
+            $conn->rollback();
+            error('Error al cerrar log de mesa: ' . $updLog->error);
+        }
+        $updLog->close();
+    }
+}
+
 $conn->commit();
 
 success([
@@ -449,6 +499,8 @@ success([
     'descuento_porcentaje' => $descuento_porcentaje_in,
     'cortesias_total' => $cortesias_total,
     'descuento_total' => $descuento_total,
+    'promocion_id' => $promoId,
+    'descuento_promo' => $descuentoPromo,
     'total_esperado' => $total_esperado
 ]);
 ?>

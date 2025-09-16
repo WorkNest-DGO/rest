@@ -210,7 +210,7 @@ try {
     $sortDir = $sortDir === 'desc' ? 'DESC' : 'ASC';
 
     $stmt = $pdo->prepare("SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :view ORDER BY ORDINAL_POSITION");
-    $stmt->execute([':view' => $view]);
+    $stmt->execute([':view' => $view]);    
     $columnsInfo = $stmt->fetchAll();
     if (!$columnsInfo) {
         http_response_code(400);

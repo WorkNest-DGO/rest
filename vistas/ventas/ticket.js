@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const ok = await cargarDenominacionesPago();
         if (!ok) return;
         await cargarCatalogosTarjeta();
+        await cargarPromociones();
         serieActual = await obtenerSerieActual();
         inicializarDividir(datos);
     }
@@ -103,7 +104,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     let denomChequeId = null;
     let catalogoTarjetas = [];
     let catalogoBancos = [];
-
+    let catalogoPromociones = [];
+    let descuentoPromocion = 0;
+    let idPromocion = 0;    
+    let banderaPromo = false;
     async function cargarCatalogosTarjeta() {
         try {
             const resp = await fetch(catalogosUrl);
@@ -114,6 +118,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (e) {
             console.error('Error cargando catálogos', e);
+        }
+    }
+    async function cargarPromociones() {
+        try {
+            const resp = await fetch(promocionesUrl);
+            const data = await resp.json();
+            if (data.success) {
+                catalogoPromociones = Array.isArray(data.promociones) ? data.promociones : [];
+                
+            }
+        } catch (e) {
+            console.error('Error cargando promociones', e);
         }
     }
 
@@ -151,6 +167,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     let productos = [];
+    let promociones = [];
     let numSub = 1;
     let banderaEfec = false;
     let banderaCheq = false;
@@ -313,10 +330,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div>Descuento monto ($): <input id=\"descuentoMontoFijo_sub${i}\" type=\"number\" min=\"0\" step=\"0.01\" value=\"0.00\"></div>
                 <div>Descuento % monto: <span id=\"lblDescPorcentaje_sub${i}\">0.00</span></div>
                 <div>Descuento monto fijo: <span id=\"lblDescMontoFijo_sub${i}\">0.00</span></div>
-                <div><strong>Descuento total:</strong> <span id=\"lblDescTotal_sub${i}\">0.00</span></div>
+                <div><strong>Descuento total:</strong> <span id=\"lblDescTotal_sub${i}\">0.00</span></div>                        
                 <div><strong>Monto actual (a cobrar):</strong> <span id=\"lblTotalEsperado_sub${i}\">0.00</span></div>
               </div>
             `;
+             html += 'Promoción: <select id="promociones' + i + '"><option value="0">Seleccione</option>';
+            catalogoPromociones.forEach(c => { html += `<option value="${c.id}">${c.nombre}</option>`; });
+            html += `</select> <div>Descuento promocion aplicada: <span id=\"lblDescPromocion_sub${i}\">0.00</span></div>`;            
             html += ` <input type="number" step="0.01" id="recibido${i}" class="recibido" placeholder="Recibido">`;
             html += ` Cambio: <span id="cambio${i}">0</span>`;
             html += `<div id="tot${i}"></div>`;
@@ -324,6 +344,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             cont.appendChild(div);
             // div.querySelector('#propina' + i).addEventListener('input', mostrarTotal);
             div.querySelector('#pago' + i).addEventListener('change', () => { mostrarTotal(); mostrarCamposPago(i); });
+            div.querySelector('#promociones' + i).addEventListener('change', () => { vvalidaPromocion(i); });
             div.querySelector('#recibido' + i).addEventListener('input', mostrarTotal);
             div.querySelectorAll('.chk-cortesia-sub').forEach(chk => {
                 chk.addEventListener('change', () => { recalcSub(i); mostrarTotal(); });
@@ -347,6 +368,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const cortSet = new Set();
         subDiv.querySelectorAll('.chk-cortesia-sub').forEach(chk => { if (chk.checked) cortSet.add(Number(chk.getAttribute('data-detalle-id')||0)); });
         let cortTotal = 0;
+        let totalPromo =0; 
+        totalPromo = Number(descuentoPromocion);
         cortSet.forEach(detId => {
             const tr = subDiv.querySelector(`tr[data-detalle-id="${detId}"]`);
             if (tr) cortTotal += Number(tr.getAttribute('data-subtotal')||0);
@@ -356,12 +379,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         const base = Math.max(0, totalBruto - cortTotal);
         const descPctMonto = Number((base * (pct/100)).toFixed(2));
         const descuentoTotal = Math.min(totalBruto, Number((cortTotal + descPctMonto + montoFijo).toFixed(2)));
-        const totalEsperado = Math.max(0, Number((totalBruto - descuentoTotal).toFixed(2)));
+        const totalEsperado1 = Math.max(0, Number((totalBruto - descuentoTotal).toFixed(2)));
+        const totalEsperado = Math.max(0, Number((totalEsperado1 - totalPromo).toFixed(2)));
         const setText = (sel, val) => { const el = subDiv.querySelector(sel); if (el) el.textContent = val.toFixed(2); };
         setText('#lblDescCortesias_sub'+idx, cortTotal);
         setText('#lblDescPorcentaje_sub'+idx, descPctMonto);
         setText('#lblDescMontoFijo_sub'+idx, montoFijo);
         setText('#lblDescTotal_sub'+idx, descuentoTotal);
+        setText('#lblDescPromocion_sub'+idx, totalPromo);
         setText('#lblTotalEsperado_sub'+idx, totalEsperado);
         const detalleIds = prods.map(p => p.id || p.detalle_id || p.venta_detalle_id).filter(Boolean);
         window.__SUBS__ = window.__SUBS__ || [];
@@ -472,6 +497,84 @@ function mostrarTotal() {
         }
     }
 
+     function vvalidaPromocion(i) {
+        const promo = document.getElementById('promociones' + i).value;
+        
+        if(Number(promo)===0){
+            banderaPromo=false;
+            document.getElementById('lblDescPromocion_sub' + i).textContent = '0.00';
+            descuentoPromocion=0;
+            idPromocion = 0;
+            recalcSub(i); 
+        }
+        else
+        {
+                var promoAplicada = catalogoPromociones[promo-1].tipo;        
+                var regla = catalogoPromociones[promo-1].regla;   
+                var myObj = JSON.parse(regla);
+                var contador = myObj.length;
+                var categoria_filtro;
+                if(typeof contador === 'undefined'){
+                    
+                    categoria_filtro=myObj.categoria_id;
+                }else{
+                    categoria_filtro=myObj[0].categoria_id        
+                }
+
+                if(promoAplicada==='bogo'){
+                    var cantidad=myObj.cantidad;
+                    const catProds = productos.filter(p => p.categoria_id === categoria_filtro);
+                    console.log(catProds);
+
+                    if(catProds.length<cantidad){
+                        banderaPromo=false;                
+                    }
+                    else{
+                        alert("promoción aplicada");
+                        banderaPromo=true;
+                        const lowestPrice = catProds.reduce((min, current) => {
+                          return (min.precio_unitario < current.precio_unitario) ? min : current;
+                        }).precio_unitario;
+                        descuentoPromocion=lowestPrice;
+                        idPromocion=promo;
+                        document.getElementById('lblDescPromocion_sub' + i).textContent = descuentoPromocion;
+                        recalcSub(i);                
+                    }
+
+                } else if (promoAplicada==='categoria_gratis'){
+                        const catProds = productos.filter(p => p.categoria_id === categoria_filtro);
+                        if(catProds.length<1){
+                            banderaPromo=false;                            
+                        }
+                        else{
+                            alert("promoción aplicada");
+                            banderaPromo=true;
+                            const lowestPrice=catProds[0].precio_unitario;
+                            descuentoPromocion=lowestPrice;
+                            idPromocion=promo;
+                            document.getElementById('lblDescPromocion_sub' + i).textContent = descuentoPromocion;
+                            recalcSub(i);
+                            console.log("descuento de promocion = " +catProds[0].precio_unitario);
+                        }
+
+                }
+
+                if(banderaPromo===false)
+                {
+                        var selectPr  = document.getElementById('promociones' + i);
+                        selectPr.selectedIndex = 0;
+                        descuentoPromocion=0;
+                        idPromocion = 0;
+                        recalcSub(i); 
+                        alert("promoción no aplicable al no cumplir las condiciones");
+                }
+
+
+        }
+
+        
+    }
+
     function crearTeclado(input) {
         const cont = document.getElementById('teclado');
         cont.innerHTML = '';
@@ -512,6 +615,9 @@ function mostrarTotal() {
             usuario_id: info.usuario_id || 1,
             sede_id: info.sede_id || null,
             subcuentas: [],
+            promocion_id: idPromocion,
+            promocion_descuento: descuentoPromocion,
+            bandera_promo: banderaPromo,
             // Extras de descuentos
             descuento_porcentaje: window.__DESC_DATA__?.pct || 0,
             descuento_total: window.__DESC_DATA__?.descTotal || 0,
@@ -610,6 +716,7 @@ function mostrarTotal() {
             });
             const d = await resp.json();
             if (d.success) {
+                console.log(d);
                 document.getElementById('regPropinas').style.display = 'block';
                 await registrarDesglosePagos(payload.subcuentas);
                 await imprimirTicketsVenta(payload.venta_id);
@@ -650,6 +757,8 @@ function mostrarTotal() {
     async function imprimirTicketsVenta(ventaId) {
         try {
             window.open('../../api/tickets/imprime_ticket.php?venta_id='+ventaId);
+            // Si la venta está asociada a una mesa, liberarla al imprimir
+            try { await liberarMesa(ventaId); } catch(_) {}
             // const resp = await fetch('../../api/tickets/reimprimir_ticket.php', {
             //     method: 'POST',
             //     headers: { 'Content-Type': 'application/json' },

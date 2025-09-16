@@ -1,7 +1,11 @@
 <?php
 require_once __DIR__ . '/../../utils/cargar_permisos.php';
 require_once __DIR__ . '/../../config/db.php';
-$path_actual = str_replace('/rest', '', $_SERVER['PHP_SELF']);
+// Base app dinámica y ruta relativa para validación
+$__sn = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+$__pos = strpos($__sn, '/vistas/');
+$__app_base = $__pos !== false ? substr($__sn, 0, $__pos) : rtrim(dirname($__sn), '/');
+$path_actual = preg_replace('#^' . preg_quote($__app_base, '#') . '#', '', ($__sn ?: $_SERVER['PHP_SELF']));
 if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
     http_response_code(403);
     echo 'Acceso no autorizado';
@@ -259,18 +263,21 @@ ob_start();
         <div id="corteTemporalDatos"></div>
         <!-- Vista formateada del corte temporal -->
         <div id="corteTemporalBonito" style="display:none;">
-          <div class="tarjeta">
-            <div><strong>Total bruto:</strong> <span id="lblTmpTotalBruto">0.00</span></div>
-            <div><strong>Descuentos:</strong> <span id="lblTmpTotalDescuentos">0.00</span></div>
-            <div><strong>Total esperado:</strong> <span id="lblTmpTotalEsperado">0.00</span></div>
-          </div>
-
           <div class="tarjeta" style="margin-top:8px;">
             <div style="opacity:.8">Esperado por tipo de pago</div>
             <div>Efectivo: <span id="lblTmpEsperadoEfectivo">0.00</span></div>
             <div>Boucher:  <span id="lblTmpEsperadoBoucher">0.00</span></div>
             <div>Cheque:   <span id="lblTmpEsperadoCheque">0.00</span></div>
           </div>
+          <br>
+          <div class="tarjeta">
+            <div><strong>Descuentos:</strong> <span id="lblTmpTotalDescuentos">0.00</span></div>
+            <div><strong>Total bruto:</strong> <span id="lblTmpTotalBruto">0.00</span></div>            
+            <div id="promocionesA" style="display:none">Promociones Aplicadas:</strong> <span id="lblTmpTotalPromociones">0.00</span></div>
+            <div><strong>Total esperado:</strong> <span id="lblTmpTotalEsperado">0.00</span></div>
+          </div>
+
+          
 
           <div class="tarjeta" style="margin-top:8px;">
             <div style="opacity:.8">Totales por mesero</div>
@@ -403,6 +410,24 @@ ob_start();
     window.ENVIO_CASA_PRODUCT_ID = 9001;
     window.ENVIO_CASA_DEFAULT_PRECIO = 30.00;
 </script>
+<!-- Modal: Corte enviado -->
+<div class="modal fade" id="modalCorteEnviado" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Corte enviado</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        Corte enviado, que tengas un buen día.
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btnContinuarCorte" class="btn custom-btn">Continuar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="../../utils/js/buscador.js"></script>
 <script src="ventas.js"></script>
   </body>

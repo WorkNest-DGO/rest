@@ -63,6 +63,15 @@ $sqlResumen2 = "SELECT
 FROM ventas v
 WHERE v.estatus = 'cerrada' 
   AND v.corte_id = ? LIMIT 1";
+
+$sqlResumen3 = "SELECT
+    SUM(v.total)   AS total,
+    SUM(v.promocion_descuento) as descuento_promociones
+FROM ventas v
+WHERE v.estatus = 'cerrada' 
+  AND v.corte_id = ? LIMIT 1";
+
+
 $stmtResumen = $conn->prepare($sqlResumen);
 $stmtResumen->bind_param('i', $corte_id);
 $stmtResumen->execute();
@@ -73,7 +82,17 @@ $stmtResumen2->bind_param('i', $corte_id);
 $stmtResumen2->execute();
 $resultResumen2 = $stmtResumen2->get_result();
 $row2 = $resultResumen2->fetch_assoc();
+
+$stmtResumen3 = $conn->prepare($sqlResumen3);
+$stmtResumen3->bind_param('i', $corte_id);
+$stmtResumen3->execute();
+$resultResumen3 = $stmtResumen3->get_result();
+$row3 = $resultResumen3->fetch_assoc();
+
 $resumen = [];
+$totalDescuentoPromos =0;
+$totalDescuentoPromos=(float)$row3['descuento_promociones'];
+
 $totalProductos = 0;
 $totalPropinas  = 0;
 $totalPropinaEfectivo=(float)$row2['propina_efectivo'];
@@ -230,6 +249,7 @@ $resultado['total_productos'] = $totalProductos;
 $resultado['total_propina_efectivo']  = $totalPropinaEfectivo;
 $resultado['total_propina_cheque']  = $totalPropinaCheque;
 $resultado['total_propina_tarjeta']  = $totalPropinaTarjeta;
+$resultado['total_descuento_promos']  = $totalDescuentoPromos;
 $resultado['total_propinas']  = $totalPropinas;
 $resultado['totalEsperado']   = $totalEsperado;
 $resultado['fondo']           = $fondoInicial;

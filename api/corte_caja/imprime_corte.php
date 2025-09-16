@@ -105,6 +105,7 @@ $printer -> initialize();
     $total_esperado   = $__totalEsperado ?? max(0, $total_bruto - $total_descuentos);
 
     // Esperados por método (si no vienen, se omiten al imprimir)
+    $total_promos = isset($datosT['total_descuento_promos']) ? (float)$datosT['total_descuento_promos'] : 0.0;
     $esperado_efectivo = $datosT['esperado_efectivo'] ?? null;
     $esperado_boucher  = $datosT['esperado_boucher']  ?? null;
     $esperado_cheque   = $datosT['esperado_cheque']   ?? null;
@@ -237,7 +238,11 @@ $printer -> initialize();
 		$printer -> feed();
 		
 	}
-	$diferencia = (float)$datosT['totalFinal'] - (float)$total_esperado;
+    if($total_promos > 0){
+        $objeto = new item('Promociones aplicadas: ' , $total_promos, True);
+        $printer->text($objeto->getAsString(32));
+    }
+	$diferencia = (float)$datosT['totalFinal'] - (float)$total_esperado - (float)$total_promos;
 	$diferencia = '' . $diferencia;
 
 	$objeto = new item('Total productos: ' ,$datosT['total_productos'],True);

@@ -163,6 +163,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnCerrarCorte')?.addEventListener('click', cerrarCorte);
     document.getElementById('guardarCierre')?.addEventListener('click', guardarCierre);
     document.getElementById('btnBuscar')?.addEventListener('click', buscarCortes);
+    // Homologado: cargar cortes automáticamente y reaccionar a cambio de fecha
+    const fechaInput = document.getElementById('buscarFecha');
+    if (fechaInput) {
+        if (!fechaInput.value) {
+            const hoy = new Date();
+            const yyyy = hoy.getFullYear();
+            const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+            const dd = String(hoy.getDate()).padStart(2, '0');
+            fechaInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+        buscarCortes();
+        fechaInput.addEventListener('change', buscarCortes);
+    }
     document.getElementById('listaCortes')?.addEventListener('change', e => cargarDetalle(e.target.value));
     document.getElementById('filtroInsumo')?.addEventListener('input', () => { pagina = 1; renderTabla(); });
     document.getElementById('registrosPagina')?.addEventListener('change', () => { pagina = 1; renderTabla(); });

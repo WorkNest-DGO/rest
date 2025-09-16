@@ -2,6 +2,7 @@ SET @ARCHIVE_MODE = 1;
 SET FOREIGN_KEY_CHECKS = 0;
 SET SQL_SAFE_UPDATES  = 0;
 
+DELETE FROM factura_tickets;
 DELETE FROM factura_detalles;
 DELETE FROM facturas;
 

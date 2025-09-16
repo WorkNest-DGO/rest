@@ -1,4 +1,4 @@
-function showAppMsg(msg) {
+﻿function showAppMsg(msg) {
   const body = document.querySelector('#appMsgModal .modal-body');
   if (body) body.textContent = String(msg);
   showModal('#appMsgModal');
@@ -6,6 +6,12 @@ function showAppMsg(msg) {
 window.alert = showAppMsg;
 
 const itemsPorPaginaAyuda = 10;
+// Videos por sección (usa el mismo modal #videoModal de index)
+const videosAyudaMap = {
+  'Ventas': 'Zk_7drzRwug',
+  'Cortes de caja': 'KJemakWLmkE',
+  'Inventario': 'xRuxjgeqQTc'
+};
 let seccionesAyuda = [
   { titulo: 'Ventas', contenido: 'Cómo registrar ventas, aplicar descuentos y cerrar corte.' },
   { titulo: 'Cortes de caja', contenido: 'Apertura de caja, fondo inicial, cortes temporales y finales.' },
@@ -13,7 +19,7 @@ let seccionesAyuda = [
   { titulo: 'Repartos', contenido: 'Marcar en camino, confirmar entrega y evidencia de entrega.' },
   { titulo: 'Meseros y mesas', contenido: 'Asignar mesas a meseros y gestión por usuario.' },
   { titulo: 'Insumos', contenido: 'Registro de entradas y control por receta.' },
-  { titulo: 'Reportes', contenido: 'Reportería dinámica por vistas/tablas y filtros.' },
+  { titulo: 'Reportes', contenido: 'Reporterí­a dinámica por vistas/tablas y filtros.' },
   { titulo: 'Horarios', contenido: 'Configurar series y horarios de cobro.' },
   { titulo: 'Usuarios', contenido: 'Altas/bajas, permisos y roles.' },
   { titulo: 'Rutas', contenido: 'Administración de rutas y permisos del sistema.' }
@@ -37,6 +43,20 @@ function renderAyuda() {
       <div class="product-name">${s.titulo}</div>
       <div>${s.contenido}</div>
     </div>`).join('');
+  // Insertar botón de video en las secciones que apliquen
+  const cards = Array.from(cont.querySelectorAll('.product-view'));
+  visibles.forEach((s, i) => {
+    const vid = videosAyudaMap[s.titulo];
+    if (!vid) return;
+    const wrap = document.createElement('div');
+    wrap.style.marginTop = '8px';
+    wrap.innerHTML = `
+      <button type="button" class="btn-play" data-toggle="modal" data-src="https://www.youtube.com/embed/${vid}" data-target="#videoModal">
+        <span></span>
+      </button>
+      <span style="margin-left:8px; font-weight:600">Ver video</span>`;
+    cards[i].appendChild(wrap);
+  });
 
   // Paginador
   pag.innerHTML = '';
@@ -68,4 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   renderAyuda();
 });
+
+
 

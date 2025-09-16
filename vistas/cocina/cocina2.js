@@ -6,6 +6,7 @@ function showAppMsg(msg) {
 window.alert = showAppMsg;
 // Constante de envío en UI cocina
 window.ENVIO_CASA_PRODUCT_ID = window.ENVIO_CASA_PRODUCT_ID || 9001;
+window.CARGO_PLATAFORMA_PRODUCT_ID = window.CARGO_PLATAFORMA_PRODUCT_ID || 9000;
 window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina') || '0', 10);
 (() => {
   const qs = s => document.querySelector(s);
@@ -45,11 +46,15 @@ window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina'
 
   function render(items){
     const PID_ENVIO = Number(window.ENVIO_CASA_PRODUCT_ID || 9001);
+    const PID_CARGO = Number(window.CARGO_PLATAFORMA_PRODUCT_ID || 9000);
     Object.values(cols).forEach(c => c.innerHTML = '');
     const txt = (filtroInput.value || '').toLowerCase();
     const tipo = (tipoEntregaSel.value || '').toLowerCase();
 
-    const visibles = (items || []).filter(it => Number(it.producto_id) !== PID_ENVIO);
+    const visibles = (items || []).filter(it => {
+      const pid = Number(it.producto_id);
+      return pid !== PID_ENVIO && pid !== PID_CARGO;
+    });
     visibles.forEach(it => {
       const cat = (it.categoria || '').toLowerCase();
       if (rolUsuario === 'barra' && cat !== 'bebida') return;
