@@ -58,7 +58,7 @@ async function buscarCortes() {
     const lista = document.getElementById('listaCortes');
     lista.innerHTML = '<option value="">Buscando...</option>';
     try {
-        const resp = await fetch(`../../api/insumos/cortes_almacen.php?accion=listar&fecha=${fecha}`);
+        const resp = await fetch(`../../api/inventario/cortes_almacen.php?accion=listar&fecha=${fecha}`);
         const data = await resp.json();
         lista.innerHTML = '<option value="">Seleccione corte...</option>';
         if (data.success) {
@@ -79,7 +79,7 @@ async function buscarCortes() {
 async function cargarDetalle(id) {
     if (!id) return;
     try {
-        const resp = await fetch(`../../api/insumos/cortes_almacen.php?accion=detalle&corte_id=${id}`);
+        const resp = await fetch(`../../api/inventario/cortes_almacen.php?accion=detalle&corte_id=${id}`);
         const data = await resp.json();
         if (data.success) {
             corteActual = id;
