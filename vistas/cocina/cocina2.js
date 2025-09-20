@@ -201,35 +201,66 @@ window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina'
   btnRefrescar.addEventListener('click', cargar);
 })();
 
-function escucharNuevasVentas(ultimoId) {
-  $.ajax({
-    url: '../../api/cocina/listen_updates.php',
-    type: 'POST',
-    data: { ultimo_id: ultimoId },
-    dataType: 'json',
-    timeout: 30000,
-    success: function (resp) {
-      if (resp.nueva_venta) {
-        cargarDatosCocina();
-      }
-      const nextId = resp.ultimo_id || ultimoId;
-      window.ultimoDetalleCocina = nextId;
-      localStorage.setItem('ultimoDetalleCocina', String(nextId));
-      escucharNuevasVentas(nextId);
-    },
-    error: function () {
-      setTimeout(() => escucharNuevasVentas(ultimoId), 1000);
+// Long-poll por notificación (versión + ids)
+let cocinaVersion = Number(localStorage.getItem('cocinaVersion') || '0');
+
+function columnaSelector(estado){
+  return {
+    'pendiente':       '#col-pendiente',
+    'en_preparacion':  '#col-preparacion',
+    'listo':           '#col-listo',
+    'entregado':       '#col-entregado'
+  }[estado] || '#col-pendiente';
+}
+
+function moverTarjetas(estadosMap){
+  Object.entries(estadosMap).forEach(([idStr, estado])=>{
+    const id = parseInt(idStr,10);
+    const card = document.querySelector(`.kanban-item[data-id='${id}']`);
+    if (!card) return;
+    const actual = card.dataset.estado;
+    if (actual !== estado) {
+      card.dataset.estado = estado;
+      const destinoSel = columnaSelector(estado);
+      const destino = document.querySelector(destinoSel);
+      if (destino && !destino.contains(card)) destino.prepend(card);
+      const badge = card.querySelector('.badge-estado');
+      if (badge) badge.textContent = String(estado).replace('_',' ');
     }
   });
+}
+
+async function waitCambiosLoop(){
+  try {
+    const r = await fetch(`../../api/cocina/listen_cambios.php?since=${cocinaVersion}`, { cache:'no-store' });
+    const data = await r.json();
+    if (data.changed) {
+      cocinaVersion = Number(data.version) || cocinaVersion;
+      localStorage.setItem('cocinaVersion', String(cocinaVersion));
+      const ids = Array.isArray(data.ids) ? data.ids : [];
+      if (ids.length) {
+        const r2 = await fetch(`../../api/cocina/estados_por_ids.php`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ ids })
+        });
+        const d2 = await r2.json();
+        if (d2.ok && d2.estados) moverTarjetas(d2.estados);
+      }
+    }
+  } catch (e) {
+    await new Promise(res => setTimeout(res, 1000));
+  }
+  // reabrir long-poll
+  waitCambiosLoop();
 }
 
 $(document).ready(function () {
   if (typeof cargarDatosCocina === 'function') {
     cargarDatosCocina().then(() => {
-      const startId = window.ultimoDetalleCocina || 0;
-      escucharNuevasVentas(startId);
+      waitCambiosLoop();
     });
   } else {
-    escucharNuevasVentas(0);
+    waitCambiosLoop();
   }
 });
