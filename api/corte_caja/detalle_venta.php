@@ -60,6 +60,7 @@ try {
             $desc = $row['descripcion'];
             if ((int)$row['denominacion_id'] === 12) {
                 $desc = 'Pago Boucher';
+                
             } elseif ((int)$row['denominacion_id'] === 13) {
                 $desc = 'Pago Cheque';
             }

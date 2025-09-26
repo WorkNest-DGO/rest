@@ -714,7 +714,7 @@ function mostrarModalDesglose(dataApi) {
     const modal = document.getElementById('modalDesglose');
     const body = modal.querySelector('.modal-body');
     let html = '<div class="bg-dark text-white p-3 border">';
-    html += '<h3>Desglose de caja</h3>';
+    html += '<h3>Detalle de dinero ingresado</h3>';
     // Datos de cabecera del corte (si existen)
     if (r.fecha_inicio) { html += `<p>Fecha inicio: ${r.fecha_inicio}</p>`; }
     if (r.folio_inicio != null) { html += `<p>Folio inicio: ${r.folio_inicio}</p>`; }
@@ -821,34 +821,61 @@ function mostrarModalDesglose(dataApi) {
     const frag = document.createDocumentFragment();
 
     catalogoDenominaciones.forEach(d => {
+        const did = Number(d.id);
+        if (did === 12 || did === 13) {
+            return;
+        }
         const div = document.createElement('div');
-        div.className = 'grupo-pago';
+        div.className = 'grupo-pago d-flex align-items-center gap-2';
         div.dataset.tipo = 'efectivo';
-        div.innerHTML = `<label>${d.descripcion}</label>` +
-            `<input type="number" class="cantidad" data-id="${d.id}" data-valor="${d.valor}" data-tipo="efectivo" min="0" value="0">` +
-            '<span class="subtotal">$0.00</span>';
+        div.innerHTML = `
+            <label class="mb-0" style="min-width:160px;">${d.descripcion}</label>
+            <input type="number" inputmode="numeric" step="1" class="cantidad form-control form-control-sm" 
+                   style="max-width:180px; text-align:center;" 
+                   data-id="${d.id}" data-valor="${d.valor}" data-tipo="efectivo" min="0" value="0">
+            <span class="subtotal ms-2">$0.00</span>`;
         frag.appendChild(div);
     });
 
     cont.appendChild(frag);
 
-    function calcular() {
+        function calcular(ev) {
+        const totalBoucher = Number.parseFloat((r.boucher && r.boucher.total) || 0) || 0;
+        const totalCheque  = Number.parseFloat((r.cheque && r.cheque.total) || 0) || 0;
+        const totalNoEfectivo = totalBoucher + totalCheque;
+        const efectivoEsperado = Math.max(0, (totalIngresado - totalNoEfectivo - totalPromos));
+        if (ev && ev.target && ev.target.classList.contains('cantidad')) {
+            const changed = ev.target;
+            const valDen = parseFloat(changed.dataset.valor) || 0;
+            let sumaOtros = 0;
+            cont.querySelectorAll('.grupo-pago').forEach(gr => {
+                const inp = gr.querySelector('.cantidad');
+                if (inp !== changed) {
+                    const v = parseFloat(inp.dataset.valor) || 0;
+                    const c = parseFloat(inp.value) || 0;
+                    sumaOtros += v * c;
+                }
+            });
+            const maxRestante = Math.max(0, efectivoEsperado - sumaOtros);
+            let cantidad = Math.floor((parseFloat(changed.value) || 0));
+            const maxCant = valDen > 0 ? Math.floor(maxRestante / valDen) : 0;
+            if (valDen > 0 && cantidad > maxCant) {
+                cantidad = maxCant;
+                changed.value = String(cantidad);
+            }
+        }
         let totalEfectivo = 0;
         cont.querySelectorAll('.grupo-pago').forEach(gr => {
             const inp = gr.querySelector('.cantidad');
             const valor = parseFloat(inp.dataset.valor) || 0;
             const cantidad = parseFloat(inp.value) || 0;
             const subtotal = valor * cantidad;
-            gr.querySelector('.subtotal').textContent = `$${subtotal.toFixed(2)}`;
+            gr.querySelector('.subtotal').textContent = `${subtotal.toFixed(2)}`;
             totalEfectivo += subtotal;
         });
         document.getElementById('totalEfectivo').textContent = totalEfectivo.toFixed(2);
-
-        // Excluir pagos no efectivos (boucher/cheque) del cálculo de diferencia
-        const totalBoucher = Number.parseFloat((r.boucher && r.boucher.total) || 0) || 0;
-        const totalCheque  = Number.parseFloat((r.cheque && r.cheque.total) || 0) || 0;
-        const totalNoEfectivo = totalBoucher + totalCheque;
-        const dif = (totalIngresado - totalNoEfectivo -totalPromos) - totalEfectivo;
+        let dif = efectivoEsperado - totalEfectivo;
+        if (dif < 0) dif = 0;
         document.getElementById('difIngresado').textContent = dif.toFixed(2);
     }
 
@@ -862,6 +889,8 @@ function mostrarModalDesglose(dataApi) {
 
     modal.querySelector('#guardarDesglose').addEventListener('click', async () => {
         calcular();
+        const difV = parseFloat(document.getElementById('difIngresado').textContent) || 0;
+        if (difV < 0) { alert('La diferencia no puede ser negativa. Verifica el efectivo contado.'); return; }
         const detalle = [];
         cont.querySelectorAll('.grupo-pago').forEach(gr => {
             const inp = gr.querySelector('.cantidad');
@@ -2324,5 +2353,10 @@ document.addEventListener('click', function (e) {
             .catch(() => alert('Error al actualizar estado'));
     }
 });
+
+
+
+
+
 
 

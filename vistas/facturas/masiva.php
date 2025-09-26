@@ -54,7 +54,7 @@ ob_start();
   <meta name="msapplication-tap-highlight" content="no" />
   <meta name="msapplication-TileColor" content="#222" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: blob:; img-src 'self' data: blob:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: blob:; img-src 'self' data: blob:; connect-src 'self' data: blob:;">
 </head>
 <body>
   <header>
@@ -162,8 +162,12 @@ ob_start();
     <!-- 7) Modal Detalle -->
     <div class="modal" id="modal-detalle">
       <div class="box">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h3>Detalle de factura</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <h3 style="margin-right:8px;">Detalle de factura</h3>
+            <a id="btn-desc-xml" href="#" class="btn custom-btn" download>Descargar XML</a>
+            <a id="btn-desc-pdf" href="#" class="btn custom-btn" download>Descargar PDF</a>
+          </div>
           <button type="button" id="btn-cerrar-modal" class="btn custom-btn">Cerrar</button>
         </div>
         <div id="detalle-contenido">

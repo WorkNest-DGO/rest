@@ -19,6 +19,38 @@ $title = 'Reportes';
 ob_start();
 ?>
 
+<style>
+  /* Estilos locales para la vista de reportes */
+  .filtros-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    align-items: center;
+    background: #0c0c0cff;
+    border: 1px solid #ff0000ff;
+    border-radius: 8px;
+    padding: 12px;
+  }
+  #loader { font-size: 14px; color: #ce1111ff; }
+  #error { font-weight: 600; }
+  .table-responsive { max-width: 100%; overflow: auto; border: 1px solid #92230aff; border-radius: 8px; }
+  #tablaVista { width: 100%; }
+  #tablaVista thead th {
+    position: sticky; top: 0; z-index: 2;
+    background: #7f0f0fff; /* en modo claro */
+    border-bottom: 2px solid #0f0f0fff;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  #tablaVista thead th.ordenado.asc::after { content: ' \2191'; font-size: 0.9em; color: #888; }
+  #tablaVista thead th.ordenado.desc::after { content: ' \2193'; font-size: 0.9em; color: #888; }
+  #tablaVista tbody td { vertical-align: middle; }
+  /* Zebra ya la aplica table-striped, reforzamos para muchas columnas */
+  #tablaVista tbody tr:nth-child(even) { background-color: #000000ff; }
+  /* Ajustes para celdas muy largas */
+  #tablaVista td, #tablaVista th { padding: .5rem .6rem; }
+  #tablaVista td { max-width: 420px; overflow: hidden; text-overflow: ellipsis; }
+</style>
 <!-- Page Header Start -->
 <div class="page-header mb-0">
     <div class="container">
@@ -56,10 +88,12 @@ ob_start();
     <div id="loader" style="display:none;">Cargando...</div>
     <div id="error" class="text-danger mt-3" style="display:none;"></div>
 
-    <table id="tablaVista" class="mt-3">
-        <thead></thead>
-        <tbody></tbody>
-    </table>
+    <div class="table-responsive mt-3">
+      <table id="tablaVista" class="table table-striped table-hover table-sm table-bordered align-middle">
+          <thead></thead>
+          <tbody></tbody>
+      </table>
+    </div>
 
     <div id="paginacion" class="mt-3">
         <button id="prevPage" class="btn custom-btn-sm">Anterior</button>

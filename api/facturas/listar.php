@@ -80,11 +80,17 @@ try {
       if ($cf_list) $sel_cf = ", " . implode(", ", $cf_list);
     }
 
+    $has_uuid = column_exists($db,'facturas','uuid');
+    $has_xmlp = column_exists($db,'facturas','xml_path');
+    $has_pdfp = column_exists($db,'facturas','pdf_path');
     $sql = "SELECT f.id AS factura_id, f.$f_fecha AS fecha, f.$f_status AS status" .
            ($has_folio ? ", f.folio" : "") .
            ($has_total ? ", f.total" : "") .
            ($has_cliente_id ? ", f.cliente_id" : "") .
            ($has_ticket_id ? ", f.ticket_id" : "") .
+           ($has_uuid ? ", f.uuid" : "") .
+           ($has_xmlp ? ", f.xml_path" : "") .
+           ($has_pdfp ? ", f.pdf_path" : "") .
            $sel_cf .
            " FROM facturas f " .
            ($has_cf_tbl && $has_cliente_id ? "LEFT JOIN clientes_facturacion cf ON cf.id = f.cliente_id " : "") .

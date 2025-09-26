@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   const API = {
     listar: '../../api/facturas/listar.php',
     listar_cliente: '../../api/facturas/listar_cliente.php',
@@ -38,7 +38,7 @@
         for (const c of j.resultado.clientes) {
           const opt = document.createElement('option');
           opt.value = c.id;
-          opt.textContent = (c.nombre || '') + (c.rfc ? ` — ${c.rfc}` : '');
+          opt.textContent = (c.nombre || '') + (c.rfc ? ` â€” ${c.rfc}` : '');
           sel.appendChild(opt);
         }
       }
@@ -93,7 +93,7 @@
       const r = pendientesIndex.get(id);
       const item = document.createElement('div');
       item.className = 'item';
-      item.textContent = `Ticket ${id} — ${fmt(r?.total || 0)}`;
+      item.textContent = `Ticket ${id} â€” ${fmt(r?.total || 0)}`;
       item.title = 'Click para quitar';
       item.style.cursor = 'pointer';
       item.addEventListener('click', () => toggleSeleccion(id));
@@ -221,18 +221,22 @@
       const res = await fetch(url.toString());
       const j = await res.json();
       if (!j.success) throw new Error(j.mensaje || 'No se pudo obtener detalle');
+      // Set download links
+      const base = new URL('../../api/facturas/descargar.php', window.location.href).toString();
+      el('#btn-desc-xml').setAttribute('href', base + '?factura_id=' + encodeURIComponent(String(id)) + '&tipo=xml');
+      el('#btn-desc-pdf').setAttribute('href', base + '?factura_id=' + encodeURIComponent(String(id)) + '&tipo=pdf');
       const dets = j.resultado?.detalles || [];
       const tks = j.resultado?.tickets || [];
       const cont = el('#detalle-contenido');
       cont.innerHTML = '';
       const sum = dets.reduce((acc, d) => acc + Number(d.importe || (d.cantidad * d.precio_unitario) || 0), 0);
       const head = document.createElement('div');
-      head.innerHTML = `<p><strong>Factura #${id}</strong> — Tickets: ${tks.map(x => x.ticket_id).join(', ') || '(n/d)'} — Total calc: ${fmt(sum)}</p>`;
+      head.innerHTML = `<p><strong>Factura #${id}</strong> â€” Tickets: ${tks.map(x => x.ticket_id).join(', ') || '(n/d)'} â€” Total calc: ${fmt(sum)}</p>`;
       cont.appendChild(head);
       const table = document.createElement('table');
       table.innerHTML = `
         <thead><tr>
-          <th>Producto</th><th>Descripción</th><th class="right">Cantidad</th><th class="right">P.Unit</th><th class="right">Importe</th>
+          <th>Producto</th><th>DescripciÃ³n</th><th class="right">Cantidad</th><th class="right">P.Unit</th><th class="right">Importe</th>
         </tr></thead><tbody></tbody>`;
       const tb = table.querySelector('tbody');
       for (const d of dets) {
@@ -254,26 +258,43 @@
     }
   }
 
-  async function cancelarFactura(id) {
-    if (!confirm('¿Cancelar la factura #' + id + '?')) return;
+      async function cancelarFactura(id) {
+    if (!confirm("¿Cancelar la factura #" + id + "?")) return;
+    const baseBody = { factura_id: id, motivo: "Cancelación solicitada desde módulo masivo", usuario_id: 1, type: "issued", motive: "02" };
     try {
-      const body = { factura_id: id, motivo: 'Cancelación solicitada desde módulo masivo', usuario_id: 1 };
-      const res = await fetch(API.cancelar, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+      let res = await fetch(API.cancelar, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(baseBody)
       });
-      const j = await res.json();
-      if (!j.success) throw new Error(j.mensaje || 'No se pudo cancelar');
-      alert('Factura cancelada');
+      let j;
+      try { j = await res.json(); } catch(_) { j = { success:false, mensaje: "Respuesta no válida del servidor" }; }
+      if (!j.success) {
+        const msg = String(j.mensaje || "No se pudo cancelar");
+        if (/Facturama|PAC|HTTP\s*500|método http/i.test(msg)) {
+          const ok = confirm(msg + "\n\n¿Forzar cancelación local para liberar tickets?");
+          if (ok) {
+            const res2 = await fetch(API.cancelar, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ...baseBody, force: true })
+            });
+            const j2 = await res2.json();
+            if (!j2.success) throw new Error(j2.mensaje || "No se pudo cancelar (forzado)");
+            alert("Factura cancelada (forzado).");
+            await listar();
+            return;
+          }
+        }
+        throw new Error(msg);
+      }
+      alert("Factura cancelada");
       await listar();
     } catch (e) {
       console.error(e);
-      alert('Error al cancelar: ' + e.message);
+      alert("Error al cancelar: " + e.message);
     }
-  }
-
-  // Eventos iniciales
+  }  // Eventos iniciales
   window.addEventListener('DOMContentLoaded', () => {
     setDefaultsFechas();
     listar();
@@ -295,3 +316,5 @@
   window.verFactura = verFactura;
   window.cancelarFactura = cancelarFactura;
 })();
+
+

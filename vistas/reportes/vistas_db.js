@@ -123,7 +123,9 @@ function renderTable(columns, rows) {
             const tr = document.createElement('tr');
             columns.forEach(col => {
                 const td = document.createElement('td');
-                td.innerHTML = sanitize(row[col]);
+                const raw = row[col];
+                td.innerHTML = sanitize(raw);
+                if (raw != null && raw !== '') td.title = String(raw);
                 const lower = col.toLowerCase();
                 if (lower.includes('fecha')) {
                     td.style.textAlign = 'center';

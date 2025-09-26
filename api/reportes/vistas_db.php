@@ -1,7 +1,7 @@
-<?php
+﻿<?php
 /**
- * Endpoint genérico para consultar vistas de base de datos.
- * Para agregar una nueva vista, inclúyela en el arreglo $whitelist y
+ * Endpoint genÃ©rico para consultar vistas de base de datos.
+ * Para agregar una nueva vista, inclÃºyela en el arreglo $whitelist y
  * agrega su etiqueta legible en el mapa viewLabels de vistas_db.js.
  */
 header('Content-Type: application/json');
@@ -27,20 +27,33 @@ $whitelist = [
 ];
 
 try {
-    // Conexión
+    // ConexiÃ³n
+    // (bootstrap se carga abajo, evitando duplicidad)
     $config = __DIR__ . '/../../config/db.php';
-    if (file_exists($config)) {
-        require $config; // provee $host, $user, $pass, $db
+if (file_exists($config)) {
+    require $config; // bootstrap global (get_db, $pdoOp, etc.)
+}
+if (!isset($pdo) || !($pdo instanceof PDO)) {
+    if (isset($pdoOp) && ($pdoOp instanceof PDO)) {
+        $pdo = $pdoOp; // reutiliza PDO global si existe
+    } else {
+        // --- INICIO BLOQUE NUEVO ---
+        $host = (isset($host) && $host !== '') ? $host : (getenv('DB_HOST') ?: 'localhost');
+        $db   = (isset($db)   && $db   !== '') ? $db   : (getenv('DB_NAME') ?: 'restaurante');
+        $user = (isset($user) && $user !== '') ? $user : (getenv('DB_USER') ?: 'root');
+        // Si la contraseña puede ser vacía a propósito, conserva fallback a ''.
+        $pass = (isset($pass) && $pass !== '') ? $pass : (getenv('DB_PASS') ?? '');
+        // --- FIN BLOQUE NUEVO ---
+        $dsn = "mysql:host={$host};dbname={$db};charset=utf8mb4";
+        $pdo = new PDO($dsn, $user, $pass, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+        $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_general_ci");
     }
-    $host = $host ?? getenv('DB_HOST') ?? 'localhost';
-    $db   = $db   ?? getenv('DB_NAME') ?? 'restaurante';
-    $user = $user ?? getenv('DB_USER') ?? 'root';
-    $pass = $pass ?? getenv('DB_PASS') ?? '';
-    $dsn = "mysql:host={$host};dbname={$db};charset=utf8mb4";
-    $pdo = new PDO($dsn, $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ]);
+}
+
 
     $action = $_GET['action'] ?? '';
 
@@ -194,7 +207,7 @@ try {
         exit;
     }
 
-    // Compatibilidad con vistas_db.js (parámetros: view, per_page, search, sort_by, sort_dir)
+    // Compatibilidad con vistas_db.js (parÃ¡metros: view, per_page, search, sort_by, sort_dir)
     $view = $_GET['view'] ?? '';
     if (!in_array($view, $whitelist, true)) {
         http_response_code(400);
@@ -276,3 +289,4 @@ try {
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
 }
+
