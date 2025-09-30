@@ -23,17 +23,42 @@ if (!$usuarioActualId) {
     error('No autenticado');
 }
 
+// Verificación de autorización
+$mesaUsuarioId = null;
+$stmt = $conn->prepare('SELECT usuario_id FROM mesas WHERE id = ?');
+if (!$stmt) { error('Error al preparar consulta: ' . $conn->error); }
+$stmt->bind_param('i', $mesa_id);
+if (!$stmt->execute()) { $stmt->close(); error('Error al ejecutar consulta: ' . $stmt->error); }
+$res = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+if ($res) {
+    $mesaUsuarioId = $res['usuario_id'] !== null ? (int)$res['usuario_id'] : null;
+}
+
 if ($rol !== 'admin') {
-    $stmt = $conn->prepare('SELECT usuario_id FROM mesas WHERE id = ?');
-    if (!$stmt) {
-        error('Error al preparar consulta: ' . $conn->error);
-    }
-    $stmt->bind_param('i', $mesa_id);
-    $stmt->execute();
-    $res = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-    if (!$res || (int)$res['usuario_id'] !== $usuarioActualId) {
-        error('No autorizado');
+    $esPropia = ($mesaUsuarioId !== null && $mesaUsuarioId === (int)$usuarioActualId);
+    $sinAsignar = ($mesaUsuarioId === null || $mesaUsuarioId === 0);
+    if (!$esPropia && !$sinAsignar) {
+        // Requiere contraseña del usuario asignado a la mesa
+        $pass_asignado = $input['pass_asignado'] ?? null;
+        if ($pass_asignado === null || $pass_asignado === '') {
+            error('Se requiere la contraseña del mesero asignado');
+        }
+        $stmtU = $conn->prepare('SELECT contrasena, activo FROM usuarios WHERE id = ? LIMIT 1');
+        if (!$stmtU) { error('Error al preparar consulta de usuario: ' . $conn->error); }
+        $stmtU->bind_param('i', $mesaUsuarioId);
+        if (!$stmtU->execute()) { $stmtU->close(); error('Error al ejecutar consulta de usuario: ' . $stmtU->error); }
+        $usr = $stmtU->get_result()->fetch_assoc();
+        $stmtU->close();
+        if (!$usr || (int)$usr['activo'] !== 1) {
+            error('Usuario asignado inválido');
+        }
+        $hashDb = (string)$usr['contrasena'];
+        $ok = ($hashDb === $pass_asignado) || ($hashDb === sha1($pass_asignado));
+        if (!$ok) {
+            error('Contraseña del mesero asignado incorrecta');
+        }
+        // Autorizado por contraseña válida
     }
 }
 

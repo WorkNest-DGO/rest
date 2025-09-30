@@ -7,11 +7,14 @@ window.alert = showAppMsg;
 
 let productos = [];
 let meseros = [];
+let mesasCache = [];
 const usuarioActual = window.usuarioActual || { id: null, rol: '' };
 let ventaIdActual = null;
 let mesaIdActual = null;
 let estadoMesaActual = null;
 let huboCambios = false;
+// Autorización temporal para cambio de estado
+window.__mesaAuthTemp = null; // { mesaId, pass }
 
 async function cargarMesas() {
     try {
@@ -19,6 +22,7 @@ async function cargarMesas() {
         const data = await resp.json();
         if (data.success) {
             const mesas = data.resultado;
+            mesasCache = mesas;
             const mapa = {};
 
             mesas.forEach(m => {
@@ -165,10 +169,12 @@ function renderKanban(listaMeseros, mesas) {
             if (m.estado === 'libre' && m.estado_reserva === 'ninguna') {
                 card.addEventListener('click', () => reservarMesa(m.id));
             }
-            btnCambiar.addEventListener('click', ev => { ev.stopPropagation(); mostrarMenu(btnCambiar.dataset.id); });
+            btnCambiar.addEventListener('click', ev => { ev.stopPropagation(); abrirCambioEstado(m); });
             btnDividir.addEventListener('click', ev => { ev.stopPropagation(); dividirMesa(btnDividir.dataset.id); });
         } else {
-            btnCambiar.disabled = true;
+            // Permitir cambiar estado con validación de contraseña del mesero asignado
+            btnCambiar.addEventListener('click', ev => { ev.stopPropagation(); abrirCambioEstado(m); });
+            // Mantener restringido dividir
             btnDividir.disabled = true;
         }
 
@@ -211,29 +217,112 @@ function activarDrag() {
     });
 }
 
-function mostrarMenu(id) {
-    const nuevo = prompt('Nuevo estado (libre, ocupada, reservada):');
-    if (nuevo) {
-        cambiarEstado(id, nuevo);
+function abrirCambioEstado(mesa) {
+    try {
+        const mesaId = parseInt(mesa.id);
+        const asignadoA = mesa.usuario_id ? parseInt(mesa.usuario_id) : null;
+        const requiereAuth = (usuarioActual.rol !== 'admin') && (asignadoA && asignadoA !== usuarioActual.id);
+
+        // Preparar modal de selección de estado
+        const estadoModal = document.getElementById('modalCambioEstado');
+        if (!estadoModal) { alert('No se encontró el modal de cambio de estado'); return; }
+        estadoModal.dataset.mesaId = String(mesaId);
+
+        // Inicializar checkboxes (solo una selección)
+        const checks = Array.from(estadoModal.querySelectorAll('#estadoOpciones input[type="checkbox"]'));
+        checks.forEach(cb => {
+            cb.checked = (cb.value === String(mesa.estado));
+            cb.onchange = () => {
+                if (cb.checked) {
+                    checks.forEach(otro => { if (otro !== cb) otro.checked = false; });
+                }
+                const esReservada = checks.find(x => x.value === 'reservada')?.checked;
+                const rc = document.getElementById('reservaCampos');
+                if (rc) rc.style.display = esReservada ? '' : 'none';
+            };
+        });
+        // Mostrar/ocultar campos reserva según selección inicial
+        const rc = document.getElementById('reservaCampos');
+        if (rc) rc.style.display = (mesa.estado === 'reservada') ? '' : 'none';
+
+        // Botón guardar: re-asignar manejador cada vez
+        const btnGuardar = document.getElementById('btnGuardarEstadoMesa');
+        if (btnGuardar) {
+            btnGuardar.onclick = async () => {
+                const sel = checks.find(c => c.checked);
+                if (!sel) { alert('Seleccione un estado'); return; }
+                const nuevo = sel.value;
+                let nombre_reserva = null, fecha_reserva = null;
+                if (nuevo === 'reservada') {
+                    nombre_reserva = (document.getElementById('reservaNombre')?.value || '').trim();
+                    fecha_reserva = (document.getElementById('reservaFecha')?.value || '').trim();
+                    if (!nombre_reserva || !fecha_reserva) {
+                        alert('Ingrese nombre y fecha de la reserva');
+                        return;
+                    }
+                }
+                const authPass = (window.__mesaAuthTemp && window.__mesaAuthTemp.mesaId === mesaId) ? window.__mesaAuthTemp.pass : null;
+                const ok = await cambiarEstado(mesaId, nuevo, authPass, { nombre_reserva, fecha_reserva });
+                if (ok) {
+                    hideModal('#modalCambioEstado');
+                    window.__mesaAuthTemp = null;
+                    await cargarMesas();
+                }
+            };
+        }
+
+        if (requiereAuth) {
+            const authModal = document.getElementById('modalAuthMesa');
+            if (!authModal) { alert('No se encontró el modal de autorización'); return; }
+            authModal.dataset.mesaId = String(mesaId);
+            const passInput = authModal.querySelector('#authMesaPass');
+            const info = authModal.querySelector('#authMesaInfo');
+            if (passInput) passInput.value = '';
+            if (info) info.textContent = mesa.mesero_nombre ? `Mesero asignado: ${mesa.mesero_nombre}` : '';
+            const btnContinuar = document.getElementById('btnAuthMesaContinuar');
+            if (btnContinuar) {
+                btnContinuar.onclick = () => {
+                    const val = (authModal.querySelector('#authMesaPass')?.value || '').trim();
+                    if (!val) { alert('Ingrese la contraseña'); return; }
+                    window.__mesaAuthTemp = { mesaId, pass: val };
+                    hideModal('#modalAuthMesa');
+                    setTimeout(() => showModal('#modalCambioEstado'), 200);
+                };
+            }
+            showModal('#modalAuthMesa');
+        } else {
+            showModal('#modalCambioEstado');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('No fue posible iniciar el cambio de estado');
     }
 }
 
-async function cambiarEstado(id, estado) {
+async function cambiarEstado(id, estado, authPass = null, extras = {}) {
     try {
+        const payload = { mesa_id: parseInt(id), nuevo_estado: estado };
+        if (authPass) payload.pass_asignado = authPass;
+        if (estado === 'reservada') {
+            if (extras && extras.nombre_reserva) payload.nombre_reserva = extras.nombre_reserva;
+            if (extras && extras.fecha_reserva) payload.fecha_reserva = extras.fecha_reserva;
+        }
         const resp = await fetch('../../api/mesas/cambiar_estado.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mesa_id: parseInt(id), nuevo_estado: estado })
+            body: JSON.stringify(payload)
         });
         const data = await resp.json();
         if (data.success) {
-            await cargarMesas();
+            return true;
         } else {
             alert(data.mensaje);
+            return false;
         }
     } catch (err) {
         console.error(err);
         alert('Error al cambiar estado');
+        return false;
     }
 }
 

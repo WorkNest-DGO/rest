@@ -50,6 +50,59 @@ ob_start();
     </div>
 </div>
 
+<!-- Modal de autorización para cambio de estado -->
+<div id="modalAuthMesa" class="modal-flotante modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Autorización requerida</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <p>Ingrese la contraseña del mesero asignado para continuar.</p>
+                <input type="password" id="authMesaPass" class="form-control" autocomplete="current-password" placeholder="Contraseña del mesero asignado">
+                <small id="authMesaInfo" class="form-text text-muted"></small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn custom-btn" id="btnAuthMesaContinuar">Continuar</button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+<!-- Modal para seleccionar nuevo estado de mesa -->
+<div id="modalCambioEstado" class="modal-flotante modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cambiar estado de mesa</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label><strong>Nuevo estado (libre, ocupada, reservada):</strong></label>
+                    <div id="estadoOpciones" class="d-flex flex-column" style="gap:6px;">
+                        <label class="mb-0"><input type="checkbox" name="estado" value="libre"> Libre</label>
+                        <label class="mb-0"><input type="checkbox" name="estado" value="ocupada"> Ocupada</label>
+                        <label class="mb-0"><input type="checkbox" name="estado" value="reservada"> Reservada</label>
+                    </div>
+                </div>
+                <div id="reservaCampos" class="form-group" style="display:none;">
+                    <label for="reservaNombre">Nombre de la reserva:</label>
+                    <input type="text" id="reservaNombre" class="form-control" placeholder="Nombre">
+                    <label for="reservaFecha" class="mt-2">Fecha y hora (YYYY-MM-DD HH:MM):</label>
+                    <input type="text" id="reservaFecha" class="form-control" placeholder="2025-09-30 19:30">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn custom-btn" id="btnGuardarEstadoMesa">Guardar</button>
+            </div>
+        </div>
+    </div>
+    </div>
+
 <div>
 <section class="section">
 	<h1>Distribución de mesas</h1>
