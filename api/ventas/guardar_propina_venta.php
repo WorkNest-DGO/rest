@@ -13,9 +13,9 @@ if (!$input || !isset($input['venta_id'])) {
 }
 
 $venta_id   = (int)$input['venta_id'];
-$propinaEfectivo = isset($input['propina_efectivo']) && !empty($input['propina_efectivo']) ? (int)$input['propina_efectivo'] : 0.00;
-$propinaCheque = isset($input['propina_cheque']) && !empty($input['propina_cheque']) ? (int)$input['propina_cheque'] : 0.00;
-$propinaTarjeta = isset($input['propina_tarjeta']) && !empty($input['propina_tarjeta']) ? (int)$input['propina_tarjeta'] : 0.00;
+$propinaEfectivo = isset($input['propina_efectivo']) && $input['propina_efectivo'] !== '' ? (float)$input['propina_efectivo'] : 0.00;
+$propinaCheque   = isset($input['propina_cheque']) && $input['propina_cheque'] !== '' ? (float)$input['propina_cheque']   : 0.00;
+$propinaTarjeta  = isset($input['propina_tarjeta']) && $input['propina_tarjeta'] !== '' ? (float)$input['propina_tarjeta']  : 0.00;
 
 
 

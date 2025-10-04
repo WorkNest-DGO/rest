@@ -23,6 +23,15 @@ if (!$usuarioActualId) {
     error('No autenticado');
 }
 
+// Regla de negocio: No permitir cambios de estado si no hay ningún corte abierto en el sistema
+$qCorte = $conn->query("SELECT 1 FROM corte_caja WHERE fecha_fin IS NULL LIMIT 1");
+if (!$qCorte) {
+    error('Error al verificar estado de caja: ' . $conn->error);
+}
+if ($qCorte->num_rows === 0) {
+    error('Se requiere abrir caja para ventas');
+}
+
 // Verificación de autorización
 $mesaUsuarioId = null;
 $stmt = $conn->prepare('SELECT usuario_id FROM mesas WHERE id = ?');

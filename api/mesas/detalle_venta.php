@@ -15,7 +15,7 @@ $venta_id = (int)$input['venta_id'];
 
 // Obtener mesa y mesero de la venta
 $info = $conn->prepare(
-    'SELECT m.nombre AS mesa, u.nombre AS mesero
+    'SELECT v.fecha AS fecha, m.nombre AS mesa, u.nombre AS mesero
      FROM ventas v
      JOIN mesas m ON v.mesa_id = m.id
      JOIN usuarios u ON v.usuario_id = u.id
@@ -57,6 +57,7 @@ while ($row = $res->fetch_assoc()) {
 $stmt->close();
 
 success([
+    'fecha'     => $datosVenta['fecha'] ?? '',
     'mesa'      => $datosVenta['mesa'] ?? '',
     'mesero'    => $datosVenta['mesero'] ?? '',
     'productos' => $productos

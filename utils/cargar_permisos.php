@@ -5,8 +5,29 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 if (!isset($_SESSION['usuario_id'])) {
-    http_response_code(401);
-    exit('No autenticado');
+    $sn = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : (isset($_SERVER['PHP_SELF']) ? $_SERVER['PHP_SELF'] : '');
+    $pos = strpos($sn, '/vistas/');
+    $baseUrl = $pos !== false ? substr($sn, 0, $pos) : rtrim(dirname($sn), '/');
+    if ($baseUrl === '') { $baseUrl = '/'; }
+
+    $isAjax = (
+        (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') ||
+        (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+    );
+
+    if ($isAjax) {
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+            http_response_code(401);
+        }
+        echo json_encode(['success' => false, 'mensaje' => 'No autenticado', 'redirect' => $baseUrl . '/index.php']);
+        exit;
+    }
+
+    if (!headers_sent()) {
+        header('Location: ' . $baseUrl . '/index.php');
+    }
+    exit;
 }
 
 if (!isset($_SESSION['rutas_permitidas'])) {

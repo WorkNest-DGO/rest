@@ -15,6 +15,7 @@ ob_start();
 <script src="../../utils/js/dragula.min.js"></script>
 
 <link href="../../utils/css/style2.css" rel="stylesheet">
+
 <div class="page-header mb-0">
     <div class="container">
         <div class="row">
@@ -35,14 +36,14 @@ ob_start();
     <select id="filtro-area"></select>
 </div>
 <div id="tablero"></div>
-<div id="modalVenta" class="modal-flotante modal fade" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+<div id="modalVenta" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Detalle de venta</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
-            <div class="modal-body"></div>
+            <div class="modal-body"><!-- contenido dinámico --></div>
             <div class="modal-footer">
                 <button type="button" class="btn custom-btn" data-dismiss="modal">Cerrar</button>
             </div>

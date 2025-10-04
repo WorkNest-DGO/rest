@@ -16,13 +16,18 @@
   let pendientesData = [];
   let pendientesIndex = new Map(); // ticket_id -> row
   let facturadasData = [];
+  // Paginación de pendientes
+  let pendPage = 1;
+  let pendPageSize = 20;
+  let pendTotal = 0;
 
   function setDefaultsFechas() {
     const now = new Date();
     const desde = new Date(now.getFullYear(), now.getMonth(), 1);
-    const hasta = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    // Para la UI mostramos el último día del mes, pero al consultar usaremos hasta exclusivo (+1 día)
+    const hastaUi = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     el('#filtro-desde').value = desde.toISOString().slice(0, 10);
-    el('#filtro-hasta').value = hasta.toISOString().slice(0, 10);
+    el('#filtro-hasta').value = hastaUi.toISOString().slice(0, 10);
   }
 
   async function cargarClientes() {
@@ -85,6 +90,29 @@
     }
   }
 
+  function renderPendientesPaginacion() {
+    const cont = el('#pend-paginacion');
+    if (!cont) return;
+    const total = Number(pendTotal || 0);
+    const size = Number(pendPageSize || 20);
+    const pages = Math.max(1, Math.ceil(total / size));
+    const page = Math.min(Math.max(1, Number(pendPage || 1)), pages);
+    pendPage = page;
+    const prevDisabled = page <= 1 ? 'disabled' : '';
+    const nextDisabled = page >= pages ? 'disabled' : '';
+    cont.innerHTML = `
+      <div class="d-flex align-items-center" style="gap:8px;">
+        <button type="button" class="btn custom-btn" id="pend-prev" ${prevDisabled}>Anterior</button>
+        <span>Página ${page} de ${pages}</span>
+        <button type="button" class="btn custom-btn" id="pend-next" ${nextDisabled}>Siguiente</button>
+      </div>
+    `;
+    const prev = el('#pend-prev');
+    const next = el('#pend-next');
+    if (prev) prev.addEventListener('click', () => { if (pendPage > 1) { pendPage--; listar(); } });
+    if (next) next.addEventListener('click', () => { const pgs = Math.max(1, Math.ceil((pendTotal||0)/(pendPageSize||20))); if (pendPage < pgs) { pendPage++; listar(); } });
+  }
+
   function renderSeleccion() {
     const cont = el('#lista-seleccion');
     cont.innerHTML = '';
@@ -119,7 +147,7 @@
       tr.innerHTML = `
         <td>${r.folio ?? r.factura_id}</td>
         <td>${(r.fecha || '').replace('T',' ')}</td>
-        <td>${r.cliente_id ?? ''}</td>
+        <td>${r.cliente ?? r.razon_social ?? r.cliente_id ?? ''}</td>
         <td class="right">${fmt(r.total)}</td>
         <td class="right">${ticketsCnt}</td>
         <td><span class="tag">${estado}</span></td>
@@ -155,14 +183,29 @@
       const { desde, hasta, buscar, sede } = getFiltros();
       const url = new URL(API.listar, window.location.href);
       if (desde) url.searchParams.set('desde', desde);
-      if (hasta) url.searchParams.set('hasta', hasta);
+      // El API usa rango [desde, hasta) (hasta exclusivo). Si el usuario pone una fecha "Hasta"
+      // queremos incluir ese día completo, por lo que enviamos hasta + 1 día.
+      if (hasta) {
+        const d = new Date(`${hasta}T00:00:00`);
+        d.setDate(d.getDate() + 1);
+        url.searchParams.set('hasta', d.toISOString().slice(0, 10));
+      }
       url.searchParams.set('estado', 'todas');
       if (buscar) url.searchParams.set('buscar', buscar);
       if (sede) url.searchParams.set('sede_id', sede);
+      // Paginación de pendientes
+      const size = Number(el('#pend-records')?.value || pendPageSize || 20);
+      pendPageSize = size;
+      const offset = (Math.max(1, pendPage) - 1) * size;
+      url.searchParams.set('pend_limit', String(size));
+      url.searchParams.set('pend_offset', String(offset));
+      url.searchParams.set('pend_count', '1');
       const res = await fetch(url.toString());
       const j = await res.json();
       if (!j.success) throw new Error(j.mensaje || 'Fallo en listar');
       renderPendientes(j.resultado?.pendientes || []);
+      pendTotal = Number(j.resultado?.pendientes_total ?? 0);
+      renderPendientesPaginacion();
       renderFacturadas(j.resultado?.facturadas || []);
       renderSeleccion();
     } catch (e) {
@@ -236,7 +279,7 @@
       const table = document.createElement('table');
       table.innerHTML = `
         <thead><tr>
-          <th>Producto</th><th>DescripciÃ³n</th><th class="right">Cantidad</th><th class="right">P.Unit</th><th class="right">Importe</th>
+          <th>Producto</th><th>Descripción</th><th class="right">Cantidad</th><th class="right">P.Unit</th><th class="right">Importe</th>
         </tr></thead><tbody></tbody>`;
       const tb = table.querySelector('tbody');
       for (const d of dets) {
@@ -299,7 +342,8 @@
     setDefaultsFechas();
     listar();
     cargarClientes();
-    el('#btn-buscar').addEventListener('click', listar);
+    el('#btn-buscar').addEventListener('click', () => { pendPage = 1; listar(); });
+    const sel = el('#pend-records'); if (sel) sel.addEventListener('change', () => { pendPage = 1; pendPageSize = Number(sel.value||20); listar(); });
     el('#select-cliente').addEventListener('change', updateAccionesState);
     el('#btn-uno-a-uno').addEventListener('click', facturarUnoAUno);
     el('#btn-global').addEventListener('click', facturarGlobal);

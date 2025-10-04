@@ -178,6 +178,7 @@ ob_start();
 <div class="container mt-3 mb-3 text-center">
   <button id="btnDeposito" type="button" class="btn custom-btn" data-toggle="modal" data-target="#modalMovimientoCaja">Depósito a caja</button>
   <button id="btnRetiro" type="button" class="btn custom-btn" data-toggle="modal" data-target="#modalMovimientoCaja">Retiro de caja</button>
+  <button id="btnDetalleMovs" type="button" class="btn custom-btn">Detalle</button>
 </div>
 
 <div class="container mt-5">
@@ -198,6 +199,7 @@ ob_start();
       <thead>
         <tr>
           <th>ID</th>
+          <th>Folio</th>
           <th>Fecha</th>
           <th>Total</th>
           <th>Tipo</th>
@@ -343,6 +345,37 @@ ob_start();
     </div>
   </div>
 </div>
+
+<!-- MODAL: Detalle de movimientos de caja -->
+<div class="modal fade" id="modalMovimientos" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Movimientos de caja (corte actual)</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-sm" id="tablaMovimientos">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Monto</th>
+                <th>Motivo</th>
+                <th>Usuario</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn custom-btn" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+ </div>
 
 <!-- MODAL NORMALIZED 2025-08-14 -->
 <div class="modal fade" id="modalCortePreview" tabindex="-1" role="dialog" aria-hidden="true">

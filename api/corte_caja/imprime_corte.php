@@ -346,7 +346,58 @@ $printer -> initialize();
 	$printer -> cut();
 
 $printer -> close();
-echo "enviado";
+
+// Página de confirmación con modal y redirección
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Corte enviado</title>
+  <style>
+    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; margin:0; }
+    .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; }
+    .modal { width: min(520px, 90vw); background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .modal-header { padding: 14px 16px; border-bottom: 1px solid #eee; font-weight: 600; }
+    .modal-body { padding: 18px 16px; }
+    .modal-footer { padding: 12px 16px; border-top: 1px solid #eee; text-align: right; }
+    .btn { appearance: none; border: 0; border-radius: 6px; padding: 10px 16px; background: #0d6efd; color: #fff; cursor: pointer; font-weight: 600; }
+    .btn:active { transform: translateY(1px); }
+  </style>
+  <script>
+    function goBackToVentas() {
+      var destino = '../../vistas/ventas/ventas.php';
+      try {
+        if (window.opener && !window.opener.closed) {
+          window.opener.location.href = destino;
+          window.close();
+          return;
+        }
+      } catch (e) { /* cross-origin safe */ }
+      window.location.href = destino;
+    }
+    window.addEventListener('DOMContentLoaded', function(){
+      var btn = document.getElementById('btnContinuar');
+      if (btn) btn.addEventListener('click', goBackToVentas);
+    });
+  </script>
+  <noscript>
+    <meta http-equiv="refresh" content="2;url=../../vistas/ventas/ventas.php" />
+  </noscript>
+  <body>
+    <div class="backdrop" role="dialog" aria-modal="true">
+      <div class="modal">
+        <div class="modal-header">Corte enviado</div>
+        <div class="modal-body">Corte enviado, que tengas un buen día.</div>
+        <div class="modal-footer">
+          <button id="btnContinuar" class="btn" autofocus>Continuar</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+<?php
 		function idDenominacionCambio($denominacionId){
 			if ($denominacionId == 1) {
 			   return "0.50" ;

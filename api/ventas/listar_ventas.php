@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
@@ -14,21 +15,31 @@ $orden = 'v.' . $orden;
 $offset = ($pagina - 1) * $limite;
 
 $baseFrom = "FROM vw_ventas_detalladas vw JOIN ventas v ON v.id = vw.venta_id LEFT JOIN tickets t ON t.venta_id = v.id";
-$where = '';
+$conditions = [];
 $params = [];
 $types = '';
+
+// Filtro por búsqueda
 if ($busqueda !== '') {
     $like = "%{$busqueda}%";
-    $where = " WHERE CONCAT_WS(' ', v.id, t.folio, v.fecha, v.total, v.estatus, v.tipo_entrega, t.tipo_pago, vw.usuario, t.mesa_nombre, t.mesero_nombre) LIKE ?";
-    $params = [$like];
-    $types = 's';
+    $conditions[] = "CONCAT_WS(' ', v.id, t.folio, v.fecha, v.total, v.estatus, v.tipo_entrega, t.tipo_pago, vw.usuario, t.mesa_nombre, t.mesero_nombre) LIKE ?";
+    $params[] = $like;
+    $types .= 's';
 }
+
+// Filtro por corte actual (si existe en sesión)
+$corteActual = isset($_SESSION['corte_id']) ? (int)$_SESSION['corte_id'] : null;
+if ($corteActual) {
+    $conditions[] = 'v.corte_id = ?';
+    $params[] = $corteActual;
+    $types .= 'i';
+}
+
+$where = count($conditions) ? (' WHERE ' . implode(' AND ', $conditions)) : '';
 
 $countSql = "SELECT COUNT(DISTINCT v.id) AS total $baseFrom$where";
 $countStmt = $conn->prepare($countSql);
-if ($busqueda !== '') {
-    $countStmt->bind_param($types, ...$params);
-}
+if (!empty($params)) { $countStmt->bind_param($types, ...$params); }
 $countStmt->execute();
 $countResult = $countStmt->get_result();
 if (!$countResult) {
@@ -52,16 +63,10 @@ $query = "SELECT v.id AS venta_id, v.fecha, v.estatus, vw.usuario, vw.mesa, vw.r
           ORDER BY $orden
           LIMIT ? OFFSET ?";
 $stmt = $conn->prepare($query);
-if (!$stmt) {
-    error('Error al preparar consulta: ' . $conn->error);
-}
-if ($busqueda !== '') {
-    $typesMain = $types . 'ii';
-    $paramsMain = array_merge($params, [$limite, $offset]);
-    $stmt->bind_param($typesMain, ...$paramsMain);
-} else {
-    $stmt->bind_param('ii', $limite, $offset);
-}
+if (!$stmt) { error('Error al preparar consulta: ' . $conn->error); }
+$typesMain = $types . 'ii';
+$paramsMain = array_merge($params, [$limite, $offset]);
+$stmt->bind_param($typesMain, ...$paramsMain);
 $stmt->execute();
 $result = $stmt->get_result();
 

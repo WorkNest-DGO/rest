@@ -52,6 +52,7 @@ async function cargarHistorial(page = currentPage) {
                     : 'N/A';
                 row.innerHTML = `
                     <td>${id}</td>
+                    <td>${v.folio ? v.folio : 'N/A'}</td>
                     <td>${fechaMostrar}</td>
                     <td>${v.total}</td>
                     <td>${v.tipo_entrega}</td>
@@ -428,6 +429,8 @@ function deshabilitarCobro() {
                 el.disabled = true;
             }
         });
+    const btns = ['#btnDeposito', '#btnRetiro', '#btnDetalleMovs'];
+    btns.forEach(sel => { const b = document.querySelector(sel); if (b) b.disabled = true; });
 }
 
 function habilitarCobro() {
@@ -437,6 +440,8 @@ function habilitarCobro() {
                 el.disabled = false;
             }
         });
+    const btns = ['#btnDeposito', '#btnRetiro', '#btnDetalleMovs'];
+    btns.forEach(sel => { const b = document.querySelector(sel); if (b) b.disabled = false; });
 }
 
 async function verificarCorte() {
@@ -547,6 +552,20 @@ async function abrirCaja() {
             alert('Debes indicar un monto');
             return;
         }
+        // Verificar si ya existe un corte abierto de otro usuario
+        try {
+            const anyCorte = await fetch('../../api/corte_caja/verificar_corte_abierto_global.php', { credentials: 'include' }).then(r=>r.json());
+            if (anyCorte && anyCorte.success && anyCorte.resultado.abierto) {
+                const u = anyCorte.resultado.usuario || {};
+                if (parseInt(u.id) !== parseInt(usuarioId)) {
+                    const nombre = u.nombre || u.usuario || 'desconocido';
+                    showAppMsg(`Corte de Usuario (${nombre}) abierto, segunda caja no habilitada`);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn('No se pudo validar cortes abiertos globales:', e);
+        }
         if (!fondoData.existe) {
             await fetch('../../api/corte_caja/guardar_fondo.php', {
                 method: 'POST',
@@ -582,11 +601,14 @@ async function cerrarCaja() {
         const resumenResp = await fetch(`../../api/corte_caja/resumen_corte_actual.php?corte_id=${corteIdActual}`);
         const resumen = await resumenResp.json();
 
-        if (!resumen.success || !resumen.resultado || resumen.resultado.num_ventas === 0) {
-            alert("No hay ventas registradas en este corte.");
+        // Permitir cierre aunque no haya ventas; sólo detener si la API falla
+        if (!resumen || resumen.success === false) {
+            const msg = (resumen && (resumen.mensaje || resumen.error)) || 'No fue posible obtener el resumen del corte.';
+            alert(msg);
             return;
         }
-        
+
+        // Abrir modal de desglose incluso con totales en 0
         mostrarModalDesglose(resumen);
         if (typeof pintarCorteActual === 'function') pintarCorteActual(resumen);
     } catch (error) {
@@ -960,6 +982,7 @@ async function finalizarCorte() {
         const data = await resp.json();
         if (data.success) {
             corteIdActual = null;
+            if (false) {
             // Mostrar modal de corte enviado con botón continuar
             try {
               if (typeof showModal === 'function') {
@@ -975,6 +998,7 @@ async function finalizarCorte() {
               }
 
             } catch { console.warn; }
+            }
             await verificarCorte();
         } else {
             alert(data.mensaje);
@@ -1044,7 +1068,10 @@ async function cargarMesas() {
             mesas.forEach(m => {
                 const opt = document.createElement('option');
                 opt.value = m.id;
-                opt.textContent = m.nombre;
+                const asignado = (m.mesero_nombre && m.mesero_nombre.trim().length > 0)
+                  ? m.mesero_nombre
+                  : 'Sin mesero asignado';
+                opt.textContent = `${m.nombre} - ${asignado}`;
                 select.appendChild(opt);
             });
         } else {
@@ -2292,6 +2319,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnDeposito').addEventListener('click', () => abrirModalMovimiento('deposito'));
     document.getElementById('btnRetiro').addEventListener('click', () => abrirModalMovimiento('retiro'));
     document.getElementById('guardarMovimiento').addEventListener('click', guardarMovimientoCaja);
+    const btnDet = document.getElementById('btnDetalleMovs');
+    if (btnDet) btnDet.addEventListener('click', abrirDetalleMovimientos);
 
     // Delegación de eventos con JavaScript puro para botones dinámicos
     const cancelModal = document.getElementById('cancelVentaModal');
@@ -2329,6 +2358,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 });
+
+async function abrirDetalleMovimientos() {
+    try {
+        const resp = await fetch('../../api/corte_caja/listar_movimientos.php', { credentials: 'include', cache: 'no-store' });
+        const data = await resp.json();
+        if (!data.success) {
+            alert(data.mensaje || data.error || 'No se pudieron obtener los movimientos');
+            return;
+        }
+        const movs = (data.resultado && data.resultado.movimientos) || [];
+        const tbody = document.querySelector('#tablaMovimientos tbody');
+        if (tbody) {
+            tbody.innerHTML = '';
+            movs.forEach(m => {
+                const tr = document.createElement('tr');
+                const tipo = (m.tipo || '').charAt(0).toUpperCase() + (m.tipo || '').slice(1);
+                tr.innerHTML = `
+                    <td>${m.fecha || ''}</td>
+                    <td>${tipo}</td>
+                    <td>$${Number(m.monto || 0).toFixed(2)}</td>
+                    <td>${m.motivo || ''}</td>
+                    <td>${m.usuario || ''}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+        showModal('#modalMovimientos');
+    } catch (e) {
+        console.error(e);
+        alert('Error al obtener movimientos');
+    }
+}
 
 document.addEventListener('click', function (e) {
     if (e.target.classList.contains('btn-entregar')) {

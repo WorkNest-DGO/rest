@@ -83,3 +83,4 @@ if (!isset($base_url)) {
 
         <!-- Template Javascript -->
         <script src="<?php echo $base_url; ?>/utils/js/main.js"></script>
+        <script src="<?php echo $base_url; ?>/utils/js/encoding-fix.js"></script>

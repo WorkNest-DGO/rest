@@ -1,4 +1,9 @@
 <?php
+// Fuerza salida en UTF-8 para evitar problemas de acentos en vistas
+if (!headers_sent()) {
+    header('Content-Type: text/html; charset=UTF-8');
+}
+@ini_set('default_charset', 'UTF-8');
 // Detecta el base URL dinámicamente según la ruta del script (raíz del app)
 if (!defined('BASE_URL')) {
     $sn = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
@@ -63,6 +68,40 @@ foreach ($rutas as $ruta) {
     <link href="<?= $base_url ?>/utils/lib/tempusdominus/css/tempusdominus-bootstrap-4.min.css" rel="stylesheet">
     <link rel="icon" href="<?= $base_url ?>/utils/logo.png" type="image/png">
     <link href="<?= $base_url ?>/utils/css/style1.css" rel="stylesheet">
+    <script>
+    window.BASE_URL = '<?= $base_url ?>';
+    (function(){
+      const _fetch = window.fetch ? window.fetch.bind(window) : null;
+      if (_fetch) {
+        window.fetch = function(input, init){
+          return _fetch(input, init).then(function(res){
+            try {
+              if (res && res.status === 401) {
+                window.location.href = (window.BASE_URL || '') + '/index.php';
+              } else {
+                const ct = res && res.headers && res.headers.get ? (res.headers.get('content-type') || '') : '';
+                if (ct.indexOf('application/json') !== -1) {
+                  res.clone().json().then(function(json){
+                    try {
+                      if (json && typeof json === 'object') {
+                        const msg = String((json.mensaje || json.msg || '') + '');
+                        if (/No\s*autenticado/i.test(msg)) {
+                          window.location.href = (window.BASE_URL || '') + '/index.php';
+                        } else if (json.redirect) {
+                          window.location.href = String(json.redirect);
+                        }
+                      }
+                    } catch(e) {}
+                  }).catch(function(){});
+                }
+              }
+            } catch(e) {}
+            return res;
+          });
+        };
+      }
+    })();
+    </script>
 </head>
 
 <body>

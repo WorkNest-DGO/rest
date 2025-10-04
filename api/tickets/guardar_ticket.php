@@ -107,6 +107,10 @@ while ($row = $result2->fetch_assoc()) {
     $contador=$contador+1;
     $ticketsss[] = (int)$row['id'];
 }
+// Validación correcta: si la venta ya tiene ticket(s), no permitir recrearlos ni continuar al flujo de cobro
+if ($contador > 0) {
+    error('La venta ya tiene ticket generado. Solo puede registrar propinas.');
+}
 if($contador>0){
     $placeholders = implode(',', array_fill(0, count($ticketsss), '?'));    
     $types = str_repeat('i', count($ticketsss));
@@ -460,7 +464,7 @@ if (($venta['tipo_entrega'] ?? null) === 'mesa' && !empty($venta['mesa_id'])) {
     $updMesa = $conn->prepare("
         UPDATE mesas
            SET estado = 'libre',
-               usuario_id = NULL,
+               
                tiempo_ocupacion_inicio = NULL,
                ticket_enviado = 0
          WHERE id = ?

@@ -15,6 +15,44 @@ let estadoMesaActual = null;
 let huboCambios = false;
 // Autorización temporal para cambio de estado
 window.__mesaAuthTemp = null; // { mesaId, pass }
+// Estado global de corte abierto (de cualquier usuario)
+window.__corteAbiertoGlobal = false;
+
+async function verificarCorteAbiertoGlobal() {
+    try {
+        const resp = await fetch('../../api/corte_caja/verificar_corte_abierto_global.php', { credentials: 'include', cache: 'no-store' });
+        const data = await resp.json();
+        window.__corteAbiertoGlobal = !!(data && data.success && data.resultado && data.resultado.abierto);
+    } catch (e) {
+        console.error('No se pudo verificar corte global:', e);
+        window.__corteAbiertoGlobal = false;
+    }
+    return window.__corteAbiertoGlobal;
+}
+
+// Long poll: detecta si el estado de caja cambia y refresca la UI sin recargar la página
+function iniciarLongPollCorte(intervalMs = 5000) {
+    let ultimo = !!window.__corteAbiertoGlobal;
+    const tick = async () => {
+        try {
+            const resp = await fetch('../../api/corte_caja/verificar_corte_abierto_global.php', { credentials: 'include', cache: 'no-store' });
+            const data = await resp.json();
+            const actual = !!(data && data.success && data.resultado && data.resultado.abierto);
+            if (actual !== ultimo) {
+                ultimo = actual;
+                window.__corteAbiertoGlobal = actual;
+                // Re-render de mesas para que aparezca/desaparezca el botón Cambiar estado
+                await cargarMesas();
+            }
+        } catch (e) {
+            // No interrumpir el ciclo por errores transitorios
+            console.warn('Long poll corte falló:', e);
+        } finally {
+            setTimeout(tick, intervalMs);
+        }
+    };
+    setTimeout(tick, intervalMs);
+}
 
 async function cargarMesas() {
     try {
@@ -141,8 +179,9 @@ function renderKanban(listaMeseros, mesas) {
             ocupacionTxt = `Ocupada hace ${diff} min`;
         }
 
+        const detallesBtn = (m.estado === 'ocupada') ? '<button class="detalles">Detalles</button>' : '';
         const botoneraHTML = `
-            <button class="detalles">Detalles</button>
+            ${detallesBtn}
             <button class="dividir" data-id="${m.id}" hidden>Dividir</button>
             <button class="cambiar" data-id="${m.id}">Cambiar estado</button>
             <button class="ticket" data-mesa="${m.id}" data-nombre="${m.nombre}" data-venta="${m.venta_id || ''}" HIDDEN>Enviar ticket</button>`;
@@ -165,24 +204,39 @@ function renderKanban(listaMeseros, mesas) {
         const btnCambiar = card.querySelector('button.cambiar');
         const btnDividir = card.querySelector('button.dividir');
 
-        if (puedeEditar) {
-            if (m.estado === 'libre' && m.estado_reserva === 'ninguna') {
-                card.addEventListener('click', () => reservarMesa(m.id));
+        if (!window.__corteAbiertoGlobal) {
+            // Sin corte abierto: no permitir cambios de estado. Mostrar leyenda en lugar del botón.
+            if (btnCambiar) {
+                const leyenda = document.createElement('span');
+                leyenda.className = 'badge bg-warning text-dark ms-2';
+                leyenda.textContent = 'Se requiere abrir caja para ventas';
+                btnCambiar.replaceWith(leyenda);
             }
-            btnCambiar.addEventListener('click', ev => { ev.stopPropagation(); abrirCambioEstado(m); });
-            btnDividir.addEventListener('click', ev => { ev.stopPropagation(); dividirMesa(btnDividir.dataset.id); });
+            // Evitar acciones de reserva/cambio/dividir
+            btnDividir && (btnDividir.disabled = true);
         } else {
-            // Permitir cambiar estado con validación de contraseña del mesero asignado
-            btnCambiar.addEventListener('click', ev => { ev.stopPropagation(); abrirCambioEstado(m); });
-            // Mantener restringido dividir
-            btnDividir.disabled = true;
+            // Con corte abierto: comportamiento normal con permisos
+            if (puedeEditar) {
+                if (m.estado === 'libre' && m.estado_reserva === 'ninguna') {
+                    card.addEventListener('click', () => reservarMesa(m.id));
+                }
+                btnCambiar.addEventListener('click', ev => { ev.stopPropagation(); abrirCambioEstado(m); });
+                btnDividir.addEventListener('click', ev => { ev.stopPropagation(); dividirMesa(btnDividir.dataset.id); });
+            } else {
+                // Permitir cambiar estado con validación de contraseña del mesero asignado
+                btnCambiar.addEventListener('click', ev => { ev.stopPropagation(); abrirCambioEstado(m); });
+                // Mantener restringido dividir
+                btnDividir.disabled = true;
+            }
         }
 
         const btnDetalles = card.querySelector('button.detalles');
-        btnDetalles.addEventListener('click', ev => {
-            ev.stopPropagation();
-            verDetalles(card.dataset.venta, card.dataset.mesa, card.querySelector('.title').textContent, card.dataset.estado);
-        });
+        if (btnDetalles) {
+            btnDetalles.addEventListener('click', ev => {
+                ev.stopPropagation();
+                abrirDetalles(m);
+            });
+        }
 
         const btnTicket = card.querySelector('button.ticket');
         btnTicket.addEventListener('click', ev => {
@@ -460,10 +514,10 @@ async function agregarDetalle() {
 
     if (!currentVentaId) {
         try {
-            const corteResp = await fetch('../../api/corte_caja/verificar_corte_abierto.php', { credentials: 'include' });
+            const corteResp = await fetch('../../api/corte_caja/verificar_corte_cajero_abierto.php', { credentials: 'include' });
             const corteData = await corteResp.json();
             if (!corteData.success || !corteData.resultado.abierto) {
-                alert('Debe abrir caja antes de iniciar una venta.');
+                alert('No hay corte abierto de un cajero. Nadie puede vender.');
                 return;
             }
         } catch (err) {
@@ -476,7 +530,7 @@ async function agregarDetalle() {
             productos: [{ producto_id: productoId, cantidad, precio_unitario: precio }]
         };
         try {
-            const resp = await fetch('../../api/ventas/crear_venta_mesas.php', {
+            const resp = await fetch('../../api/ventas/crear_venta_mesa.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(crearPayload)
@@ -524,31 +578,91 @@ async function agregarDetalle() {
     await cargarMesas();
 }
 
+function abrirDetalles(mesa) {
+    try {
+        const mesaId = parseInt(mesa.id);
+        const asignadoA = mesa.usuario_id ? parseInt(mesa.usuario_id) : null;
+        const requiereAuth = (usuarioActual.rol !== 'admin') && (asignadoA && asignadoA !== usuarioActual.id);
+
+        const continuar = async () => {
+            try {
+                const resp = await fetch('../../api/corte_caja/verificar_corte_cajero_abierto.php', { credentials: 'include' });
+                const data = await resp.json();
+                if (!data.success || !data.resultado.abierto) {
+                    alert('No hay corte abierto de un cajero. Nadie puede vender.');
+                    return;
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error al verificar el estado de caja');
+                return;
+            }
+            verDetalles(mesa.venta_id || '', String(mesa.id), String(mesa.nombre || ''), String(mesa.estado || ''));
+        };
+
+        if (requiereAuth) {
+            const authModal = document.getElementById('modalAuthMesa');
+            if (!authModal) { alert('No se encontró el modal de autorización'); return; }
+            authModal.dataset.mesaId = String(mesaId);
+            const passInput = authModal.querySelector('#authMesaPass');
+            const info = authModal.querySelector('#authMesaInfo');
+            if (passInput) passInput.value = '';
+            if (info) info.textContent = mesa.mesero_nombre ? `Mesero asignado: ${mesa.mesero_nombre}` : '';
+            const btnContinuar = document.getElementById('btnAuthMesaContinuar');
+            if (btnContinuar) {
+                btnContinuar.onclick = () => {
+                    const val = (authModal.querySelector('#authMesaPass')?.value || '').trim();
+                    if (!val) { alert('Ingrese la contraseña'); return; }
+                    // Verificar contraseña del mesero asignado antes de continuar
+                    fetch('../../api/usuarios/verificar_password.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ usuario_id: asignadoA, contrasena: val })
+                    })
+                        .then(r => r.json())
+                        .then(resp => {
+                            if (!resp.success) { alert(resp.mensaje || 'Contraseña incorrecta'); return; }
+                            window.__mesaAuthTemp = { mesaId, pass: val };
+                            hideModal('#modalAuthMesa');
+                            setTimeout(() => continuar(), 150);
+                        })
+                        .catch(() => alert('Error al verificar contraseña'));
+                };
+            }
+            showModal('#modalAuthMesa');
+        } else {
+            continuar();
+        }
+    } catch (e) {
+        console.error(e);
+        alert('No fue posible abrir los detalles');
+    }
+}
+
 async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
     ventaIdActual = ventaId;
     mesaIdActual = mesaId;
     estadoMesaActual = estado;
 
-    if (!ventaId) {
-        try {
-            const resp = await fetch('../../api/corte_caja/verificar_corte_abierto.php', { credentials: 'include' });
-            const corte = await resp.json();
-            if (!corte.success || !corte.resultado.abierto) {
-                alert('Debe abrir caja antes de iniciar una venta.');
-                return;
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Error al verificar caja');
+    // Verificar cajero con corte abierto siempre antes de mostrar detalles
+    try {
+        const resp = await fetch('../../api/corte_caja/verificar_corte_cajero_abierto.php', { credentials: 'include' });
+        const corte = await resp.json();
+        if (!corte.success || !corte.resultado.abierto) {
+            alert('No hay corte abierto de un cajero. Nadie puede vender.');
             return;
         }
+    } catch (err) {
+        console.error(err);
+        alert('Error al verificar caja');
+        return;
     }
 
     const modal = document.getElementById('modalVenta');
     const contenedor = modal.querySelector('.modal-body');
 
     if (!ventaId) {
-        contenedor.innerHTML = `<p>Mesa ${mesaNombre}</p>` + crearTablaProductos([]);
+        contenedor.innerHTML = `<p>Destino: ${mesaNombre}</p>` + crearTablaProductos([]);
         inicializarBuscadorDetalle();
         modal.querySelector('#btnAgregarDetalle').addEventListener('click', agregarDetalle);
         showModal('#modalVenta');
@@ -563,7 +677,11 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
         });
         const data = await resp.json();
         if (data.success) {
-            contenedor.innerHTML = `<p>Mesa ${data.resultado.mesa} - Venta ${ventaId}</p>` + crearTablaProductos(data.resultado.productos);
+            const info = data.resultado;
+            const header = `<p>Fecha inicio: ${info.fecha || ''}<br>Mesero: ${info.mesero || ''}<br>Destino: ${info.mesa || ''}</p>`;
+            let html = header + crearTablaProductos(info.productos);
+            html += `<button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button>`;
+            contenedor.innerHTML = html;
             contenedor.querySelectorAll('.eliminar').forEach(btn => {
                 btn.addEventListener('click', () => eliminarDetalle(btn.dataset.id, ventaId));
             });
@@ -572,6 +690,23 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
             });
             inicializarBuscadorDetalle();
             modal.querySelector('#btnAgregarDetalle').addEventListener('click', agregarDetalle);
+            const btnImp = contenedor.querySelector('#imprimirTicket');
+            if (btnImp) {
+                btnImp.addEventListener('click', () => {
+                    try {
+                        const total = Array.isArray(info.productos)
+                            ? info.productos.reduce((s, p) => s + parseFloat(p.subtotal || 0), 0)
+                            : 0;
+                        const payload = {
+                            venta_id: parseInt(ventaId),
+                            productos: info.productos || [],
+                            total
+                        };
+                        localStorage.setItem('ticketData', JSON.stringify(payload));
+                    } catch (_) { /* noop */ }
+                    window.location.href = `../ventas/ticket.php?venta=${encodeURIComponent(ventaId)}`;
+                });
+            }
             showModal('#modalVenta');
         } else {
             alert(data.mensaje);
@@ -600,7 +735,7 @@ function crearTablaProductos(productos) {
                 <ul id="detalle_lista" class="list-group position-absolute w-100 lista-productos"></ul>
             </div>
         </td>
-        <td><input type="number" id="detalle_cantidad" class="form-control" min="0.01" step="0.01"></td>
+        <td><input type="number" id="detalle_cantidad" class="form-control" min="1" step="1" value="1"></td>
         <td colspan="4"></td>
         <td colspan="2"><button class="btn custom-btn" id="btnAgregarDetalle">Agregar</button></td>
     </tr>`;
@@ -699,7 +834,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     try {
         await cargarCatalogo();
+        await verificarCorteAbiertoGlobal();
         await cargarMesas();
+        iniciarLongPollCorte(4000);
     } catch (err) {
         console.error(err);
     }

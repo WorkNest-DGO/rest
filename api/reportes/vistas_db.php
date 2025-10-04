@@ -1,7 +1,7 @@
 ﻿<?php
 /**
- * Endpoint genÃ©rico para consultar vistas de base de datos.
- * Para agregar una nueva vista, inclÃºyela en el arreglo $whitelist y
+ * Endpoint gení©rico para consultar vistas de base de datos.
+ * Para agregar una nueva vista, inclúyela en el arreglo $whitelist y
  * agrega su etiqueta legible en el mapa viewLabels de vistas_db.js.
  */
 header('Content-Type: application/json');
@@ -27,7 +27,7 @@ $whitelist = [
 ];
 
 try {
-    // ConexiÃ³n
+    // Conexión
     // (bootstrap se carga abajo, evitando duplicidad)
     $config = __DIR__ . '/../../config/db.php';
 if (file_exists($config)) {
@@ -207,7 +207,7 @@ if (!isset($pdo) || !($pdo instanceof PDO)) {
         exit;
     }
 
-    // Compatibilidad con vistas_db.js (parÃ¡metros: view, per_page, search, sort_by, sort_dir)
+    // Compatibilidad con vistas_db.js (parámetros: view, per_page, search, sort_by, sort_dir)
     $view = $_GET['view'] ?? '';
     if (!in_array($view, $whitelist, true)) {
         http_response_code(400);

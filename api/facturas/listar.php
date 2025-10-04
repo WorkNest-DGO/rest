@@ -129,21 +129,54 @@ try {
   // ====== PENDIENTES (excluir si ya facturado vía puente o legacy) ======
   if ($estado === 'todas' || $estado === 'pendientes') {
     $params = []; $types = '';
+    $pend_limit  = isset($_GET['pend_limit'])  ? max(1, min(100, (int)$_GET['pend_limit'])) : 20;
+    $pend_offset = isset($_GET['pend_offset']) ? max(0, (int)$_GET['pend_offset']) : 0;
+    $want_count  = isset($_GET['pend_count']) ? (int)$_GET['pend_count'] : 0;
     $sql = "SELECT t.id, t.folio, t.total, ".($t_fecha ? "t.$t_fecha AS fecha" : "NULL AS fecha")."
             FROM tickets t
             LEFT JOIN factura_tickets ft ON ft.ticket_id = t.id
             LEFT JOIN facturas f ON ".($has_ticket_id ? "f.ticket_id = t.id" : "0")."
                AND ".($f_status ? "COALESCE(f.$f_status,'generada')" : "'generada'")." <> 'cancelada'
             WHERE ft.ticket_id IS NULL " . ($has_ticket_id ? "AND f.id IS NULL " : "");
-    if ($t_fecha) { $sql .= "AND t.$t_fecha >= ? AND t.$t_fecha < ? "; $types.='ss'; $params[]=$desde; $params[]=$hasta; }
+    // Importante: Los pendientes deben mostrar TODOS los tickets sin factura, sin limitar por usuario ni cajero.
+    // Para no ocultar cobros de otros usuarios, NO aplicamos filtro de fecha aqui.
+    // Si en el futuro se requiere filtrar por rango, agregar un parmetro GET (por ejemplo, filtrar_fecha=1).
+    if (isset($_GET['filtrar_fecha']) && (int)$_GET['filtrar_fecha'] === 1 && $t_fecha) {
+      $sql .= "AND t.$t_fecha >= ? AND t.$t_fecha < ? ";
+      $types.='ss'; $params[]=$desde; $params[]=$hasta;
+    }
     if ($buscar !== '') { $sql .= "AND (t.folio LIKE ?) "; $types.='s'; $params[] = "%$buscar%"; }
-    $sql .= "ORDER BY ".($t_fecha ? "t.$t_fecha ASC, " : "")."t.folio ASC";
+    $sql .= "ORDER BY ".($t_fecha ? "t.$t_fecha DESC, " : "")."t.folio DESC";
+    $sql .= " LIMIT ? OFFSET ?";
 
     $st = $db->prepare($sql);
-    if ($types) $st->bind_param($types, ...$params);
+    $types2 = $types . 'ii';
+    $params2 = array_merge($params, [$pend_limit, $pend_offset]);
+    $st->bind_param($types2, ...$params2);
     $st->execute(); $rs = $st->get_result();
     while($r=$rs->fetch_assoc()) $out['pendientes'][]=$r;
     $st->close();
+    if ($want_count === 1) {
+      $typesC = '';
+      $paramsC = [];
+      $sqlC = "SELECT COUNT(*) AS c
+               FROM tickets t
+               LEFT JOIN factura_tickets ft ON ft.ticket_id = t.id
+               LEFT JOIN facturas f ON ".($has_ticket_id ? "f.ticket_id = t.id" : "0")."
+                  AND ".($f_status ? "COALESCE(f.$f_status,'generada')" : "'generada'")." <> 'cancelada'
+               WHERE ft.ticket_id IS NULL " . ($has_ticket_id ? "AND f.id IS NULL " : "");
+      if (isset($_GET['filtrar_fecha']) && (int)$_GET['filtrar_fecha'] === 1 && $t_fecha) {
+        $sqlC .= "AND t.$t_fecha >= ? AND t.$t_fecha < ? ";
+        $typesC.='ss'; $paramsC[]=$desde; $paramsC[]=$hasta;
+      }
+      if ($buscar !== '') { $sqlC .= "AND (t.folio LIKE ?) "; $typesC.='s'; $paramsC[] = "%$buscar%"; }
+      $stC = $db->prepare($sqlC);
+      if ($typesC) { $stC->bind_param($typesC, ...$paramsC); }
+      $stC->execute(); $rsC = $stC->get_result();
+      $rowC = $rsC ? $rsC->fetch_assoc() : ['c'=>0];
+      $out['pendientes_total'] = (int)($rowC['c'] ?? 0);
+      $stC->close();
+    }
   }
 
   // ====== FACTURADAS (de puente y/o legacy 1:1) ======

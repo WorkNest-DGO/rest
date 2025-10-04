@@ -24,23 +24,42 @@ if (!$mesa_id || !$productos) {
     error('Datos incompletos');
 }
 
-$cajero_id = (int)$_SESSION['usuario_id'];
+// Determinar cajero y corte abiertos
+$usuario_sesion_id = (int)$_SESSION['usuario_id'];
+$rol = isset($_SESSION['rol']) ? strtolower((string)$_SESSION['rol']) : '';
+$corte_id = null;
+$cajero_id = null;
 
-// Verificar corte abierto para el cajero
-$qc = $conn->prepare('SELECT id FROM corte_caja WHERE usuario_id = ? AND fecha_fin IS NULL ORDER BY fecha_inicio DESC LIMIT 1');
-if (!$qc) {
-    error('Error al preparar consulta de corte: ' . $conn->error);
-}
-$qc->bind_param('i', $cajero_id);
-$qc->execute();
-$resCorte = $qc->get_result();
-if ($resCorte->num_rows === 0) {
+if ($rol === 'cajero') {
+    // Usar el cajero de sesión
+    $cajero_id = $usuario_sesion_id;
+    $qc = $conn->prepare('SELECT id FROM corte_caja WHERE usuario_id = ? AND fecha_fin IS NULL ORDER BY fecha_inicio DESC LIMIT 1');
+    if (!$qc) { error('Error al preparar consulta de corte: ' . $conn->error); }
+    $qc->bind_param('i', $cajero_id);
+    $qc->execute();
+    $resCorte = $qc->get_result();
+    if ($resCorte->num_rows === 0) {
+        $qc->close();
+        error('Debe abrir caja antes de iniciar una venta.');
+    }
+    $corteRow = $resCorte->fetch_assoc();
+    $corte_id = (int)$corteRow['id'];
     $qc->close();
-    error('Debe abrir caja antes de iniciar una venta.');
+} else {
+    // Buscar cualquier cajero con corte abierto (más reciente)
+    $sql = "SELECT c.id AS corte_id, u.id AS cajero_id
+            FROM corte_caja c
+            JOIN usuarios u ON u.id = c.usuario_id
+            WHERE u.rol = 'cajero' AND c.fecha_fin IS NULL
+            ORDER BY c.fecha_inicio DESC
+            LIMIT 1";
+    $rs = $conn->query($sql);
+    if (!$rs) { error('Error al consultar cortes: ' . $conn->error); }
+    if ($rs->num_rows === 0) { error('No hay cajero con corte abierto.'); }
+    $row = $rs->fetch_assoc();
+    $corte_id = (int)$row['corte_id'];
+    $cajero_id = (int)$row['cajero_id'];
 }
-$corteRow = $resCorte->fetch_assoc();
-$corte_id = (int)$corteRow['id'];
-$qc->close();
 
 // Verificar si ya hay venta activa para la mesa
 $check = $conn->prepare("SELECT id FROM ventas WHERE mesa_id = ? AND estatus = 'activa' LIMIT 1");

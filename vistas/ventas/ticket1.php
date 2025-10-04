@@ -12,52 +12,7 @@ if (!in_array($path_actual, $_SESSION['rutas_permitidas'])) {
     exit;
 }
 
-// Validación: si la venta ya tiene ticket, mostrar solo sección de propinas
-$ventaIdParam = isset($_GET['venta']) ? (int)$_GET['venta'] : 0;
-$soloPropinas = false;
-if ($ventaIdParam > 0) {
-    if ($st = $conn->prepare('SELECT 1 FROM tickets WHERE venta_id = ? LIMIT 1')) {
-        $st->bind_param('i', $ventaIdParam);
-        if ($st->execute()) {
-            $st->store_result();
-            $soloPropinas = $st->num_rows > 0;
-        }
-        $st->close();
-    }
-}
-
 $title = 'Ticket';
-$tieneTicket = false;
-$tienePropina = false;
-$totalVenta = 0.00; // total de la venta (sin propinas, desde ventas.total o sum(detalles))
-$propinaTotal = 0.00;
-if ($ventaIdParam > 0) {
-    // ¿Existe ticket?
-    if ($st = $conn->prepare('SELECT 1 FROM tickets WHERE venta_id = ? LIMIT 1')) {
-        $st->bind_param('i', $ventaIdParam);
-        if ($st->execute()) { $st->store_result(); $tieneTicket = $st->num_rows > 0; }
-        $st->close();
-    }
-    // ¿Propina registrada en ventas?
-    if ($sp = $conn->prepare('SELECT total, COALESCE(propina_efectivo,0)+COALESCE(propina_cheque,0)+COALESCE(propina_tarjeta,0) AS propina_total FROM ventas WHERE id = ?')) {
-        $sp->bind_param('i', $ventaIdParam);
-        if ($sp->execute()) {
-            $r = $sp->get_result()->fetch_assoc();
-            $propinaTotal = (float)($r['propina_total'] ?? 0);
-            $tienePropina = $propinaTotal > 0;
-            $totalVenta = isset($r['total']) ? (float)$r['total'] : 0.00;
-        }
-        $sp->close();
-    }
-    // Si ventas.total no está seteado, calcular desde venta_detalles
-    if ($totalVenta <= 0.0) {
-        if ($sv = $conn->prepare('SELECT SUM(cantidad * precio_unitario) AS total FROM venta_detalles WHERE venta_id = ?')) {
-            $sv->bind_param('i', $ventaIdParam);
-            if ($sv->execute()) { $row = $sv->get_result()->fetch_assoc(); $totalVenta = (float)($row['total'] ?? 0); }
-            $sv->close();
-        }
-    }
-}
 ob_start();
 ?>
 <!-- Page Header Start -->
@@ -121,24 +76,28 @@ ob_start();
     <div class="mb-2">
       <button id="btnDescuentos" type="button" class="btn btn-warning">Descuentos</button>
     </div>
-    <div id="regPropinas" style="display:none;">
-        <h3>Propinas:</h3>
-        <div id="propinaEfectivoD" style="display:none;">
-            <label for="propinaEfectivo" class="form-label">Efectivo: </label>
-            <input type="number" step="0.01" disabled class="form-control" id="propinaEfectivo" required>
-        </div>
-        <div id="propinaChequeD" style="display:none;">
-            <label for="propinaCheque" class="form-label">Cheque: </label>
-            <input type="number" step="0.01" disabled class="form-control" id="propinaCheque" required>
-        </div>
-        <div id="propinaTarjetaD" style="display:none;">
-            <label for="propinaTarjeta" class="form-label">Tarjeta: </label>
-            <input type="number" step="0.01" disabled class="form-control" id="propinaTarjeta" required>
-        </div>
-    <br>
-    <button id="btnGuardarTicket" class="btn custom-btn">Guardar</button>
-    </div>
     <div id="teclado" class="mt-3"></div>
+</div>
+
+<!-- Sección Propinas (movida fuera de #dividir) -->
+<div class="container mt-4" id="regPropinas" style="display:none;">
+  <h3>Propinas</h3>
+  <div class="row">
+    <div id="propinaEfectivoD" style="display:none;" class="col-md-4">
+      <label for="propinaEfectivo" class="form-label">Efectivo</label>
+      <input type="number" step="0.01" disabled class="form-control" id="propinaEfectivo" required>
+    </div>
+    <div id="propinaChequeD" style="display:none;" class="col-md-4">
+      <label for="propinaCheque" class="form-label">Cheque</label>
+      <input type="number" step="0.01" disabled class="form-control" id="propinaCheque" required>
+    </div>
+    <div id="propinaTarjetaD" style="display:none;" class="col-md-4">
+      <label for="propinaTarjeta" class="form-label">Tarjeta</label>
+      <input type="number" step="0.01" disabled class="form-control" id="propinaTarjeta" required>
+    </div>
+  </div>
+  <br>
+  <button id="btnGuardarTicket" class="btn custom-btn">Guardar</button>
 </div>
 
 <div id="imprimir" style="display:none;" class="custom-modal2">
@@ -211,11 +170,6 @@ ob_start();
 
 <?php require_once __DIR__ . '/../footer.php'; ?>
 <script>
-    // Señales servidor
-    window.__SOLO_PROPINAS__ = <?php echo ($tieneTicket && !$tienePropina) ? 'true' : 'false'; ?>; // ticket sin propina => solo propinas
-    window.__TIENE_PROPINA__ = <?php echo $tienePropina ? 'true' : 'false'; ?>; // ya hay propina => ocultar combos
-    // Monto actual = total de venta + propinas
-    window.__TOTAL_VENTA__ = <?php echo json_encode(number_format(max(0, $totalVenta + $propinaTotal), 2, '.', '')); ?>;
     const catalogosUrl = '../../api/tickets/catalogos_tarjeta.php';
     const promocionesUrl = '../../api/tickets/promociones.php';
     const denominacionesUrl = '../../api/corte_caja/listar_denominaciones.php';
@@ -242,36 +196,6 @@ ob_start();
         } catch (e) { msg.textContent = 'Error de red'; }
       });
     });
-    </script>
-<script>
-// Al cargar, si el servidor indica SOLO_PROPINAS, ocultar controles de cobro y mostrar solo propinas
-document.addEventListener('DOMContentLoaded', function(){
-  try {
-    if (window.__SOLO_PROPINAS__) {
-      var div = document.getElementById('dividir');
-      if (div) { div.style.display = 'block'; }
-      var idsOcultar = ['tablaProductos','descuentosPanel','agregarSub','btnCrearTicket','subcuentas','teclado','btnDescuentos'];
-      idsOcultar.forEach(function(id){ var el = document.getElementById(id); if (el) { el.style.display = 'none'; el.disabled = true; }});
-      var reg = document.getElementById('regPropinas');
-      if (reg) { reg.style.display = 'block'; }
-      // Habilitar inputs de propinas y mostrarlos
-      var pe = document.getElementById('propinaEfectivo'); if (pe) { pe.disabled = false; }
-      var pc = document.getElementById('propinaCheque'); if (pc) { pc.disabled = false; }
-      var pt = document.getElementById('propinaTarjeta'); if (pt) { pt.disabled = false; }
-      var ped = document.getElementById('propinaEfectivoD'); if (ped) { ped.style.display = 'block'; }
-      var pcd = document.getElementById('propinaChequeD'); if (pcd) { pcd.style.display = 'block'; }
-      var ptd = document.getElementById('propinaTarjetaD'); if (ptd) { ptd.style.display = 'block'; }
-    } else if (window.__TIENE_PROPINA__) {
-      // Ya existe propina: ocultar combos de propina y mostrar solo Monto actual
-      var div = document.getElementById('dividir');
-      if (div) { div.style.display = 'block'; }
-      var idsOcultar2 = ['tablaProductos','descuentosPanel','agregarSub','btnCrearTicket','subcuentas','teclado','btnDescuentos','propinaEfectivoD','propinaChequeD','propinaTarjetaD','btnGuardarTicket','regPropinas'];
-      idsOcultar2.forEach(function(id){ var el = document.getElementById(id); if (el) { el.style.display = 'none'; el.disabled = true; }});
-      var g = document.getElementById('lblMontoActualGlobal');
-      if (g) { g.textContent = (Number(window.__TOTAL_VENTA__) || 0).toFixed(2); }
-    }
-  } catch(e) { /* noop */ }
-});
 </script>
 <script src="ticket.js"></script>
 </body>
