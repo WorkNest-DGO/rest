@@ -2359,6 +2359,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
+// Long-poll: refrescar historial de ventas cuando haya cambios
+(function iniciarLongPollVentas(){
+    let since = 0;
+    async function tick(){
+        try {
+            const resp = await fetch('../../api/ventas/listen_cambios.php?since=' + since, { cache: 'no-store' });
+            const data = await resp.json();
+            if (data && typeof data.version !== 'undefined') since = parseInt(data.version) || since;
+            if (data && data.changed) {
+                try { await cargarHistorial(); } catch(_){}
+            }
+        } catch (e) {
+            // no romper el ciclo por errores transitorios
+        } finally {
+            setTimeout(tick, 1500);
+        }
+    }
+    // arrancar tras la carga inicial
+    document.addEventListener('DOMContentLoaded', () => setTimeout(tick, 1500));
+})();
+
 async function abrirDetalleMovimientos() {
     try {
         const resp = await fetch('../../api/corte_caja/listar_movimientos.php', { credentials: 'include', cache: 'no-store' });

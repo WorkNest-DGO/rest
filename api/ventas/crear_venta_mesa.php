@@ -121,4 +121,27 @@ if ($log) {
     $log->close();
 }
 
+// Notificar cambio a historial de ventas (long-poll)
+try {
+    $dir = __DIR__ . '/runtime';
+    @mkdir($dir, 0775, true);
+    $verFile   = $dir . '/ventas_version.txt';
+    $eventsLog = $dir . '/ventas_events.jsonl';
+    $fp = fopen($verFile, 'c+');
+    if ($fp) {
+        flock($fp, LOCK_EX);
+        $txt  = stream_get_contents($fp);
+        $cur  = intval(trim($txt ?? '0'));
+        $next = $cur + 1;
+        ftruncate($fp, 0);
+        rewind($fp);
+        fwrite($fp, (string)$next);
+        fflush($fp);
+        flock($fp, LOCK_UN);
+        fclose($fp);
+        $evt = json_encode(['v'=>$next,'ids'=>[$venta_id],'ts'=>time()]);
+        file_put_contents($eventsLog, $evt . PHP_EOL, FILE_APPEND | LOCK_EX);
+    }
+} catch (Throwable $e) { /* no interrumpir */ }
+
 success(['venta_id' => $venta_id]);

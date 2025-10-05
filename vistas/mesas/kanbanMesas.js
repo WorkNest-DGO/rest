@@ -680,7 +680,8 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
             const info = data.resultado;
             const header = `<p>Fecha inicio: ${info.fecha || ''}<br>Mesero: ${info.mesero || ''}<br>Destino: ${info.mesa || ''}</p>`;
             let html = header + crearTablaProductos(info.productos);
-            html += `<button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button>`;
+            html += `<br>`;
+            html += `<button  class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button>`;
             contenedor.innerHTML = html;
             contenedor.querySelectorAll('.eliminar').forEach(btn => {
                 btn.addEventListener('click', () => eliminarDetalle(btn.dataset.id, ventaId));
@@ -718,7 +719,7 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
 }
 
 function crearTablaProductos(productos) {
-    let html = '<table class="styled-table" border="1"><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th>Hora</th><th></th><th></th></tr></thead><tbody>';
+    let html = '<table class="styled-table" border="1"><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th><th>Estatus</th><th>Hora</th><th></th><th></th></tr></thead><tbody>';
     productos.forEach(p => {
         const est = textoEstado(p.estado_producto);
         const btnEliminar = (p.estado_producto !== 'entregado' && p.estado_producto !== 'en_preparacion') ? `<button class="eliminar" data-id="${p.id}">Eliminar</button>` : '';

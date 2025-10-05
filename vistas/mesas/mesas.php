@@ -40,7 +40,7 @@ ob_start();
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Detalle de venta</h5>
+                <h5 class="modal-title">Detalle de venta en mesa</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body"><!-- contenido dinámico --></div>
@@ -143,6 +143,29 @@ window.usuarioActual = {
 </script>
 <script src="../../utils/js/buscador.js"></script>
 <script src="kanbanMesas.js"></script>
+<script>
+// Long-poll ventas: refresca tablero de mesas cuando cambian ventas (apertura/cierre)
+(function iniciarLongPollVentasMesas(){
+  let since = 0;
+  async function tick(){
+    try {
+      const resp = await fetch('../../api/ventas/listen_cambios.php?since=' + since, { cache: 'no-store' });
+      const data = await resp.json();
+      if (data && typeof data.version !== 'undefined') since = parseInt(data.version) || since;
+      if (data && data.changed) {
+        if (typeof cargarMesas === 'function') {
+          try { await cargarMesas(); } catch(e) {}
+        }
+      }
+    } catch (e) {
+      // silencioso
+    } finally {
+      setTimeout(tick, 1500);
+    }
+  }
+  document.addEventListener('DOMContentLoaded', () => setTimeout(tick, 1500));
+})();
+</script>
 </body>
 </html>
 <?php

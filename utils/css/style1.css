@@ -1902,3 +1902,45 @@ a:focus {
     display: none;
     z-index: 1000;
   }
+
+  /* Fix Mesas modal: product dropdown should overlay footer */
+  #modalVenta .modal-content { overflow: visible; }
+  /* El body del modal no debe crecer más que la ventana: hace scroll interno */
+  #modalVenta .modal-body {
+    max-height: calc(100vh - 220px); /* header + footer aprox */
+    overflow-y: auto;
+    /* espacio extra para desplegar la lista sin chocar con el footer */
+    padding-bottom: 160px;
+  }
+  /* Permitir que contenidos posicionados puedan sobresalir si es necesario */
+  #modalVenta .modal-dialog { overflow: visible; }
+  #modalVenta .lista-productos {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 2000; /* above modal footer */
+  }
+
+  /* ===== Ticket (ventas/ticket.php) layout tweaks ===== */
+  /* Numpad/teclado: botones más separados y legibles */
+  #teclado { display: grid; grid-template-columns: repeat(3, minmax(56px, 1fr)); gap: 8px; }
+  #teclado button { padding: 10px 14px; font-size: 18px; line-height: 1.15; border-radius: 6px; }
+  @media (min-width: 768px) {
+    #teclado button { padding: 12px 18px; font-size: 20px; }
+  }
+
+  /* Subcuentas: inputs y filas menos apretados */
+  #subcuentas { display: flex; flex-direction: column; gap: 12px; }
+  #subcuentas > div { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  #subcuentas select,
+  #subcuentas input[type="number"] { max-width: 280px; width: 100%; padding: 6px 10px; }
+  #subcuentas .recibido { font-size: 18px; }
+  #subcuentas [id^="extraPago"] { margin-top: 6px; }
+  #subcuentas .descuentosPanel { margin-top: 8px; }
+  #subcuentas .descuentosPanel > div { margin-top: 4px; }
+  #subcuentas span[id^="cambio"] { min-width: 80px; display: inline-block; text-align: right; }
+
+  /* Tabla principal dentro de Ticket: un poco más de aire en celdas */
+  #dividir #tablaProductos.styled-table th,
+  #dividir #tablaProductos.styled-table td { padding: 10px 12px; }

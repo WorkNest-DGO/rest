@@ -84,6 +84,32 @@ ob_start();
 </div>
 <div id="dividir" style="display:none;" class="container mt-5">
     <h2 class="section-subheader">Dividir venta</h2>
+    <style>
+      /* Layout: dos columnas en desktop para facilitar uso */
+      #dividir { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
+      #dividir > h2 { grid-column: 1 / -1; }
+      #dividir > .table-responsive, #dividir > #descuentosPanel { grid-column: 1; }
+      #dividir > .mb-2,
+      #dividir > .btn-row,
+      #dividir > #subcuentas,
+      #dividir > #regPropinas,
+      #dividir > #teclado,
+      #dividir > .monto-actual { grid-column: 2; }
+      .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .btn-row > .btn { width: 100%; }
+      .monto-actual { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border: 1px solid #333; border-radius: 6px; }
+      .monto-actual #lblMontoActualGlobal { font-size: 20px; font-weight: bold; }
+      #subcuentas { max-height: 50vh; overflow: auto; }
+      @media (max-width: 992px) {
+        #dividir { grid-template-columns: 1fr; }
+        #dividir > .mb-2,
+        #dividir > .btn-row,
+        #dividir > #subcuentas,
+        #dividir > #regPropinas,
+        #dividir > #teclado,
+        #dividir > .monto-actual { grid-column: 1; }
+      }
+    </style>
     <div class="table-responsive">
         <style>
           /* Bloqueo visual de descuentos/cortesías hasta desbloquear */
@@ -110,10 +136,12 @@ ob_start();
     </div>
     <!-- Panel de descuentos global oculto (los descuentos se aplican por subcuenta) -->
     <div id="descuentosPanel" style="display:none;"></div>
-    <button id="agregarSub" class="btn custom-btn">Agregar subcuenta</button>
-    <button id="btnCrearTicket" class="btn custom-btn">imprimir Tickets</button>
+    <div class="btn-row">
+      <button id="agregarSub" class="btn custom-btn">Agregar subcuenta</button>
+      <button id="btnCrearTicket" class="btn custom-btn">imprimir Tickets</button>
+    </div>
     <div id="subcuentas"></div>
-    <div style="margin-top:10px;">
+    <div class="monto-actual" style="margin-top:10px;">
       <strong>Monto actual (suma de subcuentas):</strong>
       <span id="lblMontoActualGlobal">0.00</span>
     </div>
