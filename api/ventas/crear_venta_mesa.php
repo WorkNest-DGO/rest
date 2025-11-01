@@ -83,12 +83,14 @@ foreach ($productos as $p) {
     $total += $p['cantidad'] * $p['precio_unitario'];
 }
 
-$stmt = $conn->prepare('INSERT INTO ventas (mesa_id, tipo_entrega, total, corte_id, cajero_id, sede_id) VALUES (?, ?, ?, ?, ?, ?)');
+$stmt = $conn->prepare('INSERT INTO ventas (mesa_id, tipo_entrega, total, corte_id, cajero_id, sede_id, propina_efectivo, propina_cheque, propina_tarjeta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
 if (!$stmt) {
     error('Error al preparar venta: ' . $conn->error);
 }
 $tipo = 'mesa';
-$stmt->bind_param('isdiii', $mesa_id, $tipo, $total, $corte_id, $cajero_id, $sede_id);
+// Propinas iniciales en 0 para cumplir con NOT NULL sin default
+$propina_efectivo = 0.0; $propina_cheque = 0.0; $propina_tarjeta = 0.0;
+$stmt->bind_param('isdiiiddd', $mesa_id, $tipo, $total, $corte_id, $cajero_id, $sede_id, $propina_efectivo, $propina_cheque, $propina_tarjeta);
 if (!$stmt->execute()) {
     $stmt->close();
     error('Error al crear venta: ' . $stmt->error);
@@ -100,6 +102,8 @@ $detalle = $conn->prepare('INSERT INTO venta_detalles (venta_id, producto_id, ca
 if (!$detalle) {
     error('Error al preparar detalle: ' . $conn->error);
 }
+// Llevar registro de IDs creados para notificar a cocina
+$ids_creados = [];
 foreach ($productos as $p) {
     $producto_id = (int)$p['producto_id'];
     $cantidad = (int)$p['cantidad'];
@@ -109,6 +113,8 @@ foreach ($productos as $p) {
         $detalle->close();
         error('Error al insertar detalle: ' . $detalle->error);
     }
+    $nid = (int)$detalle->insert_id;
+    if ($nid) { $ids_creados[] = $nid; }
 }
 $detalle->close();
 
@@ -121,27 +127,38 @@ if ($log) {
     $log->close();
 }
 
-// Notificar cambio a historial de ventas (long-poll)
+// Notificar cambio a historial de ventas (long-poll) - silencioso si no hay permisos
 try {
     $dir = __DIR__ . '/runtime';
-    @mkdir($dir, 0775, true);
-    $verFile   = $dir . '/ventas_version.txt';
-    $eventsLog = $dir . '/ventas_events.jsonl';
-    $fp = fopen($verFile, 'c+');
-    if ($fp) {
-        flock($fp, LOCK_EX);
-        $txt  = stream_get_contents($fp);
-        $cur  = intval(trim($txt ?? '0'));
-        $next = $cur + 1;
-        ftruncate($fp, 0);
-        rewind($fp);
-        fwrite($fp, (string)$next);
-        fflush($fp);
-        flock($fp, LOCK_UN);
-        fclose($fp);
-        $evt = json_encode(['v'=>$next,'ids'=>[$venta_id],'ts'=>time()]);
-        file_put_contents($eventsLog, $evt . PHP_EOL, FILE_APPEND | LOCK_EX);
+    $okDir = is_dir($dir) || @mkdir($dir, 0775, true);
+    if ($okDir && @is_writable($dir)) {
+        $verFile   = $dir . '/ventas_version.txt';
+        $eventsLog = $dir . '/ventas_events.jsonl';
+        $fp = @fopen($verFile, 'c+');
+        if ($fp) {
+            flock($fp, LOCK_EX);
+            rewind($fp);
+            $txt  = stream_get_contents($fp);
+            $cur  = intval(trim($txt ?? '0'));
+            $next = $cur + 1;
+            ftruncate($fp, 0);
+            rewind($fp);
+            fwrite($fp, (string)$next);
+            fflush($fp);
+            flock($fp, LOCK_UN);
+            fclose($fp);
+            $evt = json_encode(['v'=>$next,'ids'=>[$venta_id],'ts'=>time()]);
+            @file_put_contents($eventsLog, $evt . PHP_EOL, FILE_APPEND | LOCK_EX);
+        }
     }
 } catch (Throwable $e) { /* no interrumpir */ }
+
+// Notificar a pantallas de cocina (long-poll) sobre nuevos detalles sin usar HTTP
+if (!empty($ids_creados)) {
+    try {
+        require_once __DIR__ . '/../cocina/notify_lib.php';
+        @cocina_notify(array_values(array_unique($ids_creados)));
+    } catch (\Throwable $e) { /* noop */ }
+}
 
 success(['venta_id' => $venta_id]);

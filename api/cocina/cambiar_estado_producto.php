@@ -154,22 +154,11 @@ if ($nuevo_estado === 'listo') {
     }
 }
 
-// Notificar cambio a pantallas de cocina (long-poll por versión)
+// Notificar cambio a pantallas de cocina (long-poll por versión) sin depender de HTTP
 try {
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $base   = rtrim(dirname($_SERVER['REQUEST_URI'] ?? '/'), '/');
-    $url    = $scheme . '://' . $host . $base . '/notify_cambio.php';
-    $ctx = stream_context_create(['http' => [
-        'method'  => 'POST',
-        'header'  => "Content-Type: application/json",
-        'content' => json_encode(['ids' => [$detalle_id]]),
-        'timeout' => 2
-    ]]);
-    @file_get_contents($url, false, $ctx);
-} catch (\Throwable $e) {
-    // opcional: log
-}
+    require_once __DIR__ . '/notify_lib.php';
+    @cocina_notify([$detalle_id]);
+} catch (\Throwable $e) { /* noop */ }
 
 success(true);
 ?>

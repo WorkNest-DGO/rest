@@ -31,6 +31,10 @@ $corte_id      = isset($input['corte_id']) ? (int) $input['corte_id'] : null;
 $productos     = isset($input['productos']) && is_array($input['productos']) ? $input['productos'] : null;
 $observacion   = isset($input['observacion']) ? $input['observacion'] : null;
 $sede_id       = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$input['sede_id'] : 1;
+// Propinas opcionales (si no llegan, 0 por defecto)
+$propina_efectivo = isset($input['propina_efectivo']) ? (float)$input['propina_efectivo'] : 0.0;
+$propina_cheque   = isset($input['propina_cheque'])   ? (float)$input['propina_cheque']   : 0.0;
+$propina_tarjeta  = isset($input['propina_tarjeta'])  ? (float)$input['propina_tarjeta']  : 0.0;
 // Precio de envío opcional desde el front (si la línea no vino por productos)
 $precio_envio  = isset($input['precio_envio']) ? (float)$input['precio_envio'] : null;
 // Cantidad de envío opcional
@@ -125,17 +129,17 @@ $nueva_venta = false;
 
 if (!isset($venta_id)) {
     if ($tipo === 'domicilio') {
-        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, observacion, corte_id, cajero_id, fecha_asignacion, sede_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)');
+        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, observacion, corte_id, cajero_id, fecha_asignacion, sede_id, propina_efectivo, propina_cheque, propina_tarjeta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?)');
     } else {
-        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, observacion, corte_id, cajero_id, sede_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, observacion, corte_id, cajero_id, sede_id, propina_efectivo, propina_cheque, propina_tarjeta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
     }
     if (!$stmt) {
         error('Error al preparar venta: ' . $conn->error);
     }
     if ($tipo === 'domicilio') {
-        $stmt->bind_param('iiisdsiii', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $observacion, $corte_id, $cajero_id, $sede_id);
+        $stmt->bind_param('iiisdsiiiddd', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $observacion, $corte_id, $cajero_id, $sede_id, $propina_efectivo, $propina_cheque, $propina_tarjeta);
     } else {
-        $stmt->bind_param('iiisdsiii', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $observacion, $corte_id, $cajero_id, $sede_id);
+        $stmt->bind_param('iiisdsiiiddd', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $observacion, $corte_id, $cajero_id, $sede_id, $propina_efectivo, $propina_cheque, $propina_tarjeta);
     }
     if (!$stmt->execute()) {
         error('Error al crear venta: ' . $stmt->error);
@@ -220,6 +224,7 @@ if (!$detalle) {
 }
 
 $ultimo_detalle_id = 0;
+$detalles_creados = [];
 foreach ($productos as $p) {
     $producto_id     = (int) $p['producto_id'];
     $cantidad        = (int) $p['cantidad'];
@@ -232,6 +237,7 @@ foreach ($productos as $p) {
         error('Error al insertar detalle (producto_id=' . $producto_id . '): ' . $err);
     }
     $ultimo_detalle_id = $detalle->insert_id;
+    if ($ultimo_detalle_id) { $detalles_creados[] = (int)$ultimo_detalle_id; }
 }
 $detalle->close();
 
@@ -274,6 +280,8 @@ if ($tipo === 'domicilio' && $repartidor_id) {
                             if ($ins) {
                                 $ins->bind_param('iiid', $venta_id, $pid, $cantidadEnv, $precio);
                                 $ins->execute();
+                                $nuevoId = (int)$ins->insert_id;
+                                if ($nuevoId) { $detalles_creados[] = $nuevoId; }
                                 $ins->close();
                             }
                         }
@@ -287,7 +295,7 @@ if ($tipo === 'domicilio' && $repartidor_id) {
 }
 
 // Recalcular el total a partir de venta_detalles (incluye envío si aplica)
-$recalc = $conn->prepare("UPDATE ventas v JOIN (SELECT venta_id, SUM(cantidad * precio_unitario) AS total FROM venta_detalles WHERE venta_id = ?) x ON x.venta_id = v.id SET v.total = x.total WHERE v.id = ?");
+$recalc = $conn->prepare("UPDATE ventas v JOIN (SELECT venta_id, SUM(cantidad * precio_unitario) AS total FROM venta_detalles WHERE venta_id = ? GROUP BY venta_id) x ON x.venta_id = v.id SET v.total = x.total WHERE v.id = ?");
 if ($recalc) {
     $recalc->bind_param('ii', $venta_id, $venta_id);
     $recalc->execute();
@@ -305,27 +313,38 @@ if ($log) {
     $log->close();
 }
 
-// Notificar cambio a historial de ventas (long-poll)
+// Notificar cambio a historial de ventas (long-poll) - silencioso si no hay permisos
 try {
     $dir = __DIR__ . '/runtime';
-    @mkdir($dir, 0775, true);
-    $verFile   = $dir . '/ventas_version.txt';
-    $eventsLog = $dir . '/ventas_events.jsonl';
-    $fp = fopen($verFile, 'c+');
-    if ($fp) {
-        flock($fp, LOCK_EX);
-        $txt  = stream_get_contents($fp);
-        $cur  = intval(trim($txt ?? '0'));
-        $next = $cur + 1;
-        ftruncate($fp, 0);
-        rewind($fp);
-        fwrite($fp, (string)$next);
-        fflush($fp);
-        flock($fp, LOCK_UN);
-        fclose($fp);
-        $evt = json_encode(['v'=>$next,'ids'=>[$venta_id],'ts'=>time()]);
-        file_put_contents($eventsLog, $evt . PHP_EOL, FILE_APPEND | LOCK_EX);
+    $okDir = is_dir($dir) || @mkdir($dir, 0775, true);
+    if ($okDir && @is_writable($dir)) {
+        $verFile   = $dir . '/ventas_version.txt';
+        $eventsLog = $dir . '/ventas_events.jsonl';
+        $fp = @fopen($verFile, 'c+');
+        if ($fp) {
+            flock($fp, LOCK_EX);
+            rewind($fp);
+            $txt  = stream_get_contents($fp);
+            $cur  = intval(trim($txt ?? '0'));
+            $next = $cur + 1;
+            ftruncate($fp, 0);
+            rewind($fp);
+            fwrite($fp, (string)$next);
+            fflush($fp);
+            flock($fp, LOCK_UN);
+            fclose($fp);
+            $evt = json_encode(['v'=>$next,'ids'=>[$venta_id],'ts'=>time()]);
+            @file_put_contents($eventsLog, $evt . PHP_EOL, FILE_APPEND | LOCK_EX);
+        }
     }
 } catch (Throwable $e) { /* no interrumpir */ }
+
+// Notificar a pantallas de cocina sobre nuevos detalles creados (sin HTTP interno)
+if (!empty($detalles_creados)) {
+    try {
+        require_once __DIR__ . '/../cocina/notify_lib.php';
+        @cocina_notify(array_values(array_unique($detalles_creados)));
+    } catch (\Throwable $e) { /* noop */ }
+}
 
 success(['venta_id' => $venta_id, 'ultimo_detalle_id' => $ultimo_detalle_id]);

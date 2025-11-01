@@ -4,6 +4,7 @@
 // para despertar a las pantallas (long-poll) sin tocar la BD.
 
 header('Content-Type: application/json');
+require_once __DIR__ . '/notify_lib.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   http_response_code(405);
@@ -22,33 +23,16 @@ if (!$ids) {
   exit;
 }
 
-$dir = __DIR__ . '/runtime';
-@mkdir($dir, 0775, true);
-
-$verFile   = $dir . '/cocina_version.txt';
-$eventsLog = $dir . '/cocina_events.jsonl';
-
-$fp = fopen($verFile, 'c+'); // crea si no existe
-if (!$fp) {
+if (!cocina_notify($ids)) {
   http_response_code(500);
-  echo json_encode(['ok'=>false,'msg'=>'No se pudo abrir version.txt']);
+  echo json_encode(['ok'=>false,'msg'=>'No se pudo actualizar versión']);
   exit;
 }
 
-flock($fp, LOCK_EX);
-$txt  = stream_get_contents($fp);
-$cur  = intval(trim($txt ?? '0'));
-$next = $cur + 1;
-ftruncate($fp, 0);
-rewind($fp);
-fwrite($fp, (string)$next);
-fflush($fp);
-flock($fp, LOCK_UN);
-fclose($fp);
-
-// Anexa evento con versión e ids
-$evt = json_encode(['v'=>$next,'ids'=>$ids,'ts'=>time()]);
-file_put_contents($eventsLog, $evt . PHP_EOL, FILE_APPEND | LOCK_EX);
-
-echo json_encode(['ok'=>true,'version'=>$next]);
-
+// Responder versión actual calculando desde archivos (sin depender de helpers)
+$primary  = __DIR__ . '/runtime';
+$fallback = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'cocina_runtime';
+$v1 = file_exists($primary . '/cocina_version.txt') ? (int)@file_get_contents($primary . '/cocina_version.txt') : 0;
+$v2 = file_exists($fallback . '/cocina_version.txt') ? (int)@file_get_contents($fallback . '/cocina_version.txt') : 0;
+$ver = max($v1, $v2);
+echo json_encode(['ok'=>true,'version'=>$ver]);

@@ -43,5 +43,13 @@ if ($up) {
     $up->close();
 }
 
+// Notificar cambio a pantallas de cocina (nuevo detalle) sin HTTP interno
+try {
+    require_once __DIR__ . '/../cocina/notify_lib.php';
+    // Nota: insert_id no está disponible aquí; notificar último detalle de esta venta
+    $last = $conn->insert_id ?? null;
+    if ($last) { @cocina_notify([ (int)$last ]); }
+} catch (\Throwable $e) { /* noop */ }
+
 success(true);
 ?>

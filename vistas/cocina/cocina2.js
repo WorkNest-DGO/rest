@@ -44,6 +44,28 @@ window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina'
   `;
   document.head.appendChild(style);
 
+  function createCard(it){
+    const card = document.createElement('div');
+    card.className = 'kanban-item';
+    card.draggable = true;
+    card.dataset.id = it.detalle_id;
+    card.dataset.estado = it.estado;
+    card.dataset.productoId = it.producto_id;
+    card.innerHTML = `
+      <div class='title'>${it.producto} <small>x${it.cantidad}</small></div>
+      <div class='meta'>
+        <span>${it.destino}</span>
+        <span>${formatHora(it.estado === 'entregado' ? it.entregado_hr : it.hora)}</span>
+        ${it.observaciones ? `<span>Obs: ${escapeHtml(it.observaciones)}</span>` : ''}
+      </div>
+      <button class="btn-ver">Ver</button>
+    `;
+    const verBtn = card.querySelector('.btn-ver');
+    verBtn.addEventListener('click', ev => { ev.stopPropagation(); mostrarModalProducto(it); });
+    bindDrag(card);
+    return card;
+  }
+
   function render(items){
     const PID_ENVIO = Number(window.ENVIO_CASA_PRODUCT_ID || 9001);
     const PID_CARGO = Number(window.CARGO_PLATAFORMA_PRODUCT_ID || 9000);
@@ -65,24 +87,7 @@ window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina'
       }
       if (tipo && it.tipo !== tipo) return;
 
-      const card = document.createElement('div');
-      card.className = 'kanban-item';
-      card.draggable = true;
-      card.dataset.id = it.detalle_id;
-      card.dataset.estado = it.estado;
-      card.dataset.productoId = it.producto_id;
-      card.innerHTML = `
-        <div class='title'>${it.producto} <small>x${it.cantidad}</small></div>
-        <div class='meta'>
-          <span>${it.destino}</span>
-          <span>${formatHora(it.estado === 'entregado' ? it.entregado_hr : it.hora)}</span>
-          ${it.observaciones ? `<span>Obs: ${escapeHtml(it.observaciones)}</span>` : ''}
-        </div>
-        <button class="btn-ver">Ver</button>
-      `;
-      const verBtn = card.querySelector('.btn-ver');
-      verBtn.addEventListener('click', ev => { ev.stopPropagation(); mostrarModalProducto(it); });
-      bindDrag(card);
+      const card = createCard(it);
       (cols[it.estado] || cols.pendiente).appendChild(card);
     });
   }
@@ -203,6 +208,7 @@ window.ultimoDetalleCocina = parseInt(localStorage.getItem('ultimoDetalleCocina'
 
 // Long-poll por notificación (versión + ids)
 let cocinaVersion = Number(localStorage.getItem('cocinaVersion') || '0');
+let cocinaNoChangeTicks = 0;
 
 function columnaSelector(estado){
   return {
@@ -234,9 +240,17 @@ async function waitCambiosLoop(){
   try {
     const r = await fetch(`../../api/cocina/listen_cambios.php?since=${cocinaVersion}`, { cache:'no-store' });
     const data = await r.json();
+    // Siempre sincronizar la versión local con la del servidor,
+    // incluso cuando no haya cambios, para evitar quedar "atascado".
+    if (data && typeof data.version !== 'undefined') {
+      const verSrv = Number(data.version);
+      if (!Number.isNaN(verSrv)) {
+        cocinaVersion = verSrv;
+        localStorage.setItem('cocinaVersion', String(cocinaVersion));
+      }
+    }
     if (data.changed) {
-      cocinaVersion = Number(data.version) || cocinaVersion;
-      localStorage.setItem('cocinaVersion', String(cocinaVersion));
+      cocinaNoChangeTicks = 0;
       const ids = Array.isArray(data.ids) ? data.ids : [];
       if (ids.length) {
         const r2 = await fetch(`../../api/cocina/estados_por_ids.php`, {
@@ -246,6 +260,57 @@ async function waitCambiosLoop(){
         });
         const d2 = await r2.json();
         if (d2.ok && d2.estados) moverTarjetas(d2.estados);
+
+        // Agregar tarjetas nuevas (ids que no existen aún en el DOM)
+        const missing = ids.filter(id => !document.querySelector(`.kanban-item[data-id='${id}']`));
+        if (missing.length) {
+          try {
+            const r3 = await fetch(`../../api/cocina/detalles_por_ids.php`, {
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ ids: missing })
+            });
+            const d3 = await r3.json();
+            if (d3.ok && Array.isArray(d3.data)) {
+              // Aplicar filtros actuales al insertar
+              const txt = (document.querySelector('#txtFiltro')?.value || '').toLowerCase();
+              const tipo = (document.querySelector('#selTipoEntrega')?.value || '').toLowerCase();
+              d3.data.forEach(it => {
+                const PID_ENVIO = Number(window.ENVIO_CASA_PRODUCT_ID || 9001);
+                const PID_CARGO = Number(window.CARGO_PLATAFORMA_PRODUCT_ID || 9000);
+                const pid = Number(it.producto_id);
+                if (pid === PID_ENVIO || pid === PID_CARGO) return;
+                const cat = (it.categoria || '').toLowerCase();
+                if (rolUsuario === 'barra' && cat !== 'bebida') return;
+                if (rolUsuario === 'alimentos' && cat === 'bebida') return;
+                if (txt){
+                  const hay = (it.producto + ' ' + it.destino).toLowerCase().includes(txt);
+                  if (!hay) return;
+                }
+                if (tipo && it.tipo !== tipo) return;
+                // Evitar duplicados si aparece casi simultáneo
+                if (document.querySelector(`.kanban-item[data-id='${it.detalle_id}']`)) return;
+                const card = createCard(it);
+                (document.querySelector(columnaSelector(it.estado)) || document.querySelector('#col-pendiente')).prepend(card);
+                // Actualizar cache local
+                if (!cache.some(x => x.detalle_id === it.detalle_id)) cache.push(it);
+              });
+              // Actualizar último detalle para persistencia
+              const allIds = Array.from(document.querySelectorAll('.kanban-item')).map(n => parseInt(n.dataset.id,10)).filter(Boolean);
+              if (allIds.length) {
+                window.ultimoDetalleCocina = Math.max.apply(null, allIds);
+                localStorage.setItem('ultimoDetalleCocina', String(window.ultimoDetalleCocina));
+              }
+            }
+          } catch (_) { /* noop insertar nuevas */ }
+        }
+      }
+    } else {
+      cocinaNoChangeTicks++;
+      // Fallback: si no hay cambios varias rondas, recargar lista completa
+      if (cocinaNoChangeTicks >= 2 && typeof cargarDatosCocina === 'function') {
+        try { await cargarDatosCocina(); } catch(_){}
+        cocinaNoChangeTicks = 0;
       }
     }
   } catch (e) {

@@ -27,7 +27,7 @@ $dir = __DIR__ . '/runtime';
 $verFile   = $dir . '/ventas_version.txt';
 $eventsLog = $dir . '/ventas_events.jsonl';
 
-$fp = fopen($verFile, 'c+');
+$fp = @fopen($verFile, 'c+');
 if (!$fp) {
   http_response_code(500);
   echo json_encode(['ok'=>false,'msg'=>'No se pudo abrir ventas_version.txt']);
@@ -46,7 +46,6 @@ flock($fp, LOCK_UN);
 fclose($fp);
 
 $evt = json_encode(['v'=>$next,'ids'=>$ids,'ts'=>time()], JSON_UNESCAPED_UNICODE);
-file_put_contents($eventsLog, $evt . PHP_EOL, FILE_APPEND | LOCK_EX);
+@file_put_contents($eventsLog, $evt . PHP_EOL, FILE_APPEND | LOCK_EX);
 
 echo json_encode(['ok'=>true,'version'=>$next]);
-
