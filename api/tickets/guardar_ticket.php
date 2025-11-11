@@ -322,6 +322,12 @@ foreach ($subcuentas as $sub) {
             error('Datos de cheque incompletos');
         }
     }
+    // Motivo de descuento por subcuenta (opcional)
+    $motivo_desc = null;
+    if (isset($sub['desc_des'])) {
+        $motivo_desc = trim((string)$sub['desc_des']);
+        if ($motivo_desc === '') { $motivo_desc = null; }
+    }
     $fecha = date('Y-m-d H:i:s');
     $insTicket->bind_param(
         'iiidsidsissssisssssiissi',
@@ -355,9 +361,14 @@ foreach ($subcuentas as $sub) {
         error('Error al guardar ticket: ' . $insTicket->error);
     }
     $ticket_id = $insTicket->insert_id;
-    // Guardar descuento total del ticket con decimales (schema reciente: DECIMAL(10,2))
-    $updDesc = $conn->prepare('UPDATE tickets SET descuento = ? WHERE id = ?');
-    if ($updDesc) { $updDesc->bind_param('di', $descuento_total_sub, $ticket_id); $updDesc->execute(); $updDesc->close(); }
+    // Guardar descuento total y motivo del descuento (desc_des) en tickets
+    if ($motivo_desc !== null) {
+        $updDesc = $conn->prepare('UPDATE tickets SET descuento = ?, desc_des = ? WHERE id = ?');
+        if ($updDesc) { $updDesc->bind_param('dsi', $descuento_total_sub, $motivo_desc, $ticket_id); $updDesc->execute(); $updDesc->close(); }
+    } else {
+        $updDesc = $conn->prepare('UPDATE tickets SET descuento = ?, desc_des = NULL WHERE id = ?');
+        if ($updDesc) { $updDesc->bind_param('di', $descuento_total_sub, $ticket_id); $updDesc->execute(); $updDesc->close(); }
+    }
     // Registrar conceptos en ticket_descuentos si existe
     if ($cortesias_total_sub > 0 && !empty($cortesias_filtradas)) {
         if ($insC = $conn->prepare("INSERT INTO ticket_descuentos (ticket_id, tipo, venta_detalle_id, monto, usuario_id)

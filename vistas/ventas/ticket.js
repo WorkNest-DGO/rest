@@ -341,6 +341,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             html += ` Cambio: <span id="cambio${i}">0</span>`;
             html += `<div id="tot${i}"></div>`;
             div.innerHTML = html;
+            // Agregar campo de motivo de descuento dentro del panel de descuentos por subcuenta
+            try {
+                const panel = div.querySelector('.descuentosPanel');
+                if (panel) {
+                    const motivoDiv = document.createElement('div');
+                    motivoDiv.innerHTML = 'Motivo descuento: <input id="motivo_sub' + i + '" type="text" maxlength="255" placeholder="Describe el motivo">';
+                    panel.appendChild(motivoDiv);
+                }
+            } catch(_) {}
             cont.appendChild(div);
             // div.querySelector('#propina' + i).addEventListener('input', mostrarTotal);
             div.querySelector('#pago' + i).addEventListener('change', () => { mostrarTotal(); mostrarCamposPago(i); });
@@ -388,6 +397,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         setText('#lblDescTotal_sub'+idx, descuentoTotal);
         setText('#lblDescPromocion_sub'+idx, totalPromo);
         setText('#lblTotalEsperado_sub'+idx, totalEsperado);
+        // Marcar motivo como requerido si hay descuento aplicado en esta subcuenta
+        try {
+            const motivoEl = subDiv.querySelector('#motivo_sub'+idx);
+            if (motivoEl) {
+                motivoEl.required = (descuentoTotal > 0);
+            }
+        } catch(_) {}
         const detalleIds = prods.map(p => p.id || p.detalle_id || p.venta_detalle_id).filter(Boolean);
         window.__SUBS__ = window.__SUBS__ || [];
         window.__SUBS__[idx] = { idx, detalleIds, cortesias: Array.from(cortSet), pct, montoFijo, totalBruto: Number(totalBruto.toFixed(2)), descuentoTotal, totalEsperado };
@@ -647,6 +663,17 @@ function mostrarTotal() {
             let recibido = parseFloat(document.getElementById('recibido' + i).value || 0);
             const stateSub = window.__SUBS__ && window.__SUBS__[i] ? window.__SUBS__[i] : null;
             const total = stateSub ? Number(stateSub.totalEsperado || 0) : prods.reduce((s, p) => s + p.cantidad * p.precio_unitario, 0) ;
+            // Validar que se capture motivo cuando hay descuento aplicado
+            const motivoEl = document.getElementById('motivo_sub' + i);
+            const requiereMotivo = stateSub && Number(stateSub.descuentoTotal || 0) > 0;
+            if (requiereMotivo) {
+                const valorMotivo = (motivoEl && motivoEl.value) ? motivoEl.value.trim() : '';
+                if (!valorMotivo) {
+                    alert('Captura el motivo del descuento en la subcuenta ' + i);
+                    if (motivoEl) { motivoEl.focus(); }
+                    return;
+                }
+            }
             if (!tipo) {
                 alert('Selecciona tipo de pago en subcuenta ' + i);
                 return;
@@ -703,6 +730,7 @@ function mostrarTotal() {
                 serie_id: serie,
                 tipo_pago: tipo,
                 monto_recibido: recibido,
+                desc_des: (document.getElementById('motivo_sub' + i)?.value || '').trim(),
                 ...extra
             });
         }

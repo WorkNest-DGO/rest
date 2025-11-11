@@ -113,7 +113,9 @@ while ($row = $resultResumen->fetch_assoc()) {
 }
 $stmtResumen->close();
 
-$totalEsperado = $totalProductos + $totalPropinas;
+// Total esperado normalizado:
+// Usar tickets post-descuentos (total_esperado desde agregados) y sumar propinas registradas en ventas.
+$totalEsperado = $totalProductos + $totalPropinas; // valor provisional, se corrige tras calcular agregados
 
 // Agregados de descuentos y esperado (con tickets)
 $sqlAgg = "SELECT
@@ -134,6 +136,10 @@ if ($stmtAgg) {
     }
     $stmtAgg->close();
 }
+
+// Recalcular totalEsperado con base en agregados post-descuentos
+$__totalEsperadoProductos = (float)($rowAgg['total_esperado'] ?? 0);
+$totalEsperado = $__totalEsperadoProductos + $totalPropinas;
 
 // Obtener fondo inicial y fecha de inicio del corte
 $stmtFondo = $conn->prepare('SELECT c.fondo_inicial, c.fecha_inicio, u.nombre AS cajero
@@ -251,7 +257,7 @@ $resultado['total_propina_cheque']  = $totalPropinaCheque;
 $resultado['total_propina_tarjeta']  = $totalPropinaTarjeta;
 $resultado['total_descuento_promos']  = $totalDescuentoPromos;
 $resultado['total_propinas']  = $totalPropinas;
-$resultado['totalEsperado']   = $totalEsperado;
+$resultado['totalEsperado']   = $totalEsperado; // productos post-descuento + propinas
 $resultado['fondo']           = $fondoInicial;
 $resultado['total_depositos'] = $totalDepositos;
 $resultado['total_retiros']   = $totalRetiros;
