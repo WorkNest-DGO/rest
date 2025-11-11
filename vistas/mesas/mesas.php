@@ -163,7 +163,11 @@ window.usuarioActual = {
       setTimeout(tick, 1500);
     }
   }
-  document.addEventListener('DOMContentLoaded', () => setTimeout(tick, 1500));
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(tick, 150));
+  } else {
+    setTimeout(tick, 150);
+  }
 })();
 </script>
 </body>

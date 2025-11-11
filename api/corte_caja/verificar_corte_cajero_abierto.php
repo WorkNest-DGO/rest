@@ -10,14 +10,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     error('Método no permitido');
 }
 
-$sql = "SELECT c.id AS corte_id, u.id AS cajero_id, u.usuario, u.nombre
-        FROM corte_caja c
-        JOIN usuarios u ON u.id = c.usuario_id
-        WHERE u.rol = 'cajero' AND c.fecha_fin IS NULL
-        ORDER BY c.fecha_inicio DESC
-        LIMIT 1";
+$sqlPreferCajero = "
+  SELECT c.id AS corte_id, u.id AS usuario_id, u.usuario, u.nombre, u.rol
+  FROM corte_caja c
+  JOIN usuarios u ON u.id = c.usuario_id
+  WHERE c.fecha_fin IS NULL
+  ORDER BY (LOWER(TRIM(u.rol)) = 'cajero') DESC, c.fecha_inicio DESC
+  LIMIT 1
+";
 
-$res = $conn->query($sql);
+$res = $conn->query($sqlPreferCajero);
 if (!$res) {
     error('Error al verificar corte: ' . $conn->error);
 }
@@ -28,12 +30,12 @@ if ($abierto) {
     $row = $res->fetch_assoc();
     $payload['corte_id'] = (int)$row['corte_id'];
     $payload['cajero'] = [
-        'id' => (int)$row['cajero_id'],
+        'id' => (int)$row['usuario_id'],
         'usuario' => $row['usuario'],
-        'nombre' => $row['nombre']
+        'nombre' => $row['nombre'],
+        'rol' => $row['rol']
     ];
 }
 
 success($payload);
 ?>
-

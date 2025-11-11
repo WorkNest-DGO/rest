@@ -4,6 +4,11 @@
 
 header('Content-Type: application/json');
 
+// Evitar bloqueo por sesión: liberar el candado si hay sesión activa
+if (session_status() === PHP_SESSION_ACTIVE) {
+  @session_write_close();
+}
+
 $since    = isset($_GET['since']) ? intval($_GET['since']) : 0;
 $timeout  = 25;        // segundos
 $sleepUs  = 300000;    // 0.3s por iteración
