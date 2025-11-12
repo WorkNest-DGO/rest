@@ -50,7 +50,7 @@ if ($rol === 'cajero') {
     $sql = "SELECT c.id AS corte_id, u.id AS cajero_id
             FROM corte_caja c
             JOIN usuarios u ON u.id = c.usuario_id
-            WHERE u.rol = 'cajero' AND c.fecha_fin IS NULL
+            WHERE c.fecha_fin IS NULL
             ORDER BY c.fecha_inicio DESC
             LIMIT 1";
     $rs = $conn->query($sql);
@@ -162,3 +162,4 @@ if (!empty($ids_creados)) {
 }
 
 success(['venta_id' => $venta_id]);
+

@@ -17,6 +17,17 @@ if (!IS_PRIVILEGED) {
 const params = new URLSearchParams(location.search);
 const repartidorId = params.get('id');
 
+let usuariosRepartidores = [];
+async function cargarUsuariosRepartidores() {
+    try {
+        const resp = await fetch('../../api/usuarios/listar_repartidores.php');
+        const data = await resp.json();
+        usuariosRepartidores = (data && data.success) ? (data.resultado || []) : [];
+    } catch (e) {
+        console.error('No se pudieron cargar usuarios repartidores', e);
+    }
+}
+
 function diffMins(a, b) {
     const t1 = new Date(a).getTime();
     const t2 = new Date(b).getTime();
@@ -25,6 +36,9 @@ function diffMins(a, b) {
 
 async function cargarEntregas() {
     try {
+        if (!usuariosRepartidores.length) {
+            await cargarUsuariosRepartidores();
+        }
         let url = '../../api/repartidores/listar_entregas.php';
         const qs = new URLSearchParams();
         if (repartidorId) {
@@ -60,7 +74,7 @@ async function cargarEntregas() {
                     <td>${v.id}</td>
                     <td>${v.fecha}</td>
                     <td>${v.total}</td>
-                    <td>${v.repartidor}</td>
+                    <td></td>
                     <td>${productos}</td>
                     <td>${v.observacion || ''}</td>
                     <td>${asign}</td>
@@ -69,6 +83,52 @@ async function cargarEntregas() {
                     <td>${totalMin}</td>
                     <td>${caminoMin}</td>
                 `;
+
+                // Selector de repartidor (usuarios rol repartidor) solo en PENDIENTES (pendiente/en_camino)
+                const repTd = row.children[3];
+                if (v.estado_entrega === 'pendiente' || v.estado_entrega === 'en_camino') {
+                    const sel = document.createElement('select');
+                    sel.className = 'form-control form-control-sm';
+                    const ph = document.createElement('option');
+                    ph.value = '';
+                    ph.textContent = v.repartidor ? `Actual: ${v.repartidor}` : 'Seleccione';
+                    sel.appendChild(ph);
+                    (usuariosRepartidores || []).forEach(u => {
+                        const opt = document.createElement('option');
+                        opt.value = String(u.id);
+                        opt.textContent = u.nombre;
+                        if (v.usuario_id && Number(v.usuario_id) === Number(u.id)) {
+                            opt.selected = true;
+                            ph.textContent = u.nombre;
+                        }
+                        sel.appendChild(opt);
+                    });
+                    sel.addEventListener('change', async () => {
+                        const nuevo = parseInt(sel.value || '0', 10);
+                        if (!nuevo) return;
+                        try {
+                            const r = await fetch('../../api/repartidores/reasignar_repartidor.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ venta_id: v.id, repartidor_id: nuevo })
+                            }).then(r => r.json());
+                            if (!r.success) {
+                                alert(r.mensaje || 'No se pudo reasignar');
+                                return;
+                            }
+                            const selText = sel.selectedOptions[0]?.text || '';
+                            sel.options[0].textContent = selText || 'Seleccione';
+                            sel.selectedIndex = 0;
+                        } catch (e) {
+                            console.error(e);
+                            alert('Error al reasignar');
+                        }
+                    });
+                    repTd.appendChild(sel);
+                } else {
+                    // En entregadas: mostrar texto, sin opción de cambiar
+                    repTd.textContent = v.repartidor || '';
+                }
 
                 if (v.estado_entrega === 'pendiente') {
                     const btn = document.createElement('button');
@@ -287,3 +347,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     cargarEntregas();
 });
+
+document.addEventListener('DOMContentLoaded', cargarEntregas);
+

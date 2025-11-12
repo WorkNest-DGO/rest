@@ -805,15 +805,22 @@ function mostrarModalDesglose(dataApi) {
         html += '</ul>';
     }
 
-    // Totales por repartidor (si existe)
-    if (Array.isArray(r.total_repartidor) && r.total_repartidor.length) {
-        html += '<h4>Total por repartidor</h4><ul>';
-        r.total_repartidor.forEach(x => {
-            const nombre = (x?.nombre ?? '').toString();
-            const total = Number.parseFloat(x?.total) || 0;
-            html += `<li>${nombre}: $${total.toFixed(2)}</li>`;
-        });
-        html += '</ul>';
+    // Totales por repartidor + mostrador/rapido
+    {
+        const totalRapido = Number.parseFloat(r.total_rapido || 0);
+        const listaRep = Array.isArray(r.total_repartidor) ? r.total_repartidor : [];
+        if ((listaRep && listaRep.length) || totalRapido) {
+            html += '<h4>Total por repartidor</h4><ul>';
+            if (totalRapido) {
+                html += `<li>Mostrador/rapido: $${totalRapido.toFixed(2)}</li>`;
+            }
+            (listaRep || []).forEach(x => {
+                const nombre = (x?.nombre ?? '').toString();
+                const total = Number.parseFloat(x?.total) || 0;
+                html += `<li>${nombre}: $${total.toFixed(2)}</li>`;
+            });
+            html += '</ul>';
+        }
     }
 
 
@@ -1215,6 +1222,7 @@ function aplicarEnvioSiCorresponde() {
 async function actualizarSelectorUsuario() {
     const tipo = (document.getElementById('tipo_entrega')?.value || '').toLowerCase();
     const usuarioSel = document.getElementById('usuario_id');
+    const campoMesero = document.getElementById('campoMesero');
     if (!usuarioSel) return;
 
     if (tipo === 'domicilio') {
@@ -1226,16 +1234,19 @@ async function actualizarSelectorUsuario() {
             setLabelUsuario('Mesero:');
             await cargarMeseros();
         }
+        if (campoMesero) campoMesero.style.display = 'block';
     } else if (tipo === 'mesa') {
         setLabelUsuario('Mesero:');
         usuarioSel.disabled = true;
         if (typeof asignarMeseroPorMesa === 'function') {
             asignarMeseroPorMesa();
         }
+        if (campoMesero) campoMesero.style.display = 'block';
     } else { // 'rapido' u otros
-        setLabelUsuario('Mesero:');
-        usuarioSel.disabled = false;
-        await cargarMeseros();
+        // En venta rapida no se requiere seleccionar mesero
+        if (campoMesero) campoMesero.style.display = 'none';
+        usuarioSel.disabled = true;
+        usuarioSel.value = '';
     }
 
     if (typeof verificarActivacionProductos === 'function') {
@@ -1551,7 +1562,9 @@ async function registrarVenta() {
     const tipo = document.getElementById('tipo_entrega').value;
     const mesa_id = parseInt(document.getElementById('mesa_id').value);
     const repartidor_id = parseInt(document.getElementById('repartidor_id').value);
-    const usuario_id = parseInt(document.getElementById('usuario_id').value);
+    const usuario_id = (tipo === 'rapido')
+        ? (parseInt(window.usuarioId || '0', 10) || null)
+        : parseInt(document.getElementById('usuario_id').value);
     const observacion = document.getElementById('observacion').value.trim();
     // Obtener carrito (incluye enví­o si el panel está activo)
     const productos = obtenerCarritoActual();
@@ -2036,6 +2049,8 @@ if (tipoEntregaEl) {
 
         if (campoMesa) campoMesa.style.display = (tipo === 'mesa') ? 'block' : 'none';
         if (campoRepartidor) campoRepartidor.style.display = (tipo === 'domicilio') ? 'block' : 'none';
+        const campoMesero = document.getElementById('campoMesero');
+        if (campoMesero) campoMesero.style.display = (tipo === 'rapido') ? 'none' : 'block';
         if (campoObservacion) campoObservacion.style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
 
         actualizarSelectorUsuario();

@@ -94,7 +94,7 @@ ob_start();
           <select id="repartidor_id" name="repartidor_id" class="form-control"></select>
         </div>
 
-        <div class="form-group">
+        <div id="campoMesero" class="form-group">
           <label for="usuario_id" class="text-white">Mesero:</label>
           <select id="usuario_id" name="usuario_id" class="form-control"></select>
         </div>

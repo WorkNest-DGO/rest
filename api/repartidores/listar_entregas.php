@@ -17,7 +17,14 @@ if (isset($_GET['repartidor_id'])) {
 
 if ($repartidor_id) {
     $stmt = $conn->prepare(
-        "SELECT v.id, v.fecha, v.total, v.estatus, v.entregado, v.estado_entrega, v.fecha_asignacion, v.fecha_inicio, v.fecha_entrega, v.seudonimo_entrega, v.foto_entrega, v.observacion, r.nombre AS repartidor FROM ventas v JOIN repartidores r ON v.repartidor_id = r.id WHERE v.repartidor_id = ? AND v.estatus IN ('activa','cerrada') ORDER BY v.fecha DESC"
+        "SELECT v.id, v.usuario_id, v.repartidor_id, v.fecha, v.total, v.estatus, v.entregado, v.estado_entrega, v.fecha_asignacion, v.fecha_inicio, v.fecha_entrega, v.seudonimo_entrega, v.foto_entrega, v.observacion,
+                COALESCE(u.nombre, r.nombre) AS repartidor
+           FROM ventas v
+      LEFT JOIN usuarios u ON u.id = v.usuario_id AND u.rol = 'repartidor'
+      LEFT JOIN repartidores r ON r.id = v.repartidor_id
+          WHERE v.repartidor_id = ?
+            AND v.estatus IN ('activa','cerrada')
+       ORDER BY v.fecha DESC"
     );
     if (!$stmt) {
         error('Error al preparar consulta: ' . $conn->error);
@@ -25,7 +32,14 @@ if ($repartidor_id) {
     $stmt->bind_param('i', $repartidor_id);
 } else {
     $stmt = $conn->prepare(
-        "SELECT v.id, v.fecha, v.total, v.estatus, v.entregado, v.estado_entrega, v.fecha_asignacion, v.fecha_inicio, v.fecha_entrega, v.seudonimo_entrega, v.foto_entrega, v.observacion, r.nombre AS repartidor FROM ventas v JOIN repartidores r ON v.repartidor_id = r.id WHERE v.tipo_entrega = 'domicilio' AND v.estatus IN ('activa','cerrada') ORDER BY v.fecha DESC"
+        "SELECT v.id, v.usuario_id, v.repartidor_id, v.fecha, v.total, v.estatus, v.entregado, v.estado_entrega, v.fecha_asignacion, v.fecha_inicio, v.fecha_entrega, v.seudonimo_entrega, v.foto_entrega, v.observacion,
+                COALESCE(u.nombre, r.nombre) AS repartidor
+           FROM ventas v
+      LEFT JOIN usuarios u ON u.id = v.usuario_id AND u.rol = 'repartidor'
+      LEFT JOIN repartidores r ON r.id = v.repartidor_id
+          WHERE v.tipo_entrega = 'domicilio'
+            AND v.estatus IN ('activa','cerrada')
+       ORDER BY v.fecha DESC"
     );
     if (!$stmt) {
         error('Error al preparar consulta: ' . $conn->error);
@@ -41,6 +55,8 @@ while ($row = $res->fetch_assoc()) {
     $ventas[$row['id']] = [
         'id'          => (int)$row['id'],
         'fecha'       => $row['fecha'],
+        'usuario_id'  => isset($row['usuario_id']) ? (int)$row['usuario_id'] : null,
+        'repartidor_id' => isset($row['repartidor_id']) ? (int)$row['repartidor_id'] : null,
         'total'       => (float)$row['total'],
         'estatus'     => $row['estatus'],
         'entregado'   => (int)$row['entregado'],

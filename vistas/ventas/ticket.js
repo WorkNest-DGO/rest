@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderProductos() {
         const tbody = document.querySelector('#tablaProductos tbody');
         tbody.innerHTML = '';
-        productos.forEach(p => {
+        productos.forEach((p, idx) => {
             const tr = document.createElement('tr');
             const detalleId = p.id || p.detalle_id || p.venta_detalle_id || null;
             const subtotal = (parseFloat(p.cantidad) || 0) * (parseFloat(p.precio_unitario) || 0);
@@ -276,6 +276,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             tr.innerHTML = `<td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td class="text-center">${chkHtml}</td>`;
             const td = document.createElement('td');
             td.appendChild(sel);
+            const btnDiv = document.createElement('button');
+            btnDiv.type = 'button';
+            btnDiv.className = 'btn btn-sm btn-secondary';
+            btnDiv.style.marginLeft = '6px';
+            btnDiv.textContent = 'Dividir';
+            btnDiv.disabled = !(Number(p.cantidad) > 1);
+            btnDiv.addEventListener('click', () => {
+                const cant = Number(p.cantidad) || 0;
+                if (cant <= 1) return;
+                p.cantidad = cant - 1;
+                const nuevo = Object.assign({}, p, { cantidad: 1 });
+                productos.splice(idx + 1, 0, nuevo);
+                renderProductos();
+                renderSubcuentas();
+            });
+            td.appendChild(btnDiv);
             tr.appendChild(td);
             tbody.appendChild(tr);
         });
