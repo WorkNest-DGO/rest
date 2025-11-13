@@ -39,6 +39,7 @@ if ($repartidor_id) {
       LEFT JOIN repartidores r ON r.id = v.repartidor_id
           WHERE v.tipo_entrega = 'domicilio'
             AND v.estatus IN ('activa','cerrada')
+            AND (u.id IS NOT NULL OR v.repartidor_id = 4)
        ORDER BY v.fecha DESC"
     );
     if (!$stmt) {

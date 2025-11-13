@@ -57,6 +57,7 @@ async function cargarHistorial(page = currentPage) {
                     <td>${v.total}</td>
                     <td>${v.tipo_entrega}</td>
                     <td>${destino || ''}</td>
+                    <td>${v.observacion ? String(v.observacion) : ''}</td>
                     <td>${v.estatus}</td>
                     <td>${entregado}</td>
                     <td><button class=\"btn custom-btn btn-detalle\" data-id=\"${id}\" data-toggle=\"modal\" data-target=\"#modal-detalles\">Ver detalles</button></td>
@@ -454,7 +455,7 @@ async function verificarCorte() {
             cont.innerHTML = '';
 
             if (data.success && data.resultado.abierto) {
-                cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCorte">Cerrar corte</button> <button id="btnCorteTemporal" class="btn btn-warning">Corte Temporal</button>`;
+                cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCorte">Cerrar corte</button> <button id="btnCorteTemporal" class="btn btn-warning">Corte Temporal</button> <button id="btnPropinasUsuarios" class="btn custom-btn">Propinas por usuario</button>`;
                 const btnCerrar = document.getElementById('btnCerrarCorte');
                 if (btnCerrar) {
                     btnCerrar.addEventListener('click', (ev) => {
@@ -463,6 +464,8 @@ async function verificarCorte() {
                     });
                 }
                 document.getElementById('btnCorteTemporal').addEventListener('click', abrirCorteTemporal);
+                const btnProp = document.getElementById('btnPropinasUsuarios');
+                if (btnProp) btnProp.addEventListener('click', abrirPropinasPorUsuario);
                 habilitarCobro();
             } else {
                 cont.innerHTML = `<button class="btn custom-btn" id="btnAbrirCaja">Abrir caja</button>`;
@@ -633,6 +636,58 @@ function abrirCorteTemporal() {
                 guardarCorteTemporal(r);
             };
         });
+}
+
+// Consulta y muestra propinas agrupadas por usuario (mesero)
+async function abrirPropinasPorUsuario() {
+    try {
+        const resp = await fetch('../../api/ventas/propinas_por_usuario.php');
+        const data = await resp.json();
+        if (!data || !data.success) {
+            alert((data && data.mensaje) || 'No se pudo consultar propinas');
+            return;
+        }
+        const payload = data.resultado || {};
+        let detalle = payload.detalle || [];
+        // Mostrar solo usuarios con propina > 0
+        detalle = detalle.filter(r => Number(r.total || 0) > 0);
+        const tot = payload.totales || {};
+        if (!detalle.length) {
+            const cont = document.getElementById('propinasUsuariosContenido');
+            if (cont) cont.innerHTML = '<div class="text-center text-muted">Sin propinas registradas.</div>';
+            showModal('#modalPropinasUsuarios');
+            return;
+        }
+
+        let html = '<div class="table-responsive">';
+        html += '<table class="styled-table">';
+        html += '<thead><tr><th>Usuario</th><th>Efectivo</th><th>Cheque</th><th>Tarjeta</th><th>Total</th></tr></thead><tbody>';
+        detalle.forEach(r => {
+            html += `<tr>
+                        <td>${r.usuario || ''}</td>
+                        <td>$${Number(r.propina_efectivo || 0).toFixed(2)}</td>
+                        <td>$${Number(r.propina_cheque || 0).toFixed(2)}</td>
+                        <td>$${Number(r.propina_tarjeta || 0).toFixed(2)}</td>
+                        <td><strong>$${Number(r.total || 0).toFixed(2)}</strong></td>
+                     </tr>`;
+        });
+        html += '</tbody>';
+        html += `<tfoot><tr>
+                    <th>Total</th>
+                    <th>$${Number(tot.efectivo || 0).toFixed(2)}</th>
+                    <th>$${Number(tot.cheque || 0).toFixed(2)}</th>
+                    <th>$${Number(tot.tarjeta || 0).toFixed(2)}</th>
+                    <th>$${Number(tot.total || 0).toFixed(2)}</th>
+                 </tr></tfoot>`;
+        html += '</table></div>';
+
+        const cont = document.getElementById('propinasUsuariosContenido');
+        if (cont) cont.innerHTML = html;
+        showModal('#modalPropinasUsuarios');
+    } catch (e) {
+        console.error(e);
+        alert('Error de red al consultar');
+    }
 }
 
 function generarHTMLCorte(r) {
@@ -1805,7 +1860,11 @@ async function verDetalles(id) {
             if (info.foto_entrega) {
                 html += `<p>Evidencia:<br><img src="../../uploads/evidencias/${info.foto_entrega}" width="300"></p>`;
             }
-            html += `<button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button> <button hidden class="btn custom-btn" id="cerrarDetalle" data-dismiss="modal">Cerrar</button>`;
+            html += `<div class="mt-2">
+                        <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button>
+                        ${ventaCerrada ? '<button class="btn custom-btn" id="reimprimirTicket" style="margin-left:8px;">Reimprimir ticket</button>' : ''}
+                        <button hidden class="btn custom-btn" id="cerrarDetalle" data-dismiss="modal">Cerrar</button>
+                      </div>`;
 
             contenedor.innerHTML = html;
             showModal('#modal-detalles');
@@ -1851,6 +1910,17 @@ async function verDetalles(id) {
                 localStorage.setItem('ticketData', JSON.stringify(payload));
                 imprimirTicket(id);
             });
+
+            // Botón de reimpresión: visible solo si la venta está cerrada
+            if (ventaCerrada) {
+                const btnReimp = document.getElementById('reimprimirTicket');
+                if (btnReimp) {
+                    btnReimp.addEventListener('click', () => {
+                        // Reimprime los tickets ya generados para esta venta desde el backend
+                        window.open('../../api/tickets/reimprime_ticket.php?venta_id=' + encodeURIComponent(id));
+                    });
+                }
+            }
         } else {
             alert(data.mensaje);
         }

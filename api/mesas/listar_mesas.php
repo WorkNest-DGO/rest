@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../utils/response.php';
 $query = "SELECT m.id, m.nombre, m.estado, m.capacidad, m.mesa_principal_id,
                 m.area_id, m.ticket_enviado, COALESCE(ca.nombre, m.area) AS area_nombre,
                 m.estado_reserva, m.nombre_reserva, m.fecha_reserva,
-                m.tiempo_ocupacion_inicio, m.usuario_id,
+                m.tiempo_ocupacion_inicio, m.usuario_id, m.alineacion_id,
                 u.nombre AS mesero_nombre,
                 v.id AS venta_id
           FROM mesas m
@@ -37,6 +37,7 @@ while ($row = $result->fetch_assoc()) {
         'fecha_reserva'     => $row['fecha_reserva'],
         'tiempo_ocupacion_inicio' => $row['tiempo_ocupacion_inicio'],
         'usuario_id'        => $row['usuario_id'] !== null ? (int)$row['usuario_id'] : null,
+        'alineacion_id'     => $row['alineacion_id'] !== null ? (int)$row['alineacion_id'] : null,
         'venta_activa'      => $row['venta_id'] !== null,
         'venta_id'          => $row['venta_id'] !== null ? (int)$row['venta_id'] : null,
         'mesero_nombre'     => $row['mesero_nombre'] ?? null

@@ -204,6 +204,7 @@ ob_start();
           <th>Total</th>
           <th>Tipo</th>
           <th>Destino</th>
+          <th>Observación</th>
           <th>Estatus</th>
           <th>Entregado</th>
           <th>Ver detalles</th>
@@ -238,6 +239,25 @@ ob_start();
     </div>
   </div>
 </div>
+<!-- Modal: Propinas por usuario -->
+<div class="modal fade" id="modalPropinasUsuarios" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Propinas por usuario</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <div id="propinasUsuariosContenido">
+          <div class="text-muted">Cargando...</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+ </div>
 <!-- MODAL NORMALIZED 2025-08-14 -->
 <div class="modal fade" id="modalDesglose" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog" role="document">

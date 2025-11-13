@@ -22,7 +22,7 @@ $types = '';
 // Filtro por búsqueda
 if ($busqueda !== '') {
     $like = "%{$busqueda}%";
-    $conditions[] = "CONCAT_WS(' ', v.id, t.folio, v.fecha, v.total, v.estatus, v.tipo_entrega, t.tipo_pago, vw.usuario, t.mesa_nombre, t.mesero_nombre) LIKE ?";
+    $conditions[] = "CONCAT_WS(' ', v.id, t.folio, v.fecha, v.total, v.estatus, v.tipo_entrega, t.tipo_pago, vw.usuario, t.mesa_nombre, t.mesero_nombre, v.observacion) LIKE ?";
     $params[] = $like;
     $types .= 's';
 }
@@ -49,7 +49,7 @@ $totalRegistros = (int)$countResult->fetch_assoc()['total'];
 $totalPaginas = (int)ceil($totalRegistros / $limite);
 
 $query = "SELECT v.id AS venta_id, v.fecha, v.estatus, vw.usuario, vw.mesa, vw.repartidor,
-                 v.tipo_entrega, v.usuario_id, v.entregado, v.sede_id,
+                 v.tipo_entrega, v.usuario_id, v.entregado, v.sede_id, v.observacion,
                  GROUP_CONCAT(t.folio ORDER BY t.folio) AS folio,
                  MAX(t.mesa_nombre) AS mesa_nombre,
                  MAX(t.mesero_nombre) AS mesero_nombre,

@@ -61,6 +61,8 @@ async function cargarEntregas() {
             if (!IS_PRIVILEGED) {
                 registros = registros.filter(v => parseInt(v.usuario_id) === USER_ID);
             }
+            // Mostrar solo registros del repartidor "Repartidor casa"
+
             registros.forEach(v => {
                 const row = document.createElement('tr');
                 const productos = v.productos.map(p => `${p.nombre} (${p.cantidad})`).join(', ');
@@ -131,30 +133,54 @@ async function cargarEntregas() {
                 }
 
                 if (v.estado_entrega === 'pendiente') {
+                    const accionTd = document.createElement('td');
                     const btn = document.createElement('button');
                     btn.className='btn custom-btn';
                     btn.textContent = 'En camino';
                     btn.addEventListener('click', () => marcarEnCamino(v.id));
-                    const accionTd = document.createElement('td');
+
+                    const btnImp = document.createElement('button');
+                    btnImp.className='btn custom-btn';
+                    btnImp.style.marginLeft = '8px';
+                    btnImp.textContent = 'Imprimir ticket';
+                    btnImp.addEventListener('click', () => imprimirTicketReparto(v.id));
+
                     accionTd.appendChild(btn);
+                    accionTd.appendChild(btnImp);
                     row.appendChild(accionTd);
                     pendientesBody.appendChild(row);
                 } else if (v.estado_entrega === 'en_camino') {
+                    const accionTd = document.createElement('td');
                     const btn = document.createElement('button');
                     btn.className='btn custom-btn';
                     btn.textContent = 'Marcar entregado';
                     btn.addEventListener('click', () => marcarEntregada(v.id));
-                    const accionTd = document.createElement('td');
+
+                    const btnImp = document.createElement('button');
+                    btnImp.className='btn custom-btn';
+                    btnImp.style.marginLeft = '8px';
+                    btnImp.textContent = 'Imprimir ticket';
+                    btnImp.addEventListener('click', () => imprimirTicketReparto(v.id));
+
                     accionTd.appendChild(btn);
+                    accionTd.appendChild(btnImp);
                     row.appendChild(accionTd);
                     pendientesBody.appendChild(row);
                 } else {
+                    const detTd = document.createElement('td');
                     const btn = document.createElement('button');
                     btn.className='btn custom-btn';
                     btn.textContent = 'Ver detalle';
                     btn.addEventListener('click', () => mostrarDetalle(v));
-                    const detTd = document.createElement('td');
+
+                    const btnImp = document.createElement('button');
+                    btnImp.className='btn custom-btn';
+                    btnImp.style.marginLeft = '8px';
+                    btnImp.textContent = 'Imprimir ticket';
+                    btnImp.addEventListener('click', () => imprimirTicketReparto(v.id));
+
                     detTd.appendChild(btn);
+                    detTd.appendChild(btnImp);
                     row.appendChild(detTd);
                     entregadasBody.appendChild(row);
                 }
@@ -350,3 +376,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('DOMContentLoaded', cargarEntregas);
 
+// Imprimir ticket desde la lista de repartos
+async function imprimirTicketReparto(ventaId) {
+    try {
+        const resp = await fetch('../../api/ventas/detalle_venta.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ venta_id: parseInt(ventaId) })
+        });
+        const data = await resp.json();
+        if (data && data.success) {
+            const info = data.resultado || data;
+            const total = info.total || (Array.isArray(info.productos) ? info.productos.reduce((s, p) => s + parseFloat(p.subtotal), 0) : 0);
+            const payload = {
+                venta_id: parseInt(ventaId),
+                usuario_id: info.usuario_id || 1,
+                fecha: info.fecha || '',
+                propina_efectivo: info.propina_efectivo || 0,
+                propina_cheque: info.propina_cheque || 0,
+                propina_tarjeta: info.propina_tarjeta || 0,
+                productos: info.productos || [],
+                total,
+                sede_id: info.sede_id || 1
+            };
+            localStorage.setItem('ticketData', JSON.stringify(payload));
+            // Ir a la vista de ticket para imprimir
+            window.location.href = '../ventas/ticket.php?venta=' + encodeURIComponent(ventaId);
+        } else {
+            alert((data && data.mensaje) || 'No se pudo obtener el detalle de la venta');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al obtener detalles para imprimir');
+    }
+}
