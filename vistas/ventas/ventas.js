@@ -1224,6 +1224,15 @@ async function actualizarSelectorUsuario() {
     const usuarioSel = document.getElementById('usuario_id');
     const campoMesero = document.getElementById('campoMesero');
     if (!usuarioSel) return;
+    if (tipo === 'domicilio' && !esRepartidorCasaSeleccionado()) {
+        if (campoMesero) campoMesero.style.display = 'none';
+        usuarioSel.disabled = true;
+        usuarioSel.value = '';
+        if (typeof verificarActivacionProductos === 'function') {
+            verificarActivacionProductos();
+        }
+        return;
+    }
 
     if (tipo === 'domicilio') {
         usuarioSel.disabled = false;
@@ -2050,7 +2059,7 @@ if (tipoEntregaEl) {
         if (campoMesa) campoMesa.style.display = (tipo === 'mesa') ? 'block' : 'none';
         if (campoRepartidor) campoRepartidor.style.display = (tipo === 'domicilio') ? 'block' : 'none';
         const campoMesero = document.getElementById('campoMesero');
-        if (campoMesero) campoMesero.style.display = (tipo === 'rapido') ? 'none' : 'block';
+        if (campoMesero) campoMesero.style.display = (tipo === 'mesa') ? 'block' : 'none';
         if (campoObservacion) campoObservacion.style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
 
         actualizarSelectorUsuario();
