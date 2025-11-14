@@ -104,6 +104,33 @@ ob_start();
     </div>
     </div>
 
+<!-- Modal para asignar mesero (embebido) -->
+<div id="modalAsignarMesero" class="modal-flotante modal fade" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Asignar mesero a mesa</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="selMeseroAsignar"><strong>Mesero</strong></label>
+          <select id="selMeseroAsignar" class="form-control"></select>
+        </div>
+        <div class="form-group mt-2">
+          <label for="passMeseroAsignar">Contraseña del mesero</label>
+          <input type="password" id="passMeseroAsignar" class="form-control" autocomplete="current-password">
+          <small class="form-text text-muted" id="infoAsignarMesero"></small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn custom-btn" id="btnConfirmarAsignacion">Asignar</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
 <div>
 <section class="section">
 	<h1>Distribución de mesas</h1>

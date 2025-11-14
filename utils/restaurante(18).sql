@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 13-11-2025 a las 18:32:39
+-- Tiempo de generación: 13-11-2025 a las 21:07:43
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -20,8 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `restaurante`
 --
-CREATE DATABASE IF NOT EXISTS `restaurante` DEFAULT CHARACTER SET utf16le COLLATE utf16le_bin;
-USE `restaurante`;
 
 DELIMITER $$
 --
@@ -256,6 +254,69 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_recalcular_todos` ()   BEGIN
         CALL sp_recalcular_productos_por_insumo(v_insumo_id);
     END LOOP;
     CLOSE cur;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_resumen_productos_por_persona` (IN `p_fecha_inicio` DATETIME, IN `p_fecha_fin` DATETIME)   BEGIN
+    /* 
+       Resumen de productos vendidos por persona (mesero / repartidor)
+       en el rango de fechas dado, sólo ventas cerradas (no canceladas).
+    */
+
+    SELECT
+        t.persona_tipo,
+        t.persona_id,
+        t.persona_nombre,
+        t.producto_id,
+        t.producto_nombre,
+        SUM(t.cantidad) AS total_cantidad
+    FROM (
+        -- MESEROS (ventas en mesa / rápido, asociadas a usuarios)
+        SELECT
+            'mesero' AS persona_tipo,
+            u.id     AS persona_id,
+            u.nombre AS persona_nombre,
+            p.id     AS producto_id,
+            p.nombre AS producto_nombre,
+            vd.cantidad
+        FROM ventas v
+        INNER JOIN venta_detalles vd ON vd.venta_id   = v.id
+        INNER JOIN productos      p  ON p.id          = vd.producto_id
+        INNER JOIN usuarios       u  ON u.id          = v.usuario_id
+        WHERE
+            v.fecha BETWEEN p_fecha_inicio AND p_fecha_fin
+            AND v.estatus = 'cerrada'
+            AND u.rol = 'mesero'
+
+        UNION ALL
+
+        -- REPARTIDORES (ventas a domicilio ligadas a tabla repartidores)
+        SELECT
+            'repartidor' AS persona_tipo,
+            r.id         AS persona_id,
+            r.nombre     AS persona_nombre,
+            p.id         AS producto_id,
+            p.nombre     AS producto_nombre,
+            vd.cantidad
+        FROM ventas v
+        INNER JOIN venta_detalles vd ON vd.venta_id      = v.id
+        INNER JOIN productos      p  ON p.id             = vd.producto_id
+        INNER JOIN repartidores   r  ON r.id             = v.repartidor_id
+        WHERE
+            v.fecha BETWEEN p_fecha_inicio AND p_fecha_fin
+            AND v.estatus = 'cerrada'
+            AND v.repartidor_id IS NOT NULL
+    ) AS t
+    GROUP BY
+        t.persona_tipo,
+        t.persona_id,
+        t.persona_nombre,
+        t.producto_id,
+        t.producto_nombre
+    ORDER BY
+        t.persona_tipo,
+        t.persona_nombre,
+        total_cantidad DESC,
+        t.producto_nombre;
 END$$
 
 DELIMITER ;

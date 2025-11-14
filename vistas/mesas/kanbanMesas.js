@@ -61,20 +61,8 @@ async function cargarMesas() {
         if (data.success) {
             const mesas = data.resultado;
             mesasCache = mesas;
-            const mapa = {};
-
-            mesas.forEach(m => {
-                const uid = parseInt(m.usuario_id);
-                if (uid) {
-                    if (!mapa[uid]) {
-                        mapa[uid] = { id: uid, nombre: m.mesero_nombre };
-                    }
-                }
-            });
-
-            const meserosUnicos = Object.values(mapa).sort((a, b) => a.nombre.localeCompare(b.nombre));
-            meseros = meserosUnicos;
-            renderKanban(meserosUnicos, mesas);
+            // Tablero único: todas las mesas en un solo panel
+            renderTableroUnico(mesas);
         } else {
             alert(data.mensaje);
         }
@@ -85,51 +73,30 @@ async function cargarMesas() {
 }
 
 
-function crearColumnas(container, listaMeseros) {
+function crearColumnaUnica(container) {
     if (!container) return;
-    if (!Array.isArray(listaMeseros)) return;
-
-    listaMeseros.forEach(me => {
-        const li = document.createElement('li');
-        li.className = 'drag-column drag-column-on-hold';
-        li.classList.add('kanban-board');
-        li.dataset.meseroId = me.id;
-
-        const header = document.createElement('span');
-        header.className = 'drag-column-header';
-        header.innerHTML = `<h3>${me.nombre}</h3>`;
-        li.appendChild(header);
-
-        const ul = document.createElement('ul');
-        ul.className = 'drag-inner-list kanban-dropzone';
-        li.appendChild(ul);
-
-        container.appendChild(li);
-    });
-
-    const liSin = document.createElement('li');
-    liSin.className = 'drag-column drag-column-on-hold';
-    liSin.classList.add('kanban-board');
-    liSin.dataset.meseroId = 'sin';
-    const headerSin = document.createElement('span');
-    headerSin.className = 'drag-column-header';
-    headerSin.innerHTML = '<h3>No asignado</h3>';
-    liSin.appendChild(headerSin);
-    const ulSin = document.createElement('ul');
-    ulSin.className = 'drag-inner-list kanban-dropzone';
-    liSin.appendChild(ulSin);
-    container.appendChild(liSin);
+    const li = document.createElement('li');
+    li.className = 'drag-column drag-column-on-hold kanban-board';
+    li.dataset.meseroId = 'todas';
+    const header = document.createElement('span');
+    header.className = 'drag-column-header';
+    header.innerHTML = '<h3>Todas las mesas</h3>';
+    li.appendChild(header);
+    const ul = document.createElement('ul');
+    ul.className = 'drag-inner-list kanban-dropzone';
+    li.appendChild(ul);
+    container.appendChild(li);
 }
 
 /** Crea las columnas por mesero y agrega las tarjetas de mesas */
-function renderKanban(listaMeseros, mesas) {
+function renderTableroUnico(mesas) {
     const cont = document.getElementById('kanban-list');
     if (!cont) {
         console.error('Contenedor #kanban-list no encontrado');
         return;
     }
     cont.innerHTML = '';
-    crearColumnas(cont, listaMeseros);
+    crearColumnaUnica(cont);
 
     const uniones = {};
     mesas.forEach(m => {
@@ -139,18 +106,11 @@ function renderKanban(listaMeseros, mesas) {
         }
     });
 
-    const mapaMeseros = listaMeseros.reduce((acc, me) => {
-        acc[String(me.id)] = me.nombre;
-        return acc;
-    }, {});
+    const mapaMeseros = {}; // nombre dinámico si viene en la mesa
 
-    // Asignar mesas a columnas
-
+    // Colocar todas las mesas en la única columna
+    const col = cont.querySelector('li[data-mesero-id="todas"] .drag-inner-list');
     mesas.forEach(m => {
-        let col = cont.querySelector(`li[data-mesero-id="${m.usuario_id}"] .drag-inner-list`);
-        if (!col) {
-            col = cont.querySelector('li[data-mesero-id="sin"] .drag-inner-list');
-        }
         if (!col) return;
         const card = document.createElement('li');
         card.className = 'drag-item mesa kanban-item';
@@ -169,7 +129,7 @@ function renderKanban(listaMeseros, mesas) {
         }
 
         const ventaTxt = m.venta_activa ? `Venta activa: ${m.venta_id}` : 'Sin venta';
-        const meseroNombre = mapaMeseros[String(m.usuario_id)] || null;
+        const meseroNombre = m.mesero_nombre || null;
         const meseroTxt = meseroNombre ? `Mesero: ${meseroNombre}` : 'Sin mesero asignado';
         const reservaTxt = m.estado_reserva === 'reservada' ? `Reservada: ${m.nombre_reserva} (${m.fecha_reserva})` : '';
         let ocupacionTxt = '';
@@ -180,10 +140,14 @@ function renderKanban(listaMeseros, mesas) {
         }
 
         const detallesBtn = (m.estado === 'ocupada') ? '<button class="detalles">Detalles</button>' : '';
+        const asignarBtnHTML = m.usuario_id ? `<button class="asignar" data-id="${m.id}" hidden>Asignar mesero</button>`
+                                            : `<button class="asignar" data-id="${m.id}">Asignar mesero</button>`;
+        const cambiarBtnHTML = `<button class="cambiar" data-id="${m.id}" hidden>Cambiar estado</button>`;
         const botoneraHTML = `
             ${detallesBtn}
+            ${asignarBtnHTML}
             <button class="dividir" data-id="${m.id}" hidden>Dividir</button>
-            <button class="cambiar" data-id="${m.id}">Cambiar estado</button>
+            ${cambiarBtnHTML}
             <button class="ticket" data-mesa="${m.id}" data-nombre="${m.nombre}" data-venta="${m.venta_id || ''}" HIDDEN>Enviar ticket</button>`;
 
         card.innerHTML = `
@@ -203,6 +167,7 @@ function renderKanban(listaMeseros, mesas) {
         const puedeEditar = usuarioActual.rol === 'admin' || (m.usuario_id && parseInt(m.usuario_id) === usuarioActual.id);
         const btnCambiar = card.querySelector('button.cambiar');
         const btnDividir = card.querySelector('button.dividir');
+        const btnAsignar = card.querySelector('button.asignar');
 
         if (!window.__corteAbiertoGlobal) {
             // Sin corte abierto: no permitir cambios de estado. Mostrar leyenda en lugar del botón.
@@ -215,19 +180,25 @@ function renderKanban(listaMeseros, mesas) {
             // Evitar acciones de reserva/cambio/dividir
             btnDividir && (btnDividir.disabled = true);
         } else {
-            // Con corte abierto: comportamiento normal con permisos
-            if (puedeEditar) {
-                if (m.estado === 'libre' && m.estado_reserva === 'ninguna') {
-                    card.addEventListener('click', () => reservarMesa(m.id));
+            // Con corte abierto: al seleccionar la mesa, primero asignar mesero si no tiene
+            card.addEventListener('click', () => {
+                if (!m.usuario_id) {
+                    abrirAsignarMesero(m);
+                } else if (puedeEditar) {
+                    // Permitir flujos existentes
+                    if (m.estado === 'libre' && m.estado_reserva === 'ninguna') {
+                        reservarMesa(m.id);
+                    }
+                } else {
+                    // No es el mesero asignado: requiere pass para cambiar estado
+                    // pero ver detalles sigue con botón dedicado
                 }
-                btnCambiar.addEventListener('click', ev => { ev.stopPropagation(); abrirCambioEstado(m); });
-                btnDividir.addEventListener('click', ev => { ev.stopPropagation(); dividirMesa(btnDividir.dataset.id); });
-            } else {
-                // Permitir cambiar estado con validación de contraseña del mesero asignado
-                btnCambiar.addEventListener('click', ev => { ev.stopPropagation(); abrirCambioEstado(m); });
-                // Mantener restringido dividir
-                btnDividir.disabled = true;
+            });
+            if (btnAsignar) {
+                btnAsignar.addEventListener('click', ev => { ev.stopPropagation(); abrirAsignarMesero(m); });
             }
+            btnCambiar.addEventListener('click', ev => { ev.stopPropagation(); abrirCambioEstado(m); });
+            btnDividir.addEventListener('click', ev => { ev.stopPropagation(); dividirMesa(btnDividir.dataset.id); });
         }
 
         const btnDetalles = card.querySelector('button.detalles');
@@ -247,7 +218,8 @@ function renderKanban(listaMeseros, mesas) {
         col.appendChild(card);
     });
 
-    activarDrag();
+    // Drag irrelevante con una columna; se puede omitir o dejar activo
+    // activarDrag();
     try { ajustarAlturasKanban(); } catch(_) {}
 }
 
@@ -269,6 +241,77 @@ function activarDrag() {
             return usuarioActual.rol === 'admin' || mesaUsuarioId === usuarioActual.id;
         }
     });
+}
+
+// Modal de asignación de mesero
+async function abrirAsignarMesero(mesa) {
+    try {
+        // Cargar meseros si no están en cache
+        if (!Array.isArray(window.__meserosCat) || !window.__meserosCat?.length) {
+            const r = await fetch('../../api/usuarios/listar_meseros.php');
+            const j = await r.json();
+            if (j && j.success) {
+                window.__meserosCat = j.resultado || [];
+            } else {
+                alert('No fue posible cargar meseros');
+                return;
+            }
+        }
+        const modal = document.getElementById('modalAsignarMesero');
+        if (!modal) { alert('No se encontró el modal de asignación'); return; }
+        modal.dataset.mesaId = String(mesa.id);
+        const sel = modal.querySelector('#selMeseroAsignar');
+        const info = modal.querySelector('#infoAsignarMesero');
+        const pass = modal.querySelector('#passMeseroAsignar');
+        if (info) info.textContent = `Mesa: ${mesa.nombre}`;
+        if (pass) pass.value = '';
+        if (sel) {
+            sel.innerHTML = '<option value="">Seleccione mesero</option>' +
+                (window.__meserosCat || []).map(me => `<option value="${me.id}">${me.nombre}</option>`).join('');
+        }
+        const btn = modal.querySelector('#btnConfirmarAsignacion');
+        if (btn) {
+            btn.onclick = async () => {
+                const meseroId = parseInt(sel.value || '0', 10);
+                const pwd = (pass.value || '').trim();
+                if (!meseroId) { alert('Seleccione un mesero'); return; }
+                if (!pwd) { alert('Ingrese la contraseña del mesero'); return; }
+                // Verificar contraseña
+                const v = await fetch('../../api/usuarios/verificar_password.php', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario_id: meseroId, contrasena: pwd })
+                }).then(r => r.json()).catch(() => null);
+                if (!v || !v.success) { alert((v && v.mensaje) || 'Contraseña incorrecta'); return; }
+                // Asignar mesa
+                const a = await fetch('../../api/mesas/asignar.php', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mesa_id: parseInt(mesa.id), usuario_id: meseroId, usuario_asignador_id: (usuarioActual?.id || null) })
+                }).then(r => r.json()).catch(() => null);
+                if (!a || !a.success) { alert((a && a.mensaje) || 'No se pudo asignar'); return; }
+                // Guardar autorización temporal y abrir directamente la modal de cambio de estado
+                window.__mesaAuthTemp = { mesaId: parseInt(mesa.id), pass: pwd };
+                hideModal('#modalAsignarMesero');
+                // Simular que ya está asignada en el objeto actual para el flujo
+                try {
+                    const ms = (window.__meserosCat || []).find(x => parseInt(x.id) === meseroId);
+                    mesa.usuario_id = meseroId;
+                    mesa.mesero_nombre = ms ? ms.nombre : (mesa.mesero_nombre || '');
+                } catch(_) {}
+                // Ocultar botón Asignar en la tarjeta pertinente
+                try {
+                    const card = document.querySelector(`.kanban-item[data-mesa="${mesa.id}"]`);
+                    const btnAsign = card && card.querySelector('button.asignar');
+                    if (btnAsign) btnAsign.hidden = true;
+                } catch(_) {}
+                // Abrir modal de cambio de estado sin solicitar nuevamente contraseña
+                abrirCambioEstado(mesa);
+            };
+        }
+        showModal('#modalAsignarMesero');
+    } catch (e) {
+        console.error(e);
+        alert('No fue posible iniciar la asignación');
+    }
 }
 
 function abrirCambioEstado(mesa) {
@@ -326,6 +369,11 @@ function abrirCambioEstado(mesa) {
         }
 
         if (requiereAuth) {
+            const tmpAuth = window.__mesaAuthTemp;
+            if (tmpAuth && tmpAuth.mesaId === mesaId && tmpAuth.pass) {
+                showModal('#modalCambioEstado');
+                return;
+            }
             const authModal = document.getElementById('modalAuthMesa');
             if (!authModal) { alert('No se encontró el modal de autorización'); return; }
             authModal.dataset.mesaId = String(mesaId);
