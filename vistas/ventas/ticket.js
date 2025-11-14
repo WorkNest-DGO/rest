@@ -108,6 +108,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     let descuentoPromocion = 0;
     let idPromocion = 0;    
     let banderaPromo = false;
+    // Para combos con precio fijo (monto): se aplica como totalEsperado1 - monto
+    let promoMontoFijo = 0;
+    let promoSubIdx = null;
     async function cargarCatalogosTarjeta() {
         try {
             const resp = await fetch(catalogosUrl);
@@ -357,6 +360,52 @@ document.addEventListener('DOMContentLoaded', async () => {
             html += ` Cambio: <span id="cambio${i}">0</span>`;
             html += `<div id="tot${i}"></div>`;
             div.innerHTML = html;
+            // Convertir select único de promoción en panel acumulable
+            try {
+                const selSingle = div.querySelector('#promociones' + i);
+                const descWrap = div.querySelector('#lblDescPromocion_sub' + i)?.parentElement || null;
+                if (selSingle && descWrap && descWrap.parentNode) {
+                    const panel = document.createElement('div');
+                    panel.className = 'promos-panel';
+                    panel.id = 'promosPanel' + i;
+                    const row = document.createElement('div');
+                    row.className = 'promo-row';
+                    const lab = document.createElement('label');
+                    lab.textContent = 'Promoción:';
+                    selSingle.classList.add('promo-select');
+                    row.appendChild(lab);
+                    row.appendChild(selSingle);
+                    const add = document.createElement('button');
+                    add.type = 'button';
+                    add.className = 'btn btn-secondary btn-add-promo';
+                    add.dataset.sub = String(i);
+                    add.textContent = 'Agregar';
+                    row.appendChild(add);
+                    panel.appendChild(row);
+                    // Insertar panel antes del resumen de descuento
+                    descWrap.parentNode.insertBefore(panel, descWrap);
+                    // Reetiquetar resumen
+                    descWrap.firstChild && (descWrap.firstChild.textContent = 'Descuento promociones aplicado: ');
+                    const wire = () => {
+                        panel.querySelectorAll('select.promo-select').forEach(s => { s.onchange = () => recalcSub(i); });
+                    };
+                    wire();
+                    add.addEventListener('click', () => {
+                        const rows = panel.querySelectorAll('select.promo-select').length;
+                        const r = document.createElement('div'); r.className = 'promo-row';
+                        const txt = document.createTextNode('Promoción:');
+                        const s2 = document.createElement('select'); s2.className = 'promo-select'; s2.id = 'promociones' + i + '_' + rows;
+                        const opt0 = document.createElement('option'); opt0.value = '0'; opt0.textContent = 'Seleccione'; s2.appendChild(opt0);
+                        (catalogoPromociones || []).forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = c.nombre; s2.appendChild(o); });
+                        const rm = document.createElement('button'); rm.type = 'button'; rm.className = 'btn btn-danger btn-rm-promo'; rm.textContent = 'Quitar';
+                        rm.addEventListener('click', () => { r.remove(); recalcSub(i); });
+                        r.appendChild(txt); r.appendChild(s2); r.appendChild(rm);
+                        panel.appendChild(r);
+                        wire();
+                        recalcSub(i);
+                    });
+                }
+            } catch(_) {}
             // Agregar campo de motivo de descuento dentro del panel de descuentos por subcuenta
             try {
                 const panel = div.querySelector('.descuentosPanel');
@@ -369,7 +418,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             cont.appendChild(div);
             // div.querySelector('#propina' + i).addEventListener('input', mostrarTotal);
             div.querySelector('#pago' + i).addEventListener('change', () => { mostrarTotal(); mostrarCamposPago(i); });
-            div.querySelector('#promociones' + i).addEventListener('change', () => { vvalidaPromocion(i); });
             div.querySelector('#recibido' + i).addEventListener('input', mostrarTotal);
             div.querySelectorAll('.chk-cortesia-sub').forEach(chk => {
                 chk.addEventListener('change', () => { recalcSub(i); mostrarTotal(); });
@@ -393,8 +441,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const cortSet = new Set();
         subDiv.querySelectorAll('.chk-cortesia-sub').forEach(chk => { if (chk.checked) cortSet.add(Number(chk.getAttribute('data-detalle-id')||0)); });
         let cortTotal = 0;
-        let totalPromo =0; 
-        totalPromo = Number(descuentoPromocion);
+        let totalPromo = 0; 
         cortSet.forEach(detId => {
             const tr = subDiv.querySelector(`tr[data-detalle-id="${detId}"]`);
             if (tr) cortTotal += Number(tr.getAttribute('data-subtotal')||0);
@@ -405,6 +452,61 @@ document.addEventListener('DOMContentLoaded', async () => {
         const descPctMonto = Number((base * (pct/100)).toFixed(2));
         const descuentoTotal = Math.min(totalBruto, Number((cortTotal + descPctMonto + montoFijo).toFixed(2)));
         const totalEsperado1 = Math.max(0, Number((totalBruto - descuentoTotal).toFixed(2)));
+        // Calcular descuentos por promociones acumulables seleccionadas en esta subcuenta
+        try {
+            const selectedIds = Array.from(subDiv.querySelectorAll('select.promo-select'))
+                .map(s => parseInt(s.value || '0', 10))
+                .filter(Boolean);
+            if (selectedIds.length) {
+                // pool de precios por unidad por producto de la subcuenta (para matches por categoría/id)
+                const poolByPromo = (promo) => {
+                    let reglaJson = {};
+                    try { reglaJson = promo.regla ? JSON.parse(promo.regla) : {}; } catch(_) { reglaJson = {}; }
+                    const reglasArray = Array.isArray(reglaJson) ? reglaJson : [reglaJson];
+                    const prodIds  = reglasArray.map(r => parseInt(r.id_producto || 0, 10)).filter(Boolean);
+                    const catIds   = reglasArray.map(r => parseInt(r.categoria_id || 0, 10)).filter(Boolean);
+                    const items = prods.filter(p => (prodIds.length ? prodIds.includes(parseInt(p.producto_id || p.id || 0, 10)) : true)
+                                                  && (catIds.length ? catIds.includes(parseInt(p.categoria_id || 0, 10)) : true));
+                    const unitPrices = [];
+                    items.forEach(it => { const qty = Math.max(1, parseInt(it.cantidad || 1, 10)); const price = Number(it.precio_unitario || 0); for (let k=0;k<qty;k++) unitPrices.push(price); });
+                    unitPrices.sort((a,b)=>Number(a)-Number(b));
+                    return unitPrices;
+                };
+                let sumNonMonto = 0;
+                let montoMin = null;
+                selectedIds.forEach(pid => {
+                    const promo = (catalogoPromociones || []).find(p => parseInt(p.id) === pid);
+                    if (!promo) return;
+                    const tipo = String(promo.tipo||'').toLowerCase();
+                    const monto = Number(promo.monto||0);
+                    let reglaJson = {};
+                    try { reglaJson = promo.regla ? JSON.parse(promo.regla) : {}; } catch(_) { reglaJson = {}; }
+                    const cantidad = parseInt((Array.isArray(reglaJson) ? (reglaJson[0]?.cantidad) : (reglaJson?.cantidad)) || '0', 10) || ((tipo==='bogo'||tipo==='combo')?2:1);
+                    if (monto>0 && tipo==='combo') {
+                        montoMin = (montoMin===null) ? monto : Math.min(montoMin, monto);
+                    } else {
+                        const pool = poolByPromo(promo);
+                        if (pool.length >= cantidad) {
+                            // Para bogo N:1, descuento = el más barato del grupo requerido
+                            // Para categoria_gratis cantidad n: tomar n unidades más baratas
+                            if (tipo==='categoria_gratis') {
+                                const take = pool.slice(0, cantidad);
+                                sumNonMonto += take.reduce((s,x)=>s+Number(x||0),0);
+                            } else {
+                                sumNonMonto += Number(pool[0]||0);
+                            }
+                        }
+                    }
+                });
+                let discMonto = 0;
+                if (montoMin!==null) {
+                    discMonto = Math.max(0, Number((totalEsperado1 - montoMin).toFixed(2)));
+                }
+                totalPromo = Math.min(totalEsperado1, Number((discMonto + sumNonMonto).toFixed(2)));
+            } else {
+                totalPromo = 0;
+            }
+        } catch(_) { totalPromo = 0; }
         const totalEsperado = Math.max(0, Number((totalEsperado1 - totalPromo).toFixed(2)));
         const setText = (sel, val) => { const el = subDiv.querySelector(sel); if (el) el.textContent = val.toFixed(2); };
         setText('#lblDescCortesias_sub'+idx, cortTotal);
@@ -422,7 +524,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch(_) {}
         const detalleIds = prods.map(p => p.id || p.detalle_id || p.venta_detalle_id).filter(Boolean);
         window.__SUBS__ = window.__SUBS__ || [];
-        window.__SUBS__[idx] = { idx, detalleIds, cortesias: Array.from(cortSet), pct, montoFijo, totalBruto: Number(totalBruto.toFixed(2)), descuentoTotal, totalEsperado };
+        window.__SUBS__[idx] = { idx, detalleIds, cortesias: Array.from(cortSet), pct, montoFijo, totalBruto: Number(totalBruto.toFixed(2)), descuentoTotal, totalEsperado, promoTotal: totalPromo };
         // Actualizar monto actual global (suma de subcuentas)
         try {
             let suma = 0;
@@ -433,6 +535,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Sincroniza input recibido según tipo de pago
         try { mostrarTotal(); } catch(_) {}
     }
+
+    // Agrega un recalculador global para preparar payload con descuentos acumulados de promociones
+    window.__ticketRecalcDescuentos = function() {
+        try {
+            let sumPromo = 0;
+            let firstId = 0;
+            for (let i = 1; i <= numSub; i++) {
+                const subDiv = document.getElementById('sub' + i);
+                if (!subDiv) continue;
+                const state = window.__SUBS__ && window.__SUBS__[i] ? window.__SUBS__[i] : null;
+                if (state && typeof state.promoTotal === 'number') {
+                    sumPromo += Number(state.promoTotal || 0);
+                }
+                if (!firstId) {
+                    const sel = subDiv.querySelector('select.promo-select');
+                    const id = sel ? parseInt(sel.value || '0', 10) : 0;
+                    if (id) firstId = id;
+                }
+            }
+            descuentoPromocion = Number(sumPromo.toFixed(2));
+            banderaPromo = descuentoPromocion > 0;
+            idPromocion = firstId || 0;
+        } catch(_) {}
+    };
     async function capturaPropinas() {
         const cont = document.getElementById('regPropinas');
         const info2 = JSON.parse(localStorage.getItem('ticketData'));
@@ -529,83 +655,7 @@ function mostrarTotal() {
         }
     }
 
-     function vvalidaPromocion(i) {
-        const promo = document.getElementById('promociones' + i).value;
-        
-        if(Number(promo)===0){
-            banderaPromo=false;
-            document.getElementById('lblDescPromocion_sub' + i).textContent = '0.00';
-            descuentoPromocion=0;
-            idPromocion = 0;
-            recalcSub(i); 
-        }
-        else
-        {
-                var promoAplicada = catalogoPromociones[promo-1].tipo;        
-                var regla = catalogoPromociones[promo-1].regla;   
-                var myObj = JSON.parse(regla);
-                var contador = myObj.length;
-                var categoria_filtro;
-                if(typeof contador === 'undefined'){
-                    
-                    categoria_filtro=myObj.categoria_id;
-                }else{
-                    categoria_filtro=myObj[0].categoria_id        
-                }
-
-                if(promoAplicada==='bogo'){
-                    var cantidad=myObj.cantidad;
-                    const catProds = productos.filter(p => p.categoria_id === categoria_filtro);
-                    console.log(catProds);
-
-                    if(catProds.length<cantidad){
-                        banderaPromo=false;                
-                    }
-                    else{
-                        alert("promoción aplicada");
-                        banderaPromo=true;
-                        const lowestPrice = catProds.reduce((min, current) => {
-                          return (min.precio_unitario < current.precio_unitario) ? min : current;
-                        }).precio_unitario;
-                        descuentoPromocion=lowestPrice;
-                        idPromocion=promo;
-                        document.getElementById('lblDescPromocion_sub' + i).textContent = descuentoPromocion;
-                        recalcSub(i);                
-                    }
-
-                } else if (promoAplicada==='categoria_gratis'){
-                        const catProds = productos.filter(p => p.categoria_id === categoria_filtro);
-                        if(catProds.length<1){
-                            banderaPromo=false;                            
-                        }
-                        else{
-                            alert("promoción aplicada");
-                            banderaPromo=true;
-                            const lowestPrice=catProds[0].precio_unitario;
-                            descuentoPromocion=lowestPrice;
-                            idPromocion=promo;
-                            document.getElementById('lblDescPromocion_sub' + i).textContent = descuentoPromocion;
-                            recalcSub(i);
-                            console.log("descuento de promocion = " +catProds[0].precio_unitario);
-                        }
-
-                }
-
-                if(banderaPromo===false)
-                {
-                        var selectPr  = document.getElementById('promociones' + i);
-                        selectPr.selectedIndex = 0;
-                        descuentoPromocion=0;
-                        idPromocion = 0;
-                        recalcSub(i); 
-                        alert("promoción no aplicable al no cumplir las condiciones");
-                }
-
-
-        }
-
-        
-    }
+     function vvalidaPromocion(i) { try { recalcSub(i); } catch(_) {} }
 
     function crearTeclado(input) {
         const cont = document.getElementById('teclado');
