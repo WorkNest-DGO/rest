@@ -7,11 +7,15 @@ $query = "SELECT m.id, m.nombre, m.estado, m.capacidad, m.mesa_principal_id,
                 m.area_id, m.ticket_enviado, COALESCE(ca.nombre, m.area) AS area_nombre,
                 m.estado_reserva, m.nombre_reserva, m.fecha_reserva,
                 m.tiempo_ocupacion_inicio, m.usuario_id, m.alineacion_id,
-                u.nombre AS mesero_nombre,
+                u.nombre AS mesero_nombre, u.usuario AS mesero_usuario,
+                al.nombre AS alineacion_nombre,
+                mp.nombre AS mesa_principal_nombre,
                 v.id AS venta_id
           FROM mesas m
           LEFT JOIN catalogo_areas ca ON m.area_id = ca.id
           LEFT JOIN usuarios u ON m.usuario_id = u.id
+          LEFT JOIN alineacion al ON m.alineacion_id = al.id
+          LEFT JOIN mesas mp ON m.mesa_principal_id = mp.id
           LEFT JOIN ventas v ON v.mesa_id = m.id AND v.estatus = 'activa'
           ORDER BY area_nombre, m.id";
 $result = $conn->query($query);
@@ -40,7 +44,10 @@ while ($row = $result->fetch_assoc()) {
         'alineacion_id'     => $row['alineacion_id'] !== null ? (int)$row['alineacion_id'] : null,
         'venta_activa'      => $row['venta_id'] !== null,
         'venta_id'          => $row['venta_id'] !== null ? (int)$row['venta_id'] : null,
-        'mesero_nombre'     => $row['mesero_nombre'] ?? null
+        'mesero_nombre'     => $row['mesero_nombre'] ?? null,
+        'mesero_usuario'    => $row['mesero_usuario'] ?? null,
+        'alineacion_nombre' => $row['alineacion_nombre'] ?? null,
+        'mesa_principal_nombre' => $row['mesa_principal_nombre'] ?? null
     ];
 }
 

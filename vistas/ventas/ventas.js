@@ -1119,23 +1119,28 @@ async function cargarMeseros() {
     }
 }
 
-async function cargarMesas() {
+async function cargarMesas(preserveMesaId) {
     try {
         const resp = await fetch('../../api/mesas/mesas.php');
         const data = await resp.json();
         if (data.success) {
-            mesas = data.resultado;
+            // Solo mesas disponibles (estado = 'libre')
+            mesas = (data.resultado || []).filter(m => String(m.estado || '').toLowerCase() === 'libre');
             const select = document.getElementById('mesa_id');
+            const prev = (typeof preserveMesaId !== 'undefined' && preserveMesaId !== null)
+                ? String(preserveMesaId)
+                : (select ? String(select.value || '') : '');
             select.innerHTML = '<option value="">Seleccione</option>';
             mesas.forEach(m => {
                 const opt = document.createElement('option');
                 opt.value = m.id;
-                const asignado = (m.mesero_nombre && m.mesero_nombre.trim().length > 0)
-                  ? m.mesero_nombre
-                  : 'Sin mesero asignado';
-                opt.textContent = `${m.nombre} - ${asignado}`;
+                opt.textContent = `${m.nombre}`;
                 select.appendChild(opt);
             });
+            // Restaurar selección si aplica
+            if (prev) {
+                select.value = prev;
+            }
         } else {
             alert(data.mensaje || 'Error al cargar mesas');
         }
@@ -1301,7 +1306,10 @@ async function actualizarSelectorUsuario() {
         if (campoMesero) campoMesero.style.display = 'block';
     } else if (tipo === 'mesa') {
         setLabelUsuario('Mesero:');
-        usuarioSel.disabled = true;
+        // Cargar mesas disponibles y catálogo de meseros
+        await cargarMesas();
+        await cargarMeseros();
+        usuarioSel.disabled = false;
         if (typeof asignarMeseroPorMesa === 'function') {
             asignarMeseroPorMesa();
         }
@@ -1328,26 +1336,45 @@ function asignarMeseroPorMesa() {
     }
     if (isNaN(mesaId)) {
         meseroSelect.value = '';
-        meseroSelect.disabled = true;
+        meseroSelect.disabled = false;
         return;
     }
     const mesa = mesas.find(m => m.id === mesaId);
     if (!mesa) {
         meseroSelect.value = '';
-        meseroSelect.disabled = true;
+        meseroSelect.disabled = false;
         return;
     }
-    if (!mesa.usuario_id) {
-        alert('La mesa seleccionada no tiene mesero asignado. Contacta al administrador.');
-        mesaSelect.value = '';
-        meseroSelect.value = '';
-        meseroSelect.disabled = true;
-        verificarActivacionProductos();
-        return;
+    // Mesa libre: permitir seleccionar cualquier mesero del catálogo cargado
+    meseroSelect.disabled = false;
+}
+
+// Asignar mesero a mesa al seleccionar ambos
+async function asignarMeseroSeleccionado() {
+    const tipo = (document.getElementById('tipo_entrega')?.value || '').toLowerCase();
+    if (tipo !== 'mesa') return;
+    const mesaId = parseInt(document.getElementById('mesa_id').value || '0', 10);
+    const usuarioSel = document.getElementById('usuario_id');
+    const meseroId = parseInt(usuarioSel?.value || '0', 10);
+    if (!mesaId || !meseroId) return;
+    try {
+        const resp = await fetch('../../api/mesas/asignar.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mesa_id: mesaId, usuario_id: meseroId })
+        });
+        const data = await resp.json();
+        if (!data.success) {
+            alert(data.mensaje || 'No se pudo asignar el mesero a la mesa');
+            return;
+        }
+        // Mantener habilitado para permitir correcciones de asignación si es necesario
+        // Refrescar listado de mesas disponibles pero conservando la selección actual
+        await cargarMesas(String(mesaId));
+    } catch (e) {
+        console.error(e);
+        alert('Error al asignar mesero');
     }
-    meseroSelect.innerHTML = `<option value="${mesa.usuario_id}">${mesa.mesero_nombre}</option>`;
-    meseroSelect.value = mesa.usuario_id;
-    meseroSelect.disabled = true;
 }
 
 // Inicializa el nuevo selector de productos con buscador
@@ -2329,6 +2356,7 @@ document.getElementById('mesa_id').addEventListener('change', () => {
     asignarMeseroPorMesa();
     verificarActivacionProductos();
 });
+// Nota: no asignar mesero a mesa en este punto; se asigna al registrar la venta
 // Listener repartidor_id: cada vez que cambie, recalcula si es "Repartidor casa"
 const repartidorEl = document.getElementById('repartidor_id');
 if (repartidorEl) {

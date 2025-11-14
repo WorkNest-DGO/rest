@@ -33,8 +33,8 @@ ob_start();
     <h2>Mesas (CRUD)</h2>
   </div>
 
-  <div class="card p-3 mb-3">
-    <h5 id="formTitle">Nueva mesa</h5>
+  <div style="color:black" class="card p-3 mb-3">
+    <h5 style="color:black" id="formTitle">Nueva mesa</h5>
     <form id="mesaForm">
       <input type="hidden" id="mesa_id">
       <div class="row g-3">
@@ -91,9 +91,9 @@ ob_start();
           <th>Capacidad</th>
           <th>Mesa principal</th>
           <th>Área</th>
-          <th>Usuario ID</th>
-          <th>Área ID</th>
-          <th>Alineación ID</th>
+          <th>Usuario</th>
+          <th>Área (ID:Nombre)</th>
+          <th>Alineación</th>
           <th>Acciones</th>
         </tr>
       </thead>

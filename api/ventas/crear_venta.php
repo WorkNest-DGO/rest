@@ -63,7 +63,7 @@ if ($tipo === 'mesa') {
     if (!$rowEstado) {
         error('Mesa no encontrada');
     }
-    if ((int)($rowEstado['usuario_id'] ?? 0) !== $usuario_id) {
+    if (((int)($rowEstado['usuario_id'] ?? 0) !== 0) && ((int)($rowEstado['usuario_id'] ?? 0) !== $usuario_id)) {
         http_response_code(400);
         error('La mesa seleccionada pertenece a otro mesero. Actualiza la pantalla e intÃ©ntalo de nuevo.');
     }
@@ -149,9 +149,9 @@ if (!isset($venta_id)) {
     $stmt->close();
     $nueva_venta = true;
     if ($tipo === 'mesa') {
-        $updMesa = $conn->prepare("UPDATE mesas SET estado = 'ocupada', tiempo_ocupacion_inicio = IF(tiempo_ocupacion_inicio IS NULL, NOW(), tiempo_ocupacion_inicio) WHERE id = ?");
+        $updMesa = $conn->prepare("UPDATE mesas SET usuario_id = IFNULL(usuario_id, ?), estado = 'ocupada', tiempo_ocupacion_inicio = IF(tiempo_ocupacion_inicio IS NULL, NOW(), tiempo_ocupacion_inicio) WHERE id = ?");
         if ($updMesa) {
-            $updMesa->bind_param('i', $mesa_id);
+            $updMesa->bind_param('ii', $usuario_id, $mesa_id);
             $updMesa->execute();
             $updMesa->close();
         }

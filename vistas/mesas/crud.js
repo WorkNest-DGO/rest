@@ -15,15 +15,27 @@ async function cargarMesasCrud() {
     tbody.innerHTML = '';
     (data.resultado || []).forEach(m => {
       const tr = document.createElement('tr');
+      const usuarioTexto = (m.usuario_id != null)
+        ? `${m.usuario_id}: ${m.mesero_nombre || m.mesero_usuario || ''}`
+        : '';
+      const areaTexto = (m.area_id != null)
+        ? `${m.area_id}: ${m.area || ''}`
+        : (m.area || '');
+      const alineacionTexto = (m.alineacion_id != null)
+        ? `${m.alineacion_id}: ${m.alineacion_nombre || ''}`
+        : '';
+      const mesaPrincipalTexto = (m.mesa_principal_id != null)
+        ? `${m.mesa_principal_id}: ${m.mesa_principal_nombre || ''}`
+        : '';
       tr.innerHTML = `
         <td>${m.nombre || ''}</td>
         <td>${m.estado || ''}</td>
         <td>${m.capacidad ?? ''}</td>
-        <td>${m.mesa_principal_id ?? ''}</td>
-        <td>${m.area || ''}</td>
-        <td>${m.usuario_id ?? ''}</td>
-        <td>${m.area_id ?? ''}</td>
-        <td>${m.alineacion_id ?? ''}</td>
+        <td>${mesaPrincipalTexto}</td>
+        <td>${areaTexto}</td>
+        <td>${usuarioTexto}</td>
+        <td>${areaTexto}</td>
+        <td>${alineacionTexto}</td>
         <td>
           <button class="btn custom-btn" data-action="edit" data-id="${m.id}">Editar</button>
           <button class="btn custom-btn" data-action="delete" data-id="${m.id}" style="margin-left:6px;">Eliminar</button>
@@ -146,4 +158,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
-
