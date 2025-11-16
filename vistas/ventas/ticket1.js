@@ -70,6 +70,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     if (sinDatos) sinDatos.style.display = 'none';
+    // Guardar tipo_entrega de la venta para filtrar promociones por tipo_venta
+    if (almacenado) {
+        try {
+            const datosTmp = JSON.parse(almacenado);
+            window.__tipoEntregaVenta = (datosTmp.tipo_entrega || '').toLowerCase();
+        } catch (_) {
+            window.__tipoEntregaVenta = '';
+        }
+    }
     if (ventaParam) {
         // Modo reimpresión vía ?venta=: forzar visibilidad de propinas y reimprimir directo
         const ventaIdNum = parseInt(ventaParam, 10);
@@ -191,8 +200,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             const resp = await fetch(promocionesUrl);
             const data = await resp.json();
             if (data.success) {
-                catalogoPromociones = Array.isArray(data.promociones) ? data.promociones : [];
-                
+                let promos = Array.isArray(data.promociones) ? data.promociones : [];
+                const tipoEntrega = (window.__tipoEntregaVenta || '').toLowerCase();
+                if (tipoEntrega === 'mesa') {
+                    promos = promos.filter(p => String(p.tipo_venta || '').toLowerCase() === 'mesa');
+                } else if (tipoEntrega === 'domicilio' || tipoEntrega === 'rapido') {
+                    promos = promos.filter(p => String(p.tipo_venta || '').toLowerCase() === 'llevar');
+                }
+                catalogoPromociones = promos;
             }
         } catch (e) {
             console.error('Error cargando promociones', e);

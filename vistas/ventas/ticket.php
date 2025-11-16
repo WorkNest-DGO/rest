@@ -237,6 +237,26 @@ ob_start();
   </div>
   </div>
 
+<!-- Modal de error de promoción -->
+<div class="modal fade" id="modalPromoError" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Promoción no aplicable</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="promoErrorMsg"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
 <?php require_once __DIR__ . '/../footer.php'; ?>
 <script>
     // Señales servidor

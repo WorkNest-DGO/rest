@@ -1923,17 +1923,18 @@ async function verDetalles(id) {
                     const entrada = prompt('Indica sede', sedeId);
                     if (entrada) sede = parseInt(entrada) || sede;
                 }
-                const payload = {
-                    venta_id: parseInt(id),
-                    usuario_id: venta.usuario_id || 1,
-                    fecha: venta.fecha || '',
-                    propina_efectivo: info.propina_efectivo,
-                    propina_cheque: info.propina_cheque,
-                    propina_tarjeta: info.propina_tarjeta,
-                    productos: info.productos,
-                    total,
-                    sede_id: sede
-                };
+                  const payload = {
+                      venta_id: parseInt(id),
+                      usuario_id: venta.usuario_id || 1,
+                      fecha: venta.fecha || '',
+                      tipo_entrega: venta.tipo_entrega || '',
+                      propina_efectivo: info.propina_efectivo,
+                      propina_cheque: info.propina_cheque,
+                      propina_tarjeta: info.propina_tarjeta,
+                      productos: info.productos,
+                      total,
+                      sede_id: sede
+                  };
                 localStorage.setItem('ticketData', JSON.stringify(payload));
                 imprimirTicket(id);
             });
@@ -2090,14 +2091,15 @@ async function imprimirSolicitud(mesaId, ventaId) {
                 const entrada = prompt('Indica sede', sedeId);
                 if (entrada) sede = parseInt(entrada) || sede;
             }
-            const payload = {
-                venta_id: parseInt(ventaId),
-                usuario_id: venta.usuario_id || 1,
-                fecha: venta.fecha || '',
-                productos: info.productos,
-                total,
-                sede_id: sede
-            };
+              const payload = {
+                  venta_id: parseInt(ventaId),
+                  usuario_id: venta.usuario_id || 1,
+                  fecha: venta.fecha || '',
+                  tipo_entrega: venta.tipo_entrega || '',
+                  productos: info.productos,
+                  total,
+                  sede_id: sede
+              };
             localStorage.setItem('ticketData', JSON.stringify(payload));
             ticketPrinted(mesaId);
             imprimirTicket(ventaId);
