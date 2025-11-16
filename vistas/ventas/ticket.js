@@ -45,6 +45,112 @@ function llenarTicket(data) {
         document.getElementById('totalLetras').textContent = data.total_letras || '';
     }
 
+    // Validación extra para promociones de tipo "llevar" (versión con nombre de categoría)
+    // Evita que 3x209, 2 Té y 2 rollos + té usen más productos de los que hay,
+    // y muestra el nombre de la categoría (por ejemplo "Rollo empanizado") en el mensaje.
+    function validarPromosAcumulablesLlevar(subIdx) {
+        const tipoEntrega = (window.__tipoEntregaVenta || '').toLowerCase();
+        if (tipoEntrega !== 'domicilio' && tipoEntrega !== 'rapido' && tipoEntrega !== 'llevar') {
+            return { ok: true };
+        }
+        const subDiv = document.getElementById('sub' + subIdx);
+        if (!subDiv) return { ok: true };
+
+        const prodsSub = productos.filter(function (p) { return p.subcuenta === subIdx; });
+        if (!prodsSub.length) return { ok: true };
+
+        const selectedIds = Array.from(subDiv.querySelectorAll('select.promo-select'))
+            .map(function (s) { return parseInt(s.value || '0', 10); })
+            .filter(function (v) { return !!v; });
+        if (!selectedIds.length) return { ok: true };
+
+        const promosSel = selectedIds
+            .map(function (pid) {
+                return (catalogoPromociones || []).find(function (p) {
+                    return parseInt(p.id, 10) === pid;
+                });
+            })
+            .filter(function (p) { return !!p; });
+
+        const combos = promosSel.filter(function (p) {
+            const tipo = String(p.tipo || '').toLowerCase();
+            const monto = Number(p.monto || 0);
+            const tipoVenta = String(p.tipo_venta || '').toLowerCase();
+            return tipo === 'combo' && monto > 0 && tipoVenta === 'llevar';
+        });
+        if (!combos.length) return { ok: true };
+
+        const promo6 = combos.find(function (p) { return parseInt(p.id, 10) === 6; });
+        if (!promo6) return { ok: true };
+
+        const tiene5 = combos.some(function (p) { return parseInt(p.id, 10) === 5; });
+        const tiene9 = combos.some(function (p) { return parseInt(p.id, 10) === 9; });
+
+        let rollPromo6Ids = [];
+        if (promo6 && promo6.regla) {
+            let rj;
+            try { rj = JSON.parse(promo6.regla); } catch (e) { rj = null; }
+            const arr = Array.isArray(rj) ? rj : (rj ? [rj] : []);
+            rollPromo6Ids = arr
+                .map(function (r) { return parseInt(r.id_producto || 0, 10); })
+                .filter(function (v) { return !!v; });
+        }
+
+        let cat9Count = 0;
+        let rollSubsetCount = 0;
+        let teaCount = 0;
+        prodsSub.forEach(function (p) {
+            const cant = Number(p.cantidad || 0);
+            if (!cant) return;
+            const pid = parseInt(p.producto_id || p.id || 0, 10);
+            const catId = parseInt(p.categoria_id || 0, 10);
+            if (catId === 9) cat9Count += cant;
+            if (rollPromo6Ids.indexOf(pid) !== -1) rollSubsetCount += cant;
+            if (pid === 66) teaCount += cant;
+        });
+
+        if (!cat9Count && !rollSubsetCount && !teaCount) {
+            return { ok: true };
+        }
+
+        const g6 = Math.min(Math.floor(rollSubsetCount / 2), teaCount);
+        let g5 = 0;
+        if (tiene5) {
+            g5 = Math.floor(teaCount / 2);
+        }
+        let g9 = 0;
+        if (tiene9) {
+            const cantidadReq9 = 3;
+            g9 = Math.floor(cat9Count / cantidadReq9);
+        }
+
+        const errores = [];
+        const nombrePromo5 = (combos.find(function (p) { return parseInt(p.id, 10) === 5; }) || {}).nombre || '2 Té';
+        const nombrePromo6 = promo6.nombre || '2 rollos y té';
+        const promo9Obj = combos.find(function (p) { return parseInt(p.id, 10) === 9; }) || {};
+        const nombrePromo9 = promo9Obj.nombre || '3x $209 en rollos';
+        let nombreCat9 = 'categoría 9';
+        if (promo9Obj && Array.isArray(promo9Obj.categorias_regla) && promo9Obj.categorias_regla.length) {
+            nombreCat9 = promo9Obj.categorias_regla[0].nombre || nombreCat9;
+        }
+
+        const totalTeaNeeded = (g6 * 1) + (g5 * 2);
+        if (totalTeaNeeded > teaCount && (tiene5 || g6 > 0)) {
+            errores.push(`Las promociones "${nombrePromo6}" y "${nombrePromo5}" requieren ${totalTeaNeeded} tés y solo hay ${teaCount}.`);
+        }
+
+        const totalRollsNeeded = (g6 * 2) + (g9 * 3);
+        if (totalRollsNeeded > cat9Count && (tiene9 || g6 > 0)) {
+            errores.push(`Las promociones "${nombrePromo6}" y "${nombrePromo9}" requieren ${totalRollsNeeded} rollos (${nombreCat9}) y solo hay ${cat9Count}.`);
+        }
+
+        if (errores.length) {
+            return { ok: false, mensajes: errores };
+        }
+
+        return { ok: true };
+    }
+
 function imprimirTicket() {
         const ticketContainer = document.getElementById('ticketContainer');
         if (!ticketContainer) return;
@@ -479,6 +585,42 @@ document.addEventListener('DOMContentLoaded', async () => {
         const descPctMonto = Number((base * (pct/100)).toFixed(2));
         const descuentoTotal = Math.min(totalBruto, Number((cortTotal + descPctMonto + montoFijo).toFixed(2)));
         const totalEsperado1 = Math.max(0, Number((totalBruto - descuentoTotal).toFixed(2)));
+        // Validar combinación de promociones \"llevar\" (3x209, 2 TǸ, 2 rollos + tǸ)
+        try {
+            if (!window.__validandoPromosAcumulables) {
+                const resAcum = validarPromosAcumulablesLlevar(idx);
+                if (resAcum && resAcum.ok === false) {
+                    const subDivLocal = document.getElementById('sub' + idx);
+                    const mensajes = resAcum.mensajes || [];
+                    const body = document.getElementById('promoErrorMsg');
+                    if (body) {
+                        body.innerHTML = '<p>La combinación de promociones seleccionadas no es válida porque:</p><ul>' +
+                            mensajes.map(m => '<li>' + m + '</li>').join('') +
+                            '</ul>';
+                    }
+                    const texto = 'La combinación de promociones seleccionadas no es válida:\n\n' + mensajes.join('\n');
+                    try {
+                        if (window.jQuery && $('#modalPromoError').modal) {
+                            $('#modalPromoError').modal('show');
+                        } else {
+                            alert(texto);
+                        }
+                    } catch(_) {
+                        alert(texto);
+                    }
+                    if (subDivLocal) {
+                        subDivLocal.querySelectorAll('select.promo-select').forEach(s => {
+                            const val = parseInt(s.value || '0', 10);
+                            if (val === 6) s.value = '0';
+                        });
+                    }
+                    window.__validandoPromosAcumulables = true;
+                    recalcSub(idx);
+                    window.__validandoPromosAcumulables = false;
+                    return;
+                }
+            }
+        } catch(_) {}
         // Calcular descuentos por promociones acumulables seleccionadas en esta subcuenta
         try {
             const selectedIds = Array.from(subDiv.querySelectorAll('select.promo-select'))
@@ -1277,4 +1419,98 @@ function mostrarTotal() {
         } catch (e) {
             console.error('Error al liberar mesa');
         }
+    }
+
+    // Validación extra para promociones de tipo "llevar"
+    // Evita que 3x209, 2 TǸ y 2 rollos + tǸ usen mǭs productos de los que hay.
+    function validarPromosAcumulablesLlevar_OLD(subIdx) {
+        const tipoEntrega = (window.__tipoEntregaVenta || '').toLowerCase();
+        if (tipoEntrega !== 'domicilio' && tipoEntrega !== 'rapido' && tipoEntrega !== 'llevar') {
+            return { ok: true };
+        }
+        const subDiv = document.getElementById('sub' + subIdx);
+        if (!subDiv) return { ok: true };
+
+        const prodsSub = productos.filter(p => p.subcuenta === subIdx);
+        if (!prodsSub.length) return { ok: true };
+
+        const selectedIds = Array.from(subDiv.querySelectorAll('select.promo-select'))
+            .map(s => parseInt(s.value || '0', 10))
+            .filter(Boolean);
+        if (!selectedIds.length) return { ok: true };
+
+        const promosSel = selectedIds
+            .map(pid => (catalogoPromociones || []).find(p => parseInt(p.id) === pid))
+            .filter(Boolean);
+
+        const combos = promosSel.filter(p => {
+            const tipo = String(p.tipo || '').toLowerCase();
+            const monto = Number(p.monto || 0);
+            const tipoVenta = String(p.tipo_venta || '').toLowerCase();
+            return tipo === 'combo' && monto > 0 && tipoVenta === 'llevar';
+        });
+        if (!combos.length) return { ok: true };
+
+        const promo6 = combos.find(p => parseInt(p.id, 10) === 6);
+        if (!promo6) return { ok: true };
+
+        const tiene5 = combos.some(p => parseInt(p.id, 10) === 5);
+        const tiene9 = combos.some(p => parseInt(p.id, 10) === 9);
+
+        let rollPromo6Ids = [];
+        if (promo6 && promo6.regla) {
+            let rj;
+            try { rj = JSON.parse(promo6.regla); } catch(_) { rj = null; }
+            const arr = Array.isArray(rj) ? rj : (rj ? [rj] : []);
+            rollPromo6Ids = arr.map(r => parseInt(r.id_producto || 0, 10)).filter(Boolean);
+        }
+
+        let cat9Count = 0;
+        let rollSubsetCount = 0;
+        let teaCount = 0;
+        prodsSub.forEach(p => {
+            const cant = Number(p.cantidad || 0);
+            if (!cant) return;
+            const pid = parseInt(p.producto_id || p.id || 0, 10);
+            const catId = parseInt(p.categoria_id || 0, 10);
+            if (catId === 9) cat9Count += cant;
+            if (rollPromo6Ids.includes(pid)) rollSubsetCount += cant;
+            if (pid === 66) teaCount += cant;
+        });
+
+        if (!cat9Count && !rollSubsetCount && !teaCount) {
+            return { ok: true };
+        }
+
+        const g6 = Math.min(Math.floor(rollSubsetCount / 2), teaCount);
+        let g5 = 0;
+        if (tiene5) {
+            g5 = Math.floor(teaCount / 2);
+        }
+        let g9 = 0;
+        if (tiene9) {
+            const cantidadReq9 = 3;
+            g9 = Math.floor(cat9Count / cantidadReq9);
+        }
+
+        const errores = [];
+        const nombrePromo5 = (combos.find(p => parseInt(p.id, 10) === 5) || {}).nombre || '2 TǸ';
+        const nombrePromo6 = promo6.nombre || '2 rollos y tǸ';
+        const nombrePromo9 = (combos.find(p => parseInt(p.id, 10) === 9) || {}).nombre || '3x $209 en rollos';
+
+        const totalTeaNeeded = (g6 * 1) + (g5 * 2);
+        if (totalTeaNeeded > teaCount && (tiene5 || g6 > 0)) {
+            errores.push(`Las promociones "${nombrePromo6}" y "${nombrePromo5}" requieren ${totalTeaNeeded} tés y solo hay ${teaCount}.`);
+        }
+
+        const totalRollsNeeded = (g6 * 2) + (g9 * 3);
+        if (totalRollsNeeded > cat9Count && (tiene9 || g6 > 0)) {
+            errores.push(`Las promociones "${nombrePromo6}" y "${nombrePromo9}" requieren ${totalRollsNeeded} rollos (categoría 9) y solo hay ${cat9Count}.`);
+        }
+
+        if (errores.length) {
+            return { ok: false, mensajes: errores };
+        }
+
+        return { ok: true };
     }

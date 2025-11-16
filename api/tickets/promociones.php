@@ -17,11 +17,13 @@ if (!$resPromociones) {
 }
 
 while ($row = $resPromociones->fetch_assoc()) {
-    $productosRegla = [];
+    $productosRegla  = [];
+    $categoriasRegla = [];
     $reglaRaw = $row['regla'];
     $reglaJson = json_decode($reglaRaw, true);
 
-    $idsProductos = [];
+    $idsProductos  = [];
+    $idsCategorias = [];
     if (is_array($reglaJson)) {
         // Puede ser un objeto o un arreglo de objetos
         $esAsociativo = array_keys($reglaJson) !== range(0, count($reglaJson) - 1);
@@ -29,16 +31,26 @@ while ($row = $resPromociones->fetch_assoc()) {
             if (isset($reglaJson['id_producto'])) {
                 $idsProductos[] = (int)$reglaJson['id_producto'];
             }
+            if (isset($reglaJson['categoria_id'])) {
+                $idsCategorias[] = (int)$reglaJson['categoria_id'];
+            }
         } else {
             foreach ($reglaJson as $r) {
-                if (is_array($r) && isset($r['id_producto'])) {
+                if (!is_array($r)) {
+                    continue;
+                }
+                if (isset($r['id_producto'])) {
                     $idsProductos[] = (int)$r['id_producto'];
+                }
+                if (isset($r['categoria_id'])) {
+                    $idsCategorias[] = (int)$r['categoria_id'];
                 }
             }
         }
     }
 
-    $idsProductos = array_values(array_unique(array_filter($idsProductos)));
+    $idsProductos  = array_values(array_unique(array_filter($idsProductos)));
+    $idsCategorias = array_values(array_unique(array_filter($idsCategorias)));
 
     if (!empty($idsProductos)) {
         $idsList = implode(',', array_map('intval', $idsProductos));
@@ -53,14 +65,28 @@ while ($row = $resPromociones->fetch_assoc()) {
         }
     }
 
+    if (!empty($idsCategorias)) {
+        $idsListCat = implode(',', array_map('intval', $idsCategorias));
+        $resCat = $conn->query("SELECT id, nombre FROM catalogo_categorias WHERE id IN ($idsListCat)");
+        if ($resCat) {
+            while ($c = $resCat->fetch_assoc()) {
+                $categoriasRegla[] = [
+                    'id'     => (int)$c['id'],
+                    'nombre' => $c['nombre'],
+                ];
+            }
+        }
+    }
+
     $promociones[] = [
         'id'              => (int)$row['id'],
         'nombre'          => $row['nombre'],
         'regla'           => $row['regla'],
         'tipo'            => $row['tipo'],
         'monto'           => isset($row['monto']) ? (float)$row['monto'] : 0.0,
-        'tipo_venta'      => $row['tipo_venta'] ?? null,
-        'productos_regla' => $productosRegla,
+        'tipo_venta'       => $row['tipo_venta'] ?? null,
+        'productos_regla'  => $productosRegla,
+        'categorias_regla' => $categoriasRegla,
     ];
 }
 
@@ -69,4 +95,3 @@ echo json_encode([
     'success'     => true,
     'promociones' => $promociones,
 ]);
-
