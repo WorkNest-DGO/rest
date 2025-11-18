@@ -2317,16 +2317,19 @@ function validarPromosAcumulablesLlevarVenta(selectedIds, carrito) {
         return { ok: true };
     }
 
-    const promo6 = combos.find(p => parseInt(p.id, 10) === 6);
-    if (!promo6) {
+    const countPromos = id => combos.filter(p => parseInt(p.id, 10) === id).length;
+    const promo5Count = countPromos(5);
+    const promo6Count = countPromos(6);
+    const promo9Count = countPromos(9);
+    if (!promo5Count && !promo6Count && !promo9Count) {
         return { ok: true };
     }
 
-    const tiene5 = combos.some(p => parseInt(p.id, 10) === 5);
-    const tiene9 = combos.some(p => parseInt(p.id, 10) === 9);
+    const promo6 = combos.find(p => parseInt(p.id, 10) === 6);
+    const promo9Obj = combos.find(p => parseInt(p.id, 10) === 9) || {};
 
     let rollPromo6Ids = [];
-    if (promo6 && promo6.regla) {
+    if (promo6Count && promo6 && promo6.regla) {
         let rj;
         try { rj = JSON.parse(promo6.regla); } catch (e) { rj = null; }
         const arr = Array.isArray(rj) ? rj : (rj ? [rj] : []);
@@ -2352,35 +2355,48 @@ function validarPromosAcumulablesLlevarVenta(selectedIds, carrito) {
         return { ok: true };
     }
 
-    const g6 = Math.min(Math.floor(rollSubsetCount / 2), teaCount);
-    let g5 = 0;
-    if (tiene5) {
-        g5 = Math.floor(teaCount / 2);
-    }
-    let g9 = 0;
-    if (tiene9) {
-        const cantidadReq9 = 3;
-        g9 = Math.floor(cat9Count / cantidadReq9);
-    }
+    const describirPromos = (nombres = []) => {
+        const lista = nombres.filter(Boolean);
+        if (!lista.length) return '';
+        const fraseBase = lista.length === 1 ? 'La promoción' : 'Las promociones';
+        if (lista.length === 1) {
+            return `${fraseBase} "${lista[0]}"`;
+        }
+        if (lista.length === 2) {
+            return `${fraseBase} "${lista[0]}" y "${lista[1]}"`;
+        }
+        const ult = lista.pop();
+        return `${fraseBase} "${lista.join('", "')}" y "${ult}"`;
+    };
 
     const errores = [];
     const nombrePromo5 = (combos.find(p => parseInt(p.id, 10) === 5) || {}).nombre || '2 Té';
-    const nombrePromo6 = promo6.nombre || '2 rollos y té';
-    const promo9Obj = combos.find(p => parseInt(p.id, 10) === 9) || {};
+    const nombrePromo6 = (promo6 || {}).nombre || '2 rollos y té';
     const nombrePromo9 = promo9Obj.nombre || '3x $209 en rollos';
     let nombreCat9 = 'categoría 9';
     if (promo9Obj && Array.isArray(promo9Obj.categorias_regla) && promo9Obj.categorias_regla.length) {
         nombreCat9 = promo9Obj.categorias_regla[0].nombre || nombreCat9;
     }
 
-    const totalTeaNeeded = (g6 * 1) + (g5 * 2);
-    if (totalTeaNeeded > teaCount && (tiene5 || g6 > 0)) {
-        errores.push(`Las promociones "${nombrePromo6}" y "${nombrePromo5}" requieren ${totalTeaNeeded} tés y solo hay ${teaCount}.`);
+    const totalTeaNeeded = (promo6Count * 1) + (promo5Count * 2);
+    if ((promo5Count || promo6Count) && totalTeaNeeded > teaCount) {
+        errores.push(`${describirPromos([
+            promo6Count ? nombrePromo6 : null,
+            promo5Count ? nombrePromo5 : null,
+        ])} requieren ${totalTeaNeeded} tés y solo hay ${teaCount}.`);
     }
 
-    const totalRollsNeeded = (g6 * 2) + (g9 * 3);
-    if (totalRollsNeeded > cat9Count && (tiene9 || g6 > 0)) {
-        errores.push(`Las promociones "${nombrePromo6}" y "${nombrePromo9}" requieren ${totalRollsNeeded} rollos (${nombreCat9}) y solo hay ${cat9Count}.`);
+    const totalRollPromo6Needed = promo6Count * 2;
+    if (promo6Count && totalRollPromo6Needed > rollSubsetCount) {
+        errores.push(`${describirPromos([nombrePromo6])} requiere ${totalRollPromo6Needed} rollos válidos y solo hay ${rollSubsetCount}.`);
+    }
+
+    const totalRollsNeeded = totalRollPromo6Needed + (promo9Count * 3);
+    if ((promo6Count || promo9Count) && totalRollsNeeded > cat9Count) {
+        errores.push(`${describirPromos([
+            promo6Count ? nombrePromo6 : null,
+            promo9Count ? nombrePromo9 : null,
+        ])} requieren ${totalRollsNeeded} rollos (${nombreCat9}) y solo hay ${cat9Count}.`);
     }
 
     if (errores.length) {
