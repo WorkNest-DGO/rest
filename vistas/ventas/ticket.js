@@ -80,11 +80,15 @@ function llenarTicket(data) {
         });
         if (!combos.length) return { ok: true };
 
-        const promo6 = combos.find(function (p) { return parseInt(p.id, 10) === 6; });
-        if (!promo6) return { ok: true };
+        const countPromos = function(id) {
+            return combos.filter(function (p) { return parseInt(p.id, 10) === id; }).length;
+        };
+        const promo6Count = countPromos(6);
+        if (!promo6Count) return { ok: true };
 
-        const tiene5 = combos.some(function (p) { return parseInt(p.id, 10) === 5; });
-        const tiene9 = combos.some(function (p) { return parseInt(p.id, 10) === 9; });
+        const promo6 = combos.find(function (p) { return parseInt(p.id, 10) === 6; });
+        const promo5Count = countPromos(5);
+        const promo9Count = countPromos(9);
 
         let rollPromo6Ids = [];
         if (promo6 && promo6.regla) {
@@ -113,17 +117,6 @@ function llenarTicket(data) {
             return { ok: true };
         }
 
-        const g6 = Math.min(Math.floor(rollSubsetCount / 2), teaCount);
-        let g5 = 0;
-        if (tiene5) {
-            g5 = Math.floor(teaCount / 2);
-        }
-        let g9 = 0;
-        if (tiene9) {
-            const cantidadReq9 = 3;
-            g9 = Math.floor(cat9Count / cantidadReq9);
-        }
-
         const errores = [];
         const nombrePromo5 = (combos.find(function (p) { return parseInt(p.id, 10) === 5; }) || {}).nombre || '2 Té';
         const nombrePromo6 = promo6.nombre || '2 rollos y té';
@@ -134,14 +127,19 @@ function llenarTicket(data) {
             nombreCat9 = promo9Obj.categorias_regla[0].nombre || nombreCat9;
         }
 
-        const totalTeaNeeded = (g6 * 1) + (g5 * 2);
-        if (totalTeaNeeded > teaCount && (tiene5 || g6 > 0)) {
-            errores.push(`Las promociones "${nombrePromo6}" y "${nombrePromo5}" requieren ${totalTeaNeeded} tés y solo hay ${teaCount}.`);
+        const totalTeaNeeded = (promo6Count * 1) + (promo5Count * 2);
+        if (totalTeaNeeded > teaCount && (promo5Count > 0 || promo6Count > 0)) {
+            errores.push(`Las promociones "${nombrePromo6}"${promo5Count ? ' y "' + nombrePromo5 + '"' : ''} requieren ${totalTeaNeeded} tés y solo hay ${teaCount}.`);
         }
 
-        const totalRollsNeeded = (g6 * 2) + (g9 * 3);
-        if (totalRollsNeeded > cat9Count && (tiene9 || g6 > 0)) {
-            errores.push(`Las promociones "${nombrePromo6}" y "${nombrePromo9}" requieren ${totalRollsNeeded} rollos (${nombreCat9}) y solo hay ${cat9Count}.`);
+        const totalRollPromo6Needed = promo6Count * 2;
+        if (totalRollPromo6Needed > rollSubsetCount) {
+            errores.push(`La promoción "${nombrePromo6}" requiere ${totalRollPromo6Needed} rollos válidos y solo hay ${rollSubsetCount}.`);
+        }
+
+        const totalRollsNeeded = totalRollPromo6Needed + (promo9Count * 3);
+        if (totalRollsNeeded > cat9Count && (promo9Count > 0 || promo6Count > 0)) {
+            errores.push(`Las promociones "${nombrePromo6}"${promo9Count ? ' y "' + nombrePromo9 + '"' : ''} requieren ${totalRollsNeeded} rollos (${nombreCat9}) y solo hay ${cat9Count}.`);
         }
 
         if (errores.length) {
@@ -1477,11 +1475,13 @@ function mostrarTotal() {
         });
         if (!combos.length) return { ok: true };
 
-        const promo6 = combos.find(p => parseInt(p.id, 10) === 6);
-        if (!promo6) return { ok: true };
+        const countPromos = id => combos.filter(p => parseInt(p.id, 10) === id).length;
+        const promo6Count = countPromos(6);
+        if (!promo6Count) return { ok: true };
 
-        const tiene5 = combos.some(p => parseInt(p.id, 10) === 5);
-        const tiene9 = combos.some(p => parseInt(p.id, 10) === 9);
+        const promo6 = combos.find(p => parseInt(p.id, 10) === 6);
+        const promo5Count = countPromos(5);
+        const promo9Count = countPromos(9);
 
         let rollPromo6Ids = [];
         if (promo6 && promo6.regla) {
@@ -1508,30 +1508,24 @@ function mostrarTotal() {
             return { ok: true };
         }
 
-        const g6 = Math.min(Math.floor(rollSubsetCount / 2), teaCount);
-        let g5 = 0;
-        if (tiene5) {
-            g5 = Math.floor(teaCount / 2);
-        }
-        let g9 = 0;
-        if (tiene9) {
-            const cantidadReq9 = 3;
-            g9 = Math.floor(cat9Count / cantidadReq9);
-        }
-
         const errores = [];
         const nombrePromo5 = (combos.find(p => parseInt(p.id, 10) === 5) || {}).nombre || '2 TǸ';
         const nombrePromo6 = promo6.nombre || '2 rollos y tǸ';
         const nombrePromo9 = (combos.find(p => parseInt(p.id, 10) === 9) || {}).nombre || '3x $209 en rollos';
 
-        const totalTeaNeeded = (g6 * 1) + (g5 * 2);
-        if (totalTeaNeeded > teaCount && (tiene5 || g6 > 0)) {
-            errores.push(`Las promociones "${nombrePromo6}" y "${nombrePromo5}" requieren ${totalTeaNeeded} tés y solo hay ${teaCount}.`);
+        const totalTeaNeeded = (promo6Count * 1) + (promo5Count * 2);
+        if (totalTeaNeeded > teaCount && (promo5Count > 0 || promo6Count > 0)) {
+            errores.push(`Las promociones "${nombrePromo6}"${promo5Count ? ' y "' + nombrePromo5 + '"' : ''} requieren ${totalTeaNeeded} tés y solo hay ${teaCount}.`);
         }
 
-        const totalRollsNeeded = (g6 * 2) + (g9 * 3);
-        if (totalRollsNeeded > cat9Count && (tiene9 || g6 > 0)) {
-            errores.push(`Las promociones "${nombrePromo6}" y "${nombrePromo9}" requieren ${totalRollsNeeded} rollos (categoría 9) y solo hay ${cat9Count}.`);
+        const totalRollPromo6Needed = promo6Count * 2;
+        if (totalRollPromo6Needed > rollSubsetCount) {
+            errores.push(`La promoción "${nombrePromo6}" requiere ${totalRollPromo6Needed} rollos válidos y solo hay ${rollSubsetCount}.`);
+        }
+
+        const totalRollsNeeded = totalRollPromo6Needed + (promo9Count * 3);
+        if (totalRollsNeeded > cat9Count && (promo9Count > 0 || promo6Count > 0)) {
+            errores.push(`Las promociones "${nombrePromo6}"${promo9Count ? ' y "' + nombrePromo9 + '"' : ''} requieren ${totalRollsNeeded} rollos (categoría 9) y solo hay ${cat9Count}.`);
         }
 
         if (errores.length) {
