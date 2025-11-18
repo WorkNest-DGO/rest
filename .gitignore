@@ -6,3 +6,4 @@ rest.rar
 api/horarios/debug_serie.log
 logs/php_error.log
 restfin.rar
+api/cocina/runtime/cocina_events.jsonl
