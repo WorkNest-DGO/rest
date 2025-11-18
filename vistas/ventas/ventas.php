@@ -81,10 +81,18 @@ ob_start();
 
         <!-- Promociones aplicables a la venta (opcional, filtradas por tipo de entrega) -->
         <div id="campoPromocion" class="form-group" style="display:none;">
-          <label for="promocion_id" class="text-white">Promoci&oacute;n:</label>
-          <select id="promocion_id" name="promocion_id" class="form-control">
-            <option value="">Sin promoci&oacute;n</option>
-          </select>
+          <label class="text-white d-block">Promociones:</label>
+          <div id="panelPromosVenta" class="promos-panel bg-light text-dark rounded p-3">
+            <div class="promo-row d-flex flex-wrap gap-2 align-items-center">
+              <select id="promocion_id" name="promocion_id" class="form-control promo-select flex-grow-1"></select>
+              <button type="button" class="btn btn-secondary" id="btnAgregarPromoVenta">Agregar promoci&oacute;n</button>
+            </div>
+            <div id="promosVentaDinamicas"></div>
+            <small class="text-muted d-block mt-2">Puedes activar m&aacute;s de una promoci&oacute;n; se validar&aacute;n contra los productos capturados.</small>
+          </div>
+          <div class="text-white mt-2">
+            Promociones activas: <span id="lblPromosActivasVenta">0</span>
+          </div>
         </div>
 
         <div id="campoMesa" class="form-group">
@@ -471,6 +479,26 @@ ob_start();
     window.ENVIO_CASA_PRODUCT_ID = 9001;
     window.ENVIO_CASA_DEFAULT_PRECIO = 30.00;
 </script>
+<!-- Modal de error de promoción -->
+<div class="modal fade" id="modalPromoError" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Promoci&oacute;n no aplicable</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="promoErrorMsg"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Corte enviado -->
 <div class="modal fade" id="modalCorteEnviado" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog" role="document">
