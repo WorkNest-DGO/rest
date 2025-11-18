@@ -117,6 +117,9 @@ let repartidores = [];
 let ticketRequests = [];
 let ventaIdActual = null;
 let mesas = [];
+// Catálogo de promociones para selección en ventas
+let catalogoPromocionesVenta = [];
+const promocionesUrlVentas = '../../api/tickets/promociones.php';
 
 // ==== [INICIO BLOQUE valida: validación para cierre de corte] ====
 const VENTAS_URL = typeof API_LISTAR_VENTAS !== 'undefined' ? API_LISTAR_VENTAS : '../../api/ventas/listar_ventas.php';
@@ -1697,6 +1700,16 @@ async function registrarVenta() {
         corte_id: corteIdActual,
         sede_id: sedeId
     };
+    // Promoción seleccionada (opcional)
+    try {
+        const selPromo = document.getElementById('promocion_id');
+        if (selPromo) {
+            const promoVal = parseInt(selPromo.value || '0', 10);
+            if (!isNaN(promoVal) && promoVal > 0) {
+                payload.promocion_id = promoVal;
+            }
+        }
+    } catch (_) {}
 
     // Si el panel de enví­o está activo, incluir precio_envio y envio_cantidad explí­citos para blindaje en backend
     try {
@@ -1750,12 +1763,14 @@ async function resetFormularioVenta() {
     const rep = document.getElementById('repartidor_id');
     const mesero = document.getElementById('usuario_id');
     const obs = document.getElementById('observacion');
+    const selPromo = document.getElementById('promocion_id');
 
     if (tipoEntrega) tipoEntrega.value = '';         // vuelve al estado neutro
     if (mesa) mesa.value = '';
     if (rep) rep.value = '';
     if (mesero) { mesero.disabled = false; mesero.value = ''; }
     if (obs) obs.value = '';
+    if (selPromo) selPromo.value = '';
 
     // Forzar placeholder y repintar selects clave
     ;['tipo_entrega','mesa_id','repartidor_id','usuario_id'].forEach(id => {
@@ -1828,6 +1843,7 @@ async function resetFormularioVenta() {
     ]);
 
     verificarActivacionProductos();
+    actualizarComboPromociones();
     if (tipoEntrega) tipoEntrega.focus();
 }
 
@@ -1925,15 +1941,17 @@ async function verDetalles(id) {
                 }
                   const payload = {
                       venta_id: parseInt(id),
-                      usuario_id: venta.usuario_id || 1,
-                      fecha: venta.fecha || '',
-                      tipo_entrega: venta.tipo_entrega || '',
+                      usuario_id: venta.usuario_id || info.usuario_id || 1,
+                      fecha: venta.fecha || info.fecha || '',
+                      tipo_entrega: venta.tipo_entrega || info.tipo_entrega || '',
                       propina_efectivo: info.propina_efectivo,
                       propina_cheque: info.propina_cheque,
                       propina_tarjeta: info.propina_tarjeta,
                       productos: info.productos,
                       total,
-                      sede_id: sede
+                      sede_id: venta.sede_id || info.sede_id || sede,
+                      promocion_id: venta.promocion_id || info.promocion_id || null,
+                      promocion_descuento: info.promocion_descuento || 0
                   };
                 localStorage.setItem('ticketData', JSON.stringify(payload));
                 imprimirTicket(id);
@@ -2146,6 +2164,62 @@ function verificarActivacionProductos() {
     }
 }
 
+// Carga catálogo de promociones para ventas y actualiza el combo según tipo de entrega
+async function cargarPromocionesVenta() {
+    try {
+        const resp = await fetch(promocionesUrlVentas);
+        const data = await resp.json();
+        if (data && data.success && Array.isArray(data.promociones)) {
+            catalogoPromocionesVenta = data.promociones;
+            actualizarComboPromociones();
+        }
+    } catch (e) {
+        console.error('Error cargando promociones para ventas', e);
+    }
+}
+
+function actualizarComboPromociones() {
+    const campo = document.getElementById('campoPromocion');
+    const sel = document.getElementById('promocion_id');
+    const tipoEl = document.getElementById('tipo_entrega');
+    if (!campo || !sel || !tipoEl) return;
+
+    const tipo = (tipoEl.value || '').toLowerCase();
+
+    // Limpiar opciones
+    sel.innerHTML = '';
+    const opt0 = document.createElement('option');
+    opt0.value = '';
+    opt0.textContent = 'Sin promoci\u00f3n';
+    sel.appendChild(opt0);
+
+    if (!tipo || !Array.isArray(catalogoPromocionesVenta) || !catalogoPromocionesVenta.length) {
+        campo.style.display = 'none';
+        return;
+    }
+
+    let promos = catalogoPromocionesVenta.slice();
+    if (tipo === 'mesa') {
+        promos = promos.filter(p => String(p.tipo_venta || '').toLowerCase() === 'mesa' || !p.tipo_venta);
+    } else if (tipo === 'domicilio' || tipo === 'rapido') {
+        promos = promos.filter(p => String(p.tipo_venta || '').toLowerCase() === 'llevar' || !p.tipo_venta);
+    }
+
+    if (!promos.length) {
+        campo.style.display = 'none';
+        return;
+    }
+
+    promos.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nombre;
+        sel.appendChild(opt);
+    });
+
+    campo.style.display = 'block';
+}
+
 // Listener tipo_entrega: deja tu lógica de mostrar/ocultar divs y AL FINAL llama a actualizarSelectorUsuario()
 const tipoEntregaEl = document.getElementById('tipo_entrega');
 if (tipoEntregaEl) {
@@ -2163,6 +2237,7 @@ if (tipoEntregaEl) {
 
         actualizarSelectorUsuario();
         aplicarEnvioSiCorresponde();
+        actualizarComboPromociones();
     });
 }
 
@@ -2424,6 +2499,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarRepartidores();
     cargarHistorial();
     cargarSolicitudes();
+    cargarPromocionesVenta();
     document.getElementById('registrarVenta').addEventListener('click', registrarVenta);
     document.getElementById('agregarProducto').addEventListener('click', agregarFilaProducto);
     actualizarSelectorUsuario();

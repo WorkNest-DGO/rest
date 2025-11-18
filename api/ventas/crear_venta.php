@@ -31,6 +31,13 @@ $corte_id      = isset($input['corte_id']) ? (int) $input['corte_id'] : null;
 $productos     = isset($input['productos']) && is_array($input['productos']) ? $input['productos'] : null;
 $observacion   = isset($input['observacion']) ? $input['observacion'] : null;
 $sede_id       = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$input['sede_id'] : 1;
+// Promoci&oacute;n seleccionada (opcional)
+$promocion_id  = isset($input['promocion_id']) ? (int)$input['promocion_id'] : null;
+if ($promocion_id !== null && $promocion_id <= 0) {
+    $promocion_id = null;
+}
+// De momento el descuento por promoci&oacute;n se calcular&aacute; al cerrar el ticket
+$promocion_descuento = 0.0;
 // Propinas opcionales (si no llegan, 0 por defecto)
 $propina_efectivo = isset($input['propina_efectivo']) ? (float)$input['propina_efectivo'] : 0.0;
 $propina_cheque   = isset($input['propina_cheque'])   ? (float)$input['propina_cheque']   : 0.0;
@@ -123,6 +130,15 @@ if ($tipo === 'mesa') {
             $upTotal->execute();
             $upTotal->close();
         }
+        // Si se env&iacute;a una promoci&oacute;n nueva, actualizarla
+        if ($promocion_id !== null) {
+            $upPromo = $conn->prepare('UPDATE ventas SET promocion_id = ? WHERE id = ?');
+            if ($upPromo) {
+                $upPromo->bind_param('ii', $promocion_id, $venta_id);
+                $upPromo->execute();
+                $upPromo->close();
+            }
+        }
     }
 }
 
@@ -130,17 +146,17 @@ $nueva_venta = false;
 
 if (!isset($venta_id)) {
     if ($tipo === 'domicilio') {
-        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, observacion, corte_id, cajero_id, fecha_asignacion, sede_id, propina_efectivo, propina_cheque, propina_tarjeta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?)');
+        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, observacion, corte_id, cajero_id, fecha_asignacion, sede_id, propina_efectivo, propina_cheque, propina_tarjeta, promocion_id, promocion_descuento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?)');
     } else {
-        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, observacion, corte_id, cajero_id, sede_id, propina_efectivo, propina_cheque, propina_tarjeta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $conn->prepare('INSERT INTO ventas (mesa_id, repartidor_id, usuario_id, tipo_entrega, total, observacion, corte_id, cajero_id, sede_id, propina_efectivo, propina_cheque, propina_tarjeta, promocion_id, promocion_descuento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
     }
     if (!$stmt) {
         error('Error al preparar venta: ' . $conn->error);
     }
     if ($tipo === 'domicilio') {
-        $stmt->bind_param('iiisdsiiiddd', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $observacion, $corte_id, $cajero_id, $sede_id, $propina_efectivo, $propina_cheque, $propina_tarjeta);
+        $stmt->bind_param('iiisdsiiidddid', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $observacion, $corte_id, $cajero_id, $sede_id, $propina_efectivo, $propina_cheque, $propina_tarjeta, $promocion_id, $promocion_descuento);
     } else {
-        $stmt->bind_param('iiisdsiiiddd', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $observacion, $corte_id, $cajero_id, $sede_id, $propina_efectivo, $propina_cheque, $propina_tarjeta);
+        $stmt->bind_param('iiisdsiiidddid', $mesa_id, $repartidor_id, $usuario_id, $tipo, $total, $observacion, $corte_id, $cajero_id, $sede_id, $propina_efectivo, $propina_cheque, $propina_tarjeta, $promocion_id, $promocion_descuento);
     }
     if (!$stmt->execute()) {
         error('Error al crear venta: ' . $stmt->error);

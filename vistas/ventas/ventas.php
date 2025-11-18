@@ -79,6 +79,14 @@ ob_start();
           <textarea id="observacion" name="observacion" class="form-control"></textarea>
         </div>
 
+        <!-- Promociones aplicables a la venta (opcional, filtradas por tipo de entrega) -->
+        <div id="campoPromocion" class="form-group" style="display:none;">
+          <label for="promocion_id" class="text-white">Promoci&oacute;n:</label>
+          <select id="promocion_id" name="promocion_id" class="form-control">
+            <option value="">Sin promoci&oacute;n</option>
+          </select>
+        </div>
+
         <div id="campoMesa" class="form-group">
           <label for="mesa_id" class="text-white">Mesa:</label>
           <select id="mesa_id" name="mesa_id" class="form-control">

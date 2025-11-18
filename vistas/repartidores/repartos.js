@@ -392,12 +392,15 @@ async function imprimirTicketReparto(ventaId) {
                 venta_id: parseInt(ventaId),
                 usuario_id: info.usuario_id || 1,
                 fecha: info.fecha || '',
+                tipo_entrega: info.tipo_entrega || '',
                 propina_efectivo: info.propina_efectivo || 0,
                 propina_cheque: info.propina_cheque || 0,
                 propina_tarjeta: info.propina_tarjeta || 0,
                 productos: info.productos || [],
                 total,
-                sede_id: info.sede_id || 1
+                sede_id: info.sede_id || 1,
+                promocion_id: info.promocion_id || null,
+                promocion_descuento: info.promocion_descuento || 0
             };
             localStorage.setItem('ticketData', JSON.stringify(payload));
             // Ir a la vista de ticket para imprimir

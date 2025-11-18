@@ -50,6 +50,7 @@ $totalPaginas = (int)ceil($totalRegistros / $limite);
 
 $query = "SELECT v.id AS venta_id, v.fecha, v.estatus, vw.usuario, vw.mesa, vw.repartidor,
                  v.tipo_entrega, v.usuario_id, v.entregado, v.sede_id, v.observacion,
+                 v.promocion_id, v.promocion_descuento,
                  GROUP_CONCAT(t.folio ORDER BY t.folio) AS folio,
                  MAX(t.mesa_nombre) AS mesa_nombre,
                  MAX(t.mesero_nombre) AS mesero_nombre,

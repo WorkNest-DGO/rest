@@ -178,6 +178,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const datos = JSON.parse(almacenado);
     // Exponer tipo_entrega de la venta de forma global para filtrar promociones por tipo_venta
     window.__tipoEntregaVenta = (datos.tipo_entrega || '').toLowerCase();
+    // Exponer promoci&oacute;n seleccionada en la venta (si existe) para preseleccionar en ticket
+    window.__promocionVentaId = datos.promocion_id || null;
     const totalPropinas = parseFloat(datos.propina_efectivo) + parseFloat(datos.propina_cheque) + parseFloat(datos.propina_tarjeta);
     if (parseFloat(totalPropinas) > parseFloat(0.00)){
         document.getElementById('divReimprimir').style.display = 'block';
@@ -193,6 +195,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await cargarPromociones();
         serieActual = await obtenerSerieActual();
         inicializarDividir(datos);
+        preseleccionarPromoVenta();
     }
     const btnImprimir = document.getElementById('btnImprimir');
     if (btnImprimir) btnImprimir.addEventListener('click', imprimirTicket);
@@ -305,6 +308,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (btnGuardar) btnGuardar.addEventListener('click', capturaPropinas);
         const btnCrear = document.getElementById('btnCrearTicket');
         if (btnCrear) btnCrear.addEventListener('click', guardarSubcuentas);
+    }
+
+    // Si la venta ya viene con una promoci&oacute;n seleccionada, tratar de preseleccionarla
+    function preseleccionarPromoVenta() {
+        try {
+            const baseId = window.__promocionVentaId ? parseInt(window.__promocionVentaId, 10) : 0;
+            if (!baseId) return;
+            const selects = document.querySelectorAll('.promos-panel select.promo-select');
+            if (!selects.length) return;
+            let aplicada = false;
+            selects.forEach(sel => {
+                if (aplicada) return;
+                if (sel.querySelector(`option[value=\"${baseId}\"]`)) {
+                    sel.value = String(baseId);
+                    const subDiv = sel.closest('[id^=\"sub\"]');
+                    if (subDiv && typeof recalcSub === 'function') {
+                        const subIdx = parseInt(subDiv.id.replace('sub', ''), 10) || 1;
+                        try { recalcSub(subIdx); } catch (_) {}
+                    }
+                    aplicada = true;
+                }
+            });
+        } catch (_) {}
     }
 
     // === Descuentos y cortesías ===

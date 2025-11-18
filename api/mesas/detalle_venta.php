@@ -15,7 +15,14 @@ $venta_id = (int)$input['venta_id'];
 
 // Obtener mesa y mesero de la venta
 $info = $conn->prepare(
-    'SELECT v.fecha AS fecha, m.nombre AS mesa, u.nombre AS mesero
+    'SELECT v.fecha AS fecha,
+            v.tipo_entrega,
+            v.usuario_id,
+            v.sede_id,
+            v.promocion_id,
+            v.promocion_descuento,
+            m.nombre AS mesa,
+            u.nombre AS mesero
      FROM ventas v
      JOIN mesas m ON v.mesa_id = m.id
      JOIN usuarios u ON v.usuario_id = u.id
@@ -57,9 +64,14 @@ while ($row = $res->fetch_assoc()) {
 $stmt->close();
 
 success([
-    'fecha'     => $datosVenta['fecha'] ?? '',
-    'mesa'      => $datosVenta['mesa'] ?? '',
-    'mesero'    => $datosVenta['mesero'] ?? '',
-    'productos' => $productos
+    'fecha'               => $datosVenta['fecha'] ?? '',
+    'tipo_entrega'        => $datosVenta['tipo_entrega'] ?? '',
+    'usuario_id'          => isset($datosVenta['usuario_id']) ? (int)$datosVenta['usuario_id'] : null,
+    'sede_id'             => isset($datosVenta['sede_id']) ? (int)$datosVenta['sede_id'] : null,
+    'promocion_id'        => isset($datosVenta['promocion_id']) ? (int)$datosVenta['promocion_id'] : null,
+    'promocion_descuento' => isset($datosVenta['promocion_descuento']) ? (float)$datosVenta['promocion_descuento'] : 0.0,
+    'mesa'                => $datosVenta['mesa'] ?? '',
+    'mesero'              => $datosVenta['mesero'] ?? '',
+    'productos'           => $productos
 ]);
 ?>

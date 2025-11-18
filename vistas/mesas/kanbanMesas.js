@@ -748,8 +748,17 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
                             : 0;
                         const payload = {
                             venta_id: parseInt(ventaId),
+                            usuario_id: info.usuario_id || 1,
+                            fecha: info.fecha || '',
+                            tipo_entrega: info.tipo_entrega || '',
                             productos: info.productos || [],
-                            total
+                            total,
+                            sede_id: info.sede_id || 1,
+                            propina_efectivo: info.propina_efectivo || 0,
+                            propina_cheque: info.propina_cheque || 0,
+                            propina_tarjeta: info.propina_tarjeta || 0,
+                            promocion_id: info.promocion_id || null,
+                            promocion_descuento: info.promocion_descuento || 0
                         };
                         localStorage.setItem('ticketData', JSON.stringify(payload));
                     } catch (_) { /* noop */ }
