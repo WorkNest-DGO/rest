@@ -101,7 +101,7 @@ function llenarTicket(data) {
                 .filter(function (v) { return !!v; });
         }
 
-        let cat9Count = 0;
+        const categoriasConteo = {};
         let rollSubsetCount = 0;
         let teaCount = 0;
         prodsSub.forEach(function (p) {
@@ -109,12 +109,41 @@ function llenarTicket(data) {
             if (!cant) return;
             const pid = parseInt(p.producto_id || p.id || 0, 10);
             const catId = parseInt(p.categoria_id || 0, 10);
-            if (catId === 9) cat9Count += cant;
+            if (catId) {
+                categoriasConteo[catId] = (categoriasConteo[catId] || 0) + cant;
+            }
             if (rollPromo6Ids.indexOf(pid) !== -1) rollSubsetCount += cant;
             if (pid === 66) teaCount += cant;
         });
 
-        if (!cat9Count && !rollSubsetCount && !teaCount) {
+        const extraerCategoriasPromo = function(promo) {
+            const ids = [];
+            if (!promo) return ids;
+            if (Array.isArray(promo.categorias_regla)) {
+                promo.categorias_regla.forEach(function(cat) {
+                    const cId = parseInt(cat && cat.id, 10);
+                    if (cId) ids.push(cId);
+                });
+            }
+            if (!ids.length && promo && promo.regla) {
+                let regla;
+                try { regla = JSON.parse(promo.regla); } catch (e) { regla = null; }
+                const arr = Array.isArray(regla) ? regla : (regla ? [regla] : []);
+                arr.forEach(function(r) {
+                    const cId = parseInt(r && r.categoria_id, 10);
+                    if (cId) ids.push(cId);
+                });
+            }
+            return Array.from(new Set(ids.filter(Boolean)));
+        };
+
+        const categoriasPromo9 = extraerCategoriasPromo(promo9Obj);
+        const categoriasParaConteo = categoriasPromo9.length ? categoriasPromo9 : [9];
+        const catPromoCount = categoriasParaConteo.reduce(function(sum, cId) {
+            return sum + (categoriasConteo[cId] || 0);
+        }, 0);
+
+        if (!catPromoCount && !rollSubsetCount && !teaCount) {
             return { ok: true };
         }
 
@@ -135,10 +164,21 @@ function llenarTicket(data) {
         const errores = [];
         const nombrePromo5 = (combos.find(function (p) { return parseInt(p.id, 10) === 5; }) || {}).nombre || '2 Té';
         const nombrePromo6 = (promo6 || {}).nombre || '2 rollos y té';
-        const nombrePromo9 = promo9Obj.nombre || '3x $209 en rollos';
+        const nombrePromo9 = (promo9Obj && promo9Obj.nombre) || '3x $209 en rollos';
         let nombreCat9 = 'categoría 9';
         if (promo9Obj && Array.isArray(promo9Obj.categorias_regla) && promo9Obj.categorias_regla.length) {
-            nombreCat9 = promo9Obj.categorias_regla[0].nombre || nombreCat9;
+            const nombres = promo9Obj.categorias_regla.map(function (cat) {
+                return cat && cat.nombre ? cat.nombre : null;
+            }).filter(Boolean);
+            if (nombres.length === 1) {
+                nombreCat9 = nombres[0];
+            } else if (nombres.length > 1) {
+                nombreCat9 = nombres.join(', ');
+            }
+        } else if (categoriasParaConteo.length === 1) {
+            nombreCat9 = 'categoría ' + categoriasParaConteo[0];
+        } else if (categoriasParaConteo.length > 1) {
+            nombreCat9 = 'categorías ' + categoriasParaConteo.join(', ');
         }
 
         const totalTeaNeeded = (promo6Count * 1) + (promo5Count * 2);
@@ -155,11 +195,11 @@ function llenarTicket(data) {
         }
 
         const totalRollsNeeded = totalRollPromo6Needed + (promo9Count * 3);
-        if ((promo6Count || promo9Count) && totalRollsNeeded > cat9Count) {
+        if ((promo6Count || promo9Count) && totalRollsNeeded > catPromoCount) {
             errores.push(`${describirPromos([
                 promo6Count ? nombrePromo6 : null,
                 promo9Count ? nombrePromo9 : null,
-            ])} requieren ${totalRollsNeeded} rollos (${nombreCat9}) y solo hay ${cat9Count}.`);
+            ])} requieren ${totalRollsNeeded} rollos (${nombreCat9}) y solo hay ${catPromoCount}.`);
         }
 
         if (errores.length) {
