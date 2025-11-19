@@ -13,6 +13,16 @@ if (!$input || !isset($input['venta_id'], $input['subcuentas']) || !is_array($in
 $banderaPromo = $input['bandera_promo'];
 $descuentoPromo = 0.00;
 $promoId=0;
+$promociones_ids = [];
+if (isset($input['promociones_ids']) && is_array($input['promociones_ids'])) {
+    foreach ($input['promociones_ids'] as $pid) {
+        $pid = (int)$pid;
+        if ($pid > 0) {
+            $promociones_ids[] = $pid;
+        }
+    }
+    $promociones_ids = array_values(array_unique($promociones_ids));
+}
 $venta_id   = (int)$input['venta_id'];
 $subcuentas = $input['subcuentas'];
 $sede_id    = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$input['sede_id'] : 1;
@@ -450,12 +460,62 @@ if ($banderaPromo) {
     $promoId = (int)$input['promocion_id'];
     $descuentoPromo = (float)$input['promocion_descuento'];
     $updPromoDesc = $conn->prepare('UPDATE ventas SET promocion_id = ? , promocion_descuento = ? WHERE id = ?');
-    if ($updPromoDesc) { 
-            $updPromoDesc->bind_param('idi', $promoId, $descuentoPromo ,$venta_id); 
-            $updPromoDesc->execute(); 
-            $updPromoDesc->close(); 
+    if ($updPromoDesc) {
+            $updPromoDesc->bind_param('idi', $promoId, $descuentoPromo ,$venta_id);
+            $updPromoDesc->execute();
+            $updPromoDesc->close();
     }
-
+    $conteoPromos = count($promociones_ids);
+    if ($conteoPromos > 1) {
+        $delPivot = $conn->prepare('DELETE FROM venta_promos WHERE venta_id = ?');
+        if ($delPivot) {
+            $delPivot->bind_param('i', $venta_id);
+            $delPivot->execute();
+            $delPivot->close();
+        }
+        $insPivot = $conn->prepare('INSERT INTO venta_promos (venta_id, promo_id, descuento_aplicado) VALUES (?, ?, ?)');
+        if ($insPivot) {
+            $ventaRef = $venta_id;
+            $promoRef = 0;
+            $descRef = 0.0;
+            $insPivot->bind_param('iid', $ventaRef, $promoRef, $descRef);
+            $perPromo = $conteoPromos > 0 ? round($descuentoPromo / $conteoPromos, 2) : 0.0;
+            $acumulado = 0.0;
+            foreach ($promociones_ids as $idx => $promoPivotId) {
+                $promoRef = (int)$promoPivotId;
+                if ($promoRef <= 0) {
+                    continue;
+                }
+                if ($conteoPromos === 1) {
+                    $descRef = round($descuentoPromo, 2);
+                } else {
+                    if ($idx === $conteoPromos - 1) {
+                        $descRef = round($descuentoPromo - $acumulado, 2);
+                    } else {
+                        $descRef = $perPromo;
+                        $acumulado += $perPromo;
+                    }
+                }
+                $insPivot->execute();
+            }
+            $insPivot->close();
+        }
+    } else {
+        $cleanPivot = $conn->prepare('DELETE FROM venta_promos WHERE venta_id = ?');
+        if ($cleanPivot) {
+            $cleanPivot->bind_param('i', $venta_id);
+            $cleanPivot->execute();
+            $cleanPivot->close();
+        }
+    }
+}
+elseif (!empty($promociones_ids)) {
+    $cleanPivot = $conn->prepare('DELETE FROM venta_promos WHERE venta_id = ?');
+    if ($cleanPivot) {
+        $cleanPivot->bind_param('i', $venta_id);
+        $cleanPivot->execute();
+        $cleanPivot->close();
+    }
 }
 
 $cerrar = $conn->prepare("UPDATE ventas SET estatus = 'cerrada' WHERE id = ?");

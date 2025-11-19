@@ -238,6 +238,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.__tipoEntregaVenta = (datos.tipo_entrega || '').toLowerCase();
     // Exponer promoci&oacute;n seleccionada en la venta (si existe) para preseleccionar en ticket
     window.__promocionVentaId = datos.promocion_id || null;
+    window.__promocionesVentaIds = Array.isArray(datos.promociones_ids)
+        ? datos.promociones_ids.map(id => parseInt(id, 10)).filter(id => id > 0)
+        : [];
+    if ((!window.__promocionesVentaIds || window.__promocionesVentaIds.length === 0) && datos.promocion_id) {
+        const fallbackPromo = parseInt(datos.promocion_id, 10);
+        if (fallbackPromo) {
+            window.__promocionesVentaIds = [fallbackPromo];
+        }
+    }
     const totalPropinas = parseFloat(datos.propina_efectivo) + parseFloat(datos.propina_cheque) + parseFloat(datos.propina_tarjeta);
     if (parseFloat(totalPropinas) > parseFloat(0.00)){
         document.getElementById('divReimprimir').style.display = 'block';
@@ -275,8 +284,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     let catalogoBancos = [];
     let catalogoPromociones = [];
     let descuentoPromocion = 0;
-    let idPromocion = 0;    
+    let idPromocion = 0;
     let banderaPromo = false;
+    let promocionesAplicadasTicket = [];
+    window.__promocionesAplicadasTicket = promocionesAplicadasTicket;
     // Para combos con precio fijo (monto): se aplica como totalEsperado1 - monto
     let promoMontoFijo = 0;
     let promoSubIdx = null;
@@ -368,24 +379,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (btnCrear) btnCrear.addEventListener('click', guardarSubcuentas);
     }
 
-    // Si la venta ya viene con una promoci&oacute;n seleccionada, tratar de preseleccionarla
+    function obtenerPromosInicialesVenta() {
+        const base = Array.isArray(window.__promocionesVentaIds) ? window.__promocionesVentaIds : [];
+        const normalizados = Array.from(new Set(base.map(id => parseInt(id, 10)).filter(id => id > 0)));
+        if (normalizados.length) {
+            return normalizados;
+        }
+        const fallback = window.__promocionVentaId ? parseInt(window.__promocionVentaId, 10) : 0;
+        return fallback ? [fallback] : [];
+    }
+
+    // Si la venta ya viene con una o más promociones, tratar de preseleccionarlas
     function preseleccionarPromoVenta() {
         try {
-            const baseId = window.__promocionVentaId ? parseInt(window.__promocionVentaId, 10) : 0;
-            if (!baseId) return;
-            const selects = document.querySelectorAll('.promos-panel select.promo-select');
+            const ids = obtenerPromosInicialesVenta();
+            if (!ids.length) return;
+            let selects = Array.from(document.querySelectorAll('.promos-panel select.promo-select'));
             if (!selects.length) return;
-            let aplicada = false;
-            selects.forEach(sel => {
-                if (aplicada) return;
-                if (sel.querySelector(`option[value=\"${baseId}\"]`)) {
-                    sel.value = String(baseId);
-                    const subDiv = sel.closest('[id^=\"sub\"]');
-                    if (subDiv && typeof recalcSub === 'function') {
-                        const subIdx = parseInt(subDiv.id.replace('sub', ''), 10) || 1;
-                        try { recalcSub(subIdx); } catch (_) {}
-                    }
-                    aplicada = true;
+            const addBtn = document.querySelector('.promos-panel .btn-add-promo');
+            ids.forEach((pid, idx) => {
+                if (!pid) return;
+                if (!selects[idx] && addBtn) {
+                    addBtn.click();
+                    selects = Array.from(document.querySelectorAll('.promos-panel select.promo-select'));
+                }
+                const sel = selects[idx];
+                if (sel && sel.querySelector(`option[value=\"${pid}\"]`)) {
+                    sel.value = String(pid);
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             });
         } catch (_) {}
@@ -1074,6 +1095,7 @@ function validarPromoSeleccion(subIdx, selectEl) {
         try {
             let sumPromo = 0;
             let firstId = 0;
+            const idsSeleccionados = new Set();
             for (let i = 1; i <= numSub; i++) {
                 const subDiv = document.getElementById('sub' + i);
                 if (!subDiv) continue;
@@ -1081,15 +1103,20 @@ function validarPromoSeleccion(subIdx, selectEl) {
                 if (state && typeof state.promoTotal === 'number') {
                     sumPromo += Number(state.promoTotal || 0);
                 }
-                if (!firstId) {
-                    const sel = subDiv.querySelector('select.promo-select');
+                subDiv.querySelectorAll('select.promo-select').forEach(sel => {
                     const id = sel ? parseInt(sel.value || '0', 10) : 0;
-                    if (id) firstId = id;
-                }
+                    if (!id) return;
+                    if (!firstId) {
+                        firstId = id;
+                    }
+                    idsSeleccionados.add(id);
+                });
             }
             descuentoPromocion = Number(sumPromo.toFixed(2));
             banderaPromo = descuentoPromocion > 0;
             idPromocion = firstId || 0;
+            promocionesAplicadasTicket = Array.from(idsSeleccionados);
+            window.__promocionesAplicadasTicket = promocionesAplicadasTicket;
         } catch(_) {}
     };
     async function capturaPropinas() {
@@ -1253,6 +1280,7 @@ function mostrarTotal() {
             promocion_id: idPromocion,
             promocion_descuento: descuentoPromocion,
             bandera_promo: banderaPromo,
+            promociones_ids: Array.isArray(window.__promocionesAplicadasTicket) ? window.__promocionesAplicadasTicket : [],
             // Extras de descuentos
             descuento_porcentaje: window.__DESC_DATA__?.pct || 0,
             descuento_total: window.__DESC_DATA__?.descTotal || 0,

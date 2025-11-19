@@ -39,6 +39,13 @@ async function cargarHistorial(page = currentPage) {
                     row.classList.add('table-info');
                 }
                 const fechaMostrar = fechaParte === hoy ? 'Hoy' : v.fecha;
+                const totalNetoNum = (v.total_neto !== undefined && v.total_neto !== null)
+                    ? parseFloat(v.total_neto)
+                    : NaN;
+                const totalBase = parseFloat(v.total) || 0;
+                const totalMostrar = Number.isFinite(totalNetoNum)
+                    ? totalNetoNum.toFixed(2)
+                    : totalBase.toFixed(2);
                 const accion = v.estatus !== 'cancelada'
                     ? `<button class=\"btn custom-btn btn-cancelar\" data-id=\"${id}\">Cancelar</button>`
                     : '';
@@ -54,7 +61,7 @@ async function cargarHistorial(page = currentPage) {
                     <td>${id}</td>
                     <td>${v.folio ? v.folio : 'N/A'}</td>
                     <td>${fechaMostrar}</td>
-                    <td>${v.total}</td>
+                    <td>${totalMostrar}</td>
                     <td>${v.tipo_entrega}</td>
                     <td>${destino || ''}</td>
                     <td>${v.observacion ? String(v.observacion) : ''}</td>
@@ -1963,7 +1970,8 @@ async function verDetalles(id) {
                       total,
                       sede_id: venta.sede_id || info.sede_id || sede,
                       promocion_id: venta.promocion_id || info.promocion_id || null,
-                      promocion_descuento: info.promocion_descuento || 0
+                      promocion_descuento: info.promocion_descuento || 0,
+                      promociones_ids: Array.isArray(info.promociones_ids) ? info.promociones_ids : []
                   };
                 localStorage.setItem('ticketData', JSON.stringify(payload));
                 imprimirTicket(id);
@@ -2128,7 +2136,10 @@ async function imprimirSolicitud(mesaId, ventaId) {
                   tipo_entrega: venta.tipo_entrega || '',
                   productos: info.productos,
                   total,
-                  sede_id: sede
+                  sede_id: sede,
+                  promocion_id: venta.promocion_id || info.promocion_id || null,
+                  promocion_descuento: info.promocion_descuento || 0,
+                  promociones_ids: Array.isArray(info.promociones_ids) ? info.promociones_ids : []
               };
             localStorage.setItem('ticketData', JSON.stringify(payload));
             ticketPrinted(mesaId);

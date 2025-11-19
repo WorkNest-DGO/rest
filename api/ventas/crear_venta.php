@@ -3,6 +3,50 @@ session_start();
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
+if (!function_exists('sincronizarPromosVenta')) {
+    /**
+     * Sincroniza las promociones asociadas a una venta en la tabla pivote.
+     *
+     * @param mysqli $conn
+     * @param int    $ventaId
+     * @param int[]  $promoIds
+     */
+    function sincronizarPromosVenta($conn, $ventaId, $promoIds)
+    {
+        $ventaId = (int)$ventaId;
+        if ($ventaId <= 0) {
+            return;
+        }
+
+        $del = $conn->prepare('DELETE FROM venta_promos WHERE venta_id = ?');
+        if ($del) {
+            $del->bind_param('i', $ventaId);
+            $del->execute();
+            $del->close();
+        }
+
+        if (empty($promoIds)) {
+            return;
+        }
+
+        $ins = $conn->prepare('INSERT INTO venta_promos (venta_id, promo_id, descuento_aplicado) VALUES (?, ?, NULL)');
+        if (!$ins) {
+            return;
+        }
+        $ventaRef = $ventaId;
+        $promoRef = 0;
+        $ins->bind_param('ii', $ventaRef, $promoRef);
+        foreach ($promoIds as $pid) {
+            $promoRef = (int)$pid;
+            if ($promoRef <= 0) {
+                continue;
+            }
+            $ins->execute();
+        }
+        $ins->close();
+    }
+}
+
 // Config de envÃ­o automÃ¡tico (Repartidor casa)
 if (!defined('ENVIO_CASA_PRODUCT_ID')) define('ENVIO_CASA_PRODUCT_ID', 9001);
 if (!defined('ENVIO_CASA_NOMBRE'))    define('ENVIO_CASA_NOMBRE', 'ENVÃO â€“ Repartidor casa');
@@ -35,6 +79,21 @@ $sede_id       = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$i
 $promocion_id  = isset($input['promocion_id']) ? (int)$input['promocion_id'] : null;
 if ($promocion_id !== null && $promocion_id <= 0) {
     $promocion_id = null;
+}
+// Promociones adicionales seleccionadas desde el panel
+$promociones_ids = [];
+if (isset($input['promociones_ids']) && is_array($input['promociones_ids'])) {
+    foreach ($input['promociones_ids'] as $pid) {
+        $pid = (int)$pid;
+        if ($pid > 0) {
+            $promociones_ids[] = $pid;
+        }
+    }
+    $promociones_ids = array_values(array_unique($promociones_ids));
+}
+$usaPivotPromos = count($promociones_ids) > 1;
+if (!$usaPivotPromos && $promocion_id === null && count($promociones_ids) === 1) {
+    $promocion_id = $promociones_ids[0];
 }
 // De momento el descuento por promoci&oacute;n se calcular&aacute; al cerrar el ticket
 $promocion_descuento = 0.0;
@@ -317,6 +376,15 @@ if ($recalc) {
     $recalc->bind_param('ii', $venta_id, $venta_id);
     $recalc->execute();
     $recalc->close();
+}
+
+// Sincronizar promociones en la tabla pivote (solo aplica cuando hay más de una)
+if (isset($venta_id) && $venta_id > 0) {
+    if ($usaPivotPromos) {
+        sincronizarPromosVenta($conn, $venta_id, $promociones_ids);
+    } else {
+        sincronizarPromosVenta($conn, $venta_id, []);
+    }
 }
 
 // LÃ³gica reemplazada por base de datos: ver bd.sql (Logs)

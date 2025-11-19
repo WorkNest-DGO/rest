@@ -400,7 +400,8 @@ async function imprimirTicketReparto(ventaId) {
                 total,
                 sede_id: info.sede_id || 1,
                 promocion_id: info.promocion_id || null,
-                promocion_descuento: info.promocion_descuento || 0
+                promocion_descuento: info.promocion_descuento || 0,
+                promociones_ids: Array.isArray(info.promociones_ids) ? info.promociones_ids : []
             };
             localStorage.setItem('ticketData', JSON.stringify(payload));
             // Ir a la vista de ticket para imprimir

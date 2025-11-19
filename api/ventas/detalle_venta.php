@@ -52,6 +52,24 @@ if (!$info->execute()) {
 $datosVenta = $info->get_result()->fetch_assoc();
 $info->close();
 
+$promosVenta = [];
+$promosIds = [];
+$promosTotal = 0.0;
+if ($promoStmt = $conn->prepare('SELECT vp.promo_id, cp.nombre, COALESCE(vp.descuento_aplicado,0) AS descuento_aplicado FROM venta_promos vp JOIN catalogo_promos cp ON cp.id = vp.promo_id WHERE vp.venta_id = ? ORDER BY vp.id')) {
+    $promoStmt->bind_param('i', $venta_id);
+    if ($promoStmt->execute()) {
+        $resPromo = $promoStmt->get_result();
+        while ($rowPromo = $resPromo->fetch_assoc()) {
+            $rowPromo['promo_id'] = (int)($rowPromo['promo_id'] ?? 0);
+            $rowPromo['descuento_aplicado'] = isset($rowPromo['descuento_aplicado']) ? (float)$rowPromo['descuento_aplicado'] : 0.0;
+            $promosVenta[] = $rowPromo;
+            $promosIds[] = $rowPromo['promo_id'];
+            $promosTotal += $rowPromo['descuento_aplicado'];
+        }
+    }
+    $promoStmt->close();
+}
+
 $stmt = $conn->prepare(
     'SELECT vd.id, vd.producto_id, p.nombre, vd.cantidad, vd.precio_unitario, ' .
     '(vd.cantidad * vd.precio_unitario) AS subtotal, vd.estado_producto, vd.entregado_hr, p.categoria_id ' .
@@ -86,6 +104,9 @@ echo json_encode([
     'sede_id'              => isset($datosVenta['sede_id']) ? (int)$datosVenta['sede_id'] : null,
     'promocion_id'         => isset($datosVenta['promocion_id']) ? (int)$datosVenta['promocion_id'] : null,
     'promocion_descuento'  => isset($datosVenta['promocion_descuento']) ? (float)$datosVenta['promocion_descuento'] : 0.0,
+    'promociones'          => $promosVenta,
+    'promociones_ids'      => $promosIds,
+    'promociones_total_descuento' => $promosTotal,
     'mesa'                 => $datosVenta['mesa'] ?? '',
     'repartidor'           => $datosVenta['repartidor'] ?? '',
     'mesero'               => $datosVenta['mesero'] ?? '',

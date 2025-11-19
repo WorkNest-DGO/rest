@@ -700,6 +700,7 @@ function mostrarTotal() {
             promocion_id: idPromocion,
             promocion_descuento: descuentoPromocion,
             bandera_promo: banderaPromo,
+            promociones_ids: Array.isArray(window.__promocionesAplicadasTicket) ? window.__promocionesAplicadasTicket : [],
             // Extras de descuentos
             descuento_porcentaje: window.__DESC_DATA__?.pct || 0,
             descuento_total: window.__DESC_DATA__?.descTotal || 0,
