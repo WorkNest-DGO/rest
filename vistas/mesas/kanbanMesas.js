@@ -758,7 +758,8 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
                             propina_cheque: info.propina_cheque || 0,
                             propina_tarjeta: info.propina_tarjeta || 0,
                             promocion_id: info.promocion_id || null,
-                            promocion_descuento: info.promocion_descuento || 0
+                            promocion_descuento: info.promocion_descuento || 0,
+                            promociones_ids: Array.isArray(info.promociones_ids) ? info.promociones_ids : []
                         };
                         localStorage.setItem('ticketData', JSON.stringify(payload));
                     } catch (_) { /* noop */ }
