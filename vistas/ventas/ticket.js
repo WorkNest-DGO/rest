@@ -209,6 +209,115 @@ function llenarTicket(data) {
         return { ok: true };
     }
 
+    function calcularDescuentoCombosEspeciales(prodsSub, promoCountMap) {
+        try {
+            const countPromo5 = promoCountMap[5] || 0; // 2 Té x $49
+            const countPromo6 = promoCountMap[6] || 0; // 2 rollos + té $169
+            const countPromo9 = promoCountMap[9] || 0; // 3x$209
+            if (!countPromo5 && !countPromo6 && !countPromo9) {
+                return 0;
+            }
+
+            const buscarPromo = (id) => (catalogoPromociones || []).find(p => parseInt(p.id, 10) === id) || null;
+            const promo5 = countPromo5 ? buscarPromo(5) : null;
+            const promo6 = countPromo6 ? buscarPromo(6) : null;
+            const promo9 = countPromo9 ? buscarPromo(9) : null;
+
+            const promo6RollIds = [];
+            if (promo6 && promo6.regla) {
+                try {
+                    const regla6 = JSON.parse(promo6.regla);
+                    const arr = Array.isArray(regla6) ? regla6 : (regla6 ? [regla6] : []);
+                    arr.forEach(r => {
+                        const pid = parseInt(r && r.id_producto, 10);
+                        if (pid) promo6RollIds.push(pid);
+                    });
+                } catch (_) {}
+            }
+
+            const teaId = 66;
+            const unidadesRollCat9 = [];
+            const unidadesRollPromo6 = [];
+            const unidadesTea = [];
+            let unique = 0;
+            prodsSub.forEach(p => {
+                const pid = parseInt(p.producto_id || p.id || 0, 10);
+                const cat = parseInt(p.categoria_id || 0, 10);
+                const qty = Math.max(1, parseInt(p.cantidad || 1, 10));
+                const price = Number(p.precio_unitario || 0);
+                for (let i = 0; i < qty; i++) {
+                    const unit = { pid, cat, price, key: `${pid}-${cat}-${unique++}` };
+                    if (cat === 9) unidadesRollCat9.push(unit);
+                    if (promo6RollIds.includes(pid)) unidadesRollPromo6.push(unit);
+                    if (pid === teaId) unidadesTea.push(unit);
+                }
+            });
+
+            if (!unidadesRollCat9.length && !unidadesRollPromo6.length && !unidadesTea.length) {
+                return 0;
+            }
+
+            const sortDesc = arr => arr.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+            sortDesc(unidadesRollCat9);
+            sortDesc(unidadesRollPromo6);
+            sortDesc(unidadesTea);
+
+            const tomarUnidades = (arr, cantidad) => {
+                if (cantidad <= 0) return [];
+                return arr.splice(0, Math.min(cantidad, arr.length));
+            };
+            const eliminarDe = (arr, unidades) => {
+                unidades.forEach(u => {
+                    const idx = arr.findIndex(item => item.key === u.key);
+                    if (idx !== -1) arr.splice(idx, 1);
+                });
+            };
+
+            let totalDescuento = 0;
+
+            if (promo6 && countPromo6 > 0) {
+                const monto6 = Number(promo6.monto || 0);
+                const maxCombos6 = Math.min(
+                    countPromo6,
+                    Math.floor(unidadesRollPromo6.length / 2),
+                    unidadesTea.length
+                );
+                for (let i = 0; i < maxCombos6; i++) {
+                    const rollos = tomarUnidades(unidadesRollPromo6, 2);
+                    eliminarDe(unidadesRollCat9, rollos);
+                    const tes = tomarUnidades(unidadesTea, 1);
+                    const sumaGrupo = rollos.concat(tes).reduce((s, u) => s + Number(u.price || 0), 0);
+                    totalDescuento += Math.max(0, sumaGrupo - monto6);
+                }
+            }
+
+            if (promo9 && countPromo9 > 0) {
+                const monto9 = Number(promo9.monto || 0);
+                const maxCombos9 = Math.min(countPromo9, Math.floor(unidadesRollCat9.length / 3));
+                for (let i = 0; i < maxCombos9; i++) {
+                    const rollos = tomarUnidades(unidadesRollCat9, 3);
+                    const sumaGrupo = rollos.reduce((s, u) => s + Number(u.price || 0), 0);
+                    totalDescuento += Math.max(0, sumaGrupo - monto9);
+                }
+            }
+
+            if (promo5 && countPromo5 > 0) {
+                const monto5 = Number(promo5.monto || 0);
+                const maxCombos5 = Math.min(countPromo5, Math.floor(unidadesTea.length / 2));
+                for (let i = 0; i < maxCombos5; i++) {
+                    const tes = tomarUnidades(unidadesTea, 2);
+                    const sumaGrupo = tes.reduce((s, u) => s + Number(u.price || 0), 0);
+                    totalDescuento += Math.max(0, sumaGrupo - monto5);
+                }
+            }
+
+            return totalDescuento;
+        } catch (err) {
+            console.error('Error al calcular combos especiales', err);
+            return 0;
+        }
+    }
+
 function imprimirTicket() {
         const ticketContainer = document.getElementById('ticketContainer');
         if (!ticketContainer) return;
@@ -675,6 +784,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const subDiv = document.getElementById('sub'+idx);
         if (!subDiv) return;
         const prods = productos.filter(p => p.subcuenta === idx);
+        const selectedIds = Array.from(subDiv.querySelectorAll('select.promo-select'))
+            .map(s => parseInt(s.value || '0', 10))
+            .filter(Boolean);
+        const promoCountMap = {};
+        selectedIds.forEach(id => {
+            promoCountMap[id] = (promoCountMap[id] || 0) + 1;
+        });
         const totalBruto = prods.reduce((s, p) => s + (Number(p.cantidad)||0) * (Number(p.precio_unitario)||0), 0);
         const cortSet = new Set();
         subDiv.querySelectorAll('.chk-cortesia-sub').forEach(chk => { if (chk.checked) cortSet.add(Number(chk.getAttribute('data-detalle-id')||0)); });
@@ -728,9 +844,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch(_) {}
         // Calcular descuentos por promociones acumulables seleccionadas en esta subcuenta
         try {
-            const selectedIds = Array.from(subDiv.querySelectorAll('select.promo-select'))
-                .map(s => parseInt(s.value || '0', 10))
-                .filter(Boolean);
             if (selectedIds.length) {
                 // pool de precios por unidad por producto de la subcuenta (para matches por categoría/id)
                 const poolByPromo = (promo) => {
@@ -787,9 +900,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch(_) { totalPromo = 0; }
         // Ajuste específico para combos de categoría con precio fijo (por ejemplo 3x209 en categoría 9)
         try {
-            const selectedIdsCat = Array.from(new Set(Array.from(subDiv.querySelectorAll('select.promo-select'))
-                .map(s => parseInt(s.value || '0', 10))
-                .filter(Boolean)));
+            const selectedIdsCat = Array.from(new Set(selectedIds));
             let totalPromoCatCombo = 0;
             selectedIdsCat.forEach(pid => {
                 const promo = (catalogoPromociones || []).find(p => parseInt(p.id) === pid);
@@ -797,6 +908,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const tipo = String(promo.tipo || '').toLowerCase();
                 const monto = Number(promo.monto || 0);
                 if (tipo !== 'combo' || !promo.regla) return;
+                if (parseInt(promo.id, 10) === 9) return; // se calcula en bloque especial
                 let reglaJson = {};
                 try { reglaJson = JSON.parse(promo.regla); } catch(_) { reglaJson = {}; }
                 const reglasArray = Array.isArray(reglaJson) ? reglaJson : [reglaJson];
@@ -816,7 +928,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!unitPricesCat.length) return;
                 unitPricesCat.sort((a, b) => Number(b) - Number(a)); // más caros primero
                 const grupos = Math.floor(unitPricesCat.length / cantidadReq);
-                for (let g = 0; g < grupos; g++) {
+                const maxAplicaciones = Math.min(grupos, promoCountMap[pid] || 0);
+                for (let g = 0; g < maxAplicaciones; g++) {
                     const offset = g * cantidadReq;
                     const grupo = unitPricesCat.slice(offset, offset + cantidadReq);
                     const sumaGrupo = grupo.reduce((s, x) => s + Number(x || 0), 0);
@@ -828,95 +941,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 totalPromo = Math.min(totalEsperado1, Number((totalPromo + totalPromoCatCombo).toFixed(2)));
             }
         } catch(_) {}
-        // Ajuste adicional para combos de precio fijo por producto (por ejemplo 2x49 de T� id 66)
         try {
-            const selectedIdsProd = Array.from(new Set(Array.from(subDiv.querySelectorAll('select.promo-select'))
-                .map(s => parseInt(s.value || '0', 10))
-                .filter(Boolean)));
-            let totalPromoProdCombo = 0;
-            selectedIdsProd.forEach(pid => {
-                const promo = (catalogoPromociones || []).find(p => parseInt(p.id) === pid);
-                if (!promo || !promo.regla) return;
-                const tipo = String(promo.tipo || '').toLowerCase();
-                const monto = Number(promo.monto || 0);
-                if (tipo !== 'combo' || monto <= 0) return;
-                // Solo aplicar este bloque a la promo 2 Te (id=5)
-                if (parseInt(promo.id) !== 5) return;
-                let reglaJson = {};
-                try { reglaJson = JSON.parse(promo.regla); } catch(_) { reglaJson = {}; }
-                const reglasArray = Array.isArray(reglaJson) ? reglaJson : [reglaJson];
-                const rule = reglasArray[0] || {};
-                const prodIdRegla = parseInt(rule.id_producto || 0, 10);
-                let cantidadReq = parseInt(rule.cantidad || 0, 10) || 0;
-                if (!prodIdRegla || !cantidadReq) return;
-                const unitPrices = [];
-                prods.forEach(p => {
-                    const prodId = parseInt(p.producto_id || p.id || 0, 10);
-                    if (prodId !== prodIdRegla) return;
-                    const qty = Math.max(1, parseInt(p.cantidad || 1, 10));
-                    const price = Number(p.precio_unitario || 0);
-                    for (let k = 0; k < qty; k++) unitPrices.push(price);
-                });
-                if (!unitPrices.length) return;
-                unitPrices.sort((a, b) => Number(b) - Number(a)); // m�s caros primero
-                const grupos = Math.floor(unitPrices.length / cantidadReq);
-                for (let g = 0; g < grupos; g++) {
-                    const offset = g * cantidadReq;
-                    const grupo = unitPrices.slice(offset, offset + cantidadReq);
-                    const sumaGrupo = grupo.reduce((s, x) => s + Number(x || 0), 0);
-                    const desc = Math.max(0, sumaGrupo - monto);
-                    totalPromoProdCombo += desc;
-                }
-            });
-            if (totalPromoProdCombo > 0) {
-                totalPromo = Math.min(totalEsperado1, Number((totalPromo + totalPromoProdCombo).toFixed(2)));
+            const descuentoEspecial = calcularDescuentoCombosEspeciales(prods, promoCountMap);
+            if (descuentoEspecial > 0) {
+                totalPromo = Math.min(totalEsperado1, Number((totalPromo + descuentoEspecial).toFixed(2)));
             }
-        } catch(_) {}
-        // Ajuste especial para promo "2 rollos y té" (id=6)
-        try {
-            const selectedIdsRollTea = Array.from(subDiv.querySelectorAll('select.promo-select'))
-                .map(s => parseInt(s.value || '0', 10))
-                .filter(Boolean);
-            let totalPromoRollTea = 0;
-            selectedIdsRollTea.forEach(pid => {
-                const promo = (catalogoPromociones || []).find(p => parseInt(p.id) === pid);
-                if (!promo || !promo.regla) return;
-                const tipo = String(promo.tipo || '').toLowerCase();
-                const monto = Number(promo.monto || 0);
-                if (tipo !== 'combo' || monto <= 0 || parseInt(promo.id) !== 6) return;
-                let reglaJson = {};
-                try { reglaJson = JSON.parse(promo.regla); } catch(_) { reglaJson = {}; }
-                const reglasArray = Array.isArray(reglaJson) ? reglaJson : [reglaJson];
-                const rollIds = reglasArray.map(r => parseInt(r.id_producto || 0, 10)).filter(Boolean);
-                const teaId = 66;
-                const rollPrices = [];
-                const teaPrices = [];
-                prods.forEach(p => {
-                    const pidProd = parseInt(p.producto_id || p.id || 0, 10);
-                    const qty = Math.max(1, parseInt(p.cantidad || 1, 10));
-                    const price = Number(p.precio_unitario || 0);
-                    for (let k = 0; k < qty; k++) {
-                        if (rollIds.includes(pidProd)) rollPrices.push(price);
-                        if (pidProd === teaId) teaPrices.push(price);
-                    }
-                });
-                if (!rollPrices.length || !teaPrices.length) return;
-                rollPrices.sort((a, b) => Number(b) - Number(a));
-                teaPrices.sort((a, b) => Number(b) - Number(a));
-                const grupos = Math.min(Math.floor(rollPrices.length / 2), teaPrices.length);
-                for (let g = 0; g < grupos; g++) {
-                    const r1 = rollPrices[g * 2];
-                    const r2 = rollPrices[g * 2 + 1];
-                    const t  = teaPrices[g];
-                    const sumaGrupo = Number(r1 || 0) + Number(r2 || 0) + Number(t || 0);
-                    const desc = Math.max(0, sumaGrupo - monto);
-                    totalPromoRollTea += desc;
-                }
-            });
-            if (totalPromoRollTea > 0) {
-                totalPromo = Math.min(totalEsperado1, Number((totalPromo + totalPromoRollTea).toFixed(2)));
-            }
-        } catch(_) {}
+        } catch (_) {}
         const totalEsperado = Math.max(0, Number((totalEsperado1 - totalPromo).toFixed(2)));
         const setText = (sel, val) => { const el = subDiv.querySelector(sel); if (el) el.textContent = val.toFixed(2); };
         setText('#lblDescCortesias_sub'+idx, cortTotal);
