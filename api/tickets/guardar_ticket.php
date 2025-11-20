@@ -535,9 +535,10 @@ if (($venta['tipo_entrega'] ?? null) === 'mesa' && !empty($venta['mesa_id'])) {
     $updMesa = $conn->prepare("
         UPDATE mesas
            SET estado = 'libre',
-               
+
                tiempo_ocupacion_inicio = NULL,
-               ticket_enviado = 0
+               ticket_enviado = 0,
+               usuario_id = NULL
          WHERE id = ?
     ");
     if (!$updMesa) {
