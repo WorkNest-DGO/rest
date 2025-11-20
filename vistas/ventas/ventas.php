@@ -112,19 +112,22 @@ ob_start();
 
         <div id="seccionClienteDomicilio" class="form-group" style="display:none;">
           <label class="text-white d-block">Cliente para entrega a domicilio:</label>
-          <div class="mb-2">
-            <input
-              type="text"
-              id="buscarClienteDomicilio"
-              class="form-control"
-              placeholder="Escribe para buscar por nombre, teléfono o colonia"
-            >
-          </div>
-          <div class="input-group mb-2">
-            <select id="cliente_id" class="form-control"></select>
-            <div class="input-group-append">
-              <button type="button" class="btn btn-secondary" id="btnNuevoCliente">Nuevo</button>
+          <div class="d-flex flex-column flex-sm-row align-items-start gap-2 mb-2">
+            <div class="selector-cliente position-relative flex-grow-1 w-100">
+              <input
+                type="text"
+                id="buscarClienteDomicilio"
+                class="form-control"
+                placeholder="Escribe para buscar por nombre, teléfono o colonia"
+              >
+              <input type="hidden" id="cliente_id" name="cliente_id">
+              <ul
+                class="list-group list-group-flush position-absolute w-100"
+                id="listaClientesDomicilio"
+                style="z-index: 10;"
+              ></ul>
             </div>
+            <button type="button" class="btn btn-secondary" id="btnNuevoCliente">Nuevo</button>
           </div>
           <div id="resumenCliente" class="p-2 rounded" style="background: #2c2c2c; color: #ffffff; display:none;">
             <div><strong>Teléfono:</strong> <span id="clienteTelefono">-</span></div>
