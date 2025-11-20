@@ -48,7 +48,8 @@ if ($ventasActivas > 0 || $mesasOcupadas > 0) {
 // Obtener resumen de ventas agrupado por tipo de pago
 $sqlResumen = "SELECT
     t.tipo_pago,
-    SUM(t.total)   AS total
+    SUM(t.total)          AS total_bruto,
+    SUM(t.monto_recibido) AS total_cobrado
 FROM ventas v
 JOIN tickets t ON t.venta_id = v.id
 WHERE v.estatus = 'cerrada'
@@ -94,37 +95,38 @@ $totalDescuentoPromos =0;
 $totalDescuentoPromos=(float)$row3['descuento_promociones'];
 
 $totalProductos = 0;
+$totalCobrado   = 0;
 $totalPropinas  = 0;
 $totalPropinaEfectivo=(float)$row2['propina_efectivo'];
 $totalPropinaCheque=(float)$row2['propina_cheque'];
 $totalPropinaTarjeta=(float)$row2['propina_tarjeta'];
 $totalPropinas=$totalPropinaEfectivo+$totalPropinaCheque+$totalPropinaTarjeta;
 while ($row = $resultResumen->fetch_assoc()) {
-    $total   = (float)$row['total'];
-   
-    $productos = $total;
+    $productos    = (float)$row['total_bruto'];
+    $totalCobro   = (float)$row['total_cobrado'];
     $resumen[$row['tipo_pago']] = [
         'productos' => $productos,
-        
-        'total'     => $total
+
+        'total'     => $totalCobro
     ];
     $totalProductos += $productos;
-   
+    $totalCobrado   += $totalCobro;
+
 }
 $stmtResumen->close();
 
 // Total esperado normalizado:
-// Usar tickets post-descuentos (total_esperado desde agregados) y sumar propinas registradas en ventas.
-$totalEsperado = $totalProductos + $totalPropinas; // valor provisional, se corrige tras calcular agregados
+// Usar lo realmente cobrado en tickets (monto_recibido) y sumar propinas registradas en ventas.
+$totalEsperado = $totalCobrado + $totalPropinas; // valor provisional, se corrige tras calcular agregados
 
 // Agregados de descuentos y esperado (con tickets)
 $sqlAgg = "SELECT
   COALESCE(SUM(t.total), 0) AS total_bruto,
   COALESCE(SUM(COALESCE(t.descuento,0)), 0) AS total_descuentos,
-  COALESCE(SUM(t.total - COALESCE(t.descuento,0)), 0) AS total_esperado,
-  COALESCE(SUM(CASE WHEN t.tipo_pago='efectivo' THEN t.total - COALESCE(t.descuento,0) ELSE 0 END), 0) AS esperado_efectivo,
-  COALESCE(SUM(CASE WHEN t.tipo_pago='boucher'  THEN t.total - COALESCE(t.descuento,0) ELSE 0 END), 0) AS esperado_boucher,
-  COALESCE(SUM(CASE WHEN t.tipo_pago='cheque'   THEN t.total - COALESCE(t.descuento,0) ELSE 0 END), 0) AS esperado_cheque
+  COALESCE(SUM(t.monto_recibido), 0) AS total_esperado,
+  COALESCE(SUM(CASE WHEN t.tipo_pago='efectivo' THEN t.monto_recibido ELSE 0 END), 0) AS esperado_efectivo,
+  COALESCE(SUM(CASE WHEN t.tipo_pago='boucher'  THEN t.monto_recibido ELSE 0 END), 0) AS esperado_boucher,
+  COALESCE(SUM(CASE WHEN t.tipo_pago='cheque'   THEN t.monto_recibido ELSE 0 END), 0) AS esperado_cheque
 FROM ventas v
 JOIN tickets t ON t.venta_id = v.id
 WHERE v.estatus = 'cerrada' AND v.corte_id = ?";
@@ -170,14 +172,14 @@ $stmtMovimientos->close();
 
 $totalFinal = $totalEsperado + $fondoInicial + $totalDepositos - $totalRetiros;
 
-// Total de ventas registradas por usuarios con rol de mesero
+// Total cobrado registrado por usuarios con rol de mesero
 $sqlMeseros = "
-    SELECT 
-        TRIM(u.nombre) AS nombre, 
-        IFNULL(SUM(t.total), 0) AS total
-    FROM usuarios u 
-    LEFT JOIN ventas v 
-        ON v.usuario_id = u.id  
+    SELECT
+        TRIM(u.nombre) AS nombre,
+        IFNULL(SUM(t.monto_recibido), 0) AS total
+    FROM usuarios u
+    LEFT JOIN ventas v
+        ON v.usuario_id = u.id
         AND v.corte_id = ?
     LEFT JOIN tickets t 
         ON t.venta_id = v.id
@@ -201,7 +203,7 @@ $stmtMeseros->close();
 
 
 // Total de ventas de tipo rapida
-$sqlRapido = "SELECT SUM(t.total) AS total
+$sqlRapido = "SELECT SUM(t.monto_recibido) AS total
                FROM ventas v
                JOIN tickets t ON t.venta_id = v.id
               WHERE v.estatus = 'cerrada'
@@ -213,8 +215,8 @@ $stmtRapido->execute();
 $totalRapido = (float)($stmtRapido->get_result()->fetch_assoc()['total'] ?? 0);
 $stmtRapido->close();
 
-// Totales agrupados por repartidor
-$sqlRepartidor = "SELECT r.nombre, IFNULL(SUM(t.total), 0) AS total
+// Totales cobrados agrupados por repartidor
+$sqlRepartidor = "SELECT r.nombre, IFNULL(SUM(t.monto_recibido), 0) AS total
                   FROM repartidores r
                   LEFT JOIN ventas v ON v.repartidor_id = r.id AND v.corte_id = ?
                   LEFT JOIN tickets t ON t.venta_id = v.id
@@ -252,6 +254,7 @@ $stmtFolios->close();
 
 $resultado = $resumen;
 $resultado['total_productos'] = $totalProductos;
+$resultado['total_cobrado']   = $totalCobrado;
 $resultado['total_propina_efectivo']  = $totalPropinaEfectivo;
 $resultado['total_propina_cheque']  = $totalPropinaCheque;
 $resultado['total_propina_tarjeta']  = $totalPropinaTarjeta;
