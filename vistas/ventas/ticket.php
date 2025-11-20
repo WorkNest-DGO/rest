@@ -156,7 +156,7 @@ ob_start();
             <input type="number" step="0.01" disabled class="form-control" id="propinaEfectivo" required>
         </div>
         <div id="propinaChequeD" style="display:none;">
-            <label for="propinaCheque" class="form-label">Cheque: </label>
+            <label for="propinaCheque" class="form-label">Transferencia: </label>
             <input type="number" step="0.01" disabled class="form-control" id="propinaCheque" required>
         </div>
         <div id="propinaTarjetaD" style="display:none;">
@@ -190,7 +190,7 @@ ob_start();
             <div><strong>Boucher:</strong> <span id="tarjetaBoucher"></span></div>
         </div>
         <div id="chequeInfo" style="display:none;">
-            <div><strong>No. Cheque:</strong> <span id="chequeNumero"></span></div>
+            <div><strong>No. transferencia:</strong> <span id="chequeNumero"></span></div>
             <div><strong>Banco:</strong> <span id="chequeBanco"></span></div>
         </div>
         <div><strong>Inicio:</strong> <span id="horaInicio"></span></div>

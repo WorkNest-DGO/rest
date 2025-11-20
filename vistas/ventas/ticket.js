@@ -445,7 +445,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error(e);
         }
         if (!denomBoucherId || !denomChequeId) {
-            alert('Faltan denominaciones para pagos con tarjeta o cheque');
+            alert('Faltan denominaciones para pagos con tarjeta o transferencia');
             return false;
         }
         return true;
@@ -684,7 +684,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <option value="">Pago</option>
                         <option value="efectivo">Efectivo</option>
                         <option value="boucher">Tarjeta</option>
-                        <option value="cheque">Cheque</option>
+                        <option value="cheque">Transferencia</option>
                     </select>`;
             html += ` <div id=\"extraPago${i}\" class=\"mt-2\"></div>`;
             html += `
