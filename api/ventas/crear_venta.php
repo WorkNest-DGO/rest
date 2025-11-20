@@ -105,6 +105,8 @@ $propina_tarjeta  = isset($input['propina_tarjeta'])  ? (float)$input['propina_t
 $precio_envio  = isset($input['precio_envio']) ? (float)$input['precio_envio'] : null;
 // Cantidad de envÃ­o opcional
 $envio_cantidad = isset($input['envio_cantidad']) ? (int)$input['envio_cantidad'] : null;
+$cliente_id    = isset($input['cliente_id']) ? (int)$input['cliente_id'] : null;
+$costo_fore    = array_key_exists('costo_fore', $input) ? (float)$input['costo_fore'] : null;
 
 if (!$tipo || !$productos) {
     error('Datos incompletos para crear la venta');
@@ -147,6 +149,52 @@ if ($tipo === 'mesa') {
     if (!$usuario_id) { $usuario_id = $cajero_id; }
 } else {
     error('Tipo de venta invÃ¡lido');
+}
+
+$cliente_colonia_id = null;
+$cliente_costo_fore = null;
+$esRepartidorCasa = false;
+if ($tipo === 'domicilio' && $repartidor_id) {
+    $repStmt = $conn->prepare('SELECT LOWER(TRIM(nombre)) AS nombre FROM repartidores WHERE id = ?');
+    if ($repStmt) {
+        $repStmt->bind_param('i', $repartidor_id);
+        $repStmt->execute();
+        $repRes = $repStmt->get_result();
+        $repRow = $repRes->fetch_assoc();
+        $repStmt->close();
+        $esRepartidorCasa = $repRow && ($repRow['nombre'] === 'repartidor casa');
+    }
+}
+
+if ($cliente_id) {
+    $cliStmt = $conn->prepare('SELECT c.id, c.colonia_id, col.costo_fore FROM clientes c LEFT JOIN colonias col ON col.id = c.colonia_id WHERE c.id = ?');
+    if (!$cliStmt) {
+        error('No se pudo validar el cliente: ' . $conn->error);
+    }
+    $cliStmt->bind_param('i', $cliente_id);
+    $cliStmt->execute();
+    $cliRes = $cliStmt->get_result();
+    $cliRow = $cliRes->fetch_assoc();
+    $cliStmt->close();
+    if (!$cliRow) {
+        error('Cliente no encontrado');
+    }
+    $cliente_colonia_id = $cliRow['colonia_id'] ? (int)$cliRow['colonia_id'] : null;
+    $cliente_costo_fore = $cliRow['costo_fore'] !== null ? (float)$cliRow['costo_fore'] : null;
+}
+
+if ($esRepartidorCasa && !$cliente_id) {
+    error('Debes seleccionar un cliente para repartidor casa');
+}
+
+if ($costo_fore !== null) {
+    $precio_envio = (float)$costo_fore;
+}
+if ($cliente_costo_fore !== null && $precio_envio === null) {
+    $precio_envio = (float)$cliente_costo_fore;
+}
+if ($esRepartidorCasa && $envio_cantidad === null) {
+    $envio_cantidad = 1;
 }
 
 $total = 0;
@@ -320,46 +368,50 @@ $detalle->close();
 // EnvÃ­o automÃ¡tico si aplica (domicilio + "Repartidor casa") e idempotente
 if ($tipo === 'domicilio' && $repartidor_id) {
     try {
-        $stmt = $conn->prepare('SELECT LOWER(TRIM(nombre)) AS nombre FROM repartidores WHERE id = ?');
-        if ($stmt) {
-            $stmt->bind_param('i', $repartidor_id);
-            $stmt->execute();
-            $res = $stmt->get_result();
-            $row = $res->fetch_assoc();
-            $stmt->close();
-            $esCasa = $row && ($row['nombre'] === 'repartidor casa');
-            if ($esCasa) {
-                // Â¿ya existe la lÃ­nea de envÃ­o?
-                $chk = $conn->prepare('SELECT id FROM venta_detalles WHERE venta_id = ? AND producto_id = ? LIMIT 1');
-                if ($chk) {
-                    $pid = (int)ENVIO_CASA_PRODUCT_ID;
-                    $chk->bind_param('ii', $venta_id, $pid);
-                    $chk->execute();
-                    $c = $chk->get_result()->fetch_assoc();
-                    $chk->close();
-                    if ($c && isset($c['id'])) {
-                        // Ya existe: actualizar cantidad/precio si nos llegaron, y marcar entregado + sin descargar
-                        $cantidadEnv = isset($input['envio_cantidad']) ? max(1, (int)$input['envio_cantidad']) : 1;
-                        $precio = $precio_envio !== null ? (float)$precio_envio : (float)ENVIO_CASA_DEFAULT_PRECIO;
-                        $upd = $conn->prepare("UPDATE venta_detalles SET cantidad = ?, precio_unitario = ?, insumos_descargados = 0, estado_producto = 'entregado' WHERE id = ?");
-                        if ($upd) {
-                            $detId = (int)$c['id'];
-                            $upd->bind_param('idi', $cantidadEnv, $precio, $detId);
-                            $upd->execute();
-                            $upd->close();
-                        }
-                    } else {
-                        $cantidadEnv = isset($input['envio_cantidad']) ? max(1, (int)$input['envio_cantidad']) : 1;
-                        $precio = $precio_envio !== null ? (float)$precio_envio : (float)ENVIO_CASA_DEFAULT_PRECIO;
-                        if ($cantidadEnv > 0) {
-                            $ins = $conn->prepare("INSERT INTO venta_detalles (venta_id, producto_id, cantidad, precio_unitario, insumos_descargados, estado_producto) VALUES (?, ?, ?, ?, 0, 'entregado')");
-                            if ($ins) {
-                                $ins->bind_param('iiid', $venta_id, $pid, $cantidadEnv, $precio);
-                                $ins->execute();
-                                $nuevoId = (int)$ins->insert_id;
-                                if ($nuevoId) { $detalles_creados[] = $nuevoId; }
-                                $ins->close();
-                            }
+        $esCasa = $esRepartidorCasa;
+        if (!$esCasa) {
+            $stmt = $conn->prepare('SELECT LOWER(TRIM(nombre)) AS nombre FROM repartidores WHERE id = ?');
+            if ($stmt) {
+                $stmt->bind_param('i', $repartidor_id);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                $row = $res->fetch_assoc();
+                $stmt->close();
+                $esCasa = $row && ($row['nombre'] === 'repartidor casa');
+            }
+        }
+
+        if ($esCasa) {
+            // Â¿ya existe la lÃ­nea de envÃ­o?
+            $chk = $conn->prepare('SELECT id FROM venta_detalles WHERE venta_id = ? AND producto_id = ? LIMIT 1');
+            if ($chk) {
+                $pid = (int)ENVIO_CASA_PRODUCT_ID;
+                $chk->bind_param('ii', $venta_id, $pid);
+                $chk->execute();
+                $c = $chk->get_result()->fetch_assoc();
+                $chk->close();
+                if ($c && isset($c['id'])) {
+                    // Ya existe: actualizar cantidad/precio si nos llegaron, y marcar entregado + sin descargar
+                    $cantidadEnv = isset($input['envio_cantidad']) ? max(1, (int)$input['envio_cantidad']) : 1;
+                    $precio = $precio_envio !== null ? (float)$precio_envio : (float)ENVIO_CASA_DEFAULT_PRECIO;
+                    $upd = $conn->prepare("UPDATE venta_detalles SET cantidad = ?, precio_unitario = ?, insumos_descargados = 0, estado_producto = 'entregado' WHERE id = ?");
+                    if ($upd) {
+                        $detId = (int)$c['id'];
+                        $upd->bind_param('idi', $cantidadEnv, $precio, $detId);
+                        $upd->execute();
+                        $upd->close();
+                    }
+                } else {
+                    $cantidadEnv = isset($input['envio_cantidad']) ? max(1, (int)$input['envio_cantidad']) : 1;
+                    $precio = $precio_envio !== null ? (float)$precio_envio : (float)ENVIO_CASA_DEFAULT_PRECIO;
+                    if ($cantidadEnv > 0) {
+                        $ins = $conn->prepare("INSERT INTO venta_detalles (venta_id, producto_id, cantidad, precio_unitario, insumos_descargados, estado_producto) VALUES (?, ?, ?, ?, 0, 'entregado')");
+                        if ($ins) {
+                            $ins->bind_param('iiid', $venta_id, $pid, $cantidadEnv, $precio);
+                            $ins->execute();
+                            $nuevoId = (int)$ins->insert_id;
+                            if ($nuevoId) { $detalles_creados[] = $nuevoId; }
+                            $ins->close();
                         }
                     }
                 }
@@ -384,6 +436,30 @@ if (isset($venta_id) && $venta_id > 0) {
         sincronizarPromosVenta($conn, $venta_id, $promociones_ids);
     } else {
         sincronizarPromosVenta($conn, $venta_id, []);
+    }
+}
+
+if ($cliente_id && isset($venta_id)) {
+    $delCliVenta = $conn->prepare('DELETE FROM cliente_venta WHERE idventa = ?');
+    if ($delCliVenta) {
+        $delCliVenta->bind_param('i', $venta_id);
+        $delCliVenta->execute();
+        $delCliVenta->close();
+    }
+    $cliVenta = $conn->prepare('INSERT INTO cliente_venta (idcliente, idventa) VALUES (?, ?)');
+    if ($cliVenta) {
+        $cliVenta->bind_param('ii', $cliente_id, $venta_id);
+        $cliVenta->execute();
+        $cliVenta->close();
+    }
+}
+
+if ($costo_fore !== null && $cliente_colonia_id) {
+    $updCol = $conn->prepare('UPDATE colonias SET costo_fore = ? WHERE id = ?');
+    if ($updCol) {
+        $updCol->bind_param('di', $costo_fore, $cliente_colonia_id);
+        $updCol->execute();
+        $updCol->close();
     }
 }
 
