@@ -1138,7 +1138,7 @@ async function cargarClientesDomicilio() {
         const data = await resp.json();
         if (data.success) {
             clientesDomicilio = data.resultado || [];
-            pintarClientesSelect();
+            aplicarFiltroClientesDomicilio();
         }
     } catch (err) {
         console.error('No se pudieron cargar los clientes', err);
@@ -1158,11 +1158,11 @@ function pintarColoniasSelect(select) {
     });
 }
 
-function pintarClientesSelect(seleccion = null) {
+function pintarClientesSelect(seleccion = null, lista = clientesDomicilio) {
     const sel = document.getElementById('cliente_id');
     if (!sel) return;
     sel.innerHTML = '<option value="">--Selecciona--</option>';
-    clientesDomicilio.forEach(cli => {
+    lista.forEach(cli => {
         const opt = document.createElement('option');
         opt.value = cli.id;
         const col = cli.colonia_nombre || cli.colonia_texto || '';
@@ -1171,6 +1171,40 @@ function pintarClientesSelect(seleccion = null) {
     });
     if (seleccion) {
         sel.value = String(seleccion);
+    }
+}
+
+function filtrarClientesDomicilioPorTexto(termino = '') {
+    const needle = termino.trim().toLowerCase();
+    if (!needle) return clientesDomicilio;
+    return clientesDomicilio.filter(cli => {
+        const campos = [
+            cli.nombre,
+            cli.telefono,
+            cli.colonia_nombre,
+            cli.colonia_texto,
+            cli.calle,
+            cli.numero_exterior
+        ];
+        return campos.some(campo => campo && String(campo).toLowerCase().includes(needle));
+    });
+}
+
+function aplicarFiltroClientesDomicilio() {
+    const buscador = document.getElementById('buscarClienteDomicilio');
+    const termino = buscador ? buscador.value : '';
+    const sel = document.getElementById('cliente_id');
+    const seleccionActual = sel ? sel.value : null;
+    const listaFiltrada = filtrarClientesDomicilioPorTexto(termino);
+    const seleccionValida = seleccionActual && listaFiltrada.some(c => String(c.id) === seleccionActual)
+        ? seleccionActual
+        : null;
+    pintarClientesSelect(seleccionValida, listaFiltrada);
+    if (seleccionValida) {
+        const cli = listaFiltrada.find(c => String(c.id) === seleccionValida);
+        actualizarResumenCliente(cli || null);
+    } else {
+        actualizarResumenCliente(null);
     }
 }
 
@@ -3151,6 +3185,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnDet) btnDet.addEventListener('click', abrirDetalleMovimientos);
     const clienteSel = document.getElementById('cliente_id');
     if (clienteSel) clienteSel.addEventListener('change', onClienteSeleccionadoChange);
+    const buscadorCliente = document.getElementById('buscarClienteDomicilio');
+    if (buscadorCliente) {
+        buscadorCliente.addEventListener('input', aplicarFiltroClientesDomicilio);
+    }
     const btnNuevoCliente = document.getElementById('btnNuevoCliente');
     if (btnNuevoCliente) btnNuevoCliente.addEventListener('click', abrirModalNuevoCliente);
     const btnGuardarCliente = document.getElementById('guardarNuevoCliente');

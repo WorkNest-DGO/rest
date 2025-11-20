@@ -112,6 +112,14 @@ ob_start();
 
         <div id="seccionClienteDomicilio" class="form-group" style="display:none;">
           <label class="text-white d-block">Cliente para entrega a domicilio:</label>
+          <div class="mb-2">
+            <input
+              type="text"
+              id="buscarClienteDomicilio"
+              class="form-control"
+              placeholder="Escribe para buscar por nombre, teléfono o colonia"
+            >
+          </div>
           <div class="input-group mb-2">
             <select id="cliente_id" class="form-control"></select>
             <div class="input-group-append">
