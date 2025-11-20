@@ -517,15 +517,29 @@ async function abrirCaja() {
         content.className = 'modal-content';
 
         const body = document.createElement('div');
-        body.className = 'modal-body';
+        body.className = 'modal-body bg-dark text-white';
+
+        const labelIntro = document.createElement('p');
+        labelIntro.textContent = 'Captura el desglose de denominaciones para abrir la caja. El total calculado se usará como fondo de apertura.';
+        body.appendChild(labelIntro);
+
+        const contDen = document.createElement('div');
+        contDen.id = 'contenedorDenominacionesApertura';
+        contDen.className = 'd-flex flex-column gap-2';
+        body.appendChild(contDen);
+
+        const resumen = document.createElement('p');
+        resumen.innerHTML = 'Total contado: $<strong id="totalAperturaEfectivo">0.00</strong>';
+        body.appendChild(resumen);
 
         const label = document.createElement('label');
-        label.textContent = 'Monto de apertura:';
+        label.textContent = 'Monto de apertura (calculado):';
 
         const input = document.createElement('input');
         input.type = 'number';
         input.id = 'montoApertura';
         input.className = 'form-control';
+        input.readOnly = true;
 
         body.appendChild(label);
         body.appendChild(input);
@@ -554,7 +568,7 @@ async function abrirCaja() {
         if (!document.getElementById('modalAbrirCajaStyles')) {
             const style = document.createElement('style');
             style.id = 'modalAbrirCajaStyles';
-            style.textContent = '#modalAbrirCaja .modal-footer{display:flex;justify-content:flex-end;gap:0.5rem;}';
+            style.textContent = '#modalAbrirCaja .modal-footer{display:flex;justify-content:flex-end;gap:0.5rem;}#contenedorDenominacionesApertura .grupo-pago{background:#2b2b2b;border-radius:6px;padding:8px;}';
             document.head.appendChild(style);
         }
 
@@ -562,19 +576,65 @@ async function abrirCaja() {
     }
 
     const inputMonto = modal.querySelector('#montoApertura');
+
+    const contDen = modal.querySelector('#contenedorDenominacionesApertura');
+    contDen.innerHTML = '';
+    const frag = document.createDocumentFragment();
+
+    if (!Array.isArray(catalogoDenominaciones) || !catalogoDenominaciones.length) {
+        const alerta = document.createElement('div');
+        alerta.className = 'alert alert-warning';
+        alerta.textContent = 'No hay denominaciones configuradas. Captura manualmente el monto de apertura.';
+        contDen.appendChild(alerta);
+        inputMonto.readOnly = false;
+    } else {
+        catalogoDenominaciones.forEach(d => {
+            const did = Number(d.id);
+            if (did === 12 || did === 13) return;
+            const div = document.createElement('div');
+            div.className = 'grupo-pago d-flex align-items-center gap-2';
+            div.dataset.tipo = 'efectivo';
+            div.innerHTML = `
+                <label class="mb-0" style="min-width:160px;">${d.descripcion}</label>
+                <input type="number" inputmode="numeric" step="1" class="cantidad form-control form-control-sm"
+                       style="max-width:180px; text-align:center;"
+                       data-id="${d.id}" data-valor="${d.valor}" data-tipo="efectivo" min="0" value="0">
+                <span class="subtotal ms-2">$0.00</span>`;
+            frag.appendChild(div);
+        });
+        contDen.appendChild(frag);
+    }
+
+    function recalcularTotalApertura() {
+        let total = 0;
+        contDen.querySelectorAll('.grupo-pago').forEach(gr => {
+            const inp = gr.querySelector('.cantidad');
+            const valor = parseFloat(inp.dataset.valor) || 0;
+            const cantidad = parseFloat(inp.value) || 0;
+            const subtotal = valor * cantidad;
+            gr.querySelector('.subtotal').textContent = `$${subtotal.toFixed(2)}`;
+            total += subtotal;
+        });
+        const totalLabel = modal.querySelector('#totalAperturaEfectivo');
+        if (totalLabel) totalLabel.textContent = total.toFixed(2);
+        if (total) {
+            inputMonto.value = total.toFixed(2);
+        }
+        return total;
+    }
+
+    contDen.querySelectorAll('.cantidad').forEach(inp => inp.addEventListener('input', recalcularTotalApertura));
     if (fondoData.existe) {
         inputMonto.value = fondoData.monto;
-        inputMonto.readOnly = true;
-    } else {
-        inputMonto.value = '';
-        inputMonto.readOnly = false;
     }
+    recalcularTotalApertura();
 
     const btnAbrir = modal.querySelector('#btnAbrirCajaModal');
     btnAbrir.onclick = async () => {
+        const totalApertura = recalcularTotalApertura();
         const monto = inputMonto.value.trim();
-        if (monto === '' || isNaN(parseFloat(monto))) {
-            alert('Debes indicar un monto');
+        if ((monto === '' || isNaN(parseFloat(monto))) && totalApertura <= 0) {
+            alert('Debes indicar un monto o capturar denominaciones');
             return;
         }
         // Verificar si ya existe un corte abierto de otro usuario
@@ -591,11 +651,12 @@ async function abrirCaja() {
         } catch (e) {
             console.warn('No se pudo validar cortes abiertos globales:', e);
         }
+        const montoApertura = parseFloat(monto || totalApertura || 0);
         if (!fondoData.existe) {
             await fetch('../../api/corte_caja/guardar_fondo.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario_id: usuarioId, monto: parseFloat(monto) })
+                body: JSON.stringify({ usuario_id: usuarioId, monto: montoApertura })
             });
         }
         try {
@@ -607,6 +668,31 @@ async function abrirCaja() {
             const data = await resp.json();
             if (data.success) {
                 corteIdActual = data.resultado ? data.resultado.corte_id : data.corte_id;
+                const detalle = [];
+                contDen.querySelectorAll('.grupo-pago').forEach(gr => {
+                    const inp = gr.querySelector('.cantidad');
+                    const cantidad = parseFloat(inp.value) || 0;
+                    if (cantidad <= 0) return;
+                    detalle.push({
+                        denominacion_id: parseInt(inp.dataset.id, 10),
+                        cantidad: parseInt(cantidad, 10),
+                        tipo_pago: 'efectivo',
+                        denominacion: parseFloat(inp.dataset.valor)
+                    });
+                });
+
+                if (detalle.length) {
+                    try {
+                        await fetch('../../api/corte_caja/guardar_desglose.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ corte_id: corteIdActual, detalle })
+                        });
+                    } catch (e) {
+                        console.warn('No se pudo guardar el desglose de apertura', e);
+                    }
+                }
+
                 hideModal(modal);
                 await verificarCorte();
             } else {
