@@ -183,10 +183,6 @@ if ($cliente_id) {
     $cliente_costo_fore = $cliRow['costo_fore'] !== null ? (float)$cliRow['costo_fore'] : null;
 }
 
-if ($esRepartidorCasa && !$cliente_id) {
-    error('Debes seleccionar un cliente para repartidor casa');
-}
-
 if ($costo_fore !== null) {
     $precio_envio = (float)$costo_fore;
 }
