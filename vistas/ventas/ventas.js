@@ -1715,7 +1715,7 @@ async function registrarVenta() {
         mesa_id: tipo === 'mesa' ? mesa_id : null,
         repartidor_id: tipo === 'domicilio' ? repartidor_id : null,
         usuario_id,
-        observacion: (tipo === 'domicilio' || tipo === 'rapido') ? observacion : '',
+        observacion,
         productos,
         corte_id: corteIdActual,
         sede_id: sedeId
@@ -2606,7 +2606,7 @@ if (tipoEntregaEl) {
         if (campoRepartidor) campoRepartidor.style.display = (tipo === 'domicilio') ? 'block' : 'none';
         const campoMesero = document.getElementById('campoMesero');
         if (campoMesero) campoMesero.style.display = (tipo === 'mesa') ? 'block' : 'none';
-        if (campoObservacion) campoObservacion.style.display = (tipo === 'domicilio' || tipo === 'rapido') ? 'block' : 'none';
+        if (campoObservacion) campoObservacion.style.display = (tipo === 'domicilio' || tipo === 'rapido' || tipo === 'mesa') ? 'block' : 'none';
 
         actualizarSelectorUsuario();
         aplicarEnvioSiCorresponde();
