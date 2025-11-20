@@ -110,6 +110,33 @@ ob_start();
           <select id="repartidor_id" name="repartidor_id" class="form-control"></select>
         </div>
 
+        <div id="seccionClienteDomicilio" class="form-group" style="display:none;">
+          <label class="text-white d-block">Cliente para entrega a domicilio:</label>
+          <div class="input-group mb-2">
+            <select id="cliente_id" class="form-control"></select>
+            <div class="input-group-append">
+              <button type="button" class="btn btn-secondary" id="btnNuevoCliente">Nuevo</button>
+            </div>
+          </div>
+          <div id="resumenCliente" class="p-2 rounded" style="background: #2c2c2c; color: #ffffff; display:none;">
+            <div><strong>Teléfono:</strong> <span id="clienteTelefono">-</span></div>
+            <div><strong>Dirección:</strong> <span id="clienteDireccion">-</span></div>
+            <div class="d-flex flex-wrap gap-3 mt-2">
+              <div><strong>Colonia:</strong> <span id="clienteColonia">-</span></div>
+              <div><strong>Dist. a La Forestal:</strong> <span id="clienteDistancia">-</span></div>
+            </div>
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <label for="costoForeInput" class="text-white mb-1">Costo de envío (costo_fore):</label>
+                <input type="number" step="0.01" min="0" class="form-control" id="costoForeInput" placeholder="Captura el costo">
+              </div>
+              <div class="col-md-6 align-self-end">
+                <small class="text-muted">Este monto se usará para el envío y se guardará en la colonia del cliente.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div id="campoMesero" class="form-group">
           <label for="usuario_id" class="text-white">Mesero:</label>
           <select id="usuario_id" name="usuario_id" class="form-control"></select>
@@ -235,6 +262,60 @@ ob_start();
 
 
 <!-- Modales -->
+<div class="modal fade" id="modalNuevoCliente" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nuevo cliente</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <form id="formNuevoCliente">
+          <div class="form-group">
+            <label for="nuevoClienteNombre">Nombre</label>
+            <input type="text" class="form-control" id="nuevoClienteNombre" required>
+          </div>
+          <div class="form-group">
+            <label for="nuevoClienteTelefono">Teléfono</label>
+            <input type="text" class="form-control" id="nuevoClienteTelefono">
+          </div>
+          <div class="form-group">
+            <label for="nuevoClienteColonia">Colonia</label>
+            <select id="nuevoClienteColonia" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label for="nuevoClienteCalle">Calle</label>
+            <input type="text" class="form-control" id="nuevoClienteCalle">
+          </div>
+          <div class="form-group">
+            <label for="nuevoClienteNumero">Número exterior</label>
+            <input type="text" class="form-control" id="nuevoClienteNumero">
+          </div>
+          <div class="form-group">
+            <label for="nuevoClienteEntre1">Entre calle 1</label>
+            <input type="text" class="form-control" id="nuevoClienteEntre1">
+          </div>
+          <div class="form-group">
+            <label for="nuevoClienteEntre2">Entre calle 2</label>
+            <input type="text" class="form-control" id="nuevoClienteEntre2">
+          </div>
+          <div class="form-group">
+            <label for="nuevoClienteReferencias">Referencias</label>
+            <textarea class="form-control" id="nuevoClienteReferencias"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="nuevoClienteCostoFore">Costo de envío (costo_fore)</label>
+            <input type="number" step="0.01" min="0" class="form-control" id="nuevoClienteCostoFore" placeholder="Opcional">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn custom-btn" id="guardarNuevoCliente">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- MODAL NORMALIZED 2025-08-14 -->
 <div class="modal fade" id="modal-detalles" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog" role="document">
