@@ -29,13 +29,20 @@ if ($ventaIdParam > 0) {
 $title = 'Ticket';
 $tieneTicket = false;
 $tienePropina = false;
+$montoCobrado = 0.00; // monto realmente cobrado en tickets (monto_recibido)
+$totalTickets = 0.00; // suma de totales de tickets generados
 $totalVenta = 0.00; // total de la venta (sin propinas, desde ventas.total o sum(detalles))
 $propinaTotal = 0.00;
 if ($ventaIdParam > 0) {
     // ¿Existe ticket?
-    if ($st = $conn->prepare('SELECT 1 FROM tickets WHERE venta_id = ? LIMIT 1')) {
+    if ($st = $conn->prepare('SELECT COALESCE(SUM(total),0) AS total_tickets, COALESCE(SUM(monto_recibido),0) AS monto_cobrado FROM tickets WHERE venta_id = ?')) {
         $st->bind_param('i', $ventaIdParam);
-        if ($st->execute()) { $st->store_result(); $tieneTicket = $st->num_rows > 0; }
+        if ($st->execute()) {
+            $res = $st->get_result()->fetch_assoc();
+            $totalTickets = isset($res['total_tickets']) ? (float)$res['total_tickets'] : 0.00;
+            $montoCobrado = isset($res['monto_cobrado']) ? (float)$res['monto_cobrado'] : 0.00;
+            $tieneTicket = ($totalTickets > 0) || ($montoCobrado > 0);
+        }
         $st->close();
     }
     // ¿Propina registrada en ventas?
@@ -263,7 +270,10 @@ ob_start();
     window.__SOLO_PROPINAS__ = <?php echo ($tieneTicket && !$tienePropina) ? 'true' : 'false'; ?>; // ticket sin propina => solo propinas
     window.__TIENE_PROPINA__ = <?php echo $tienePropina ? 'true' : 'false'; ?>; // ya hay propina => ocultar combos
     // Monto actual = total de venta + propinas
-    window.__TOTAL_VENTA__ = <?php echo json_encode(number_format(max(0, $totalVenta + $propinaTotal), 2, '.', '')); ?>;
+    <?php
+      $baseCobro = $montoCobrado > 0 ? $montoCobrado : ($totalTickets > 0 ? $totalTickets : $totalVenta);
+    ?>
+    window.__TOTAL_VENTA__ = <?php echo json_encode(number_format(max(0, $baseCobro + $propinaTotal), 2, '.', '')); ?>;
     const catalogosUrl = '../../api/tickets/catalogos_tarjeta.php';
     const promocionesUrl = '../../api/tickets/promociones.php';
     const denominacionesUrl = '../../api/corte_caja/listar_denominaciones.php';
