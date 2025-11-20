@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 20-11-2025 a las 06:11:54
+-- Tiempo de generación: 20-11-2025 a las 18:38:57
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -463,7 +463,7 @@ CREATE TABLE `catalogo_folios` (
 
 INSERT INTO `catalogo_folios` (`id`, `descripcion`, `folio_actual`) VALUES
 (1, 'Serie Restaurante', 1000),
-(2, 'Serie Forestal', 2201);
+(2, 'Serie Forestal', 2207);
 
 -- --------------------------------------------------------
 
@@ -14635,7 +14635,6 @@ INSERT INTO `colonias` (`id`, `colonia`, `lat`, `lon`, `dist_km_la_forestal`, `d
 (506, 'Guadalupe Victoria INFONAVIT', 24.048553, -104.620162, 5.10, 8.70, '34220', 'Fraccionamiento', 30.00, 50.00),
 (507, 'Las Fuentes', 24.045931, -104.617248, 5.60, 9.20, '34220', 'Fraccionamiento', 30.00, 50.00),
 (508, 'Predio Granados', 23.995403, -104.658827, 6.40, 1.10, '34220', 'Fraccionamiento', 40.00, 20.00),
-(509, '?', NULL, NULL, NULL, NULL, '34220', 'Fraccionamiento', NULL, NULL),
 (510, 'Cibeles', 24.046760, -104.621801, 5.00, 8.60, '34220', 'Fraccionamiento', 30.00, 50.00),
 (511, 'Los Girasoles', 24.033050, -104.686502, 4.00, 6.50, '34220', 'Fraccionamiento', 30.00, 40.00),
 (512, 'Privada Alejandrina', 24.042966, -104.620207, 5.00, 8.60, '34220', 'Fraccionamiento', 30.00, 50.00),
@@ -14681,9 +14680,9 @@ INSERT INTO `colonias` (`id`, `colonia`, `lat`, `lon`, `dist_km_la_forestal`, `d
 (552, 'Villas del Carmen', 24.052826, -104.602312, 7.90, 11.50, '34227', 'Fraccionamiento', 40.00, NULL),
 (553, 'Villas del Pedregal II', 24.050863, -104.598187, 8.80, 12.10, '34227', 'Fraccionamiento', 50.00, NULL),
 (554, 'Rinconada Sol', 24.058397, -104.608505, 6.80, 10.40, '34228', 'Fraccionamiento', 40.00, NULL),
-(555, 'Fidel Velázquez I', 24.055387, -104.597190, 8.50, 12.10, '34229', 'Fraccionamiento', 40.00, NULL);
+(555, 'Fidel Velázquez I', 24.055387, -104.597190, 8.50, 12.10, '34229', 'Fraccionamiento', 40.00, NULL),
+(556, 'Fidel Velázquez II', 24.060929, -104.604862, 7.20, 11.30, '34229', 'Fraccionamiento', 40.00, NULL);
 INSERT INTO `colonias` (`id`, `colonia`, `lat`, `lon`, `dist_km_la_forestal`, `dist_km_el_naranjal`, `cp`, `tipo_asenta`, `costo_fore`, `costo_madero`) VALUES
-(556, 'Fidel Velázquez II', 24.060929, -104.604862, 7.20, 11.30, '34229', 'Fraccionamiento', 40.00, NULL),
 (557, 'Fideicomiso Ciudad Industrial', 24.067766, -104.609233, 7.00, 11.60, '34229', 'Fraccionamiento', 40.00, NULL),
 (558, 'Real de Villas', 24.062172, -104.601402, 7.70, 11.40, '34229', 'Fraccionamiento', 40.00, NULL),
 (559, 'Emiliano Zapata', 24.036664, -104.621385, 4.40, 8.30, '34230', 'Colonia', 30.00, 40.00),
@@ -14899,7 +14898,8 @@ CREATE TABLE `corte_caja` (
 --
 
 INSERT INTO `corte_caja` (`id`, `usuario_id`, `fecha_inicio`, `folio_inicio`, `folio_fin`, `total_folios`, `fecha_fin`, `total`, `observaciones`, `fondo_inicial`) VALUES
-(105, 1, '2025-11-20 06:05:11', 2201, NULL, 0, NULL, NULL, NULL, 500.00);
+(106, 1, '2025-11-20 06:34:27', 2201, 2201, 0, '2025-11-19 23:51:44', 500.00, '', 500.00),
+(107, 1, '2025-11-20 18:10:06', 2201, NULL, 0, NULL, NULL, NULL, 500.00);
 
 -- --------------------------------------------------------
 
@@ -14931,6 +14931,15 @@ CREATE TABLE `desglose_corte` (
   `tipo_pago` enum('efectivo','boucher','cheque') DEFAULT 'efectivo',
   `denominacion_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `desglose_corte`
+--
+
+INSERT INTO `desglose_corte` (`id`, `corte_id`, `denominacion`, `cantidad`, `tipo_pago`, `denominacion_id`) VALUES
+(500, 106, 500.00, 1, 'efectivo', 10),
+(501, 107, 1.00, 789, 'cheque', 13),
+(502, 107, 1.00, 690, 'boucher', 12);
 
 -- --------------------------------------------------------
 
@@ -15412,7 +15421,17 @@ INSERT INTO `logs_accion` (`id`, `usuario_id`, `modulo`, `accion`, `fecha`, `ref
 (1553, 1, 'ventas', 'Alta de venta', '2025-11-19 12:55:51', 703),
 (1554, 38, 'ventas', 'Alta de venta', '2025-11-19 22:10:11', 704),
 (1555, 38, 'ventas', 'Alta de venta', '2025-11-19 22:24:34', 705),
-(1556, 1, 'corte_caja', 'Creación de corte', '2025-11-19 23:05:11', 105);
+(1556, 1, 'corte_caja', 'Creación de corte', '2025-11-19 23:05:11', 105),
+(1557, 1, 'corte_caja', 'Creación de corte', '2025-11-19 23:34:27', 106),
+(1558, 1, 'corte_caja', 'Cierre de corte', '2025-11-19 23:51:44', 106),
+(1559, 1, 'corte_caja', 'Creación de corte', '2025-11-20 11:10:06', 107),
+(1560, NULL, 'ventas', 'Alta de venta', '2025-11-20 11:11:09', 706),
+(1561, 1, 'ventas', 'Alta de venta', '2025-11-20 11:18:47', 707),
+(1562, 38, 'ventas', 'Alta de venta', '2025-11-20 11:20:13', 708),
+(1563, 1, 'ventas', 'Alta de venta', '2025-11-20 11:26:43', 709),
+(1564, 1, 'ventas', 'Alta de venta', '2025-11-20 11:28:13', 710),
+(1565, 1, 'ventas', 'Alta de venta', '2025-11-20 11:32:14', 711),
+(1566, 1, 'ventas', 'Alta de venta', '2025-11-20 11:38:32', 712);
 
 -- --------------------------------------------------------
 
@@ -15461,6 +15480,13 @@ CREATE TABLE `log_mesas` (
   `fecha_inicio` datetime DEFAULT NULL,
   `fecha_fin` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `log_mesas`
+--
+
+INSERT INTO `log_mesas` (`id`, `mesa_id`, `venta_id`, `usuario_id`, `fecha_inicio`, `fecha_fin`) VALUES
+(174, 1, 708, 38, NULL, '2025-11-20 11:20:49');
 
 -- --------------------------------------------------------
 
@@ -15592,7 +15618,7 @@ CREATE TABLE `productos` (
 --
 
 INSERT INTO `productos` (`id`, `nombre`, `precio`, `descripcion`, `existencia`, `activo`, `imagen`, `categoria_id`) VALUES
-(4, 'Refresco 600ml', 20.00, 'Refresco embotellado', 1000000, 1, NULL, 1),
+(4, 'Coca Cola', 29.00, 'Refresco embotellado', 1000000, 1, NULL, 1),
 (5, 'Rollo California', 120.00, 'Salmón, arroz, alga nori', 1000000, 1, NULL, 3),
 (6, 'Guamuchilito', 109.00, 'Surimi, camarón empanizado, salsa de anguila', 1000000, 1, NULL, 8),
 (7, 'Guerra', 125.00, 'Camarón, ajonjolí, aguacate, salsa de anguila', 1000000, 1, NULL, 8),
@@ -15604,7 +15630,7 @@ INSERT INTO `productos` (`id`, `nombre`, `precio`, `descripcion`, `existencia`, 
 (13, 'Cielo, Mar y Tierra', 109.00, 'Pollo, carne, camarón', 1000000, 1, NULL, 9),
 (14, '3 Quesos', 115.00, 'Rollo de camarón, carne, base, queso americano\n y gratinado con queso chihuahua.', 1000000, 1, 'prod_68adcf8c73757.jpg', 9),
 (15, 'Chiquilin Roll', 115.00, 'Relleno de base (philadelphia, pepino y\n aguacate) Por fuera topping de camarón\n empanizado especial, bañado en salsa de anguila\n y ajonjolí.', 1000000, 1, NULL, 9),
-(16, 'Maki roll', 105.00, 'Rollo de 1 ingrediente a elegir (carne, tampico,\n pollo y camarón)', 1000000, 1, NULL, 9),
+(16, 'Maki roll res', 105.00, 'Rollo de 1 ingrediente a elegir (carne, tampico,\n pollo y camarón)', 1000000, 1, NULL, 9),
 (17, 'Beef cheese', 119.00, 'Rollo de carne gratinado con queso spicy y\n ajonjolí.', 1000000, 1, NULL, 9),
 (18, 'Cordon Blue', 115.00, 'Rollo relleno de carne y tocino forrado con\n philadelphia y gratinado con queso.', 1000000, 1, NULL, 9),
 (19, 'Culichi Roll', 125.00, 'Rollo de carne con topping especial de tampico\n Tokyo empanizado coronado con camarón.', 1000000, 1, NULL, 9),
@@ -15745,7 +15771,7 @@ INSERT INTO `productos` (`id`, `nombre`, `precio`, `descripcion`, `existencia`, 
 (9018, 'Refresco Fanta', 29.00, 'Refresco sabor naranja embotellado (335ml)', 1000000, 1, NULL, 1),
 (9019, 'Refresco Coca-Cola Zero', 29.00, 'Refresco de cola sin azúcar embotellado (335ml)', 1000000, 1, NULL, 1),
 (9020, 'Maki de Pollo', 105.00, 'Rollo de pollo estilo maki .', 1000000, 1, NULL, 9),
-(9021, 'Maki de Carne', 105.00, 'Rollo de carne estilo maki.', 1000000, 1, NULL, 9),
+(9021, 'Maki de camaron', 105.00, 'Rollo de carne estilo maki.', 1000000, 1, NULL, 9),
 (9022, 'Boneless Búfalo', 135.00, '250gr de boneless bañados en salsa búfalo.', 1000000, 1, NULL, 3),
 (9023, 'Boneless Chipotle', 135.00, '250gr de boneless bañados en salsa de chipotle.', 1000000, 1, NULL, 3),
 (9024, 'Boneless BBQ', 135.00, '250gr de boneless bañados en salsa BBQ.', 1000000, 1, NULL, 3),
@@ -16742,6 +16768,18 @@ CREATE TABLE `tickets` (
   `cheque_banco_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `tickets`
+--
+
+INSERT INTO `tickets` (`id`, `venta_id`, `folio`, `serie_id`, `total`, `descuento`, `desc_des`, `fecha`, `usuario_id`, `monto_recibido`, `tipo_pago`, `sede_id`, `mesa_nombre`, `mesero_nombre`, `fecha_inicio`, `fecha_fin`, `tiempo_servicio`, `nombre_negocio`, `direccion_negocio`, `rfc_negocio`, `telefono_negocio`, `tipo_entrega`, `tarjeta_marca_id`, `tarjeta_banco_id`, `boucher`, `cheque_numero`, `cheque_banco_id`) VALUES
+(468, 706, 2201, 2, 789.00, 0.00, NULL, '2025-11-20 18:16:04', NULL, 500.00, 'cheque', 1, 'N/A', 'N/A', NULL, '2025-11-20 18:16:04', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, '564456', 1),
+(469, 707, 2202, 2, 690.00, 0.00, NULL, '2025-11-20 18:19:20', NULL, 690.00, 'boucher', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-20 18:19:20', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', 1, 3, '44234', NULL, NULL),
+(470, 708, 2203, 2, 690.00, 0.00, NULL, '2025-11-20 18:20:48', NULL, 690.00, 'efectivo', 1, 'Mesa 1', 'beto', NULL, '2025-11-20 18:20:48', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'mesa', NULL, NULL, NULL, NULL, NULL),
+(471, 709, 2204, 2, 789.00, 0.00, NULL, '2025-11-20 18:27:03', NULL, 789.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-20 18:27:03', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL),
+(472, 710, 2205, 2, 345.00, 0.00, NULL, '2025-11-20 18:29:46', NULL, 345.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-20 18:29:46', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL),
+(473, 711, 2206, 2, 690.00, 0.00, NULL, '2025-11-20 18:36:20', NULL, 690.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-20 18:36:20', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -16775,6 +16813,20 @@ CREATE TABLE `ticket_detalles` (
   `precio_unitario` decimal(10,2) DEFAULT NULL,
   `subtotal` decimal(10,2) GENERATED ALWAYS AS (`cantidad` * `precio_unitario`) STORED
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `ticket_detalles`
+--
+
+INSERT INTO `ticket_detalles` (`id`, `ticket_id`, `producto_id`, `cantidad`, `precio_unitario`) VALUES
+(1239, 468, 15, 6, 115.00),
+(1240, 468, 66, 3, 33.00),
+(1241, 469, 15, 6, 115.00),
+(1242, 470, 15, 6, 115.00),
+(1243, 471, 15, 6, 115.00),
+(1244, 471, 66, 3, 33.00),
+(1245, 472, 15, 3, 115.00),
+(1246, 473, 15, 6, 115.00);
 
 -- --------------------------------------------------------
 
@@ -16951,6 +17003,19 @@ CREATE TABLE `ventas` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
+-- Volcado de datos para la tabla `ventas`
+--
+
+INSERT INTO `ventas` (`id`, `fecha`, `mesa_id`, `repartidor_id`, `tipo_entrega`, `usuario_id`, `total`, `estatus`, `entregado`, `estado_entrega`, `fecha_asignacion`, `fecha_inicio`, `fecha_entrega`, `seudonimo_entrega`, `foto_entrega`, `corte_id`, `cajero_id`, `observacion`, `sede_id`, `propina_efectivo`, `propina_cheque`, `propina_tarjeta`, `promocion_id`, `promocion_descuento`) VALUES
+(706, '2025-11-20 11:11:09', NULL, 1, 'domicilio', NULL, 789.00, 'cerrada', 0, 'pendiente', '2025-11-20 11:11:09', NULL, NULL, NULL, NULL, 107, 1, '', 1, 0.00, 0.00, 0.00, 9, 289.00),
+(707, '2025-11-20 11:18:47', NULL, NULL, 'rapido', 1, 690.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 107, 1, '', 1, 0.00, 0.00, 0.00, 9, 272.00),
+(708, '2025-11-20 11:20:13', 1, NULL, 'mesa', 38, 690.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 107, 1, '', 1, 0.00, 0.00, 0.00, 4, 230.00),
+(709, '2025-11-20 11:26:42', NULL, NULL, 'rapido', 1, 789.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 107, 1, '', 1, 0.00, 0.00, 0.00, 9, 289.00),
+(710, '2025-11-20 11:28:13', NULL, NULL, 'rapido', 1, 345.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 107, 1, '', 1, 0.00, 0.00, 0.00, 9, 136.00),
+(711, '2025-11-20 11:32:14', NULL, NULL, 'rapido', 1, 690.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 107, 1, '', 1, 0.00, 0.00, 0.00, 9, 272.00),
+(712, '2025-11-20 11:38:32', NULL, NULL, 'rapido', 1, 690.00, 'activa', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 107, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00);
+
+--
 -- Disparadores `ventas`
 --
 DELIMITER $$
@@ -16982,6 +17047,21 @@ CREATE TABLE `venta_detalles` (
   `estado_producto` enum('pendiente','en_preparacion','listo','entregado') DEFAULT 'pendiente',
   `observaciones` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `venta_detalles`
+--
+
+INSERT INTO `venta_detalles` (`id`, `venta_id`, `producto_id`, `cantidad`, `precio_unitario`, `insumos_descargados`, `created_at`, `entregado_hr`, `estado_producto`, `observaciones`) VALUES
+(2611, 706, 15, 6, 115.00, 0, '2025-11-20 11:11:09', NULL, 'pendiente', NULL),
+(2612, 706, 66, 3, 33.00, 0, '2025-11-20 11:11:09', NULL, 'pendiente', NULL),
+(2613, 707, 15, 6, 115.00, 0, '2025-11-20 11:18:47', NULL, 'pendiente', NULL),
+(2614, 708, 15, 6, 115.00, 0, '2025-11-20 11:20:13', NULL, 'pendiente', NULL),
+(2615, 709, 15, 6, 115.00, 0, '2025-11-20 11:26:42', NULL, 'pendiente', NULL),
+(2616, 709, 66, 3, 33.00, 0, '2025-11-20 11:26:42', NULL, 'pendiente', NULL),
+(2617, 710, 15, 3, 115.00, 0, '2025-11-20 11:28:13', NULL, 'pendiente', NULL),
+(2618, 711, 15, 6, 115.00, 0, '2025-11-20 11:32:14', NULL, 'pendiente', NULL),
+(2619, 712, 15, 6, 115.00, 0, '2025-11-20 11:38:32', NULL, 'pendiente', NULL);
 
 --
 -- Disparadores `venta_detalles`
@@ -17073,6 +17153,16 @@ CREATE TABLE `venta_promos` (
   `descuento_aplicado` decimal(10,2) DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `venta_promos`
+--
+
+INSERT INTO `venta_promos` (`id`, `venta_id`, `promo_id`, `descuento_aplicado`, `created_at`) VALUES
+(21, 706, 9, 144.50, '2025-11-20 11:16:04'),
+(22, 706, 5, 144.50, '2025-11-20 11:16:04'),
+(23, 709, 9, 144.50, '2025-11-20 11:27:03'),
+(24, 709, 5, 144.50, '2025-11-20 11:27:03');
 
 -- --------------------------------------------------------
 
@@ -17916,7 +18006,7 @@ ALTER TABLE `cortes_almacen_detalle`
 -- AUTO_INCREMENT de la tabla `corte_caja`
 --
 ALTER TABLE `corte_caja`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=106;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=108;
 
 --
 -- AUTO_INCREMENT de la tabla `corte_caja_historial`
@@ -17928,7 +18018,7 @@ ALTER TABLE `corte_caja_historial`
 -- AUTO_INCREMENT de la tabla `desglose_corte`
 --
 ALTER TABLE `desglose_corte`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=500;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=503;
 
 --
 -- AUTO_INCREMENT de la tabla `entradas_detalle`
@@ -17970,7 +18060,7 @@ ALTER TABLE `insumos`
 -- AUTO_INCREMENT de la tabla `logs_accion`
 --
 ALTER TABLE `logs_accion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1557;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1567;
 
 --
 -- AUTO_INCREMENT de la tabla `log_asignaciones_mesas`
@@ -17988,7 +18078,7 @@ ALTER TABLE `log_cancelaciones`
 -- AUTO_INCREMENT de la tabla `log_mesas`
 --
 ALTER TABLE `log_mesas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=174;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=175;
 
 --
 -- AUTO_INCREMENT de la tabla `mesas`
@@ -18054,7 +18144,7 @@ ALTER TABLE `sedes`
 -- AUTO_INCREMENT de la tabla `tickets`
 --
 ALTER TABLE `tickets`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=468;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=474;
 
 --
 -- AUTO_INCREMENT de la tabla `ticket_descuentos`
@@ -18066,7 +18156,7 @@ ALTER TABLE `ticket_descuentos`
 -- AUTO_INCREMENT de la tabla `ticket_detalles`
 --
 ALTER TABLE `ticket_detalles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1239;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1247;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`
@@ -18084,13 +18174,13 @@ ALTER TABLE `usuario_ruta`
 -- AUTO_INCREMENT de la tabla `ventas`
 --
 ALTER TABLE `ventas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=706;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=713;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalles`
 --
 ALTER TABLE `venta_detalles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2611;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2620;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalles_cancelados`
@@ -18108,7 +18198,7 @@ ALTER TABLE `venta_detalles_log`
 -- AUTO_INCREMENT de la tabla `venta_promos`
 --
 ALTER TABLE `venta_promos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- Restricciones para tablas volcadas
