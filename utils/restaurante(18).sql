@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 20-11-2025 a las 06:06:00
+-- Tiempo de generación: 20-11-2025 a las 06:11:54
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -14094,6 +14094,18 @@ INSERT INTO `clientes_facturacion` (`id`, `rfc`, `razon_social`, `correo`, `tele
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `cliente_venta`
+--
+
+CREATE TABLE `cliente_venta` (
+  `id` int(11) NOT NULL,
+  `idcliente` int(11) NOT NULL,
+  `idventa` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf16le COLLATE=utf16le_bin;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `colonias`
 --
 
@@ -17483,6 +17495,12 @@ ALTER TABLE `clientes_facturacion`
   ADD UNIQUE KEY `rfc` (`rfc`);
 
 --
+-- Indices de la tabla `cliente_venta`
+--
+ALTER TABLE `cliente_venta`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indices de la tabla `colonias`
 --
 ALTER TABLE `colonias`
@@ -17857,6 +17875,12 @@ ALTER TABLE `clientes`
 --
 ALTER TABLE `clientes_facturacion`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+
+--
+-- AUTO_INCREMENT de la tabla `cliente_venta`
+--
+ALTER TABLE `cliente_venta`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `colonias`
