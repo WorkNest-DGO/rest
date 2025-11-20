@@ -10,9 +10,9 @@ $input = json_decode(file_get_contents('php://input'), true);
 if (!$input || !isset($input['venta_id'], $input['subcuentas']) || !is_array($input['subcuentas'])) {
     error('Datos incompletos');
 }
-$banderaPromo = $input['bandera_promo'];
-$descuentoPromo = 0.00;
-$promoId=0;
+$banderaPromo = !empty($input['bandera_promo']);
+$descuentoPromo = isset($input['promocion_descuento']) ? (float)$input['promocion_descuento'] : 0.00;
+$promoId = isset($input['promocion_id']) ? (int)$input['promocion_id'] : 0;
 $promociones_ids = [];
 if (isset($input['promociones_ids']) && is_array($input['promociones_ids'])) {
     foreach ($input['promociones_ids'] as $pid) {
@@ -48,6 +48,10 @@ $stmtVenta->close();
 if (!$venta) {
     error('Venta no encontrada');
 }
+
+$usuario_id = isset($input['usuario_id'])
+    ? (int)$input['usuario_id']
+    : (int)($venta['mesero_id'] ?? 0);
 
 //$usuario_id = (int)($venta['mesero_id'] ?? 0);
 //if (isset($input['usuario_id']) && (int)$input['usuario_id'] !== $usuario_id) {
@@ -216,6 +220,10 @@ if (!$insTicket || !$insDetalle) {
     error('Error al preparar inserción: ' . $conn->error);
 }
 
+$subProcesadas = [];
+$totalEsperadoGlobal = 0.0;
+$fechaAhora = date('Y-m-d H:i:s');
+
 $ticketsResp = [];
 foreach ($subcuentas as $sub) {
     if (!isset($sub['productos']) || !is_array($sub['productos'])) {
@@ -310,8 +318,7 @@ foreach ($subcuentas as $sub) {
     $desc_pct_monto_sub = round($base_sub * ($pct_sub/100.0), 2);
     $descuento_total_sub = min($total, round($cortesias_total_sub + $desc_pct_monto_sub + $monto_fijo_sub, 2));
     $total_esperado_sub = max(0.0, round($total - $descuento_total_sub, 2));
-    // El monto a registrar en tickets debe reflejar el total a cobrar después de descuentos y promociones
-    $monto_ticket = $total_esperado_sub;
+
     if ($tipo_pago === 'boucher' || $tipo_pago === 'cheque') {
         $monto_recibido = $total_esperado_sub;
     }
@@ -340,7 +347,130 @@ foreach ($subcuentas as $sub) {
         $motivo_desc = trim((string)$sub['desc_des']);
         if ($motivo_desc === '') { $motivo_desc = null; }
     }
-    $fecha = date('Y-m-d H:i:s');
+    // Primera pasada: almacenar los calculos por subcuenta y continuar.
+    $subProcesadas[] = [
+        'serie' => $serie,
+        'total_bruto' => $total,
+        'tipo_pago' => $tipo_pago,
+        'monto_recibido_raw' => $monto_recibido,
+        'detalle_ids' => $detalle_ids,
+        'cortesias_filtradas' => $cortesias_filtradas,
+        'cortesias_total_sub' => $cortesias_total_sub,
+        'pct_sub' => $pct_sub,
+        'monto_fijo_sub' => $monto_fijo_sub,
+        'desc_pct_monto_sub' => $desc_pct_monto_sub,
+        'descuento_total_sub' => $descuento_total_sub,
+        'total_esperado_sub' => $total_esperado_sub,
+        'motivo_desc' => $motivo_desc,
+        'tarjeta_marca_id' => $tarjeta_marca_id,
+        'tarjeta_banco_id' => $tarjeta_banco_id,
+        'boucher' => $boucher,
+        'cheque_numero' => $cheque_numero,
+        'cheque_banco_id' => $cheque_banco_id,
+        'productos' => $sub['productos'],
+        'fecha' => $fechaAhora
+    ];
+    $totalEsperadoGlobal += $total_esperado_sub;
+}
+
+$promoAplicadoTotal = 0.0;
+$conteoSubs = count($subProcesadas);
+foreach ($subProcesadas as $idx => &$subCalc) {
+    $promoShare = 0.0;
+    if ($descuentoPromo > 0 && $totalEsperadoGlobal > 0) {
+        if ($idx === $conteoSubs - 1) {
+            $promoShare = max(0.0, round($descuentoPromo - $promoAplicadoTotal, 2));
+        } else {
+            $ratio = $subCalc['total_esperado_sub'] > 0 ? ($subCalc['total_esperado_sub'] / $totalEsperadoGlobal) : 0;
+            $promoShare = round($descuentoPromo * $ratio, 2);
+        }
+    }
+    $promoAplicadoTotal += $promoShare;
+    $totalCobrar = max(0.0, round($subCalc['total_esperado_sub'] - $promoShare, 2));
+    $descuentoFinal = min($subCalc['total_bruto'], round($subCalc['descuento_total_sub'] + $promoShare, 2));
+    $montoRecibidoFinal = $subCalc['monto_recibido_raw'];
+    if ($subCalc['tipo_pago'] === 'boucher' || $subCalc['tipo_pago'] === 'cheque') {
+        $montoRecibidoFinal = $totalCobrar;
+    } elseif ($montoRecibidoFinal === null) {
+        $montoRecibidoFinal = $totalCobrar;
+    }
+    // Si hubo promoci�n aplicada en esta subcuenta, registra lo cobrado neto (evita dejar el bruto en monto_recibido).
+    if (!empty($subCalc['promo_descuento'])) {
+        $montoRecibidoFinal = $totalCobrar;
+    }
+    if ($montoRecibidoFinal < $totalCobrar) {
+        $montoRecibidoFinal = $totalCobrar;
+    }
+    $subCalc['promo_descuento'] = $promoShare;
+    $subCalc['total_cobrar'] = $totalCobrar;
+    $subCalc['descuento_final'] = $descuentoFinal;
+    $subCalc['monto_ticket'] = $montoRecibidoFinal;
+}
+unset($subCalc);
+
+$descuentoPromoAplicado = $promoAplicadoTotal > 0 ? round($promoAplicadoTotal, 2) : 0.0;
+if ($descuentoPromoAplicado > 0) {
+    $descuento_total = min($total_bruto, round($descuento_total + $descuentoPromoAplicado, 2));
+    $total_esperado = max(0.0, round($total_bruto - $descuento_total, 2));
+    $descuentoPromo = $descuentoPromoAplicado;
+}
+
+$promoCatalogoId = 0;
+if (count($promociones_ids) === 1) {
+    $promoCatalogoId = (int)$promociones_ids[0];
+} elseif (!empty($input['promocion_id'])) {
+    $promoCatalogoId = (int)$input['promocion_id'];
+}
+
+foreach ($subProcesadas as $sub) {
+    $serie = $sub['serie'];
+    if (!$serie && isset($input['serie_id'])) {
+        $serie = (int)$input['serie_id'];
+    }
+    if (!$serie) {
+        @require_once __DIR__ . '/../corte_caja/helpers.php';
+        if (function_exists('getSerieActiva')) {
+            $serie = (int) getSerieActiva($conn);
+        }
+    }
+    $folioStmt = $serie
+        ? $conn->prepare('SELECT id, folio_actual, descripcion FROM catalogo_folios WHERE id = ? FOR UPDATE')
+        : $conn->prepare('SELECT id, folio_actual, descripcion FROM catalogo_folios LIMIT 1 FOR UPDATE');
+    if (!$folioStmt) {
+        $conn->rollback();
+        error('Error al preparar folio: ' . $conn->error);
+    }
+    if ($serie) {
+        $folioStmt->bind_param('i', $serie);
+    }
+    if (!$folioStmt->execute()) {
+        $conn->rollback();
+        error('Error al obtener folio: ' . $folioStmt->error);
+    }
+    $resFolio = $folioStmt->get_result();
+    $row = $resFolio->fetch_assoc();
+    $folioStmt->close();
+    if (!$row) {
+        $conn->rollback();
+        error('Serie de folios no encontrada');
+    }
+    $catalogo_id = (int)$row['id'];
+    $serie_desc  = $row['descripcion'] ?? '';
+    $folio_insert = (int)$row['folio_actual'];
+    $folio_siguiente = $folio_insert + 1;
+
+    $total = $sub['total_bruto'];
+    $total_esperado_sub = $sub['total_cobrar'];
+    $monto_ticket = $sub['monto_ticket'];
+    $tipo_pago = $sub['tipo_pago'];
+    $tarjeta_marca_id = $sub['tarjeta_marca_id'];
+    $tarjeta_banco_id = $sub['tarjeta_banco_id'];
+    $boucher = $sub['boucher'];
+    $cheque_numero = $sub['cheque_numero'];
+    $cheque_banco_id = $sub['cheque_banco_id'];
+    $motivo_desc = $sub['motivo_desc'];
+    $fecha = $sub['fecha'] ?: $fechaAhora;
+
     $insTicket->bind_param(
         'iiidsidsissssisssssiissi',
         $venta_id,
@@ -376,16 +506,15 @@ foreach ($subcuentas as $sub) {
     // Guardar descuento total y motivo del descuento (desc_des) en tickets
     if ($motivo_desc !== null) {
         $updDesc = $conn->prepare('UPDATE tickets SET descuento = ?, desc_des = ? WHERE id = ?');
-        if ($updDesc) { $updDesc->bind_param('dsi', $descuento_total_sub, $motivo_desc, $ticket_id); $updDesc->execute(); $updDesc->close(); }
+        if ($updDesc) { $updDesc->bind_param('dsi', $sub['descuento_final'], $motivo_desc, $ticket_id); $updDesc->execute(); $updDesc->close(); }
     } else {
         $updDesc = $conn->prepare('UPDATE tickets SET descuento = ?, desc_des = NULL WHERE id = ?');
-        if ($updDesc) { $updDesc->bind_param('di', $descuento_total_sub, $ticket_id); $updDesc->execute(); $updDesc->close(); }
+        if ($updDesc) { $updDesc->bind_param('di', $sub['descuento_final'], $ticket_id); $updDesc->execute(); $updDesc->close(); }
     }
     // Registrar conceptos en ticket_descuentos si existe
-    if ($cortesias_total_sub > 0 && !empty($cortesias_filtradas)) {
-        if ($insC = $conn->prepare("INSERT INTO ticket_descuentos (ticket_id, tipo, venta_detalle_id, monto, usuario_id)
-                                    VALUES (?, 'cortesia', ?, ?, ?)")) {
-            foreach ($cortesias_filtradas as $vdId) {
+    if ($sub['cortesias_total_sub'] > 0 && !empty($sub['cortesias_filtradas'])) {
+        if ($insC = $conn->prepare("INSERT INTO ticket_descuentos (ticket_id, tipo, venta_detalle_id, monto, usuario_id, catalogo_promo_id) VALUES (?, 'cortesia', ?, ?, ?, 0)")) {
+            foreach ($sub['cortesias_filtradas'] as $vdId) {
                 if ($q = $conn->prepare('SELECT (cantidad*precio_unitario) AS sub FROM venta_detalles WHERE id = ? AND venta_id = ?')) {
                     $q->bind_param('ii', $vdId, $venta_id);
                     if ($q->execute()) {
@@ -401,13 +530,22 @@ foreach ($subcuentas as $sub) {
             $insC->close();
         }
     }
-    if ($desc_pct_monto_sub > 0) {
-        $insP = $conn->prepare("INSERT INTO ticket_descuentos (ticket_id, tipo, porcentaje, monto, usuario_id) VALUES (?, 'porcentaje', ?, ?, ?)");
-        if ($insP) { $insP->bind_param('iddi', $ticket_id, $pct_sub, $desc_pct_monto_sub, $usuario_id); $insP->execute(); $insP->close(); }
+    if ($sub['desc_pct_monto_sub'] > 0) {
+        $insP = $conn->prepare("INSERT INTO ticket_descuentos (ticket_id, tipo, porcentaje, monto, usuario_id, catalogo_promo_id) VALUES (?, 'porcentaje', ?, ?, ?, 0)");
+        if ($insP) { $insP->bind_param('iddi', $ticket_id, $sub['pct_sub'], $sub['desc_pct_monto_sub'], $usuario_id); $insP->execute(); $insP->close(); }
     }
-    if ($monto_fijo_sub > 0) {
-        $insM = $conn->prepare("INSERT INTO ticket_descuentos (ticket_id, tipo, monto, usuario_id) VALUES (?, 'monto_fijo', ?, ?)");
-        if ($insM) { $insM->bind_param('idi', $ticket_id, $monto_fijo_sub, $usuario_id); $insM->execute(); $insM->close(); }
+    if ($sub['monto_fijo_sub'] > 0) {
+        $insM = $conn->prepare("INSERT INTO ticket_descuentos (ticket_id, tipo, monto, usuario_id, catalogo_promo_id) VALUES (?, 'monto_fijo', ?, ?, 0)");
+        if ($insM) { $insM->bind_param('idi', $ticket_id, $sub['monto_fijo_sub'], $usuario_id); $insM->execute(); $insM->close(); }
+    }
+    if (!empty($sub['promo_descuento'])) {
+        $promoIdRegistro = $promoCatalogoId > 0 ? $promoCatalogoId : 0;
+        if ($insPr = $conn->prepare("INSERT INTO ticket_descuentos (ticket_id, tipo, monto, usuario_id, catalogo_promo_id) VALUES (?, 'promocion', ?, ?, ?)"))
+        {
+            $insPr->bind_param('idii', $ticket_id, $sub['promo_descuento'], $usuario_id, $promoIdRegistro);
+            $insPr->execute();
+            $insPr->close();
+        }
     }
 
     if ($tipo_pago === 'boucher' || $tipo_pago === 'cheque') {
@@ -441,7 +579,7 @@ foreach ($subcuentas as $sub) {
     $updFolio = $conn->prepare('UPDATE catalogo_folios SET folio_actual = ? WHERE id = ?');
     if (!$updFolio) {
         $conn->rollback();
-        error('Error al preparar actualización de folio: ' . $conn->error);
+        error('Error al preparar actualizacion de folio: ' . $conn->error);
     }
     $updFolio->bind_param('ii', $folio_siguiente, $catalogo_id);
     if (!$updFolio->execute()) {
@@ -458,9 +596,10 @@ foreach ($subcuentas as $sub) {
         'total'     => $total
     ];
 }
+
 if ($banderaPromo) {
-    $promoId = (int)$input['promocion_id'];
-    $descuentoPromo = (float)$input['promocion_descuento'];
+    $promoId = $promoId ?: (int)($input['promocion_id'] ?? 0);
+    $descuentoPromo = $descuentoPromoAplicado > 0 ? $descuentoPromoAplicado : (float)($input['promocion_descuento'] ?? 0);
     $updPromoDesc = $conn->prepare('UPDATE ventas SET promocion_id = ? , promocion_descuento = ? WHERE id = ?');
     if ($updPromoDesc) {
             $updPromoDesc->bind_param('idi', $promoId, $descuentoPromo ,$venta_id);
@@ -582,3 +721,9 @@ success([
     'total_esperado' => $total_esperado
 ]);
 ?>
+
+
+
+
+
+
