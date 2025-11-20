@@ -64,6 +64,7 @@ $query = "SELECT v.id AS venta_id, v.fecha, v.estatus, vw.usuario, vw.mesa, vw.r
                  MAX(t.mesero_nombre) AS mesero_nombre,
                  GROUP_CONCAT(t.tipo_pago ORDER BY t.id) AS tipo_pago,
                  MIN(t.fecha) AS ticket_fecha,
+                 COALESCE(SUM(t.monto_recibido), COALESCE(SUM(t.total), v.total)) AS monto_recibido,
                  COALESCE(SUM(t.total), v.total) AS total,
                  (COALESCE(SUM(t.total), v.total) - $descuentoExpr) AS total_neto,
                  COALESCE(SUM(v.propina_efectivo + v.propina_cheque + v.propina_tarjeta),0) AS propina,
