@@ -310,6 +310,8 @@ foreach ($subcuentas as $sub) {
     $desc_pct_monto_sub = round($base_sub * ($pct_sub/100.0), 2);
     $descuento_total_sub = min($total, round($cortesias_total_sub + $desc_pct_monto_sub + $monto_fijo_sub, 2));
     $total_esperado_sub = max(0.0, round($total - $descuento_total_sub, 2));
+    // El monto a registrar en tickets debe reflejar el total a cobrar después de descuentos y promociones
+    $monto_ticket = $total_esperado_sub;
     if ($tipo_pago === 'boucher' || $tipo_pago === 'cheque') {
         $monto_recibido = $total_esperado_sub;
     }
@@ -347,7 +349,7 @@ foreach ($subcuentas as $sub) {
         $total,
         $fecha,
         $usuario_id,
-        $monto_recibido,
+        $monto_ticket,
         $tipo_pago,
         $sede_id,
         $mesa_nombre,
