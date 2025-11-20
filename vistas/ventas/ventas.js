@@ -39,13 +39,19 @@ async function cargarHistorial(page = currentPage) {
                     row.classList.add('table-info');
                 }
                 const fechaMostrar = fechaParte === hoy ? 'Hoy' : v.fecha;
+                const montoRecibidoNum = (v.monto_recibido !== undefined && v.monto_recibido !== null)
+                    ? parseFloat(v.monto_recibido)
+                    : NaN;
                 const totalNetoNum = (v.total_neto !== undefined && v.total_neto !== null)
                     ? parseFloat(v.total_neto)
                     : NaN;
                 const totalBase = parseFloat(v.total) || 0;
-                const totalMostrar = Number.isFinite(totalNetoNum)
-                    ? totalNetoNum.toFixed(2)
-                    : totalBase.toFixed(2);
+                const totalMostrarNum = Number.isFinite(montoRecibidoNum)
+                    ? montoRecibidoNum
+                    : Number.isFinite(totalNetoNum)
+                        ? totalNetoNum
+                        : totalBase;
+                const totalMostrar = totalMostrarNum.toFixed(2);
                 const accion = v.estatus !== 'cancelada'
                     ? `<button class=\"btn custom-btn btn-cancelar\" data-id=\"${id}\">Cancelar</button>`
                     : '';
