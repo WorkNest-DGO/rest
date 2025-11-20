@@ -1279,7 +1279,7 @@ function mostrarTotal() {
             cont.innerHTML = html;
             cont.style.display = 'block';
         } else if (tipo === 'cheque') {
-            html += 'No. Cheque: <input type="text" id="chequeNumero' + i + '"> ';
+            html += 'No. Transferencia: <input type="text" id="chequeNumero' + i + '"> ';
             html += 'Banco: <select id="chequeBanco' + i + '"><option value="">Seleccione</option>';
             catalogoBancos.forEach(b => { html += `<option value="${b.id}">${b.nombre}</option>`; });
             html += '</select>';
@@ -1490,7 +1490,7 @@ function mostrarTotal() {
             window.open('../../api/tickets/imprime_ticket.php?venta_id='+ventaId);
             // Si la venta está asociada a una mesa, liberarla al imprimir
             try { await liberarMesa(ventaId); } catch(_) {}
-            // const resp = await fetch('../../api/tickets/reimprimir_ticket.php', {
+                        // const resp = await fetch('../../api/tickets/reimprimir_ticket.php', {
             //     method: 'POST',
             //     headers: { 'Content-Type': 'application/json' },
             //     body: JSON.stringify({ venta_id: ventaId })
