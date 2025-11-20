@@ -794,8 +794,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         const totalBruto = prods.reduce((s, p) => s + (Number(p.cantidad)||0) * (Number(p.precio_unitario)||0), 0);
         const cortSet = new Set();
         subDiv.querySelectorAll('.chk-cortesia-sub').forEach(chk => { if (chk.checked) cortSet.add(Number(chk.getAttribute('data-detalle-id')||0)); });
+        // Cortesía y promoción son excluyentes: si hay cortesías activas, limpiar y bloquear promos;
+        // si hay promociones activas, limpiar y bloquear cortesías.
+        const promoSelects = subDiv.querySelectorAll('select.promo-select');
+        const addPromoBtn = subDiv.querySelector('.btn-add-promo');
+        if (cortSet.size > 0) {
+            promoSelects.forEach(sel => {
+                if (sel.value !== '0') sel.value = '0';
+                sel.disabled = true;
+            });
+            if (addPromoBtn) addPromoBtn.disabled = true;
+            selectedIds.length = 0;
+            Object.keys(promoCountMap).forEach(k => delete promoCountMap[k]);
+        } else {
+            promoSelects.forEach(sel => { sel.disabled = false; });
+            if (addPromoBtn) addPromoBtn.disabled = false;
+        }
+        const cortesiasChecks = subDiv.querySelectorAll('.chk-cortesia-sub');
+        if (selectedIds.length) {
+            cortesiasChecks.forEach(chk => {
+                if (chk.checked) chk.checked = false;
+                chk.disabled = true;
+            });
+            cortSet.clear();
+        } else {
+            cortesiasChecks.forEach(chk => { chk.disabled = false; });
+        }
         let cortTotal = 0;
-        let totalPromo = 0; 
+        let totalPromo = 0;
         cortSet.forEach(detId => {
             const tr = subDiv.querySelector(`tr[data-detalle-id="${detId}"]`);
             if (tr) cortTotal += Number(tr.getAttribute('data-subtotal')||0);
