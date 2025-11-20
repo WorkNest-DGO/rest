@@ -1363,9 +1363,9 @@ function mostrarTotal() {
             }
             const serie = serieActual.id;
             const tipo = document.getElementById('pago' + i).value;
-            let recibido = parseFloat(document.getElementById('recibido' + i).value || 0);
+            const pagoCapturado = parseFloat(document.getElementById('recibido' + i).value || 0);
             const stateSub = window.__SUBS__ && window.__SUBS__[i] ? window.__SUBS__[i] : null;
-            const total = stateSub ? Number(stateSub.totalEsperado || 0) : prods.reduce((s, p) => s + p.cantidad * p.precio_unitario, 0) ;
+            const totalCobrar = stateSub ? Number(stateSub.totalEsperado || 0) : prods.reduce((s, p) => s + p.cantidad * p.precio_unitario, 0) ;
             // Validar que se capture motivo cuando hay descuento aplicado
             const motivoEl = document.getElementById('motivo_sub' + i);
             const requiereMotivo = stateSub && Number(stateSub.descuentoTotal || 0) > 0;
@@ -1381,7 +1381,7 @@ function mostrarTotal() {
                 alert('Selecciona tipo de pago en subcuenta ' + i);
                 return;
             }
-            if (tipo === 'efectivo' && recibido < total) {
+            if (tipo === 'efectivo' && pagoCapturado < totalCobrar) {
                 alert('Monto insuficiente en subcuenta ' + i);
                 return;
             }
@@ -1432,7 +1432,7 @@ function mostrarTotal() {
                 descuento_monto_fijo: montoFijoSub,
                 serie_id: serie,
                 tipo_pago: tipo,
-                monto_recibido: recibido,
+                monto_recibido: totalCobrar,
                 desc_des: (document.getElementById('motivo_sub' + i)?.value || '').trim(),
                 ...extra
             });
