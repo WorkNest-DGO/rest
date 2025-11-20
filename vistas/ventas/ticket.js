@@ -1432,7 +1432,9 @@ function mostrarTotal() {
                 descuento_monto_fijo: montoFijoSub,
                 serie_id: serie,
                 tipo_pago: tipo,
-                monto_recibido: totalCobrar,
+                // Para efectivo registrar lo capturado por el usuario; en tarjeta/transferencia
+                // el campo está bloqueado con el total a cobrar para evitar discrepancias.
+                monto_recibido: tipo === 'efectivo' ? pagoCapturado : totalCobrar,
                 desc_des: (document.getElementById('motivo_sub' + i)?.value || '').trim(),
                 ...extra
             });
