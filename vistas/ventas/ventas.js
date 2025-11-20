@@ -1158,20 +1158,29 @@ function pintarColoniasSelect(select) {
     });
 }
 
-function pintarClientesSelect(seleccion = null, lista = clientesDomicilio) {
-    const sel = document.getElementById('cliente_id');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">--Selecciona--</option>';
-    lista.forEach(cli => {
-        const opt = document.createElement('option');
-        opt.value = cli.id;
-        const col = cli.colonia_nombre || cli.colonia_texto || '';
-        opt.textContent = `${cli.nombre}${col ? ' – ' + col : ''}`;
-        sel.appendChild(opt);
-    });
-    if (seleccion) {
-        sel.value = String(seleccion);
+function formatearEtiquetaCliente(cli) {
+    const col = cli.colonia_nombre || cli.colonia_texto || '';
+    const tel = cli.telefono ? ` · ${cli.telefono}` : '';
+    return `${cli.nombre}${tel}${col ? ' – ' + col : ''}`;
+}
+
+function mostrarSugerenciasClientes(termino = '', lista = clientesDomicilio) {
+    const listaEl = document.getElementById('listaClientesDomicilio');
+    if (!listaEl) return;
+    listaEl.innerHTML = '';
+    const needle = termino.trim();
+    if (!needle) {
+        listaEl.style.display = 'none';
+        return;
     }
+    lista.forEach(cli => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item list-group-item-action';
+        li.textContent = formatearEtiquetaCliente(cli);
+        li.addEventListener('click', () => seleccionarCliente(cli));
+        listaEl.appendChild(li);
+    });
+    listaEl.style.display = lista.length ? 'block' : 'none';
 }
 
 function filtrarClientesDomicilioPorTexto(termino = '') {
@@ -1193,19 +1202,35 @@ function filtrarClientesDomicilioPorTexto(termino = '') {
 function aplicarFiltroClientesDomicilio() {
     const buscador = document.getElementById('buscarClienteDomicilio');
     const termino = buscador ? buscador.value : '';
-    const sel = document.getElementById('cliente_id');
-    const seleccionActual = sel ? sel.value : null;
+    const hiddenId = document.getElementById('cliente_id');
     const listaFiltrada = filtrarClientesDomicilioPorTexto(termino);
-    const seleccionValida = seleccionActual && listaFiltrada.some(c => String(c.id) === seleccionActual)
-        ? seleccionActual
-        : null;
-    pintarClientesSelect(seleccionValida, listaFiltrada);
-    if (seleccionValida) {
-        const cli = listaFiltrada.find(c => String(c.id) === seleccionValida);
+    mostrarSugerenciasClientes(termino, listaFiltrada);
+    const seleccionadoId = hiddenId ? hiddenId.value : null;
+    if (seleccionadoId) {
+        const cli = listaFiltrada.find(c => String(c.id) === String(seleccionadoId))
+            || clientesDomicilio.find(c => String(c.id) === String(seleccionadoId));
         actualizarResumenCliente(cli || null);
-    } else {
-        actualizarResumenCliente(null);
     }
+}
+
+function seleccionarCliente(cliente) {
+    const hiddenId = document.getElementById('cliente_id');
+    const buscador = document.getElementById('buscarClienteDomicilio');
+    const listaEl = document.getElementById('listaClientesDomicilio');
+    if (!hiddenId || !buscador) return;
+
+    if (!cliente) {
+        hiddenId.value = '';
+        buscador.value = '';
+        actualizarResumenCliente(null);
+        if (listaEl) listaEl.style.display = 'none';
+        return;
+    }
+
+    hiddenId.value = cliente.id;
+    buscador.value = formatearEtiquetaCliente(cliente);
+    actualizarResumenCliente(cliente);
+    if (listaEl) listaEl.style.display = 'none';
 }
 
 function actualizarResumenCliente(cliente) {
@@ -1260,7 +1285,11 @@ function toggleSeccionClienteDomicilio() {
     } else {
         seccion.style.display = 'none';
         const sel = document.getElementById('cliente_id');
+        const buscador = document.getElementById('buscarClienteDomicilio');
         if (sel) sel.value = '';
+        if (buscador) buscador.value = '';
+        const listaEl = document.getElementById('listaClientesDomicilio');
+        if (listaEl) listaEl.style.display = 'none';
         actualizarResumenCliente(null);
     }
 }
@@ -2053,9 +2082,8 @@ async function resetFormularioVenta() {
 }
 
 function onClienteSeleccionadoChange() {
-    const sel = document.getElementById('cliente_id');
-    if (!sel) return;
-    const cli = clientesDomicilio.find(c => String(c.id) === sel.value);
+    const hiddenId = document.getElementById('cliente_id');
+    const cli = hiddenId ? clientesDomicilio.find(c => String(c.id) === hiddenId.value) : null;
     actualizarResumenCliente(cli || null);
 }
 
@@ -2119,8 +2147,7 @@ async function guardarNuevoCliente() {
             const nuevo = data.resultado || data;
             if (nuevo) {
                 clientesDomicilio.push(nuevo);
-                pintarClientesSelect(nuevo.id);
-                actualizarResumenCliente(nuevo);
+                seleccionarCliente(nuevo);
                 if (nuevo.costo_fore !== null && nuevo.costo_fore !== undefined) {
                     actualizarPrecioEnvio(nuevo.costo_fore);
                 }
@@ -3183,12 +3210,24 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('guardarMovimiento').addEventListener('click', guardarMovimientoCaja);
     const btnDet = document.getElementById('btnDetalleMovs');
     if (btnDet) btnDet.addEventListener('click', abrirDetalleMovimientos);
-    const clienteSel = document.getElementById('cliente_id');
-    if (clienteSel) clienteSel.addEventListener('change', onClienteSeleccionadoChange);
+    const clienteHidden = document.getElementById('cliente_id');
+    if (clienteHidden) clienteHidden.addEventListener('change', onClienteSeleccionadoChange);
     const buscadorCliente = document.getElementById('buscarClienteDomicilio');
     if (buscadorCliente) {
-        buscadorCliente.addEventListener('input', aplicarFiltroClientesDomicilio);
+        buscadorCliente.addEventListener('input', () => {
+            if (clienteHidden) clienteHidden.value = '';
+            actualizarResumenCliente(null);
+            aplicarFiltroClientesDomicilio();
+        });
+        buscadorCliente.addEventListener('focus', () => aplicarFiltroClientesDomicilio());
     }
+    document.addEventListener('click', e => {
+        const listaEl = document.getElementById('listaClientesDomicilio');
+        const seccion = document.getElementById('seccionClienteDomicilio');
+        if (listaEl && seccion && !seccion.contains(e.target)) {
+            listaEl.style.display = 'none';
+        }
+    });
     const btnNuevoCliente = document.getElementById('btnNuevoCliente');
     if (btnNuevoCliente) btnNuevoCliente.addEventListener('click', abrirModalNuevoCliente);
     const btnGuardarCliente = document.getElementById('guardarNuevoCliente');
