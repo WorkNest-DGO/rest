@@ -130,6 +130,9 @@ let repartidores = [];
 let ticketRequests = [];
 let ventaIdActual = null;
 let mesas = [];
+let coloniasData = [];
+let clientesDomicilio = [];
+let clienteSeleccionado = null;
 // Catálogo de promociones para selección en ventas
 let catalogoPromocionesVenta = [];
 let catalogoPromocionesVentaFiltradas = [];
@@ -1105,12 +1108,126 @@ async function cargarRepartidores() {
                 select.appendChild(opt);
             });
             aplicarEnvioSiCorresponde();
+            toggleSeccionClienteDomicilio();
         } else {
             alert(data.mensaje);
         }
     } catch (err) {
         console.error(err);
         alert('Error al cargar repartidores');
+    }
+}
+
+async function cargarColoniasCatalogo() {
+    if (coloniasData.length) return coloniasData;
+    try {
+        const resp = await fetch('../../api/colonias/listar.php');
+        const data = await resp.json();
+        if (data.success) {
+            coloniasData = data.resultado || [];
+        }
+    } catch (err) {
+        console.error('No se pudieron cargar las colonias', err);
+    }
+    return coloniasData;
+}
+
+async function cargarClientesDomicilio() {
+    try {
+        const resp = await fetch('../../api/clientes/listar.php');
+        const data = await resp.json();
+        if (data.success) {
+            clientesDomicilio = data.resultado || [];
+            pintarClientesSelect();
+        }
+    } catch (err) {
+        console.error('No se pudieron cargar los clientes', err);
+    }
+}
+
+function pintarColoniasSelect(select) {
+    if (!select) return;
+    select.innerHTML = '<option value="">--Selecciona--</option>';
+    coloniasData.forEach(col => {
+        const opt = document.createElement('option');
+        opt.value = col.id;
+        opt.textContent = col.colonia;
+        opt.dataset.distancia = col.dist_km_la_forestal ?? '';
+        opt.dataset.costoFore = col.costo_fore ?? '';
+        select.appendChild(opt);
+    });
+}
+
+function pintarClientesSelect(seleccion = null) {
+    const sel = document.getElementById('cliente_id');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">--Selecciona--</option>';
+    clientesDomicilio.forEach(cli => {
+        const opt = document.createElement('option');
+        opt.value = cli.id;
+        const col = cli.colonia_nombre || cli.colonia_texto || '';
+        opt.textContent = `${cli.nombre}${col ? ' – ' + col : ''}`;
+        sel.appendChild(opt);
+    });
+    if (seleccion) {
+        sel.value = String(seleccion);
+    }
+}
+
+function actualizarResumenCliente(cliente) {
+    const resumen = document.getElementById('resumenCliente');
+    const tel = document.getElementById('clienteTelefono');
+    const dir = document.getElementById('clienteDireccion');
+    const col = document.getElementById('clienteColonia');
+    const dist = document.getElementById('clienteDistancia');
+    const costoInput = document.getElementById('costoForeInput');
+    clienteSeleccionado = cliente || null;
+
+    if (!resumen) return;
+
+    if (!cliente) {
+        resumen.style.display = 'none';
+        if (costoInput) costoInput.value = '';
+        return;
+    }
+
+    if (tel) tel.textContent = cliente.telefono || '-';
+    const direccion = [cliente.calle, cliente.numero_exterior].filter(Boolean).join(' ');
+    if (dir) dir.textContent = direccion || '-';
+    if (col) col.textContent = cliente.colonia_nombre || cliente.colonia_texto || '-';
+    const distanciaTxt = cliente.dist_km_la_forestal !== null && cliente.dist_km_la_forestal !== undefined
+        ? `${cliente.dist_km_la_forestal} km`
+        : 'Sin dato';
+    if (dist) dist.textContent = distanciaTxt;
+    if (costoInput) costoInput.value = cliente.costo_fore !== null && cliente.costo_fore !== undefined ? cliente.costo_fore : '';
+
+    resumen.style.display = 'block';
+    if (cliente.costo_fore !== null && cliente.costo_fore !== undefined) {
+        actualizarPrecioEnvio(cliente.costo_fore);
+    }
+}
+
+function actualizarPrecioEnvio(monto) {
+    const precioInput = document.getElementById('envioPrecio');
+    if (precioInput && monto !== null && monto !== undefined && monto !== '') {
+        precioInput.value = monto;
+        window.recalcularTotalesUI();
+    }
+}
+
+function toggleSeccionClienteDomicilio() {
+    const seccion = document.getElementById('seccionClienteDomicilio');
+    if (!seccion) return;
+    if (esDomicilioConRepartidorCasa()) {
+        seccion.style.display = 'block';
+        if (!clientesDomicilio.length) {
+            cargarClientesDomicilio();
+        }
+    } else {
+        seccion.style.display = 'none';
+        const sel = document.getElementById('cliente_id');
+        if (sel) sel.value = '';
+        actualizarResumenCliente(null);
     }
 }
 
@@ -1684,6 +1801,8 @@ async function registrarVenta() {
     const observacion = document.getElementById('observacion').value.trim();
     // Obtener carrito (incluye enví­o si el panel está activo)
     const productos = obtenerCarritoActual();
+    let cliente_id = null;
+    let costoForeCapturado = null;
 
     if (!validarInventario()) {
         return;
@@ -1711,6 +1830,21 @@ async function registrarVenta() {
             alert('Selecciona un repartidor válido');
             return;
         }
+        if (esDomicilioConRepartidorCasa()) {
+            const cliSel = document.getElementById('cliente_id');
+            const costoInput = document.getElementById('costoForeInput');
+            cliente_id = parseInt(cliSel?.value || '');
+            if (isNaN(cliente_id) || !cliente_id) {
+                alert('Selecciona un cliente para reparto en casa');
+                return;
+            }
+            costoForeCapturado = costoInput ? Number(costoInput.value || 0) : null;
+            if (!costoForeCapturado || costoForeCapturado <= 0) {
+                alert('Captura el costo de envío para la colonia seleccionada');
+                return;
+            }
+            actualizarPrecioEnvio(costoForeCapturado);
+        }
     } else if (tipo !== 'rapido') {
         alert('Tipo de entrega inválido');
         return;
@@ -1726,6 +1860,13 @@ async function registrarVenta() {
         corte_id: corteIdActual,
         sede_id: sedeId
     };
+    if (cliente_id) {
+        payload.cliente_id = cliente_id;
+    }
+    if (costoForeCapturado !== null && !isNaN(costoForeCapturado)) {
+        payload.costo_fore = costoForeCapturado;
+        payload.precio_envio = costoForeCapturado;
+    }
     // Promociones seleccionadas (opcional)
     try {
         const promosSel = obtenerPromocionesSeleccionadasVenta();
@@ -1796,6 +1937,11 @@ async function resetFormularioVenta() {
     if (obs) obs.value = '';
     if (selPromo) selPromo.value = '';
     limpiarPanelPromosVenta();
+    const selCliente = document.getElementById('cliente_id');
+    const costoFore = document.getElementById('costoForeInput');
+    if (selCliente) selCliente.value = '';
+    if (costoFore) costoFore.value = '';
+    actualizarResumenCliente(null);
 
     // Forzar placeholder y repintar selects clave
     ;['tipo_entrega','mesa_id','repartidor_id','usuario_id'].forEach(id => {
@@ -1870,6 +2016,90 @@ async function resetFormularioVenta() {
     verificarActivacionProductos();
     actualizarComboPromociones();
     if (tipoEntrega) tipoEntrega.focus();
+}
+
+function onClienteSeleccionadoChange() {
+    const sel = document.getElementById('cliente_id');
+    if (!sel) return;
+    const cli = clientesDomicilio.find(c => String(c.id) === sel.value);
+    actualizarResumenCliente(cli || null);
+}
+
+function abrirModalNuevoCliente() {
+    cargarColoniasCatalogo().then(() => {
+        pintarColoniasSelect(document.getElementById('nuevoClienteColonia'));
+        if (typeof showModal === 'function') {
+            showModal('#modalNuevoCliente');
+        } else if (window.$) {
+            $('#modalNuevoCliente').modal('show');
+        }
+    });
+}
+
+function cerrarModalNuevoCliente() {
+    if (typeof hideModal === 'function') {
+        hideModal('#modalNuevoCliente');
+    } else if (window.$) {
+        $('#modalNuevoCliente').modal('hide');
+    }
+}
+
+async function guardarNuevoCliente() {
+    const nombre = document.getElementById('nuevoClienteNombre')?.value.trim();
+    const telefono = document.getElementById('nuevoClienteTelefono')?.value.trim();
+    const colonia_id = parseInt(document.getElementById('nuevoClienteColonia')?.value || '');
+    const calle = document.getElementById('nuevoClienteCalle')?.value.trim();
+    const numero_exterior = document.getElementById('nuevoClienteNumero')?.value.trim();
+    const entre_calle_1 = document.getElementById('nuevoClienteEntre1')?.value.trim();
+    const entre_calle_2 = document.getElementById('nuevoClienteEntre2')?.value.trim();
+    const referencias = document.getElementById('nuevoClienteReferencias')?.value.trim();
+    const costo_fore_val = document.getElementById('nuevoClienteCostoFore')?.value;
+
+    if (!nombre || !colonia_id) {
+        alert('Captura al menos el nombre y la colonia');
+        return;
+    }
+
+    const payload = {
+        nombre,
+        telefono,
+        colonia_id,
+        calle,
+        numero_exterior,
+        entre_calle_1,
+        entre_calle_2,
+        referencias
+    };
+    if (costo_fore_val !== null && costo_fore_val !== undefined && costo_fore_val !== '') {
+        payload.costo_fore = Number(costo_fore_val);
+    }
+
+    try {
+        const resp = await fetch('../../api/clientes/crear.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        if (data.success) {
+            const nuevo = data.resultado || data;
+            if (nuevo) {
+                clientesDomicilio.push(nuevo);
+                pintarClientesSelect(nuevo.id);
+                actualizarResumenCliente(nuevo);
+                if (nuevo.costo_fore !== null && nuevo.costo_fore !== undefined) {
+                    actualizarPrecioEnvio(nuevo.costo_fore);
+                }
+            }
+            cerrarModalNuevoCliente();
+            document.getElementById('formNuevoCliente')?.reset();
+        } else {
+            alert(data.mensaje || 'No se pudo crear el cliente');
+        }
+    } catch (err) {
+        console.error('Error al crear cliente', err);
+        alert('No se pudo crear el cliente');
+    }
 }
 
 async function verDetalles(id) {
@@ -2617,6 +2847,7 @@ if (tipoEntregaEl) {
         actualizarSelectorUsuario();
         aplicarEnvioSiCorresponde();
         actualizarComboPromociones();
+        toggleSeccionClienteDomicilio();
     });
 }
 
@@ -2829,6 +3060,12 @@ if (repartidorEl) {
     repartidorEl.addEventListener('change', () => {
         actualizarSelectorUsuario();
         aplicarEnvioSiCorresponde();
+        toggleSeccionClienteDomicilio();
+        const sel = document.getElementById('cliente_id');
+        if (sel && sel.value) {
+            const cli = clientesDomicilio.find(c => String(c.id) === sel.value);
+            actualizarResumenCliente(cli || null);
+        }
     });
 }
 
@@ -2889,6 +3126,8 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarHistorial();
     cargarSolicitudes();
     cargarPromocionesVenta();
+    cargarColoniasCatalogo();
+    cargarClientesDomicilio();
     document.getElementById('registrarVenta').addEventListener('click', registrarVenta);
     document.getElementById('agregarProducto').addEventListener('click', agregarFilaProducto);
     actualizarSelectorUsuario();
@@ -2910,6 +3149,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('guardarMovimiento').addEventListener('click', guardarMovimientoCaja);
     const btnDet = document.getElementById('btnDetalleMovs');
     if (btnDet) btnDet.addEventListener('click', abrirDetalleMovimientos);
+    const clienteSel = document.getElementById('cliente_id');
+    if (clienteSel) clienteSel.addEventListener('change', onClienteSeleccionadoChange);
+    const btnNuevoCliente = document.getElementById('btnNuevoCliente');
+    if (btnNuevoCliente) btnNuevoCliente.addEventListener('click', abrirModalNuevoCliente);
+    const btnGuardarCliente = document.getElementById('guardarNuevoCliente');
+    if (btnGuardarCliente) btnGuardarCliente.addEventListener('click', guardarNuevoCliente);
+    const costoForeInput = document.getElementById('costoForeInput');
+    if (costoForeInput) {
+        costoForeInput.addEventListener('input', () => {
+            const val = Number(costoForeInput.value || 0);
+            if (val > 0) {
+                actualizarPrecioEnvio(val);
+            }
+        });
+    }
 
     // Delegación de eventos con JavaScript puro para botones dinámicos
     const cancelModal = document.getElementById('cancelVentaModal');
