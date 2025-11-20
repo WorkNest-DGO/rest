@@ -1983,9 +1983,9 @@ async function registrarVenta() {
             const cliSel = document.getElementById('cliente_id');
             const costoInput = document.getElementById('costoForeInput');
             cliente_id = parseInt(cliSel?.value || '');
+            // La selección del cliente es informativa y opcional.
             if (isNaN(cliente_id) || !cliente_id) {
-                alert('Selecciona un cliente para reparto en casa');
-                return;
+                cliente_id = null;
             }
             costoForeCapturado = costoInput ? Number(costoInput.value || 0) : null;
             if (!costoForeCapturado || costoForeCapturado <= 0) {
