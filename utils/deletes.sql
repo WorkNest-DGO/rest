@@ -6,6 +6,7 @@ DELETE FROM factura_tickets;
 DELETE FROM factura_detalles;
 DELETE FROM facturas;
 
+DELETE FROM venta_promos;
 DELETE FROM venta_detalles_log;
 DELETE FROM venta_detalles_cancelados;
 DELETE FROM ticket_descuentos;

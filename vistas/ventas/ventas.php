@@ -129,12 +129,6 @@ ob_start();
             <tbody>
                 <tr>
                   <td>
-                    <!-- Selector antiguo de productos eliminado -->
-                    <!--
-                    <div class="sel sel--producto">
-                      <select class="producto" name="producto" id="producto_id"></select>
-                    </div>
-                    -->
                     <!-- Nuevo selector de productos con buscador -->
                     <div class="selector-producto position-relative"><!-- INICIO nuevo selector -->
                       <input type="text" class="form-control buscador-producto" placeholder="Buscar producto...">
@@ -197,8 +191,9 @@ ob_start();
   <button id="btnDetalleMovs" type="button" class="btn custom-btn">Detalle</button>
 </div>
 
-<div class="container mt-5">
+<div style=" padding: 40px;">
   <h2 class="section-header">Historial de Ventas</h2>
+  <div style="text-align: center;" id="paginacion" class="mt-2"></div> <br>
   <div class="mb-2 d-flex justify-content-between">
     <input type="search" id="buscadorVentas" class="form-control w-50" placeholder="Buscar...">
     <div class="d-flex align-items-center">
@@ -232,7 +227,7 @@ ob_start();
       </tbody>
     </table>
   </div>
-  <div id="paginacion" class="mt-2"></div>
+  
 </div>
 
 
