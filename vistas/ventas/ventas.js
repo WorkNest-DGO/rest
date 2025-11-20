@@ -1333,6 +1333,8 @@ function actualizarResumenCliente(cliente) {
     if (!cliente) {
         resumen.style.display = 'none';
         if (costoInput) costoInput.value = '';
+        // Si no hay cliente seleccionado, usa el costo por defecto del concepto "ENVÍO – Repartidor casa".
+        actualizarPrecioEnvio(window.ENVIO_CASA_DEFAULT_PRECIO || 30);
         return;
     }
 
@@ -1987,12 +1989,21 @@ async function registrarVenta() {
             if (isNaN(cliente_id) || !cliente_id) {
                 cliente_id = null;
             }
-            costoForeCapturado = costoInput ? Number(costoInput.value || 0) : null;
-            if (!costoForeCapturado || costoForeCapturado <= 0) {
-                alert('Captura el costo de envío para la colonia seleccionada');
-                return;
+            if (cliente_id) {
+                costoForeCapturado = costoInput ? Number(costoInput.value || 0) : null;
+                if (!costoForeCapturado || costoForeCapturado <= 0) {
+                    alert('Captura el costo de envío para la colonia seleccionada');
+                    return;
+                }
+                actualizarPrecioEnvio(costoForeCapturado);
+            } else {
+                // Sin cliente, usar el precio configurado en el panel de envío (concepto default).
+                const precioConcepto = Number(
+                    (document.getElementById('envioPrecio')?.value) || (window.ENVIO_CASA_DEFAULT_PRECIO || 30)
+                );
+                costoForeCapturado = Number.isFinite(precioConcepto) ? precioConcepto : (window.ENVIO_CASA_DEFAULT_PRECIO || 30);
+                actualizarPrecioEnvio(costoForeCapturado);
             }
-            actualizarPrecioEnvio(costoForeCapturado);
         }
     } else if (tipo !== 'rapido') {
         alert('Tipo de entrega inválido');
@@ -2012,8 +2023,10 @@ async function registrarVenta() {
     if (cliente_id) {
         payload.cliente_id = cliente_id;
     }
-    if (costoForeCapturado !== null && !isNaN(costoForeCapturado)) {
+    if (cliente_id && costoForeCapturado !== null && !isNaN(costoForeCapturado)) {
         payload.costo_fore = costoForeCapturado;
+    }
+    if (costoForeCapturado !== null && !isNaN(costoForeCapturado)) {
         payload.precio_envio = costoForeCapturado;
     }
     // Promociones seleccionadas (opcional)
