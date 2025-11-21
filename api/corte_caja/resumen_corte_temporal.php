@@ -92,6 +92,7 @@ $stmtResumen->close();
 
 // Total esperado normalizado:
 // Usar lo realmente cobrado en tickets (monto_recibido) y sumar propinas registradas en ventas.
+$totalPropinaNoEfectivo = $totalPropinaCheque + $totalPropinaTarjeta;
 $totalEsperado = $totalCobrado + $totalPropinas;
 
 // Agregados de descuentos y esperado (con tickets)
@@ -101,7 +102,9 @@ $sqlAgg = "SELECT
   COALESCE(SUM(t.monto_recibido), 0) AS total_esperado,
   COALESCE(SUM(CASE WHEN t.tipo_pago='efectivo' THEN t.monto_recibido ELSE 0 END), 0) AS esperado_efectivo,
   COALESCE(SUM(CASE WHEN t.tipo_pago='boucher'  THEN t.monto_recibido ELSE 0 END), 0) AS esperado_boucher,
-  COALESCE(SUM(CASE WHEN t.tipo_pago='cheque'   THEN t.monto_recibido ELSE 0 END), 0) AS esperado_cheque
+  COALESCE(SUM(CASE WHEN t.tipo_pago='cheque'   THEN t.monto_recibido ELSE 0 END), 0) AS esperado_cheque,
+  COALESCE(SUM(CASE WHEN t.tipo_pago='tarjeta'  THEN t.monto_recibido ELSE 0 END), 0) AS esperado_tarjeta,
+  COALESCE(SUM(CASE WHEN t.tipo_pago='transferencia' THEN t.monto_recibido ELSE 0 END), 0) AS esperado_transferencia
 FROM ventas v
 JOIN tickets t ON t.venta_id = v.id
 WHERE v.estatus = 'cerrada' AND v.corte_id = ?";
@@ -113,6 +116,18 @@ if ($stmtAgg) {
     }
     $stmtAgg->close();
 }
+
+// Recalcular esperados por efectivo y no efectivo
+$__totalEsperadoProductos = (float)($rowAgg['total_esperado'] ?? 0);
+$__esperadoEfectivoProd   = (float)($rowAgg['esperado_efectivo'] ?? 0);
+$totalPropinaEfectivo = (float)$row2['propina_efectivo'];
+$totalPropinaCheque   = (float)$row2['propina_cheque'];
+$totalPropinaTarjeta  = (float)$row2['propina_tarjeta'];
+$totalPropinaNoEfectivo = $totalPropinaCheque + $totalPropinaTarjeta;
+
+$totalEsperado = $__totalEsperadoProductos + $totalPropinas;
+$totalEsperadoEfectivo = $__esperadoEfectivoProd + $totalPropinaEfectivo;
+$totalEsperadoNoEfectivo = ($__totalEsperadoProductos - $__esperadoEfectivoProd) + $totalPropinaNoEfectivo;
 
 // Obtener fondo inicial y fecha de inicio del corte
 $stmtFondo = $conn->prepare('SELECT c.fondo_inicial, c.fecha_inicio, u.nombre AS cajero
@@ -141,7 +156,8 @@ $totalDepositos = (float)($rowMovimientos['total_depositos'] ?? 0);
 $totalRetiros   = (float)($rowMovimientos['total_retiros'] ?? 0);
 $stmtMovimientos->close();
 
-$totalFinal = $totalEsperado + $fondoInicial + $totalDepositos - $totalRetiros;
+$totalFinalGeneral = $totalEsperado + $fondoInicial + $totalDepositos - $totalRetiros;
+$totalFinalEfectivo = $totalEsperadoEfectivo + $fondoInicial + $totalDepositos - $totalRetiros;
 
 // Total cobrado registrado por usuarios con rol de mesero
 $sqlMeseros = "
@@ -232,10 +248,13 @@ $resultado['total_propina_tarjeta']  = $totalPropinaTarjeta;
 $resultado['total_propinas']  = $totalPropinas;
 $resultado['total_descuento_promos']  = $totalDescuentoPromos;
 $resultado['totalEsperado']   = $totalEsperado;
+$resultado['totalEsperadoEfectivo'] = $totalEsperadoEfectivo;
+$resultado['totalEsperadoNoEfectivo'] = $totalEsperadoNoEfectivo;
 $resultado['fondo']           = $fondoInicial;
 $resultado['total_depositos'] = $totalDepositos;
 $resultado['total_retiros']   = $totalRetiros;
-$resultado['totalFinal']      = $totalFinal;
+$resultado['totalFinal']      = $totalFinalEfectivo;
+$resultado['totalFinalGeneral'] = $totalFinalGeneral;
 $resultado['corte_id']        = $corte_id;
 $resultado['total_meseros'] = $meseros;
 $resultado['total_rapido']    = $totalRapido;
@@ -251,6 +270,8 @@ $resultado['total_esperado']    = (float)($rowAgg['total_esperado']    ?? 0);
 $resultado['esperado_efectivo'] = (float)($rowAgg['esperado_efectivo'] ?? 0);
 $resultado['esperado_boucher']  = (float)($rowAgg['esperado_boucher']  ?? 0);
 $resultado['esperado_cheque']   = (float)($rowAgg['esperado_cheque']   ?? 0);
+$resultado['esperado_tarjeta']  = (float)($rowAgg['esperado_tarjeta']  ?? 0);
+$resultado['esperado_transferencia'] = (float)($rowAgg['esperado_transferencia'] ?? 0);
 
 echo json_encode([
     'success'   => true,

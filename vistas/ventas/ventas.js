@@ -268,16 +268,20 @@ function buildCorteTicket(resultado, cajeroOpt) {
     const efectivo = r.efectivo || {};
     const boucher = r.boucher || {};
     const cheque = r.cheque || {};
+    const tarjeta = r.tarjeta || {};
+    const transferencia = r.transferencia || {};
 
     const totalProductos = Number(r.total_productos || 0);
     const totalPropinas = Number(r.total_propinas || 0);
     const totalEsperado = Number(r.totalEsperado || 0);
+    const totalEsperadoEfectivo = Number(r.totalEsperadoEfectivo || r.esperado_efectivo || 0);
+    const totalEsperadoNoEfectivo = Number(r.totalEsperadoNoEfectivo || 0);
     const fondo = Number(r.fondo || 0);
     const totalDepositos = Number(r.total_depositos || 0);
     const totalRetiros = Number(r.total_retiros || 0);
-    const totalFinal = Number(r.totalFinal || 0);
-    const totalFinalEfectivo = Number(r.totalFinalEfectivo)|| 0;
-    const dif = totalFinal - totalEsperado;
+    const totalFinalEfectivo = Number(r.totalFinalEfectivo ?? r.totalFinal ?? 0);
+    const totalFinalGeneral = Number(r.totalFinalGeneral || totalFinalEfectivo);
+    const dif = totalFinalEfectivo - (totalEsperadoEfectivo + fondo + totalDepositos - totalRetiros);
 
     const totalMeseros = Array.isArray(r.total_meseros) ? r.total_meseros : [];
     const totalRapido = Number(r.total_rapido || 0);
@@ -322,19 +326,24 @@ function buildCorteTicket(resultado, cajeroOpt) {
     printFP('Efectivo', efectivo);
     printFP('Boucher', boucher);
     printFP('Cheque', cheque);
+    printFP('Tarjeta', tarjeta);
+    printFP('Transf.', transferencia);
     out += '\n';
 
-    // Conciliación
+        // Conciliacion
     out += repeat('-', TKT_WIDTH) + '\n';
     out += lineKV('Total productos:', padLeft(money(totalProductos), 14)) + '\n';
     out += lineKV('Total propinas:', padLeft(money(totalPropinas), 14)) + '\n';
     out += lineKV('Total esperado:', padLeft(money(totalEsperado), 14)) + '\n';
+    out += lineKV('Esperado efectivo:', padLeft(money(totalEsperadoEfectivo), 14)) + '\n';
+    out += lineKV('Esperado no efectivo:', padLeft(money(totalEsperadoNoEfectivo), 14)) + '\n';
     out += lineKV('Fondo inicial:', padLeft(money(fondo), 14)) + '\n';
-    out += lineKV('Depósitos:', padLeft(money(totalDepositos), 14)) + '\n';
+    out += lineKV('Depositos:', padLeft(money(totalDepositos), 14)) + '\n';
     out += lineKV('Retiros:', padLeft(money(totalRetiros), 14)) + '\n';
     out += repeat('-', TKT_WIDTH) + '\n';
-    out += lineKV('Conteo (total final):', padLeft(money(totalFinal), 14)) + '\n';
-    const difLabel = 'DIF (Conteo - Esperado):';
+    out += lineKV('Efectivo esperado en caja:', padLeft(money(totalFinalEfectivo), 14)) + '\n';
+    out += lineKV('Total general (ref.):', padLeft(money(totalFinalGeneral), 14)) + '\n';
+    const difLabel = 'DIF efectivo (esp - calc):';
     out += lineKV(difLabel, padLeft(money(dif), 14)) + '\n';
     out += repeat('-', TKT_WIDTH) + '\n\n';
 
@@ -878,7 +887,7 @@ function imprimirCorteTemporal(datos) {
 
 function mostrarModalDesglose(dataApi) {
     const r = dataApi?.resultado || {};
-    const metodosPago = ['efectivo', 'boucher', 'cheque'];
+    const metodosPago = ['efectivo', 'boucher', 'cheque', 'tarjeta', 'transferencia'];
 
     // Usa los totales del API si vienen; si no, calcula con metodosPago
     const totalProductos = Number.parseFloat(r.total_productos) ||
@@ -894,7 +903,8 @@ function mostrarModalDesglose(dataApi) {
         ? (Number.parseFloat(r.totalEsperado) || (totalProductos + totalPropinas))
         : totalEsperadoNew;
     const fondoInicial = Number.parseFloat(r.fondo) || 0;
-    const totalIngresado = Number.parseFloat(r.totalFinal) || (totalEsperado + fondoInicial);
+    const totalEsperadoEfectivo = Number.parseFloat(r.totalEsperadoEfectivo ?? r.esperado_efectivo ?? 0);
+    const totalIngresado = Number.parseFloat(r.totalFinalEfectivo ?? r.totalFinal) || (totalEsperadoEfectivo + fondoInicial);
 
     const modal = document.getElementById('modalDesglose');
     const body = modal.querySelector('.modal-body');
@@ -915,6 +925,7 @@ function mostrarModalDesglose(dataApi) {
     html += '<p>Fondo inicial: $<strong id="lblFondo"></strong></p>';
     html += '<p>Depósitos: $<strong id="lblTotalDepositos"></strong></p>';
     html += '<p>Retiros: $<strong id="lblTotalRetiros"></strong></p>';
+    html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
     html += `<p>Total ingresado: $${totalIngresado.toFixed(2)}</p>`;
    // html += `<p>Total productos S/descuento: $${totalProductos.toFixed(2)}</p>`;
     //Shtml += `<p>Total productos C/descuento: $${totalEsperado.toFixed(2)}</p>`;
@@ -936,7 +947,7 @@ function mostrarModalDesglose(dataApi) {
         html += '</ul>';
     }  
    
-    html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
+    
     html += '<p>Propinas por tipo de pago:</p><ul>';
     html += `<li>Efectivo: $${(Number.parseFloat(r.total_propina_efectivo) || 0).toFixed(2)}</li>`;
     html += `<li>Transferencia: $${(Number.parseFloat(r.total_propina_cheque) || 0).toFixed(2)}</li>`;
@@ -1032,10 +1043,7 @@ function mostrarModalDesglose(dataApi) {
     cont.appendChild(frag);
 
         function calcular(ev) {
-        const totalBoucher = Number.parseFloat((r.boucher && r.boucher.total) || 0) || 0;
-        const totalCheque  = Number.parseFloat((r.cheque && r.cheque.total) || 0) || 0;
-        const totalNoEfectivo = totalBoucher + totalCheque;
-        const efectivoEsperado = Math.max(0, (totalIngresado - totalNoEfectivo - totalPromos));
+        const efectivoEsperado = Number.parseFloat(r.totalEsperado ?? r.total_esperado ?? 0) || 0;
         if (ev && ev.target && ev.target.classList.contains('cantidad')) {
             const changed = ev.target;
             const valDen = parseFloat(changed.dataset.valor) || 0;
@@ -1066,8 +1074,7 @@ function mostrarModalDesglose(dataApi) {
             totalEfectivo += subtotal;
         });
         document.getElementById('totalEfectivo').textContent = totalEfectivo.toFixed(2);
-        let dif = efectivoEsperado - totalEfectivo;
-        if (dif < 0) dif = 0;
+        let dif = totalEfectivo - efectivoEsperado;
         document.getElementById('difIngresado').textContent = dif.toFixed(2);
     }
 
@@ -1508,6 +1515,8 @@ function mostrarCorteTemporalBonito(data) {
     const totalBruto      = Number(r.total_bruto      ?? r.total ?? 0);
     const totalDescuentos = Number(r.total_descuentos ?? 0);
     const totalEsperado   = Number(r.total_esperado   ?? (totalBruto - totalDescuentos) ?? 0);
+    const totalEsperadoEfectivo = Number(r.totalEsperadoEfectivo ?? r.esperado_efectivo ?? 0);
+    const totalEsperadoNoEf = Number(r.totalEsperadoNoEfectivo ?? 0);
 
     setText('#lblTmpTotalBruto', fmtMoneda(totalBruto));
     setText('#lblTmpTotalDescuentos', fmtMoneda(totalDescuentos));
@@ -1516,6 +1525,8 @@ function mostrarCorteTemporalBonito(data) {
     setText('#lblTmpEsperadoEfectivo', fmtMoneda(Number(r.esperado_efectivo || 0)));
     setText('#lblTmpEsperadoBoucher',  fmtMoneda(Number(r.esperado_boucher  || 0)));
     setText('#lblTmpEsperadoCheque',   fmtMoneda(Number(r.esperado_cheque   || 0)));
+    setText('#lblTmpEsperadoTarjeta',  fmtMoneda(Number(r.esperado_tarjeta  || 0)));
+    setText('#lblTmpEsperadoTransfer', fmtMoneda(Number(r.esperado_transferencia || 0)));
 
     var totalPromos = Number(r.total_descuento_promos ?? 0);
     if (totalPromos > 0){
@@ -1528,6 +1539,9 @@ function mostrarCorteTemporalBonito(data) {
         document.getElementById('promocionesA').style.display ='none';
         setText('#lblTmpTotalEsperado', fmtMoneda(totalEsperado));
     }
+    setText('#lblTmpTotalEsperado', fmtMoneda(totalEsperado));
+    setText('#lblTmpTotalEsperadoEfectivo', fmtMoneda(totalEsperadoEfectivo));
+    setText('#lblTmpTotalEsperadoNoEfectivo', fmtMoneda(totalEsperadoNoEf));
     const meseros = Array.isArray(r.total_meseros) ? r.total_meseros : [];
     pintarTablaSimple('#tblTmpMeseros tbody', meseros, [
         { key: 'nombre' },
@@ -3453,6 +3467,7 @@ document.addEventListener('click', function (e) {
             .catch(() => alert('Error al actualizar estado'));
     }
 });
+
 
 
 

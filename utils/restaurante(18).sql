@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 20-11-2025 a las 20:56:10
+-- Tiempo de generación: 21-11-2025 a las 05:50:57
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -24,21 +24,78 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `alineacion`
+-- Estructura de tabla para la tabla `catalogo_bancos`
 --
 
-CREATE TABLE `alineacion` (
+CREATE TABLE `catalogo_bancos` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `catalogo_bancos`
+--
+
+INSERT INTO `catalogo_bancos` (`id`, `nombre`) VALUES
+(1, 'BBVA'),
+(2, 'Santander'),
+(3, 'Banorte'),
+(4, 'HSBC'),
+(5, 'Scotiabank'),
+(6, 'Banco Azteca'),
+(7, 'Inbursa'),
+(8, 'BanCoppel');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `catalogo_categorias`
+--
+
+CREATE TABLE `catalogo_categorias` (
   `id` int(11) NOT NULL,
   `nombre` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `alineacion`
+-- Volcado de datos para la tabla `catalogo_categorias`
 --
 
-INSERT INTO `alineacion` (`id`, `nombre`) VALUES
-(3, 'Ala Derecha'),
-(4, 'Cocina');
+INSERT INTO `catalogo_categorias` (`id`, `nombre`) VALUES
+(1, 'Bebida'),
+(2, 'Postre'),
+(3, 'Platillo'),
+(4, 'Sopa'),
+(5, 'Arroz'),
+(6, 'Extra'),
+(7, 'Topping'),
+(8, 'Rollo natural'),
+(9, 'Rollo empanizado'),
+(10, 'Entrada'),
+(11, 'Rollo Premium'),
+(12, 'Rollo Nano'),
+(13, 'rollo horneado'),
+(14, 'Alcohol');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `catalogo_folios`
+--
+
+CREATE TABLE `catalogo_folios` (
+  `id` int(11) NOT NULL,
+  `descripcion` varchar(100) DEFAULT NULL,
+  `folio_actual` int(11) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `catalogo_folios`
+--
+
+INSERT INTO `catalogo_folios` (`id`, `descripcion`, `folio_actual`) VALUES
+(1, 'Serie Restaurante', 1000),
+(2, 'Serie Forestal', 2228);
 
 -- --------------------------------------------------------
 
@@ -77,6 +134,25 @@ INSERT INTO `catalogo_promos` (`id`, `nombre`, `descripcion`, `monto`, `activo`,
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `catalogo_tarjetas`
+--
+
+CREATE TABLE `catalogo_tarjetas` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `catalogo_tarjetas`
+--
+
+INSERT INTO `catalogo_tarjetas` (`id`, `nombre`) VALUES
+(1, 'Visa'),
+(2, 'MasterCard');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `cliente_venta`
 --
 
@@ -111,23 +187,6 @@ CREATE TABLE `cortes_almacen` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `cortes_almacen_detalle`
---
-
-CREATE TABLE `cortes_almacen_detalle` (
-  `id` int(11) NOT NULL,
-  `corte_id` int(11) DEFAULT NULL,
-  `insumo_id` int(11) DEFAULT NULL,
-  `existencia_inicial` decimal(10,2) DEFAULT NULL,
-  `entradas` decimal(10,2) DEFAULT NULL,
-  `salidas` decimal(10,2) DEFAULT NULL,
-  `mermas` decimal(10,2) DEFAULT NULL,
-  `existencia_final` decimal(10,2) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf32 COLLATE=utf32_bin;
-
--- --------------------------------------------------------
-
---
 -- Estructura de tabla para la tabla `corte_caja`
 --
 
@@ -149,7 +208,7 @@ CREATE TABLE `corte_caja` (
 --
 
 INSERT INTO `corte_caja` (`id`, `usuario_id`, `fecha_inicio`, `folio_inicio`, `folio_fin`, `total_folios`, `fecha_fin`, `total`, `observaciones`, `fondo_inicial`) VALUES
-(108, 1, '2025-11-20 20:27:04', 2214, NULL, 0, NULL, NULL, NULL, 1500.00);
+(109, 1, '2025-11-21 05:14:25', 2224, NULL, 0, NULL, NULL, NULL, 500.00);
 
 -- --------------------------------------------------------
 
@@ -187,9 +246,9 @@ CREATE TABLE `desglose_corte` (
 --
 
 INSERT INTO `desglose_corte` (`id`, `corte_id`, `denominacion`, `cantidad`, `tipo_pago`, `denominacion_id`) VALUES
-(503, 108, 100.00, 1, 'efectivo', 8),
-(504, 108, 200.00, 2, 'efectivo', 9),
-(505, 108, 500.00, 2, 'efectivo', 10);
+(506, 109, 500.00, 1, 'efectivo', 10),
+(507, 109, 1.00, 500, 'boucher', 12),
+(508, 109, 1.00, 500, 'cheque', 13);
 
 -- --------------------------------------------------------
 
@@ -223,6 +282,61 @@ CREATE TABLE `entradas_insumo` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `facturas`
+--
+
+CREATE TABLE `facturas` (
+  `id` int(11) NOT NULL,
+  `facturama_id` varchar(64) DEFAULT NULL,
+  `ticket_id` int(11) NOT NULL,
+  `cliente_id` int(11) NOT NULL,
+  `folio` varchar(50) DEFAULT NULL,
+  `serie` varchar(10) DEFAULT NULL,
+  `uuid` varchar(64) DEFAULT NULL,
+  `subtotal` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `impuestos` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `total` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `metodo_pago` varchar(5) NOT NULL DEFAULT 'PUE',
+  `forma_pago` varchar(5) NOT NULL DEFAULT '03',
+  `uso_cfdi` varchar(5) DEFAULT NULL,
+  `fecha_emision` datetime DEFAULT current_timestamp(),
+  `estado` enum('generada','cancelada') DEFAULT 'generada',
+  `notas` text DEFAULT NULL,
+  `xml_path` varchar(255) DEFAULT NULL,
+  `pdf_path` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `factura_detalles`
+--
+
+CREATE TABLE `factura_detalles` (
+  `id` int(11) NOT NULL,
+  `factura_id` int(11) NOT NULL,
+  `ticket_detalle_id` int(11) DEFAULT NULL,
+  `producto_id` int(11) DEFAULT NULL,
+  `descripcion` varchar(255) DEFAULT NULL,
+  `cantidad` int(11) NOT NULL DEFAULT 1,
+  `precio_unitario` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `importe` decimal(10,2) NOT NULL DEFAULT 0.00
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `factura_tickets`
+--
+
+CREATE TABLE `factura_tickets` (
+  `factura_id` int(11) NOT NULL,
+  `ticket_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf16le COLLATE=utf16le_bin;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `fondo`
 --
 
@@ -236,34 +350,7 @@ CREATE TABLE `fondo` (
 --
 
 INSERT INTO `fondo` (`usuario_id`, `monto`) VALUES
-(1, 1500.00);
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `horarios`
---
-
-CREATE TABLE `horarios` (
-  `id` int(11) NOT NULL,
-  `dia_semana` varchar(15) NOT NULL,
-  `hora_inicio` time NOT NULL,
-  `hora_fin` time NOT NULL,
-  `serie_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `horarios`
---
-
-INSERT INTO `horarios` (`id`, `dia_semana`, `hora_inicio`, `hora_fin`, `serie_id`) VALUES
-(1, 'Sabado', '00:00:00', '23:59:59', 2),
-(2, 'Lunes', '00:00:00', '23:59:00', 2),
-(3, 'Viernes', '00:00:00', '23:59:00', 2),
-(4, 'martes', '00:00:00', '23:59:59', 2),
-(5, 'miercoles', '00:00:00', '23:59:59', 2),
-(6, 'jueves', '00:00:00', '23:59:59', 2),
-(7, 'domingo', '00:00:00', '23:59:59', 2);
+(1, 500.00);
 
 -- --------------------------------------------------------
 
@@ -573,23 +660,13 @@ CREATE TABLE `movimientos_caja` (
   `fecha` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
-
 --
--- Estructura de tabla para la tabla `movimientos_insumos`
+-- Volcado de datos para la tabla `movimientos_caja`
 --
 
-CREATE TABLE `movimientos_insumos` (
-  `id` int(11) NOT NULL,
-  `tipo` enum('entrada','salida','ajuste','traspaso') DEFAULT 'entrada',
-  `usuario_id` int(11) DEFAULT NULL,
-  `usuario_destino_id` int(11) DEFAULT NULL,
-  `insumo_id` int(11) DEFAULT NULL,
-  `cantidad` decimal(10,2) DEFAULT NULL,
-  `observacion` text DEFAULT NULL,
-  `fecha` datetime DEFAULT current_timestamp(),
-  `qr_token` varchar(64) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+INSERT INTO `movimientos_caja` (`id`, `corte_id`, `usuario_id`, `tipo_movimiento`, `monto`, `motivo`, `fecha`) VALUES
+(24, 109, 1, 'deposito', 700.00, 's', '2025-11-21 05:29:22'),
+(25, 109, 1, 'retiro', 200.00, 'd', '2025-11-21 05:29:28');
 
 -- --------------------------------------------------------
 
@@ -722,11 +799,11 @@ INSERT INTO `productos` (`id`, `nombre`, `precio`, `descripcion`, `existencia`, 
 (110, 'Guamuchilito Especial', 119.00, 'Bebida preparada con jugo de guamúchil, combinada con alcohol, salsas y especias.', 1000000, 1, 'prod_68add0071ee2a.jpg', 11),
 (111, 'Juny', 333.00, 'Juny', 1000000, 1, NULL, NULL),
 (112, 'Pork Spicy', 122.00, 'Platillo de cerdo picante.', 1000000, 1, 'prod_68adcf27bc6a4.jpg', 8),
-(120, 'Corona 1/2', 35.00, 'Cerveza helada', 1000000, 1, 'prod_68adff38848ad.jpg', 1),
+(120, 'Corona 1/2', 35.00, 'Cerveza helada', 1000000, 1, 'prod_68adff38848ad.jpg', 14),
 (121, 'Corona Golden Light 1/2', 35.00, 'Cerveza Golden helada', 1000000, 1, 'prod_68adff1b2eb67.jpg', 1),
 (122, 'Negra Modelo', 40.00, 'Cerveza negra helada', 1000000, 1, 'prod_68adffa389931.jpg', 1),
 (123, 'Modelo Especial', 40.00, 'Cerveza helada', 1000000, 1, 'prod_68adfeeac5c57.jpg', 1),
-(124, 'Bud Light', 35.00, 'Cerveza helada', 1000000, 1, 'prod_68ae0111e5f9d.jpg', 1),
+(124, 'Bud Light', 35.00, 'Cerveza helada', 1000000, 1, 'prod_68ae0111e5f9d.jpg', 14),
 (125, 'Stella Artois', 45.00, 'Cerveza Helada', 1000000, 1, 'prod_68ae081b893ed.jpg', 1),
 (126, 'Ultra 1/2', 45.00, 'Cerveza helada', 1000000, 1, 'prod_68ae015b16f22.jpg', 1),
 (127, 'Michelob 1/2', 45.00, 'Cerveza helada', 1000000, 1, NULL, 1),
@@ -777,859 +854,6 @@ INSERT INTO `productos` (`id`, `nombre`, `precio`, `descripcion`, `existencia`, 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `proveedores`
---
-
-CREATE TABLE `proveedores` (
-  `id` int(11) NOT NULL,
-  `nombre` varchar(100) DEFAULT NULL,
-  `rfc` varchar(13) DEFAULT NULL,
-  `razon_social` varchar(150) DEFAULT NULL,
-  `regimen_fiscal` varchar(5) DEFAULT NULL COMMENT 'Clave SAT (p.ej. 601, 603, etc.)',
-  `correo_facturacion` varchar(150) DEFAULT NULL,
-  `telefono` varchar(20) DEFAULT NULL,
-  `telefono2` varchar(20) DEFAULT NULL,
-  `correo` varchar(150) DEFAULT NULL,
-  `direccion` text DEFAULT NULL,
-  `contacto_nombre` varchar(100) DEFAULT NULL,
-  `contacto_puesto` varchar(80) DEFAULT NULL,
-  `dias_credito` int(11) DEFAULT 0,
-  `limite_credito` decimal(12,2) DEFAULT 0.00,
-  `banco` varchar(80) DEFAULT NULL,
-  `clabe` char(18) DEFAULT NULL,
-  `cuenta_bancaria` varchar(20) DEFAULT NULL,
-  `sitio_web` varchar(150) DEFAULT NULL,
-  `observacion` text DEFAULT NULL,
-  `activo` tinyint(1) NOT NULL DEFAULT 1,
-  `fecha_alta` datetime NOT NULL DEFAULT current_timestamp(),
-  `actualizado_en` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `proveedores`
---
-
-INSERT INTO `proveedores` (`id`, `nombre`, `rfc`, `razon_social`, `regimen_fiscal`, `correo_facturacion`, `telefono`, `telefono2`, `correo`, `direccion`, `contacto_nombre`, `contacto_puesto`, `dias_credito`, `limite_credito`, `banco`, `clabe`, `cuenta_bancaria`, `sitio_web`, `observacion`, `activo`, `fecha_alta`, `actualizado_en`) VALUES
-(1, 'La patita', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, 0, 0.00, NULL, NULL, NULL, NULL, NULL, 1, '2025-09-22 08:37:12', '2025-09-22 08:37:12'),
-(2, 'Sams', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.00, NULL, NULL, NULL, NULL, NULL, 1, '2025-09-22 08:37:12', '2025-09-22 08:37:12'),
-(3, 'inix', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.00, NULL, NULL, NULL, NULL, NULL, 1, '2025-09-22 08:37:12', '2025-09-22 08:37:12'),
-(4, 'mercado libre', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.00, NULL, NULL, NULL, NULL, NULL, 1, '2025-09-22 08:37:12', '2025-09-22 08:37:12'),
-(5, 'Centauro', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.00, NULL, NULL, NULL, NULL, NULL, 1, '2025-09-22 08:37:12', '2025-09-22 08:37:12'),
-(6, 'Fruteria los hermanos', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.00, NULL, NULL, NULL, NULL, NULL, 1, '2025-09-22 08:37:12', '2025-09-22 08:37:12'),
-(7, 'Carmelita', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.00, NULL, NULL, NULL, NULL, NULL, 1, '2025-09-22 08:37:12', '2025-09-22 08:37:12'),
-(8, 'Fruteria trebol', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.00, NULL, NULL, NULL, NULL, NULL, 1, '2025-09-22 08:37:12', '2025-09-22 08:37:12'),
-(9, 'Gabriel', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.00, NULL, NULL, NULL, NULL, NULL, 1, '2025-09-22 08:37:12', '2025-09-22 08:37:12'),
-(10, 'Limon nuevo', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.00, NULL, NULL, NULL, NULL, NULL, 1, '2025-09-22 08:37:12', '2025-09-22 08:37:12'),
-(11, 'CPSmart', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.00, NULL, NULL, NULL, NULL, NULL, 1, '2025-09-22 08:37:12', '2025-09-22 08:37:12'),
-(12, 'Quimicos San Ismael', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.00, NULL, NULL, NULL, NULL, NULL, 1, '2025-09-22 08:37:12', '2025-09-22 08:37:12'),
-(13, 'Coca Cola', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.00, NULL, NULL, NULL, NULL, NULL, 1, '2025-09-22 08:37:12', '2025-09-22 08:37:12'),
-(14, 'Cerveceria Modelo', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.00, NULL, NULL, NULL, NULL, NULL, 1, '2025-09-22 08:37:12', '2025-09-22 08:37:12');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `qrs_insumo`
---
-
-CREATE TABLE `qrs_insumo` (
-  `id` int(11) NOT NULL,
-  `token` varchar(64) NOT NULL,
-  `json_data` text DEFAULT NULL,
-  `estado` enum('pendiente','confirmado','anulado') DEFAULT 'pendiente',
-  `creado_por` int(11) DEFAULT NULL,
-  `creado_en` datetime DEFAULT current_timestamp(),
-  `expiracion` datetime DEFAULT NULL,
-  `pdf_envio` varchar(255) DEFAULT NULL,
-  `pdf_recepcion` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `recetas`
---
-
-CREATE TABLE `recetas` (
-  `id` int(11) NOT NULL,
-  `producto_id` int(11) DEFAULT NULL,
-  `insumo_id` int(11) DEFAULT NULL,
-  `cantidad` decimal(10,2) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `recetas`
---
-
-INSERT INTO `recetas` (`id`, `producto_id`, `insumo_id`, `cantidad`) VALUES
-(1, 5, 1, 190.00),
-(2, 5, 2, 0.50),
-(3, 5, 3, 100.00),
-(4, 4, 4, 1.00),
-(5, 4, 72, 10.00),
-(6, 5, 75, 10.00),
-(7, 5, 2, 0.50),
-(30, 10, 7, 50.00),
-(31, 10, 12, 35.00),
-(32, 10, 16, 10.00),
-(33, 10, 81, 80.00),
-(34, 10, 76, 10.00),
-(75, 25, 8, 40.00),
-(84, 28, 25, 10.00),
-(85, 28, 8, 10.00),
-(86, 28, 81, 10.00),
-(89, 30, 10, 10.00),
-(90, 30, 9, 10.00),
-(91, 30, 7, 10.00),
-(116, 35, 12, 10.00),
-(117, 35, 11, 10.00),
-(118, 36, 12, 10.00),
-(119, 36, 10, 10.00),
-(120, 36, 9, 10.00),
-(128, 40, 22, 10.00),
-(129, 40, 34, 10.00),
-(130, 40, 29, 10.00),
-(131, 40, 52, 10.00),
-(132, 41, 34, 10.00),
-(133, 41, 53, 10.00),
-(134, 41, 44, 10.00),
-(135, 41, 57, 10.00),
-(136, 41, 77, 10.00),
-(137, 42, 55, 10.00),
-(138, 42, 34, 10.00),
-(139, 42, 35, 10.00),
-(140, 42, 21, 10.00),
-(141, 42, 22, 10.00),
-(142, 42, 78, 10.00),
-(143, 43, 70, 10.00),
-(144, 43, 10, 10.00),
-(145, 43, 9, 10.00),
-(146, 43, 78, 10.00),
-(147, 44, 10, 10.00),
-(148, 44, 33, 10.00),
-(149, 44, 69, 10.00),
-(150, 45, 43, 10.00),
-(151, 45, 64, 10.00),
-(152, 45, 35, 10.00),
-(153, 45, 55, 10.00),
-(154, 45, 32, 10.00),
-(155, 45, 67, 10.00),
-(156, 46, 64, 10.00),
-(157, 46, 55, 10.00),
-(158, 46, 32, 10.00),
-(159, 46, 35, 10.00),
-(160, 46, 45, 10.00),
-(161, 46, 38, 10.00),
-(162, 46, 16, 10.00),
-(163, 47, 62, 10.00),
-(164, 47, 36, 10.00),
-(165, 47, 34, 10.00),
-(166, 47, 74, 10.00),
-(167, 47, 16, 10.00),
-(171, 49, 50, 10.00),
-(172, 49, 47, 10.00),
-(173, 49, 10, 10.00),
-(174, 49, 61, 10.00),
-(175, 49, 48, 10.00),
-(177, 51, 61, 10.00),
-(178, 51, 48, 10.00),
-(202, 57, 12, 10.00),
-(203, 57, 24, 10.00),
-(204, 57, 81, 10.00),
-(206, 58, 9, 10.00),
-(207, 58, 12, 10.00),
-(208, 58, 11, 10.00),
-(209, 58, 81, 10.00),
-(362, 25, 14, 30.00),
-(367, 5, 90, 45.00),
-(384, 14, 24, 25.00),
-(385, 14, 10, 25.00),
-(386, 14, 14, 40.00),
-(387, 14, 36, 25.00),
-(388, 14, 12, 45.00),
-(389, 14, 15, 2.00),
-(390, 14, 66, 80.00),
-(391, 14, 1, 190.00),
-(392, 14, 2, 0.50),
-(393, 20, 24, 25.00),
-(394, 20, 36, 25.00),
-(395, 20, 12, 25.00),
-(396, 20, 66, 80.00),
-(397, 20, 21, 5.00),
-(398, 20, 8, 70.00),
-(399, 20, 1, 190.00),
-(400, 20, 2, 0.50),
-(401, 17, 87, 25.00),
-(402, 17, 24, 25.00),
-(403, 17, 14, 50.00),
-(404, 17, 36, 25.00),
-(405, 17, 12, 25.00),
-(406, 17, 66, 80.00),
-(407, 17, 80, 15.00),
-(408, 17, 1, 190.00),
-(409, 17, 2, 0.50),
-(410, 5, 24, 25.00),
-(411, 5, 10, 45.00),
-(412, 5, 36, 25.00),
-(413, 5, 12, 25.00),
-(414, 18, 24, 25.00),
-(415, 18, 14, 30.00),
-(416, 18, 36, 25.00),
-(417, 18, 12, 45.00),
-(418, 18, 66, 80.00),
-(419, 18, 8, 15.00),
-(420, 18, 1, 190.00),
-(421, 18, 2, 0.50),
-(422, 21, 24, 25.00),
-(423, 21, 19, 2.00),
-(424, 21, 20, 4.00),
-(425, 21, 92, 5.00),
-(426, 21, 36, 25.00),
-(427, 21, 12, 25.00),
-(428, 21, 9, 50.00),
-(429, 21, 91, 150.00),
-(430, 21, 1, 190.00),
-(431, 21, 2, 0.50),
-(432, 19, 87, 25.00),
-(433, 19, 24, 25.00),
-(434, 19, 19, 20.00),
-(435, 19, 10, 50.00),
-(436, 19, 14, 50.00),
-(437, 19, 36, 25.00),
-(438, 19, 12, 25.00),
-(439, 19, 81, 80.00),
-(440, 19, 1, 190.00),
-(441, 19, 2, 0.50),
-(442, 13, 24, 25.00),
-(443, 13, 10, 20.00),
-(444, 13, 14, 20.00),
-(445, 13, 36, 25.00),
-(446, 13, 12, 25.00),
-(447, 13, 9, 20.00),
-(448, 13, 1, 190.00),
-(449, 13, 2, 0.50),
-(450, 25, 87, 25.00),
-(451, 25, 24, 25.00),
-(452, 25, 10, 25.00),
-(453, 25, 36, 25.00),
-(454, 25, 12, 25.00),
-(455, 25, 66, 80.00),
-(456, 25, 21, 10.00),
-(457, 25, 80, 10.00),
-(458, 25, 1, 190.00),
-(459, 25, 2, 0.50),
-(460, 94, 87, 25.00),
-(461, 94, 24, 25.00),
-(462, 94, 19, 10.00),
-(463, 94, 10, 50.00),
-(464, 94, 88, 80.00),
-(465, 94, 36, 40.00),
-(466, 94, 12, 25.00),
-(467, 94, 1, 190.00),
-(468, 94, 2, 0.50),
-(469, 92, 87, 25.00),
-(470, 92, 24, 25.00),
-(471, 92, 88, 80.00),
-(472, 92, 36, 40.00),
-(473, 92, 12, 25.00),
-(474, 92, 33, 40.00),
-(475, 92, 1, 190.00),
-(476, 92, 2, 0.50),
-(477, 6, 24, 65.00),
-(478, 6, 36, 25.00),
-(479, 6, 12, 25.00),
-(480, 6, 7, 50.00),
-(481, 6, 81, 80.00),
-(482, 6, 1, 190.00),
-(483, 6, 2, 0.50),
-(484, 110, 24, 65.00),
-(485, 110, 10, 50.00),
-(486, 110, 36, 25.00),
-(487, 110, 12, 25.00),
-(488, 110, 7, 50.00),
-(489, 110, 81, 80.00),
-(490, 110, 1, 190.00),
-(491, 110, 2, 0.50),
-(492, 93, 87, 25.00),
-(493, 93, 24, 25.00),
-(494, 93, 10, 45.00),
-(495, 93, 92, 5.00),
-(496, 93, 32, 5.00),
-(497, 93, 36, 25.00),
-(498, 93, 12, 25.00),
-(499, 93, 66, 80.00),
-(500, 93, 80, 10.00),
-(501, 93, 8, 15.00),
-(502, 93, 1, 190.00),
-(503, 93, 2, 0.50),
-(504, 7, 87, 25.00),
-(505, 7, 24, 50.00),
-(506, 7, 10, 45.00),
-(507, 7, 90, 25.00),
-(508, 7, 36, 25.00),
-(509, 7, 12, 25.00),
-(510, 7, 80, 15.00),
-(511, 7, 1, 190.00),
-(512, 7, 2, 0.50),
-(513, 24, 24, 25.00),
-(514, 24, 14, 20.00),
-(515, 24, 88, 80.00),
-(516, 24, 36, 25.00),
-(517, 24, 12, 25.00),
-(518, 24, 9, 20.00),
-(519, 24, 81, 80.00),
-(520, 24, 8, 15.00),
-(521, 24, 1, 190.00),
-(522, 24, 2, 0.50),
-(523, 111, 93, 4.00),
-(524, 111, 24, 25.00),
-(525, 111, 19, 10.00),
-(526, 111, 92, 10.00),
-(527, 111, 36, 25.00),
-(528, 111, 12, 40.00),
-(529, 111, 3, 80.00),
-(530, 111, 1, 190.00),
-(531, 111, 2, 0.50),
-(532, 109, 24, 25.00),
-(533, 109, 92, 5.00),
-(534, 109, 62, 6.00),
-(535, 109, 36, 25.00),
-(536, 109, 12, 25.00),
-(537, 109, 91, 150.00),
-(538, 109, 1, 190.00),
-(539, 109, 2, 0.50),
-(540, 22, 24, 25.00),
-(541, 22, 14, 30.00),
-(542, 22, 36, 25.00),
-(543, 22, 12, 25.00),
-(544, 22, 66, 80.00),
-(545, 22, 81, 40.00),
-(546, 22, 8, 15.00),
-(547, 22, 1, 190.00),
-(548, 22, 2, 0.50),
-(549, 98, 87, 20.00),
-(550, 98, 24, 25.00),
-(551, 98, 40, 25.00),
-(552, 98, 10, 45.00),
-(553, 98, 92, 5.00),
-(554, 98, 36, 25.00),
-(555, 98, 12, 35.00),
-(556, 98, 3, 30.00),
-(557, 98, 80, 5.00),
-(558, 98, 1, 190.00),
-(559, 98, 2, 0.50),
-(560, 101, 24, 60.00),
-(561, 101, 40, 30.00),
-(562, 101, 41, 30.00),
-(563, 101, 10, 30.00),
-(564, 101, 26, 30.00),
-(565, 101, 36, 40.00),
-(566, 101, 12, 35.00),
-(567, 101, 33, 30.00),
-(568, 101, 63, 4.00),
-(569, 101, 1, 190.00),
-(570, 101, 2, 0.50),
-(571, 9, 87, 25.00),
-(572, 9, 24, 25.00),
-(573, 9, 10, 45.00),
-(574, 9, 90, 50.00),
-(575, 9, 92, 5.00),
-(576, 9, 73, 50.00),
-(577, 9, 65, 5.00),
-(578, 9, 36, 25.00),
-(579, 9, 12, 25.00),
-(580, 9, 1, 190.00),
-(581, 9, 2, 0.50),
-(582, 100, 24, 25.00),
-(583, 100, 19, 10.00),
-(584, 100, 90, 50.00),
-(585, 100, 88, 80.00),
-(586, 100, 36, 25.00),
-(587, 100, 12, 25.00),
-(588, 100, 8, 35.00),
-(589, 100, 1, 190.00),
-(590, 100, 2, 0.50),
-(591, 16, 24, 25.00),
-(592, 16, 10, 45.00),
-(593, 16, 14, 50.00),
-(594, 16, 36, 25.00),
-(595, 16, 12, 25.00),
-(596, 16, 9, 50.00),
-(597, 16, 81, 70.00),
-(598, 16, 1, 190.00),
-(599, 16, 2, 0.50),
-(600, 12, 24, 25.00),
-(601, 12, 10, 25.00),
-(602, 12, 14, 40.00),
-(603, 12, 36, 25.00),
-(604, 12, 12, 25.00),
-(605, 12, 1, 190.00),
-(606, 12, 2, 0.50),
-(607, 23, 24, 25.00),
-(608, 23, 10, 25.00),
-(609, 23, 36, 25.00),
-(610, 23, 12, 25.00),
-(611, 23, 66, 80.00),
-(612, 23, 21, 10.00),
-(613, 23, 81, 35.00),
-(614, 23, 8, 25.00),
-(615, 23, 1, 190.00),
-(616, 23, 2, 0.50),
-(617, 95, 87, 25.00),
-(618, 95, 24, 25.00),
-(619, 95, 88, 80.00),
-(620, 95, 36, 25.00),
-(621, 95, 12, 25.00),
-(622, 95, 9, 40.00),
-(623, 95, 8, 35.00),
-(624, 95, 34, 20.00),
-(625, 95, 1, 190.00),
-(626, 95, 2, 0.50),
-(637, 11, 87, 25.00),
-(638, 11, 24, 25.00),
-(639, 11, 90, 25.00),
-(640, 11, 36, 40.00),
-(641, 11, 12, 25.00),
-(642, 11, 80, 10.00),
-(643, 11, 7, 50.00),
-(644, 11, 34, 25.00),
-(645, 11, 1, 190.00),
-(646, 11, 2, 0.50),
-(647, 96, 87, 25.00),
-(648, 96, 24, 50.00),
-(649, 96, 10, 45.00),
-(650, 96, 32, 5.00),
-(651, 96, 88, 80.00),
-(652, 96, 36, 25.00),
-(653, 96, 12, 25.00),
-(654, 96, 81, 80.00),
-(655, 96, 1, 190.00),
-(656, 96, 2, 0.50),
-(657, 97, 87, 25.00),
-(658, 97, 24, 25.00),
-(659, 97, 19, 10.00),
-(660, 97, 14, 30.00),
-(661, 97, 88, 80.00),
-(662, 97, 36, 25.00),
-(663, 97, 12, 25.00),
-(664, 97, 9, 25.00),
-(665, 97, 8, 15.00),
-(666, 97, 1, 190.00),
-(667, 97, 2, 0.50),
-(668, 10, 87, 25.00),
-(669, 10, 24, 25.00),
-(670, 10, 36, 25.00),
-(671, 10, 91, 50.00),
-(672, 10, 80, 10.00),
-(673, 10, 1, 190.00),
-(674, 10, 2, 0.50),
-(675, 8, 87, 20.00),
-(676, 8, 24, 25.00),
-(677, 8, 51, 70.00),
-(678, 8, 92, 5.00),
-(679, 8, 36, 40.00),
-(680, 8, 12, 25.00),
-(681, 8, 80, 5.00),
-(682, 8, 7, 5.00),
-(683, 8, 1, 190.00),
-(684, 8, 2, 0.50),
-(685, 107, 87, 25.00),
-(686, 107, 24, 75.00),
-(687, 107, 10, 50.00),
-(688, 107, 36, 25.00),
-(689, 107, 12, 25.00),
-(690, 107, 9, 25.00),
-(691, 107, 66, 80.00),
-(692, 107, 21, 5.00),
-(693, 107, 80, 10.00),
-(694, 107, 8, 15.00),
-(695, 107, 1, 190.00),
-(696, 107, 2, 0.50),
-(697, 15, 87, 40.00),
-(698, 15, 24, 25.00),
-(699, 15, 90, 80.00),
-(700, 15, 36, 40.00),
-(701, 15, 12, 25.00),
-(702, 15, 1, 190.00),
-(703, 15, 2, 0.50),
-(712, 62, 95, 1.00),
-(713, 63, 96, 1.00),
-(714, 64, 97, 1.00),
-(715, 65, 98, 1.00),
-(716, 77, 87, 10.00),
-(717, 85, 19, 15.00),
-(718, 128, 56, 15.00),
-(719, 130, 56, 15.00),
-(720, 129, 56, 15.00),
-(721, 120, 101, 1.00),
-(722, 121, 102, 1.00),
-(723, 127, 108, 1.00),
-(724, 126, 107, 1.00),
-(725, 122, 103, 1.00),
-(726, 123, 104, 1.00),
-(727, 124, 105, 1.00),
-(728, 125, 106, 1.00),
-(729, 108, 55, 0.20),
-(730, 86, 45, 0.10),
-(731, 86, 55, 0.10),
-(732, 76, 72, 1.00),
-(733, 106, 45, 0.20),
-(734, 106, 53, 20.00),
-(735, 106, 34, 20.00),
-(736, 106, 49, 4.00),
-(737, 106, 73, 60.00),
-(738, 106, 35, 10.00),
-(748, 105, 109, 250.00),
-(753, 83, 20, 10.00),
-(754, 81, 110, 10.00),
-(755, 82, 99, 10.00),
-(756, 84, 30, 15.00),
-(757, 91, 90, 60.00),
-(758, 91, 16, 2.00),
-(759, 91, 19, 10.00),
-(760, 90, 10, 60.00),
-(761, 90, 8, 30.00),
-(762, 90, 11, 30.00),
-(763, 90, 21, 10.00),
-(764, 90, 112, 5.00),
-(765, 88, 23, 30.00),
-(766, 88, 89, 30.00),
-(767, 89, 7, 30.00),
-(768, 89, 89, 30.00),
-(773, 87, 19, 10.00),
-(774, 87, 80, 15.00),
-(775, 87, 87, 15.00),
-(780, 104, 115, 250.00),
-(781, 104, 89, 30.00),
-(782, 102, 1, 120.00),
-(783, 102, 12, 30.00),
-(784, 102, 2, 0.50),
-(785, 102, 16, 5.00),
-(786, 102, 36, 25.00),
-(787, 102, 34, 30.00),
-(788, 102, 92, 20.00),
-(789, 99, 1, 190.00),
-(790, 99, 36, 40.00),
-(791, 99, 12, 30.00),
-(792, 99, 2, 0.50),
-(793, 99, 45, 10.00),
-(794, 99, 94, 40.00),
-(795, 99, 33, 40.00),
-(796, 99, 24, 30.00),
-(797, 79, 80, 15.00),
-(798, 73, 117, 1.00),
-(803, 78, 118, 10.00),
-(804, 78, 89, 10.00),
-(810, 66, 119, 1000.00),
-(811, 67, 119, 1000.00),
-(812, 135, 1, 150.00),
-(813, 135, 2, 0.50),
-(814, 135, 36, 25.00),
-(815, 135, 12, 25.00),
-(816, 135, 24, 25.00),
-(817, 135, 17, 25.00),
-(818, 135, 8, 25.00),
-(819, 136, 1, 150.00),
-(820, 136, 2, 0.50),
-(821, 136, 36, 25.00),
-(822, 136, 12, 25.00),
-(823, 136, 24, 25.00),
-(824, 136, 90, 25.00),
-(825, 136, 81, 10.00),
-(826, 136, 16, 2.00),
-(827, 103, 59, 10.00),
-(828, 134, 114, 150.00),
-(829, 134, 112, 4.00),
-(830, 134, 30, 60.00),
-(831, 134, 65, 60.00),
-(832, 134, 174, 60.00),
-(833, 134, 16, 3.00),
-(834, 131, 28, 250.00),
-(835, 131, 88, 80.00),
-(836, 131, 66, 80.00),
-(837, 131, 8, 25.00),
-(838, 131, 87, 15.00),
-(839, 131, 92, 10.00),
-(840, 60, 1, 270.00),
-(841, 60, 34, 25.00),
-(842, 60, 53, 25.00),
-(843, 60, 181, 1.00),
-(844, 60, 180, 30.00),
-(845, 60, 175, 3.00),
-(846, 60, 176, 3.00),
-(847, 133, 109, 300.00),
-(848, 133, 16, 5.00),
-(849, 133, 21, 20.00),
-(850, 133, 182, 40.00),
-(851, 133, 56, 5.00),
-(852, 133, 19, 6.00),
-(853, 137, 177, 120.00),
-(854, 137, 9, 150.00),
-(855, 137, 38, 80.00),
-(856, 137, 178, 20.00),
-(857, 137, 20, 3.00),
-(858, 137, 179, 3.00),
-(859, 137, 35, 3.00),
-(860, 137, 180, 30.00),
-(861, 137, 16, 3.00),
-(862, 137, 92, 10.00),
-(863, 138, 1, 270.00),
-(864, 138, 81, 80.00),
-(865, 138, 12, 15.00),
-(866, 138, 92, 10.00),
-(867, 138, 16, 3.00),
-(868, 138, 53, 25.00),
-(869, 138, 34, 25.00),
-(870, 138, 176, 3.00),
-(871, 138, 183, 1.00),
-(872, 138, 24, 50.00),
-(873, 54, 81, 80.00),
-(874, 54, 12, 15.00),
-(875, 54, 1, 270.00),
-(876, 54, 9, 25.00),
-(877, 54, 14, 25.00),
-(878, 54, 8, 15.00),
-(879, 54, 24, 50.00),
-(880, 54, 10, 60.00),
-(881, 54, 92, 1.00),
-(882, 54, 16, 3.00),
-(883, 55, 1, 270.00),
-(884, 55, 81, 80.00),
-(885, 55, 12, 15.00),
-(886, 55, 24, 50.00),
-(887, 55, 55, 60.00),
-(888, 55, 91, 150.00),
-(889, 55, 19, 2.00),
-(890, 55, 16, 3.00),
-(891, 112, 2, 0.50),
-(892, 112, 1, 180.00),
-(893, 112, 12, 25.00),
-(894, 112, 14, 40.00),
-(895, 112, 24, 10.00),
-(896, 112, 66, 80.00),
-(897, 112, 80, 10.00),
-(898, 112, 87, 10.00),
-(899, 112, 8, 15.00),
-(900, 132, 14, 40.00),
-(901, 132, 49, 6.00),
-(902, 132, 55, 100.00),
-(903, 132, 54, 4.00),
-(904, 132, 93, 2.00),
-(905, 132, 185, 200.00),
-(906, 132, 184, 1.00),
-(907, 56, 53, 50.00),
-(908, 56, 34, 50.00),
-(909, 56, 1, 400.00),
-(910, 56, 9, 150.00),
-(911, 56, 14, 75.00),
-(912, 56, 8, 50.00),
-(913, 56, 176, 5.00),
-(914, 56, 180, 60.00),
-(915, 56, 81, 80.00),
-(916, 56, 24, 50.00),
-(917, 56, 92, 10.00),
-(918, 56, 16, 3.00),
-(919, 33, 27, 1.00),
-(920, 33, 10, 35.00),
-(921, 33, 26, 35.00),
-(922, 33, 29, 10.00),
-(923, 33, 41, 20.00),
-(924, 33, 40, 40.00),
-(925, 33, 63, 4.00),
-(926, 33, 56, 5.00),
-(927, 33, 87, 60.00),
-(928, 33, 37, 10.00),
-(929, 37, 28, 240.00),
-(930, 37, 175, 2.00),
-(931, 39, 36, 200.00),
-(932, 39, 33, 50.00),
-(933, 39, 10, 150.00),
-(934, 39, 41, 30.00),
-(935, 39, 29, 60.00),
-(936, 39, 23, 60.00),
-(937, 39, 24, 80.00),
-(938, 39, 63, 10.00),
-(939, 39, 56, 5.00),
-(940, 29, 32, 1.00),
-(941, 29, 12, 15.00),
-(942, 29, 1, 10.00),
-(943, 29, 88, 70.00),
-(944, 29, 66, 50.00),
-(945, 29, 19, 1.00),
-(946, 29, 87, 60.00),
-(947, 29, 92, 10.00),
-(948, 29, 56, 3.00),
-(949, 9004, 49, 6.00),
-(950, 9004, 9, 10.00),
-(951, 9004, 34, 6.00),
-(952, 9004, 187, 1.00),
-(953, 9004, 186, 1.00),
-(954, 9005, 49, 6.00),
-(955, 9005, 12, 10.00),
-(956, 9005, 10, 30.00),
-(957, 38, 28, 250.00),
-(958, 38, 175, 2.00),
-(959, 31, 11, 150.00),
-(960, 32, 27, 1.00),
-(961, 32, 29, 10.00),
-(962, 32, 41, 5.00),
-(963, 32, 33, 7.00),
-(964, 32, 36, 20.00),
-(965, 32, 10, 15.00),
-(966, 32, 63, 4.00),
-(967, 32, 56, 5.00),
-(968, 34, 14, 30.00),
-(969, 34, 9, 30.00),
-(970, 34, 10, 30.00),
-(971, 34, 12, 5.00),
-(972, 34, 81, 80.00),
-(973, 34, 88, 80.00),
-(974, 34, 87, 120.00),
-(975, 34, 80, 30.00),
-(976, 34, 19, 1.00),
-(977, 34, 16, 5.00),
-(978, 34, 92, 10.00),
-(1100, 139, 9, 60.00),
-(1101, 140, 7, 140.00),
-(1102, 141, 10, 50.00),
-(1103, 141, 12, 60.00),
-(1104, 142, 82, 2.00),
-(1105, 142, 12, 40.00),
-(1106, 142, 66, 40.00),
-(1107, 142, 9, 30.00),
-(1108, 143, 82, 2.00),
-(1109, 143, 12, 40.00),
-(1110, 143, 66, 40.00),
-(1111, 143, 14, 30.00),
-(1112, 144, 82, 2.00),
-(1113, 144, 12, 40.00),
-(1114, 144, 66, 40.00),
-(1115, 144, 10, 30.00),
-(1116, 48, 34, 50.00),
-(1117, 48, 53, 50.00),
-(1118, 48, 189, 30.00),
-(1119, 48, 46, 200.00),
-(1120, 48, 9, 150.00),
-(1121, 48, 10, 40.00),
-(1122, 48, 61, 500.00),
-(1123, 48, 188, 40.00),
-(1124, 48, 16, 2.00),
-(1125, 48, 92, 10.00),
-(1131, 50, 69, 150.00),
-(1132, 50, 34, 50.00),
-(1133, 50, 53, 50.00),
-(1134, 50, 177, 40.00),
-(1135, 50, 61, 500.00),
-(1136, 50, 14, 80.00),
-(1137, 50, 188, 40.00),
-(1138, 50, 16, 2.00),
-(1139, 50, 92, 10.00),
-(1146, 52, 69, 150.00),
-(1147, 52, 34, 50.00),
-(1148, 52, 53, 50.00),
-(1149, 52, 189, 30.00),
-(1150, 52, 9, 150.00),
-(1151, 52, 61, 500.00),
-(1152, 52, 188, 40.00),
-(1153, 52, 16, 2.00),
-(1154, 52, 92, 10.00),
-(1161, 28, 1, 1150.00),
-(1162, 28, 2, 2.00),
-(1163, 28, 12, 120.00),
-(1164, 28, 24, 40.00),
-(1165, 28, 36, 80.00),
-(1166, 28, 14, 130.00),
-(1167, 28, 8, 80.00),
-(1168, 28, 9, 130.00),
-(1169, 28, 7, 420.00),
-(1170, 28, 25, 6.00),
-(1171, 28, 11, 150.00),
-(1172, 28, 87, 50.00),
-(1173, 28, 80, 30.00),
-(1174, 28, 92, 20.00),
-(1175, 28, 16, 5.00),
-(1176, 49, 69, 150.00),
-(1177, 49, 10, 40.00),
-(1178, 49, 14, 50.00),
-(1179, 49, 61, 500.00),
-(1180, 49, 64, 50.00),
-(1181, 49, 53, 50.00),
-(1182, 49, 189, 30.00),
-(1183, 49, 16, 2.00),
-(1184, 49, 92, 10.00),
-(1185, 51, 69, 150.00),
-(1186, 51, 64, 50.00),
-(1187, 51, 53, 50.00),
-(1188, 51, 44, 50.00),
-(1189, 51, 177, 50.00),
-(1190, 51, 190, 50.00),
-(1191, 51, 191, 30.00),
-(1192, 51, 61, 500.00),
-(1193, 51, 16, 2.00),
-(1194, 51, 92, 10.00),
-(1195, 26, 1, 0.75),
-(1196, 26, 2, 1.00),
-(1197, 26, 12, 90.00),
-(1198, 26, 24, 40.00),
-(1199, 26, 36, 40.00),
-(1200, 26, 25, 2.00),
-(1201, 26, 59, 2.00),
-(1202, 26, 9, 100.00),
-(1203, 26, 14, 100.00),
-(1204, 26, 8, 80.00),
-(1205, 26, 81, 160.00),
-(1210, 27, 1, 0.95),
-(1211, 27, 2, 1.50),
-(1212, 27, 12, 100.00),
-(1213, 27, 36, 60.00),
-(1214, 27, 24, 40.00),
-(1215, 27, 8, 80.00),
-(1216, 27, 14, 110.00),
-(1217, 27, 9, 110.00),
-(1218, 27, 7, 280.00),
-(1219, 27, 25, 4.00),
-(1220, 27, 66, 0.10),
-(1221, 27, 87, 50.00),
-(1222, 27, 80, 20.00),
-(1223, 27, 92, 15.00),
-(1224, 27, 16, 2.00),
-(1225, 53, 191, 0.03),
-(1226, 53, 60, 150.00),
-(1227, 53, 177, 30.00),
-(1228, 53, 54, 4.00),
-(1229, 53, 190, 30.00),
-(1230, 53, 61, 500.00),
-(1231, 53, 92, 10.00),
-(1232, 53, 16, 2.00),
-(1240, 69, 65, 60.00),
-(1241, 69, NULL, 120.00),
-(1242, 69, 117, 200.00),
-(1243, 69, NULL, 125.00),
-(1247, 68, 65, 60.00),
-(1248, 68, NULL, 120.00),
-(1249, 68, NULL, 200.00),
-(1250, 68, NULL, 125.00),
-(1254, 74, 113, 90.00),
-(1255, 74, 117, 300.00),
-(1256, 74, NULL, 125.00),
-(1257, 72, NULL, 90.00),
-(1258, 72, NULL, 500.00),
-(1259, 72, NULL, 125.00),
-(1260, 70, NULL, 120.00),
-(1261, 70, NULL, 60.00),
-(1262, 70, NULL, 125.00),
-(1263, 70, NULL, 200.00),
-(1267, 71, NULL, 120.00),
-(1268, 71, NULL, 60.00),
-(1269, 71, NULL, 125.00),
-(1270, 71, 117, 200.00),
-(1274, 75, NULL, 45.00),
-(1275, 75, 113, 45.00),
-(1276, 75, NULL, 125.00),
-(1277, 75, 117, 300.00);
-
--- --------------------------------------------------------
-
---
 -- Estructura de tabla para la tabla `repartidores`
 --
 
@@ -1648,84 +872,6 @@ INSERT INTO `repartidores` (`id`, `nombre`, `telefono`) VALUES
 (2, 'Rappi', '555-999-2222'),
 (3, 'Uber', NULL),
 (4, 'Repartidor casa', NULL);
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `rutas`
---
-
-CREATE TABLE `rutas` (
-  `id` int(11) NOT NULL,
-  `nombre` varchar(100) NOT NULL,
-  `path` varchar(255) NOT NULL,
-  `tipo` enum('link','dropdown','dropdown-item') NOT NULL,
-  `grupo` varchar(50) DEFAULT NULL,
-  `orden` int(11) DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `rutas`
---
-
-INSERT INTO `rutas` (`id`, `nombre`, `path`, `tipo`, `grupo`, `orden`) VALUES
-(1, 'Inicio', '/vistas/index.php', 'link', NULL, 1),
-(2, 'Productos', '#', 'dropdown', 'Productos', 3),
-(3, 'Insumos', '/vistas/insumos/insumos.php', 'dropdown-item', 'Productos', 1),
-(4, 'Inventario', '/vistas/inventario/inventario.php', 'dropdown-item', 'Productos', 2),
-(5, 'Recetas', '/vistas/recetas/recetas.php', 'dropdown-item', 'Productos', 3),
-(6, 'Cocina', '/vistas/cocina/cocina2.php', 'link', NULL, 4),
-(7, 'Ventas', '/vistas/ventas/ventas.php', 'link', NULL, 5),
-(8, 'Mover', '/vistas/mover/mover.php', 'dropdown-item', 'Más', 14),
-(9, 'Repartos', '/vistas/repartidores/repartos.php', 'link', NULL, 7),
-(10, 'Mesas', '/vistas/mesas/mesas.php', 'link', NULL, 8),
-(11, 'Más', '#', 'dropdown', 'Más', 9),
-(12, 'Horarios', '/vistas/horarios/horarios.php', 'dropdown-item', 'Más', 1),
-(13, 'Ticket', '/vistas/ventas/ticket.php', 'dropdown-item', 'Más', 2),
-(14, 'Reportes', '/vistas/reportes/reportes.php', 'dropdown-item', 'Más', 3),
-(15, 'Ayuda', '/vistas/ayuda.php', 'link', NULL, 10),
-(18, 'Generar QR', '/vistas/bodega/generar_qr.php', 'dropdown-item', 'Más', 4),
-(19, 'Recibir QR', '/vistas/bodega/recepcion_qr.php', 'dropdown-item', 'Más', 5),
-(20, 'Meseros', '/vistas/mesas/asignar.php', 'link', NULL, 11),
-(21, 'Reporteria', '/vistas/reportes/vistas_db.php', 'dropdown-item', 'Más', 13),
-(22, 'Usuarios', '/vistas/usuarios/usuarios.php', 'dropdown-item', 'Más', 6),
-(23, 'Rutas', '/vistas/rutas/rutas.php', 'dropdown-item', 'Más', 7),
-(24, 'Permisos', '/vistas/rutas/urutas.php', 'dropdown-item', 'Más', 8),
-(25, 'CorteC', '/vistas/insumos/cortes.php', 'dropdown-item', 'Más', 9),
-(26, 'Proveedores', '/vistas/insumos/proveedores.php', 'dropdown-item', 'Más', 10),
-(27, 'Promos', '/vistas/promociones/promociones.php', 'dropdown-item', 'Más', 11),
-(28, 'Facturas', '/vistas/facturas/masiva.php', 'dropdown-item', 'Más', 12),
-(29, 'Dashboard', '/vistas/dashboard/dash.php', 'dropdown-item', 'Más', 14),
-(30, 'Bancos', '/vistas/dashboard/bancos.php', 'dropdown-item', 'Más', 15),
-(31, 'Sedes', '/vistas/dashboard/sedes.php', 'dropdown-item', 'Más', 16),
-(32, 'Tarjetas', '/vistas/dashboard/tarjetas.php', 'dropdown-item', 'Más', 17),
-(33, 'Pagos', '/vistas/ventas/historial.php', 'dropdown-item', 'Más', 18),
-(34, 'Hostless', '/vistas/mesas/host.php', 'dropdown-item', 'Más', 20);
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `sedes`
---
-
-CREATE TABLE `sedes` (
-  `id` int(11) NOT NULL,
-  `nombre` varchar(100) NOT NULL,
-  `direccion` text NOT NULL,
-  `rfc` varchar(20) NOT NULL,
-  `telefono` varchar(20) NOT NULL,
-  `correo` varchar(100) DEFAULT NULL,
-  `web` varchar(100) DEFAULT NULL,
-  `activo` tinyint(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `sedes`
---
-
-INSERT INTO `sedes` (`id`, `nombre`, `direccion`, `rfc`, `telefono`, `correo`, `web`, `activo`) VALUES
-(1, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'ventas@tokyo.com', 'tokyosushiprime.com', 1),
-(2, 'Domingo Arrieta', 'Chabacanos SN-5, El Naranjal, 34190 Durango, Dgo.', 'VEAJ9408188U9', '6181690319', 'ventas@tokyo.com', 'tokyosushiprime.com', 1);
 
 -- --------------------------------------------------------
 
@@ -1768,7 +914,10 @@ CREATE TABLE `tickets` (
 --
 
 INSERT INTO `tickets` (`id`, `venta_id`, `folio`, `serie_id`, `total`, `descuento`, `desc_des`, `fecha`, `usuario_id`, `monto_recibido`, `tipo_pago`, `sede_id`, `mesa_nombre`, `mesero_nombre`, `fecha_inicio`, `fecha_fin`, `tiempo_servicio`, `nombre_negocio`, `direccion_negocio`, `rfc_negocio`, `telefono_negocio`, `tipo_entrega`, `tarjeta_marca_id`, `tarjeta_banco_id`, `boucher`, `cheque_numero`, `cheque_banco_id`) VALUES
-(481, 719, 2214, 2, 690.00, 272.00, NULL, '2025-11-20 20:42:53', 1, 500.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-20 20:42:53', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL);
+(491, 729, 2224, 2, 789.00, 289.00, NULL, '2025-11-21 05:15:22', 1, 500.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-21 05:15:22', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL),
+(492, 730, 2225, 2, 789.00, 263.00, NULL, '2025-11-21 05:32:12', 38, 559.00, 'efectivo', 1, 'Mesa 5', 'beto', NULL, '2025-11-21 05:32:12', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'mesa', NULL, NULL, NULL, NULL, NULL),
+(493, 731, 2226, 2, 789.00, 289.00, NULL, '2025-11-21 05:46:03', 1, 500.00, 'boucher', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-21 05:46:03', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', 1, 3, '54445', NULL, NULL),
+(494, 732, 2227, 2, 789.00, 289.00, NULL, '2025-11-21 05:46:50', 1, 500.00, 'cheque', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-21 05:46:50', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, '54445', 8);
 
 -- --------------------------------------------------------
 
@@ -1794,7 +943,10 @@ CREATE TABLE `ticket_descuentos` (
 --
 
 INSERT INTO `ticket_descuentos` (`id`, `ticket_id`, `tipo`, `venta_detalle_id`, `porcentaje`, `monto`, `motivo`, `usuario_id`, `catalogo_promo_id`, `creado_en`) VALUES
-(73, 481, 'promocion', NULL, NULL, 272.00, NULL, 1, 9, '2025-11-20 13:42:53');
+(77, 491, 'promocion', NULL, NULL, 289.00, NULL, 1, 9, '2025-11-20 22:15:22'),
+(78, 492, 'promocion', NULL, NULL, 263.00, NULL, 38, 4, '2025-11-20 22:32:12'),
+(79, 493, 'promocion', NULL, NULL, 289.00, NULL, 1, 9, '2025-11-20 22:46:03'),
+(80, 494, 'promocion', NULL, NULL, 289.00, NULL, 1, 9, '2025-11-20 22:46:50');
 
 -- --------------------------------------------------------
 
@@ -1816,148 +968,14 @@ CREATE TABLE `ticket_detalles` (
 --
 
 INSERT INTO `ticket_detalles` (`id`, `ticket_id`, `producto_id`, `cantidad`, `precio_unitario`) VALUES
-(1259, 481, 15, 6, 115.00);
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `usuarios`
---
-
-CREATE TABLE `usuarios` (
-  `id` int(11) NOT NULL,
-  `nombre` varchar(100) NOT NULL,
-  `usuario` varchar(50) NOT NULL,
-  `contrasena` varchar(255) NOT NULL,
-  `rol` enum('cajero','mesero','admin','repartidor','cocinero','barra','alimentos') NOT NULL,
-  `activo` tinyint(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `usuarios`
---
-
-INSERT INTO `usuarios` (`id`, `nombre`, `usuario`, `contrasena`, `rol`, `activo`) VALUES
-(1, 'Administrador', 'admin', 'admin', 'admin', 1),
-(2, 'Javier Emanuel lopez lozano', 'JavierE', 'd033e22ae348aeb5660fc2140aec35850c4da997', 'mesero', 1),
-(3, 'maria jose valle tovar', 'MariaJ', 'admin', 'cajero', 1),
-(4, 'juan hernesto ortega Almanza', 'juan', 'admin', 'mesero', 1),
-(5, 'gilberto ozuna carrillo', 'Gil', 'admin', 'mesero', 1),
-(6, 'alinne Guadalupe Gurrola ramirez', 'Alinne', '4e7afebcfbae000b22c7c85e5560f89a2a0280b4', 'mesero', 1),
-(7, 'Mesas general', 'mesas', 'admin', 'mesero', 1),
-(8, 'Jose Angel Valdez Flores', 'AngelV', 'admin', 'cocinero', 1),
-(9, 'Daniel Gutierrez Amador', 'DaniG', 'admin', 'cocinero', 1),
-(10, 'Edson Darihec Reyes Villa', 'Darihec ', 'admin', 'cocinero', 1),
-(11, 'Hector Osbaldo Hernandez Orona', 'HectorO', 'admin', 'cocinero', 1),
-(12, 'Henry Adahyr Coronel Gamiz', 'Henry ', 'admin', 'cocinero', 1),
-(13, 'Jose Arturo Montoya Campos', 'JoseA', 'admin', 'cocinero', 1),
-(14, 'Kevin de Jesus Rosales Valles', 'KevinJ', 'admin', 'cocinero', 1),
-(15, 'Roberto Garcia Soto', 'RobertoG', 'admin', 'cocinero', 1),
-(16, 'Luis Varela Rueda', 'LuisV', 'admin', 'cocinero', 1),
-(17, 'Jesus', 'Jesus', 'admin', 'mesero', 1),
-(18, 'Andrea Jaqueline perez arrellano', 'AndreaJ', '4e7afebcfbae000b22c7c85e5560f89a2a0280b4', 'cajero', 1),
-(31, 'Andrea ontivero escalera', 'AndreaO', 'admin', 'cajero', 1),
-(32, 'Cajero General', 'CajeroG', 'admin', 'cajero', 1),
-(33, 'Cocina General', 'CocinaG', 'admin', 'alimentos', 1),
-(34, 'Barra General', 'BarraG', 'admin', 'barra', 1),
-(35, 'Diego', 'Repartidor1', 'admin', 'repartidor', 1),
-(36, 'Carlos', 'Repartidor2', 'admin', 'repartidor', 1),
-(38, 'beto', 'beto', 'admin', 'mesero', 1),
-(39, 'Ricardo', 'ricardo', 'admin', 'repartidor', 1),
-(40, 'lebo', 'lebo', 'admin', 'mesero', 1),
-(43, 'sergio', 'sergio', 'admin', 'mesero', 1),
-(44, 'repartidor apoyo', 'apoyo', 'admin', 'repartidor', 1);
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `usuario_ruta`
---
-
-CREATE TABLE `usuario_ruta` (
-  `id` int(11) NOT NULL,
-  `usuario_id` int(11) NOT NULL,
-  `ruta_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `usuario_ruta`
---
-
-INSERT INTO `usuario_ruta` (`id`, `usuario_id`, `ruta_id`) VALUES
-(184, 1, 1),
-(189, 1, 2),
-(185, 1, 3),
-(187, 1, 4),
-(190, 1, 5),
-(192, 1, 6),
-(194, 1, 7),
-(209, 1, 8),
-(197, 1, 9),
-(199, 1, 10),
-(201, 1, 11),
-(186, 1, 12),
-(188, 1, 13),
-(191, 1, 14),
-(203, 1, 15),
-(193, 1, 18),
-(195, 1, 19),
-(205, 1, 20),
-(208, 1, 21),
-(196, 1, 22),
-(198, 1, 23),
-(200, 1, 24),
-(202, 1, 25),
-(204, 1, 26),
-(206, 1, 27),
-(207, 1, 28),
-(210, 1, 29),
-(211, 1, 30),
-(212, 1, 31),
-(213, 1, 32),
-(214, 1, 33),
-(215, 1, 34),
-(62, 2, 1),
-(32, 2, 6),
-(52, 2, 7),
-(56, 2, 9),
-(33, 2, 10),
-(48, 2, 13),
-(51, 2, 18),
-(50, 2, 19),
-(54, 2, 20),
-(38, 3, 6),
-(36, 3, 7),
-(37, 3, 8),
-(57, 3, 9),
-(47, 4, 1),
-(34, 4, 6),
-(42, 4, 9),
-(35, 4, 10),
-(49, 5, 1),
-(39, 5, 3),
-(40, 5, 5),
-(41, 5, 6),
-(130, 6, 1),
-(131, 6, 10),
-(176, 18, 1),
-(178, 18, 6),
-(179, 18, 7),
-(180, 18, 10),
-(181, 18, 11),
-(177, 18, 13),
-(182, 18, 28),
-(183, 18, 33),
-(71, 32, 1),
-(72, 32, 6),
-(73, 32, 7),
-(74, 32, 15),
-(65, 33, 1),
-(66, 33, 6),
-(67, 33, 15),
-(68, 34, 1),
-(69, 34, 6),
-(70, 34, 15);
+(1289, 491, 15, 6, 115.00),
+(1290, 491, 66, 3, 33.00),
+(1291, 492, 15, 6, 115.00),
+(1292, 492, 66, 3, 33.00),
+(1293, 493, 15, 6, 115.00),
+(1294, 493, 66, 3, 33.00),
+(1295, 494, 15, 6, 115.00),
+(1296, 494, 66, 3, 33.00);
 
 -- --------------------------------------------------------
 
@@ -1997,7 +1015,10 @@ CREATE TABLE `ventas` (
 --
 
 INSERT INTO `ventas` (`id`, `fecha`, `mesa_id`, `repartidor_id`, `tipo_entrega`, `usuario_id`, `total`, `estatus`, `entregado`, `estado_entrega`, `fecha_asignacion`, `fecha_inicio`, `fecha_entrega`, `seudonimo_entrega`, `foto_entrega`, `corte_id`, `cajero_id`, `observacion`, `sede_id`, `propina_efectivo`, `propina_cheque`, `propina_tarjeta`, `promocion_id`, `promocion_descuento`) VALUES
-(719, '2025-11-20 13:42:29', NULL, NULL, 'rapido', 1, 690.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 108, 1, '', 1, 0.00, 0.00, 0.00, 9, 272.00);
+(729, '2025-11-20 22:14:54', NULL, NULL, 'rapido', 1, 789.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 109, 1, '', 1, 0.00, 0.00, 0.00, 9, 289.00),
+(730, '2025-11-20 22:30:43', 5, NULL, 'mesa', 38, 789.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 109, 1, '', 1, 74.00, 0.00, 0.00, 4, 263.00),
+(731, '2025-11-20 22:45:41', NULL, NULL, 'rapido', 1, 789.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 109, 1, '', 1, 0.00, 0.00, 0.00, 9, 289.00),
+(732, '2025-11-20 22:46:31', NULL, NULL, 'rapido', 1, 789.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 109, 1, '', 1, 0.00, 0.00, 0.00, 9, 289.00);
 
 --
 -- Disparadores `ventas`
@@ -2037,7 +1058,14 @@ CREATE TABLE `venta_detalles` (
 --
 
 INSERT INTO `venta_detalles` (`id`, `venta_id`, `producto_id`, `cantidad`, `precio_unitario`, `insumos_descargados`, `created_at`, `entregado_hr`, `estado_producto`, `observaciones`) VALUES
-(2631, 719, 15, 6, 115.00, 0, '2025-11-20 13:42:29', NULL, 'pendiente', NULL);
+(2664, 729, 15, 6, 115.00, 0, '2025-11-20 22:14:54', NULL, 'pendiente', NULL),
+(2665, 729, 66, 3, 33.00, 0, '2025-11-20 22:14:54', NULL, 'pendiente', NULL),
+(2666, 730, 15, 6, 115.00, 0, '2025-11-20 22:30:43', NULL, 'pendiente', NULL),
+(2667, 730, 66, 3, 33.00, 0, '2025-11-20 22:30:43', NULL, 'pendiente', NULL),
+(2668, 731, 15, 6, 115.00, 0, '2025-11-20 22:45:41', NULL, 'pendiente', NULL),
+(2669, 731, 66, 3, 33.00, 0, '2025-11-20 22:45:41', NULL, 'pendiente', NULL),
+(2670, 732, 15, 6, 115.00, 0, '2025-11-20 22:46:31', NULL, 'pendiente', NULL),
+(2671, 732, 66, 3, 33.00, 0, '2025-11-20 22:46:31', NULL, 'pendiente', NULL);
 
 --
 -- Disparadores `venta_detalles`
@@ -2131,15 +1159,40 @@ CREATE TABLE `venta_promos` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
+-- Volcado de datos para la tabla `venta_promos`
+--
+
+INSERT INTO `venta_promos` (`id`, `venta_id`, `promo_id`, `descuento_aplicado`, `created_at`) VALUES
+(25, 729, 9, 144.50, '2025-11-20 22:15:22'),
+(26, 729, 5, 144.50, '2025-11-20 22:15:22'),
+(27, 730, 4, 131.50, '2025-11-20 22:32:12'),
+(28, 730, 1, 131.50, '2025-11-20 22:32:12'),
+(29, 731, 9, 144.50, '2025-11-20 22:46:03'),
+(30, 731, 5, 144.50, '2025-11-20 22:46:03'),
+(31, 732, 9, 144.50, '2025-11-20 22:46:50'),
+(32, 732, 5, 144.50, '2025-11-20 22:46:50');
+
+--
 -- Índices para tablas volcadas
 --
 
 --
--- Indices de la tabla `alineacion`
+-- Indices de la tabla `catalogo_bancos`
 --
-ALTER TABLE `alineacion`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `nombre` (`nombre`);
+ALTER TABLE `catalogo_bancos`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indices de la tabla `catalogo_categorias`
+--
+ALTER TABLE `catalogo_categorias`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indices de la tabla `catalogo_folios`
+--
+ALTER TABLE `catalogo_folios`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indices de la tabla `catalogo_promos`
@@ -2148,6 +1201,12 @@ ALTER TABLE `catalogo_promos`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_cp_activo_visible` (`activo`,`visible_en_ticket`),
   ADD KEY `idx_cp_tipo` (`tipo`);
+
+--
+-- Indices de la tabla `catalogo_tarjetas`
+--
+ALTER TABLE `catalogo_tarjetas`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indices de la tabla `cliente_venta`
@@ -2162,14 +1221,6 @@ ALTER TABLE `cortes_almacen`
   ADD PRIMARY KEY (`id`),
   ADD KEY `usuario_abre_id` (`usuario_abre_id`),
   ADD KEY `usuario_cierra_id` (`usuario_cierra_id`);
-
---
--- Indices de la tabla `cortes_almacen_detalle`
---
-ALTER TABLE `cortes_almacen_detalle`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `corte_id` (`corte_id`),
-  ADD KEY `insumo_id` (`insumo_id`);
 
 --
 -- Indices de la tabla `corte_caja`
@@ -2212,17 +1263,34 @@ ALTER TABLE `entradas_insumo`
   ADD KEY `fk_entrada_usuario` (`usuario_id`);
 
 --
+-- Indices de la tabla `facturas`
+--
+ALTER TABLE `facturas`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_fact_ticket` (`ticket_id`),
+  ADD KEY `idx_fact_cliente` (`cliente_id`),
+  ADD KEY `idx_uuid` (`uuid`);
+
+--
+-- Indices de la tabla `factura_detalles`
+--
+ALTER TABLE `factura_detalles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_fd_ticketdet` (`ticket_detalle_id`),
+  ADD KEY `idx_fd_fact` (`factura_id`);
+
+--
+-- Indices de la tabla `factura_tickets`
+--
+ALTER TABLE `factura_tickets`
+  ADD PRIMARY KEY (`factura_id`,`ticket_id`),
+  ADD UNIQUE KEY `uq_ticket_unico` (`ticket_id`);
+
+--
 -- Indices de la tabla `fondo`
 --
 ALTER TABLE `fondo`
   ADD PRIMARY KEY (`usuario_id`);
-
---
--- Indices de la tabla `horarios`
---
-ALTER TABLE `horarios`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_horario_serie` (`serie_id`);
 
 --
 -- Indices de la tabla `insumos`
@@ -2248,12 +1316,6 @@ ALTER TABLE `movimientos_caja`
   ADD KEY `usuario_id` (`usuario_id`);
 
 --
--- Indices de la tabla `movimientos_insumos`
---
-ALTER TABLE `movimientos_insumos`
-  ADD PRIMARY KEY (`id`);
-
---
 -- Indices de la tabla `productos`
 --
 ALTER TABLE `productos`
@@ -2261,45 +1323,9 @@ ALTER TABLE `productos`
   ADD KEY `fk_productos_categoria` (`categoria_id`);
 
 --
--- Indices de la tabla `proveedores`
---
-ALTER TABLE `proveedores`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `ux_proveedores_rfc` (`rfc`),
-  ADD KEY `ix_proveedores_nombre` (`nombre`),
-  ADD KEY `ix_proveedores_correo` (`correo`),
-  ADD KEY `ix_proveedores_activo` (`activo`);
-
---
--- Indices de la tabla `qrs_insumo`
---
-ALTER TABLE `qrs_insumo`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indices de la tabla `recetas`
---
-ALTER TABLE `recetas`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `producto_id` (`producto_id`),
-  ADD KEY `insumo_id` (`insumo_id`);
-
---
 -- Indices de la tabla `repartidores`
 --
 ALTER TABLE `repartidores`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indices de la tabla `rutas`
---
-ALTER TABLE `rutas`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indices de la tabla `sedes`
---
-ALTER TABLE `sedes`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -2330,21 +1356,6 @@ ALTER TABLE `ticket_detalles`
   ADD PRIMARY KEY (`id`),
   ADD KEY `ticket_id` (`ticket_id`),
   ADD KEY `producto_id` (`producto_id`);
-
---
--- Indices de la tabla `usuarios`
---
-ALTER TABLE `usuarios`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `usuario` (`usuario`);
-
---
--- Indices de la tabla `usuario_ruta`
---
-ALTER TABLE `usuario_ruta`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `usuario_id` (`usuario_id`,`ruta_id`),
-  ADD KEY `ruta_id` (`ruta_id`);
 
 --
 -- Indices de la tabla `ventas`
@@ -2392,16 +1403,34 @@ ALTER TABLE `venta_promos`
 --
 
 --
--- AUTO_INCREMENT de la tabla `alineacion`
+-- AUTO_INCREMENT de la tabla `catalogo_bancos`
 --
-ALTER TABLE `alineacion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+ALTER TABLE `catalogo_bancos`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT de la tabla `catalogo_categorias`
+--
+ALTER TABLE `catalogo_categorias`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+
+--
+-- AUTO_INCREMENT de la tabla `catalogo_folios`
+--
+ALTER TABLE `catalogo_folios`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `catalogo_promos`
 --
 ALTER TABLE `catalogo_promos`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT de la tabla `catalogo_tarjetas`
+--
+ALTER TABLE `catalogo_tarjetas`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `cliente_venta`
@@ -2416,16 +1445,10 @@ ALTER TABLE `cortes_almacen`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT de la tabla `cortes_almacen_detalle`
---
-ALTER TABLE `cortes_almacen_detalle`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=186;
-
---
 -- AUTO_INCREMENT de la tabla `corte_caja`
 --
 ALTER TABLE `corte_caja`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=109;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=110;
 
 --
 -- AUTO_INCREMENT de la tabla `corte_caja_historial`
@@ -2437,7 +1460,7 @@ ALTER TABLE `corte_caja_historial`
 -- AUTO_INCREMENT de la tabla `desglose_corte`
 --
 ALTER TABLE `desglose_corte`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=506;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=509;
 
 --
 -- AUTO_INCREMENT de la tabla `entradas_detalle`
@@ -2452,10 +1475,16 @@ ALTER TABLE `entradas_insumo`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `horarios`
+-- AUTO_INCREMENT de la tabla `facturas`
 --
-ALTER TABLE `horarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+ALTER TABLE `facturas`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+
+--
+-- AUTO_INCREMENT de la tabla `factura_detalles`
+--
+ALTER TABLE `factura_detalles`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=124;
 
 --
 -- AUTO_INCREMENT de la tabla `insumos`
@@ -2473,13 +1502,7 @@ ALTER TABLE `mesas`
 -- AUTO_INCREMENT de la tabla `movimientos_caja`
 --
 ALTER TABLE `movimientos_caja`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
-
---
--- AUTO_INCREMENT de la tabla `movimientos_insumos`
---
-ALTER TABLE `movimientos_insumos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=118;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT de la tabla `productos`
@@ -2488,88 +1511,46 @@ ALTER TABLE `productos`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9028;
 
 --
--- AUTO_INCREMENT de la tabla `proveedores`
---
-ALTER TABLE `proveedores`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
-
---
--- AUTO_INCREMENT de la tabla `qrs_insumo`
---
-ALTER TABLE `qrs_insumo`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
-
---
--- AUTO_INCREMENT de la tabla `recetas`
---
-ALTER TABLE `recetas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1278;
-
---
 -- AUTO_INCREMENT de la tabla `repartidores`
 --
 ALTER TABLE `repartidores`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
--- AUTO_INCREMENT de la tabla `rutas`
---
-ALTER TABLE `rutas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
-
---
--- AUTO_INCREMENT de la tabla `sedes`
---
-ALTER TABLE `sedes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
 -- AUTO_INCREMENT de la tabla `tickets`
 --
 ALTER TABLE `tickets`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=482;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=495;
 
 --
 -- AUTO_INCREMENT de la tabla `ticket_descuentos`
 --
 ALTER TABLE `ticket_descuentos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=81;
 
 --
 -- AUTO_INCREMENT de la tabla `ticket_detalles`
 --
 ALTER TABLE `ticket_detalles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1260;
-
---
--- AUTO_INCREMENT de la tabla `usuarios`
---
-ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
-
---
--- AUTO_INCREMENT de la tabla `usuario_ruta`
---
-ALTER TABLE `usuario_ruta`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=216;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1297;
 
 --
 -- AUTO_INCREMENT de la tabla `ventas`
 --
 ALTER TABLE `ventas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=720;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=733;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalles`
 --
 ALTER TABLE `venta_detalles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2632;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2672;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalles_cancelados`
 --
 ALTER TABLE `venta_detalles_cancelados`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=170;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=173;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalles_log`
@@ -2581,7 +1562,7 @@ ALTER TABLE `venta_detalles_log`
 -- AUTO_INCREMENT de la tabla `venta_promos`
 --
 ALTER TABLE `venta_promos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- Restricciones para tablas volcadas
@@ -2593,13 +1574,6 @@ ALTER TABLE `venta_promos`
 ALTER TABLE `cortes_almacen`
   ADD CONSTRAINT `cortes_almacen_ibfk_1` FOREIGN KEY (`usuario_abre_id`) REFERENCES `usuarios` (`id`),
   ADD CONSTRAINT `cortes_almacen_ibfk_2` FOREIGN KEY (`usuario_cierra_id`) REFERENCES `usuarios` (`id`);
-
---
--- Filtros para la tabla `cortes_almacen_detalle`
---
-ALTER TABLE `cortes_almacen_detalle`
-  ADD CONSTRAINT `cortes_almacen_detalle_ibfk_1` FOREIGN KEY (`corte_id`) REFERENCES `cortes_almacen` (`id`),
-  ADD CONSTRAINT `cortes_almacen_detalle_ibfk_2` FOREIGN KEY (`insumo_id`) REFERENCES `insumos` (`id`);
 
 --
 -- Filtros para la tabla `corte_caja`
@@ -2636,16 +1610,30 @@ ALTER TABLE `entradas_insumo`
   ADD CONSTRAINT `fk_entrada_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
 
 --
+-- Filtros para la tabla `facturas`
+--
+ALTER TABLE `facturas`
+  ADD CONSTRAINT `fk_fact_cliente` FOREIGN KEY (`cliente_id`) REFERENCES `clientes_facturacion` (`id`),
+  ADD CONSTRAINT `fk_fact_ticket` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`);
+
+--
+-- Filtros para la tabla `factura_detalles`
+--
+ALTER TABLE `factura_detalles`
+  ADD CONSTRAINT `fk_fd_fact` FOREIGN KEY (`factura_id`) REFERENCES `facturas` (`id`);
+
+--
+-- Filtros para la tabla `factura_tickets`
+--
+ALTER TABLE `factura_tickets`
+  ADD CONSTRAINT `fk_ft_factura` FOREIGN KEY (`factura_id`) REFERENCES `facturas` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_ft_ticket` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`) ON UPDATE CASCADE;
+
+--
 -- Filtros para la tabla `fondo`
 --
 ALTER TABLE `fondo`
   ADD CONSTRAINT `fondo_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
-
---
--- Filtros para la tabla `horarios`
---
-ALTER TABLE `horarios`
-  ADD CONSTRAINT `fk_horario_serie` FOREIGN KEY (`serie_id`) REFERENCES `catalogo_folios` (`id`);
 
 --
 -- Filtros para la tabla `mesas`
@@ -2667,13 +1655,6 @@ ALTER TABLE `movimientos_caja`
 --
 ALTER TABLE `productos`
   ADD CONSTRAINT `fk_productos_categoria` FOREIGN KEY (`categoria_id`) REFERENCES `catalogo_categorias` (`id`);
-
---
--- Filtros para la tabla `recetas`
---
-ALTER TABLE `recetas`
-  ADD CONSTRAINT `recetas_ibfk_1` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`),
-  ADD CONSTRAINT `recetas_ibfk_2` FOREIGN KEY (`insumo_id`) REFERENCES `insumos` (`id`);
 
 --
 -- Filtros para la tabla `tickets`
@@ -2700,13 +1681,6 @@ ALTER TABLE `ticket_descuentos`
 ALTER TABLE `ticket_detalles`
   ADD CONSTRAINT `ticket_detalles_ibfk_1` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`),
   ADD CONSTRAINT `ticket_detalles_ibfk_2` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`);
-
---
--- Filtros para la tabla `usuario_ruta`
---
-ALTER TABLE `usuario_ruta`
-  ADD CONSTRAINT `usuario_ruta_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `usuario_ruta_ibfk_2` FOREIGN KEY (`ruta_id`) REFERENCES `rutas` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `ventas`
