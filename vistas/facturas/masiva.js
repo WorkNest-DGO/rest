@@ -16,10 +16,16 @@
   let pendientesData = [];
   let pendientesIndex = new Map(); // ticket_id -> row
   let facturadasData = [];
+  let formaPagoState = { codigo: null, tipo: null, tarjeta: null, mixto: false, hayTarjeta: false };
   // Paginación de pendientes
   let pendPage = 1;
   let pendPageSize = 20;
   let pendTotal = 0;
+
+  const fpInfo = el('#forma-pago-info');
+  const fpAyuda = el('#forma-pago-ayuda');
+  const fpSelect = el('#forma-pago-select');
+  const fpSelectWrap = el('#forma-pago-select-wrap');
 
   function setDefaultsFechas() {
     const now = new Date();
@@ -61,11 +67,29 @@
     return { desde, hasta, buscar, sede };
   }
 
+  const normTipoPago = (tp) => String(tp || '').trim().toLowerCase();
+  const etiquetaFormaPago = (code) => {
+    const c = String(code || '').trim();
+    if (c === '01') return '01 - Efectivo';
+    if (c === '03') return '03 - Transferencia';
+    if (c === '04') return '04 - T. Crédito';
+    if (c === '28') return '28 - T. Débito';
+    return c;
+  };
+  function obtenerFormaPagoParaEnvio() {
+    const payload = {};
+    const tarjetaSel = fpSelect ? fpSelect.value : null;
+    if (formaPagoState && formaPagoState.codigo) payload.forma_pago = formaPagoState.codigo;
+    if (formaPagoState && formaPagoState.hayTarjeta && tarjetaSel) payload.forma_pago_tarjeta = tarjetaSel;
+    return payload;
+  }
+
   function updateAccionesState() {
     const hasSel = seleccion.length > 0;
     const cliente = Number(el('#select-cliente').value || 0);
+    const bloquearGlobal = formaPagoState?.mixto || (hasSel && !formaPagoState?.codigo);
     el('#btn-uno-a-uno').disabled = !(hasSel && cliente > 0);
-    el('#btn-global').disabled = !(hasSel && cliente > 0);
+    el('#btn-global').disabled = !(hasSel && cliente > 0) || bloquearGlobal;
   }
 
   function renderPendientes(rows) {
@@ -80,6 +104,7 @@
       tr.innerHTML = `
         <td>${folio ?? ''}</td>
         <td>${(r.fecha || '').replace('T',' ')}</td>
+        <td>${r.tipo_pago ?? ''}</td>
         <td class="right">${fmt(r.total)}</td>
         <td class="right"><input type="checkbox" data-id="${r.id}"></td>
       `;
@@ -113,6 +138,39 @@
     if (next) next.addEventListener('click', () => { const pgs = Math.max(1, Math.ceil((pendTotal||0)/(pendPageSize||20))); if (pendPage < pgs) { pendPage++; listar(); } });
   }
 
+  function actualizarFormaPagoUI() {
+    const tipos = seleccion.map(id => normTipoPago(pendientesIndex.get(id)?.tipo_pago));
+    const uniq = Array.from(new Set(tipos.filter(Boolean)));
+    const hayTarjeta = tipos.some(tp => tp === 'tarjeta' || tp === 'boucher');
+    const tarjetaSel = hayTarjeta && fpSelect ? (fpSelect.value || '04') : null;
+    const state = { codigo: null, tipo: null, tarjeta: tarjetaSel, mixto: false, hayTarjeta };
+    let label = 'Selecciona tickets';
+    let ayuda = 'Se toma del tipo de pago guardado en el ticket.';
+    if (uniq.length === 1) {
+      state.tipo = uniq[0];
+      if (state.tipo === 'efectivo') { state.codigo = '01'; label = etiquetaFormaPago(state.codigo); }
+      else if (state.tipo === 'cheque') { state.codigo = '03'; label = etiquetaFormaPago(state.codigo); }
+      else if (state.tipo === 'tarjeta' || state.tipo === 'boucher') {
+        state.codigo = tarjetaSel || '04';
+        label = `${etiquetaFormaPago(state.codigo)} (tarjeta)`;
+        ayuda = 'Tipo de pago del ticket: tarjeta. Elige crédito o débito.';
+      } else {
+        label = 'Tipo de pago no identificado';
+        ayuda = 'Se enviará transferencia por defecto.';
+      }
+    } else if (uniq.length > 1) {
+      state.mixto = true;
+      label = 'Varios tipos de pago';
+      ayuda = 'Para factura global selecciona tickets con el mismo tipo de pago.';
+      if (hayTarjeta && tarjetaSel) ayuda += ' Para los tickets con tarjeta se usará tu selección.';
+    }
+    formaPagoState = state;
+    if (fpSelectWrap) fpSelectWrap.style.display = hayTarjeta ? 'block' : 'none';
+    if (hayTarjeta && fpSelect && tarjetaSel) fpSelect.value = tarjetaSel;
+    if (fpInfo) fpInfo.value = label;
+    if (fpAyuda) fpAyuda.textContent = ayuda;
+  }
+
   function renderSeleccion() {
     const cont = el('#lista-seleccion');
     cont.innerHTML = '';
@@ -121,22 +179,23 @@
       const r = pendientesIndex.get(id);
       const item = document.createElement('div');
       item.className = 'item';
-      item.textContent = `Ticket ${id} â€” ${fmt(r?.total || 0)}`;
+      const tipoTxt = r?.tipo_pago ? ` (${r.tipo_pago})` : '';
+      item.textContent = `Ticket ${id} - ${fmt(r?.total || 0)}${tipoTxt}`;
       item.title = 'Click para quitar';
       item.style.cursor = 'pointer';
       item.addEventListener('click', () => toggleSeleccion(id));
       cont.appendChild(item);
-      // Asumimos totales: impuestos 0 si no hay info
       const t = Number(r?.total || 0);
       subtotal += t; total += t;
     }
     el('#totales-subtotal').textContent = fmt(subtotal);
     el('#totales-impuestos').textContent = fmt(impuestos);
     el('#totales-total').textContent = fmt(total);
+    actualizarFormaPagoUI();
     updateAccionesState();
   }
 
-  function renderFacturadas(rows) {
+function renderFacturadas(rows) {
     facturadasData = rows || [];
     const tb = el('#tabla-facturadas tbody');
     tb.innerHTML = '';
@@ -218,7 +277,10 @@
     const clienteId = Number(el('#select-cliente').value || 0);
     if (!clienteId || seleccion.length === 0) return;
     try {
+      const fpPayload = obtenerFormaPagoParaEnvio();
       const body = { modo: 'uno_a_uno', tickets: seleccion.slice(), cliente_id: clienteId };
+      if (fpPayload.forma_pago) body.forma_pago = fpPayload.forma_pago;
+      if (fpPayload.forma_pago_tarjeta) body.forma_pago_tarjeta = fpPayload.forma_pago_tarjeta;
       const res = await fetch(API.crear, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -238,9 +300,20 @@
   async function facturarGlobal() {
     const clienteId = Number(el('#select-cliente').value || 0);
     if (!clienteId || seleccion.length === 0) return;
+    if (formaPagoState?.mixto) {
+      alert('Selecciona tickets con el mismo tipo de pago para factura global.');
+      return;
+    }
     const { desde, hasta } = getFiltros();
     try {
-      const body = { modo: 'global', tickets: seleccion.slice(), cliente_id: clienteId, periodo: { desde, hasta } };
+      const fpPayload = obtenerFormaPagoParaEnvio();
+      if (!fpPayload.forma_pago && formaPagoState?.codigo) fpPayload.forma_pago = formaPagoState.codigo;
+      if (!fpPayload.forma_pago) {
+        alert('No se pudo determinar la forma de pago desde los tickets seleccionados.');
+        return;
+      }
+      const body = { modo: 'global', tickets: seleccion.slice(), cliente_id: clienteId, periodo: { desde, hasta }, forma_pago: fpPayload.forma_pago };
+      if (fpPayload.forma_pago_tarjeta) body.forma_pago_tarjeta = fpPayload.forma_pago_tarjeta;
       const res = await fetch(API.crear, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -345,6 +418,7 @@
     el('#btn-buscar').addEventListener('click', () => { pendPage = 1; listar(); });
     const sel = el('#pend-records'); if (sel) sel.addEventListener('change', () => { pendPage = 1; pendPageSize = Number(sel.value||20); listar(); });
     el('#select-cliente').addEventListener('change', updateAccionesState);
+    if (fpSelect) fpSelect.addEventListener('change', () => { actualizarFormaPagoUI(); updateAccionesState(); });
     el('#btn-uno-a-uno').addEventListener('click', facturarUnoAUno);
     el('#btn-global').addEventListener('click', facturarGlobal);
     el('#btn-cerrar-modal').addEventListener('click', () => el('#modal-detalle').style.display = 'none');
@@ -360,5 +434,3 @@
   window.verFactura = verFactura;
   window.cancelarFactura = cancelarFactura;
 })();
-
-

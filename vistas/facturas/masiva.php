@@ -86,6 +86,7 @@ ob_start();
           <tr>
             <th>Folio Ticket</th>
             <th>Fecha</th>
+            <th>Tipo pago</th>
             <th class="right">Total</th>
             <th>Seleccionar</th>
           </tr>
@@ -103,6 +104,25 @@ ob_start();
       <div>Subtotal: <strong id="totales-subtotal">0.00</strong></div>
       <div>Impuestos: <strong id="totales-impuestos">0.00</strong></div>
       <div>Total: <strong id="totales-total">0.00</strong></div>
+    </div>
+  </section>
+
+  <!-- 3.1) Forma de pago -->
+  <section>
+    <h3>Forma de pago</h3>
+    <div class="row">
+      <div>
+        <label>Detectado</label>
+        <input type="text" id="forma-pago-info" placeholder="Selecciona tickets" readonly>
+        <div class="muted" id="forma-pago-ayuda">Se toma del tipo de pago guardado en el ticket.</div>
+      </div>
+      <div id="forma-pago-select-wrap" style="display:none;">
+        <label>Si es tarjeta, elige</label>
+        <select id="forma-pago-select">
+          <option value="04">04 - T. Cr&eacute;dito</option>
+          <option value="28">28 - T. D&eacute;bito</option>
+        </select>
+      </div>
     </div>
   </section>
 

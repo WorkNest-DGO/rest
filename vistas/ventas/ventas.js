@@ -908,7 +908,7 @@ function mostrarModalDesglose(dataApi) {
 
     // Totales incluyendo descuentos por tickets
     if (!isNaN(totalBrutoTickets) && (totalBrutoTickets > 0 || totalDescuentos >= 0)) {
-        html += `<p>Total bruto (tickets): $${(totalBrutoTickets || 0).toFixed(2)}</p>`;
+        html += `<p>Total sin descuentos: $${(totalBrutoTickets || 0).toFixed(2)}</p>`;
         html += `<p>Descuentos acumulados: $<span id="lblCorteActualDescuentos">${(totalDescuentos || 0).toFixed(2)}</span></p>`;
     }
     html += `<p><strong>Total esperado:</strong> $${totalEsperado.toFixed(2)}</p>`;
@@ -916,7 +916,8 @@ function mostrarModalDesglose(dataApi) {
     html += '<p>Depósitos: $<strong id="lblTotalDepositos"></strong></p>';
     html += '<p>Retiros: $<strong id="lblTotalRetiros"></strong></p>';
     html += `<p>Total ingresado: $${totalIngresado.toFixed(2)}</p>`;
-    html += `<p>Total productos: $${totalProductos.toFixed(2)}</p>`;
+   // html += `<p>Total productos S/descuento: $${totalProductos.toFixed(2)}</p>`;
+    //Shtml += `<p>Total productos C/descuento: $${totalEsperado.toFixed(2)}</p>`;
     html += '<p>Totales por tipo de pago:</p><ul>';
     metodosPago.forEach(tipo => {
         const p = r[tipo] || {};
@@ -931,22 +932,21 @@ function mostrarModalDesglose(dataApi) {
         html += '<p>Esperado post-descuentos por tipo de pago:</p><ul>';
         html += `<li>efectivo: $${esperadoEfec.toFixed(2)}</li>`;
         html += `<li>boucher: $${esperadoBouch.toFixed(2)}</li>`;
-        html += `<li>cheque: $${esperadoCheque.toFixed(2)}</li>`;
+        html += `<li>Transferencia: $${esperadoCheque.toFixed(2)}</li>`;
         html += '</ul>';
     }  
    
     html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
     html += '<p>Propinas por tipo de pago:</p><ul>';
     html += `<li>Efectivo: $${(Number.parseFloat(r.total_propina_efectivo) || 0).toFixed(2)}</li>`;
-    html += `<li>Cheque: $${(Number.parseFloat(r.total_propina_cheque) || 0).toFixed(2)}</li>`;
+    html += `<li>Transferencia: $${(Number.parseFloat(r.total_propina_cheque) || 0).toFixed(2)}</li>`;
     html += `<li>Tarjeta: $${(Number.parseFloat(r.total_propina_tarjeta) || 0).toFixed(2)}</li></ul>`;
 
     var totalPromos = Number(r.total_descuento_promos ?? 0);
      if (totalPromos > 0) {
-        totalIngresado2 = totalIngresado-totalPromos;
         html += '<p>Promociones:</p><ul>';
         html += `<li>Descuento Total Promociones: $${totalPromos.toFixed(2)}</li>`;
-        html += `<li>Total ingresado Post-Promociones: $${totalIngresado2.toFixed(2)}</li>`;        
+        html += `<li>Total ingresado Post-Promociones: $${totalEsperado.toFixed(2)}</li>`;        
         html += '</ul>';
     }
 

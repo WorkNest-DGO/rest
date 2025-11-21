@@ -50,6 +50,7 @@ try {
   $has_ticket_id  = column_exists($db,'facturas','ticket_id');
 
   $t_fecha = column_exists($db,'tickets','fecha') ? 'fecha' : null;
+  $t_tipo_pago = column_exists($db,'tickets','tipo_pago') ? 'tipo_pago' : null;
 
   $has_cf_tbl = table_exists($db,'clientes_facturacion');
   $cf_nombre  = $has_cf_tbl && column_exists($db,'clientes_facturacion','razon_social') ? 'razon_social'
@@ -132,7 +133,7 @@ try {
     $pend_limit  = isset($_GET['pend_limit'])  ? max(1, min(100, (int)$_GET['pend_limit'])) : 20;
     $pend_offset = isset($_GET['pend_offset']) ? max(0, (int)$_GET['pend_offset']) : 0;
     $want_count  = isset($_GET['pend_count']) ? (int)$_GET['pend_count'] : 0;
-    $sql = "SELECT t.id, t.folio, t.total, ".($t_fecha ? "t.$t_fecha AS fecha" : "NULL AS fecha")."
+    $sql = "SELECT t.id, t.folio, COALESCE(t.monto_recibido, t.total) AS total, ".($t_fecha ? "t.$t_fecha AS fecha" : "NULL AS fecha").", ".($t_tipo_pago ? "t.$t_tipo_pago AS tipo_pago" : "NULL AS tipo_pago")."
             FROM tickets t
             LEFT JOIN factura_tickets ft ON ft.ticket_id = t.id
             LEFT JOIN facturas f ON ".($has_ticket_id ? "f.ticket_id = t.id" : "0")."

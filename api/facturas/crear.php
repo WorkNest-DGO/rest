@@ -74,6 +74,24 @@ function column_is_nullable(mysqli $db, string $t, string $c): bool {
   return $row ? ($row['IS_NULLABLE'] === 'YES') : true;
 }
 function ints(array $a): array { return array_values(array_filter(array_map('intval',$a),fn($x)=>$x>0)); }
+function sanitize_forma_pago(?string $fp): ?string {
+  if ($fp === null) return null;
+  $fp = preg_replace('/\D/','',(string)$fp);
+  return in_array($fp, ['01','03','04','28'], true) ? $fp : null;
+}
+function forma_pago_desde_tipo(?string $tipoPago, ?string $formaTarjeta = null, ?string $fallback = null): string {
+  $tp = strtolower(trim((string)$tipoPago));
+  $formaTarjeta = sanitize_forma_pago($formaTarjeta);
+  $fallback = sanitize_forma_pago($fallback);
+  if ($tp === 'efectivo') return '01';
+  if ($tp === 'cheque') return '03';
+  if ($tp === 'tarjeta' || $tp === 'boucher') {
+    if (in_array($formaTarjeta, ['04','28'], true)) return $formaTarjeta;
+    return '04'; // default tarjeta: T. Crédito
+  }
+  if ($fallback !== null) return $fallback;
+  return '03';
+}
 
 // ---- Helpers de redondeo seguros (alinea con /tokyo) ----
 if (!function_exists('money2')) {
@@ -113,47 +131,210 @@ if (!function_exists('normalizar_items_cfdi')) {
   }
 }
 
-// Construir Items CFDI a partir de ticket_detalles (mysqli)
-function cfdi_items_from_ticket(mysqli $db, int $ticketId): array {
-  $sql = "SELECT td.producto_id, COALESCE(p.nombre, CONCAT('Producto ', td.producto_id)) AS descripcion, td.cantidad, td.precio_unitario
+/**
+ * Devuelve el codigo de producto SAT segun la categoria del producto.
+ * Catalogos solicitados:
+ *  1 (bebida)        -> 50193000
+ *  2 (postre)        -> 50192301
+ *  8,9,11,12,13      -> 50192100
+ *  3,4,5,6,7,10      -> 90101503
+ *  default           -> 01010101
+ */
+function product_code_from_categoria(?int $catId): string {
+  $map = [
+    1 => '50193000',
+    2 => '50192301',
+    3 => '90101503',
+    4 => '90101503',
+    5 => '90101503',
+    6 => '90101503',
+    7 => '90101503',
+    8 => '50192100',
+    9 => '50192100',
+    10 => '90101503',
+    11 => '50192100',
+    12 => '50192100',
+    13 => '50192100',
+    14 => '50202201',
+  ];
+  return $map[$catId ?? 0] ?? '01010101';
+}
+
+function descripcion_cfdi_from_categoria(?int $catId, string $nombreOriginal): string {
+  if ($catId === 1 || $catId === 14) return 'Consumo de bebidas en general';
+  if ($catId === 2) return 'postres preparados para consumo';
+  return $nombreOriginal;
+}
+
+/**
+ * Construye items CFDI, prorrateando el descuento del ticket sobre los productos
+ * para que el total facturado cuadre con el monto_recibido (o total - descuento).
+ */
+function cfdi_ticket_data(mysqli $db, int $ticketId): array {
+  static $cache = [];
+  if (isset($cache[$ticketId])) return $cache[$ticketId];
+
+  // Header del ticket (monto cobrado y descuento)
+  $ticketRow = ['total'=>0.0,'descuento'=>0.0,'monto_recibido'=>null];
+  if ($stTk = $db->prepare("SELECT total, descuento, monto_recibido FROM tickets WHERE id = ? LIMIT 1")) {
+    $stTk->bind_param('i', $ticketId);
+    if ($stTk->execute()) {
+      $resTk = $stTk->get_result();
+      if ($tmp = $resTk->fetch_assoc()) { $ticketRow = $tmp; }
+    }
+    $stTk->close();
+  }
+  $descuentoTicket = max(0.0, (float)($ticketRow['descuento'] ?? 0.0));
+  $montoRecibido   = isset($ticketRow['monto_recibido']) ? (float)$ticketRow['monto_recibido'] : null;
+
+  // Detalles del ticket
+  $sql = "SELECT td.id AS ticket_detalle_id, td.producto_id, COALESCE(p.nombre, CONCAT('Producto ', td.producto_id)) AS descripcion,
+                 td.cantidad, td.precio_unitario, p.categoria_id
           FROM ticket_detalles td LEFT JOIN productos p ON p.id = td.producto_id WHERE td.ticket_id = ?";
   $st = $db->prepare($sql); $st->bind_param('i',$ticketId); $st->execute();
-  $rs = $st->get_result(); $items = [];
-  while ($r = $rs->fetch_assoc()) {
+  $rs = $st->get_result(); $rows = [];
+  while ($r = $rs->fetch_assoc()) { $rows[] = $r; }
+  $st->close();
+  if (!$rows) {
+    $cache[$ticketId] = ['items'=>[], 'detalles'=>[], 'subtotal'=>0.0, 'impuestos'=>0.0, 'total'=>0.0, 'target_total'=>0.0];
+    return $cache[$ticketId];
+  }
+
+  $totalBruto = 0.0;
+  foreach ($rows as $r) { $totalBruto += (float)$r['precio_unitario'] * (float)$r['cantidad']; }
+
+  // Objetivo: monto_recibido; si no hay, intentar total - descuento
+  $targetBruto = $montoRecibido !== null ? (float)$montoRecibido : ($totalBruto - $descuentoTicket);
+  if ($targetBruto < 0) $targetBruto = 0.0;
+
+  // Factor de prorrateo
+  $factor = ($totalBruto > 0) ? ($targetBruto / $totalBruto) : 1.0;
+  if ($factor < 0) $factor = 0.0;
+
+  $items = [];
+  $detalles = [];
+  $importeSum = 0.0;
+  $n = count($rows);
+  foreach ($rows as $idx => $r) {
     $qty = (float)$r['cantidad'];
     $precioConIva = (float)$r['precio_unitario'];
-    if (function_exists('netearIvaItem')) {
-      $calc = netearIvaItem($precioConIva, $qty, 0.16);
-    } else {
-      $unitPriceNeto = round($precioConIva / 1.16, 6);
-      $subtotal = round($unitPriceNeto * $qty, 6);
-      $iva = round($subtotal * 0.16, 6);
-      $total = round($subtotal + $iva, 2);
-      $calc = ['unitPriceNeto'=>$unitPriceNeto,'subtotal'=>$subtotal,'iva'=>$iva,'total'=>$total];
+    $precioAjustado = $precioConIva * $factor;
+
+    // Ajuste fino en el �ltimo item para cuadrar con el objetivo
+    $importeCalculado = $precioAjustado * $qty;
+    if ($idx === $n - 1 && $targetBruto > 0) {
+      $restante = $targetBruto - ($importeSum + $importeCalculado);
+      if ($qty > 0) {
+        $precioAjustado += $restante / $qty;
+        $importeCalculado = $precioAjustado * $qty;
+      }
     }
+
+    $importe = money2($importeCalculado);
+    if ($idx === $n - 1 && $targetBruto > 0) {
+      // Asegurar que la suma de importes coincide exactamente con el objetivo
+      $ajusteFinal = money2($targetBruto - ($importeSum + $importe));
+      $importe += $ajusteFinal;
+      if ($qty > 0) { $precioAjustado = $importe / $qty; }
+    }
+    $importeSum += $importe;
+
+    $unitPriceNeto = round($precioAjustado / 1.16, 6);
+    $catId = isset($r['categoria_id']) ? (int)$r['categoria_id'] : null;
+    $descCfdi = descripcion_cfdi_from_categoria($catId, (string)$r['descripcion']);
     $items[] = [
-      'ProductCode' => '01010101',
+      'ProductCode' => product_code_from_categoria($catId),
       'IdentificationNumber' => (string)((int)$r['producto_id']),
-      'Description' => (string)$r['descripcion'],
+      'Description' => $descCfdi,
       'Unit' => 'Pieza',
       'UnitCode' => 'H87',
-      'UnitPrice' => (float)$calc['unitPriceNeto'],
+      'UnitPrice' => (float)$unitPriceNeto,
       'Quantity' => (float)$qty,
-      'Subtotal' => (float)$calc['subtotal'],
       'Taxes' => [[
         'Name' => 'IVA',
-        'Base' => (float)$calc['subtotal'],
+        'Base' => (float)round($unitPriceNeto * $qty, 6),
         'Rate' => 0.16,
         'IsRetention' => false,
         'FactorType' => 'Tasa',
-        'Total' => (float)$calc['iva'],
+        'Total' => (float)round($unitPriceNeto * $qty * 0.16, 6),
       ]],
-      'Total' => (float)$calc['total'],
       'TaxObject' => '02',
     ];
+
+    $detalles[] = [
+      'ticket_detalle_id' => (int)$r['ticket_detalle_id'],
+      'producto_id' => (int)$r['producto_id'],
+      'descripcion' => $descCfdi,
+      'cantidad' => (float)$qty,
+      'precio_unitario' => (float)money2($precioAjustado),
+      'importe' => (float)$importe,
+    ];
   }
-  $st->close();
-  return $items;
+
+  // Normalizar items y sumar totales
+  if (!empty($items)) { $items = normalizar_items_cfdi($items); }
+  $sumSub = 0.0; $sumImp = 0.0; $sumTot = 0.0;
+  foreach ($items as $it) {
+    $sumSub += (float)($it['Subtotal'] ?? 0.0);
+    $sumTot += (float)($it['Total'] ?? 0.0);
+    if (!empty($it['Taxes']) && is_array($it['Taxes'])) {
+      foreach ($it['Taxes'] as $tx) {
+        if (!empty($tx['IsRetention'])) continue;
+        $sumImp += (float)($tx['Total'] ?? 0.0);
+      }
+    }
+  }
+  $diff = money2($targetBruto - $sumTot);
+  if (abs($diff) >= 0.01 && !empty($items)) {
+    $idxAdj = count($items) - 1;
+    $qtyAdj = (float)($items[$idxAdj]['Quantity'] ?? 1.0);
+    if ($qtyAdj <= 0) { $qtyAdj = 1.0; }
+    $currentGross = (float)($items[$idxAdj]['Total'] ?? 0.0);
+    $newGross = money2($currentGross + $diff);
+    if ($newGross < 0) { $newGross = 0.0; }
+    $unitPriceAdj = round(($newGross / 1.16) / $qtyAdj, 6);
+    $items[$idxAdj]['UnitPrice'] = $unitPriceAdj;
+    if (isset($detalles[$idxAdj])) {
+      $detalles[$idxAdj]['precio_unitario'] = (float)money2($qtyAdj > 0 ? ($newGross / $qtyAdj) : $newGross);
+      $detalles[$idxAdj]['importe'] = (float)money2($newGross);
+    }
+    $items[$idxAdj]['Taxes'] = [[
+      'Name' => 'IVA',
+      'Base' => (float)round($unitPriceAdj * $qtyAdj, 6),
+      'Rate' => 0.16,
+      'IsRetention' => false,
+      'FactorType' => 'Tasa',
+      'Total' => (float)round($unitPriceAdj * $qtyAdj * 0.16, 6),
+    ]];
+    $items = normalizar_items_cfdi($items);
+    $sumSub = 0.0; $sumImp = 0.0; $sumTot = 0.0;
+    foreach ($items as $it) {
+      $sumSub += (float)($it['Subtotal'] ?? 0.0);
+      $sumTot += (float)($it['Total'] ?? 0.0);
+      if (!empty($it['Taxes']) && is_array($it['Taxes'])) {
+        foreach ($it['Taxes'] as $tx) {
+          if (!empty($tx['IsRetention'])) continue;
+          $sumImp += (float)($tx['Total'] ?? 0.0);
+        }
+      }
+    }
+  }
+
+  $cache[$ticketId] = [
+    'items' => $items,
+    'detalles' => $detalles,
+    'subtotal' => money2($sumSub),
+    'impuestos' => money2($sumImp),
+    'total' => money2($sumTot),
+    'target_total' => $targetBruto,
+  ];
+  return $cache[$ticketId];
+}
+
+// Construir Items CFDI a partir de ticket_detalles (mysqli)
+function cfdi_items_from_ticket(mysqli $db, int $ticketId): array {
+  $data = cfdi_ticket_data($db, $ticketId);
+  return $data['items'];
 }
 
 // Obtener datos del cliente fiscal (tolerante a columnas)
@@ -171,18 +352,19 @@ function obtener_cliente_fiscal(mysqli $db, int $clienteId): array {
   return $row ?: [];
 }
 
-function build_cfdi_for_tickets(mysqli $db, array $ticketIds, array $cliente, ?string $serie = null, ?array $periodo = null): array {
+function build_cfdi_for_tickets(mysqli $db, array $ticketIds, array $cliente, ?string $serie = null, ?array $periodo = null, ?string $formaPago = null): array {
   $items = [];
   foreach ($ticketIds as $tk) {
     foreach (cfdi_items_from_ticket($db, (int)$tk) as $it) $items[] = $it;
   }
+  $fp = sanitize_forma_pago($formaPago) ?? '03';
   $cfdi = [
     'Serie' => $serie !== null ? $serie : (getenv('CFDI_SERIE') ?: 'A'),
     'Currency' => 'MXN',
     'ExpeditionPlace' => (method_exists('FacturamaCfg','expeditionPlace') ? FacturamaCfg::expeditionPlace() : (getenv('FACTURAMA_EXPEDITION_PLACE') ?: '34217')),
     'CfdiType' => 'I',
     'PaymentMethod' => 'PUE',
-    'PaymentForm' => '03',
+    'PaymentForm' => $fp,
     'Receiver' => [
       'Rfc' => strtoupper((string)($cliente['rfc'] ?? '')),
       'Name' => (string)($cliente['razon_social'] ?? ''),
@@ -251,6 +433,8 @@ try {
   $tickets = isset($body['tickets']) && is_array($body['tickets']) ? ints($body['tickets']) : [];
   $clienteId = isset($body['cliente_id']) ? (int)$body['cliente_id'] : 0;
   $periodo = isset($body['periodo']) && is_array($body['periodo']) ? $body['periodo'] : null;
+  $formaPagoBody = sanitize_forma_pago($body['forma_pago'] ?? null);
+  $formaPagoTarjeta = sanitize_forma_pago($body['forma_pago_tarjeta'] ?? null);
 
   if (!in_array($modo,['uno_a_uno','global'],true)) json_response(false, 'modo debe ser uno_a_uno o global');
   if (empty($tickets)) json_response(false, 'Proporciona tickets[]');
@@ -267,6 +451,7 @@ try {
   $has_cli  = column_exists($db,'facturas','cliente_id');
   $has_tkid = column_exists($db,'facturas','ticket_id');
   $tkid_nullable = $has_tkid ? column_is_nullable($db,'facturas','ticket_id') : true;
+  $has_ticket_tipo_pago = column_exists($db,'tickets','tipo_pago');
 
   if (!$f_fecha || !$f_status) json_response(false, 'La tabla facturas requiere fecha/status');
 
@@ -284,12 +469,19 @@ try {
   $dup = array_values(array_unique($dup));
   if ($dup) json_response(false, 'Uno o más tickets ya fueron facturados: '.implode(',',$dup));
 
-  // Totales
+  // Totales y tipo de pago
   $totales = [];
-  $rs = $db->query("SELECT td.ticket_id, SUM(td.cantidad * td.precio_unitario) AS subtotal FROM ticket_detalles td WHERE td.ticket_id IN ($in) GROUP BY td.ticket_id");
-  while($r=$rs->fetch_assoc()){ $s=(float)$r['subtotal']; $totales[(int)$r['ticket_id']] = [$s,0.0,$s]; }
-  $rs = $db->query("SELECT id,total FROM tickets WHERE id IN ($in)");
-  while($r=$rs->fetch_assoc()){ $id=(int)$r['id']; if (!isset($totales[$id])) { $s=(float)$r['total']; $totales[$id]=[$s,0.0,$s]; } }
+  $ticketTipoPago = [];
+  $sqlTk = "SELECT id,total, descuento, monto_recibido" . ($has_ticket_tipo_pago ? ", tipo_pago" : ", NULL AS tipo_pago") . " FROM tickets WHERE id IN ($in)";
+  $rs = $db->query($sqlTk);
+  while($r=$rs->fetch_assoc()){
+    $id=(int)$r['id'];
+    if ($has_ticket_tipo_pago) { $ticketTipoPago[$id] = strtolower((string)$r['tipo_pago']); }
+  }
+  foreach ($tickets as $tk) {
+    $calc = cfdi_ticket_data($db, (int)$tk);
+    $totales[(int)$tk] = [$calc['subtotal'], $calc['impuestos'], $calc['total']];
+  }
 
   if ($modo === 'uno_a_uno') {
     $emitidas = [];
@@ -298,6 +490,8 @@ try {
     foreach ($tickets as $tk) {
       try {
         [$sub,$imp,$tot] = $totales[$tk] ?? [0.0,0.0,0.0];
+        $tipoPagoTicket = $ticketTipoPago[$tk] ?? null;
+        $formaPagoTicket = forma_pago_desde_tipo($tipoPagoTicket, $formaPagoTarjeta, $formaPagoBody);
         $db->begin_transaction();
 
         // 1) Insert local (temporal)
@@ -321,18 +515,26 @@ try {
           $st->bind_param('ii', $fid, $tk); $st->execute(); $st->close();
         }
         if (table_exists($db,'factura_detalles')) {
-          $sqlDet = "INSERT INTO factura_detalles (factura_id, ticket_detalle_id, producto_id, descripcion, cantidad, precio_unitario, importe)
-                     SELECT ?, td.id, td.producto_id, p.nombre, td.cantidad, td.precio_unitario, (td.cantidad*td.precio_unitario)
-                     FROM ticket_detalles td
-                     LEFT JOIN productos p ON p.id = td.producto_id
-                     WHERE td.ticket_id = ?";
-          $st = $db->prepare($sqlDet); $st->bind_param('ii', $fid,$tk); $st->execute(); $st->close();
+          $detTicket = cfdi_ticket_data($db, (int)$tk)['detalles'] ?? [];
+          if ($detTicket) {
+            $sqlDet = "INSERT INTO factura_detalles (factura_id, ticket_detalle_id, producto_id, descripcion, cantidad, precio_unitario, importe) VALUES (?,?,?,?,?,?,?)";
+            $st = $db->prepare($sqlDet);
+            foreach ($detTicket as $det) {
+              $desc = $det['descripcion'] ?? '';
+              $cant = (float)($det['cantidad'] ?? 0);
+              $precio = (float)($det['precio_unitario'] ?? 0);
+              $imp = (float)($det['importe'] ?? 0);
+              $st->bind_param('iiisddd', $fid, $det['ticket_detalle_id'], $det['producto_id'], $desc, $cant, $precio, $imp);
+              $st->execute();
+            }
+            $st->close();
+          }
         }
 
         // 3) Construir CFDI e intentar timbrar (Facturama)
         if (!function_exists('facturama_create_cfdi_json')) { throw new RuntimeException('Integración Facturama no disponible'); }
-        $cfdi = build_cfdi_for_tickets($db, [$tk], $cliente, null, null);
-        if (function_exists('facturas_log')) { facturas_log('REST_CFDI_TO_FACTURAMA', ['modo'=>'uno_a_uno','factura_id'=>$fid,'ticket_id'=>$tk,'cfdi'=>$cfdi]); }
+        $cfdi = build_cfdi_for_tickets($db, [$tk], $cliente, null, null, $formaPagoTicket);
+        if (function_exists('facturas_log')) { facturas_log('REST_CFDI_TO_FACTURAMA', ['modo'=>'uno_a_uno','factura_id'=>$fid,'ticket_id'=>$tk,'cfdi'=>$cfdi,'tipo_pago'=>$tipoPagoTicket,'forma_pago'=>$formaPagoTicket]); }
         $resp = facturama_create_cfdi_json($cfdi);
         $facturamaId = (string)($resp['Id'] ?? ($resp['id'] ?? ''));
         $uuid = (string)($resp['Uuid'] ?? ($resp['FolioFiscal'] ?? ''));
@@ -348,7 +550,7 @@ try {
         if (column_exists($db,'facturas','serie'))        { $colsUp[]='serie=?';        $typesUp.='s'; $bindUp[]=$serieResp ?: null; }
         if (column_exists($db,'facturas','folio'))        { $colsUp[]='folio=?';        $typesUp.='s'; $bindUp[]=$folioResp ?: null; }
         if (column_exists($db,'facturas','metodo_pago'))  { $colsUp[]='metodo_pago=?';  $typesUp.='s'; $bindUp[]='PUE'; }
-        if (column_exists($db,'facturas','forma_pago'))   { $colsUp[]='forma_pago=?';   $typesUp.='s'; $bindUp[]='03'; }
+        if (column_exists($db,'facturas','forma_pago'))   { $colsUp[]='forma_pago=?';   $typesUp.='s'; $bindUp[]=$formaPagoTicket; }
         if (column_exists($db,'facturas','uso_cfdi'))     { $colsUp[]='uso_cfdi=?';     $typesUp.='s'; $bindUp[]=(string)($cliente['uso_cfdi'] ?? ''); }
         if ($colsUp) {
           $sqlUp = "UPDATE facturas SET ".implode(',', $colsUp)." WHERE id=?";
@@ -413,7 +615,18 @@ try {
 
   // GLOBAL (1:N)
   $sub = 0.0; $imp = 0.0; $tot = 0.0;
-  foreach($tickets as $tk){ [$s,$i,$t] = $totales[$tk] ?? [0.0,0.0,0.0]; $sub+=$s; $imp+=$i; $tot+=$t; }
+  $tiposSeleccionados = [];
+  foreach($tickets as $tk){
+    [$s,$i,$t] = $totales[$tk] ?? [0.0,0.0,0.0];
+    $sub+=$s; $imp+=$i; $tot+=$t;
+    if (isset($ticketTipoPago[$tk])) $tiposSeleccionados[] = $ticketTipoPago[$tk];
+  }
+  $tiposUnicos = array_values(array_unique(array_filter($tiposSeleccionados, fn($v)=>$v!=='')));
+  if (count($tiposUnicos) > 1 && $formaPagoBody === null) {
+    json_response(false, 'Los tickets seleccionados tienen distintos tipo_pago; elige tickets con el mismo tipo o proporciona forma_pago para factura global.');
+  }
+  $tipoPagoGlobal = count($tiposUnicos) === 1 ? $tiposUnicos[0] : null;
+  $formaPagoGlobal = forma_pago_desde_tipo($tipoPagoGlobal, $formaPagoTarjeta, $formaPagoBody);
 
   $db->begin_transaction();
   $cols=[]; $vals=[]; $types=''; $bind=[];
@@ -440,21 +653,28 @@ try {
   }
 
   if (table_exists($db,'factura_detalles')) {
-    $in = implode(',', $tickets);
-    $sqlDet = "INSERT INTO factura_detalles (factura_id, ticket_detalle_id, producto_id, descripcion, cantidad, precio_unitario, importe)
-               SELECT ?, td.id, td.producto_id, p.nombre, td.cantidad, td.precio_unitario, (td.cantidad*td.precio_unitario)
-               FROM ticket_detalles td
-               LEFT JOIN productos p ON p.id = td.producto_id
-               WHERE td.ticket_id IN ($in)";
-    $st = $db->prepare($sqlDet); $st->bind_param('i',$fid); $st->execute(); $st->close();
+    $sqlDet = "INSERT INTO factura_detalles (factura_id, ticket_detalle_id, producto_id, descripcion, cantidad, precio_unitario, importe) VALUES (?,?,?,?,?,?,?)";
+    $st = $db->prepare($sqlDet);
+    foreach ($tickets as $tk) {
+      $detTicket = cfdi_ticket_data($db, (int)$tk)['detalles'] ?? [];
+      foreach ($detTicket as $det) {
+        $desc = $det['descripcion'] ?? '';
+        $cant = (float)($det['cantidad'] ?? 0);
+        $precio = (float)($det['precio_unitario'] ?? 0);
+        $imp = (float)($det['importe'] ?? 0);
+        $st->bind_param('iiisddd', $fid, $det['ticket_detalle_id'], $det['producto_id'], $desc, $cant, $precio, $imp);
+        $st->execute();
+      }
+    }
+    $st->close();
   }
 
   // Timbrar Factura GLOBAL (1:N) vía Facturama
   try {
     if (!function_exists('facturama_create_cfdi_json')) { throw new RuntimeException('Integración Facturama no disponible'); }
     $cliente = obtener_cliente_fiscal($db, $clienteId);
-    $cfdi = build_cfdi_for_tickets($db, $tickets, $cliente, null, $periodo);
-    if (function_exists('facturas_log')) { facturas_log('REST_CFDI_TO_FACTURAMA', ['modo'=>'global','factura_id'=>$fid,'tickets'=>$tickets,'cfdi'=>$cfdi]); }
+    $cfdi = build_cfdi_for_tickets($db, $tickets, $cliente, null, $periodo, $formaPagoGlobal);
+    if (function_exists('facturas_log')) { facturas_log('REST_CFDI_TO_FACTURAMA', ['modo'=>'global','factura_id'=>$fid,'tickets'=>$tickets,'cfdi'=>$cfdi,'tipo_pago'=>$tipoPagoGlobal,'forma_pago'=>$formaPagoGlobal]); }
     $resp = facturama_create_cfdi_json($cfdi);
     $facturamaId = (string)($resp['Id'] ?? ($resp['id'] ?? ''));
     $uuid = (string)($resp['Uuid'] ?? ($resp['FolioFiscal'] ?? ''));
@@ -467,7 +687,7 @@ try {
     if (column_exists($db,'facturas','serie'))        { $colsUp[]='serie=?';        $typesUp.='s'; $bindUp[]=$serieResp ?: null; }
     if (column_exists($db,'facturas','folio'))        { $colsUp[]='folio=?';        $typesUp.='s'; $bindUp[]=$folioResp ?: null; }
     if (column_exists($db,'facturas','metodo_pago'))  { $colsUp[]='metodo_pago=?';  $typesUp.='s'; $bindUp[]='PUE'; }
-    if (column_exists($db,'facturas','forma_pago'))   { $colsUp[]='forma_pago=?';   $typesUp.='s'; $bindUp[]='03'; }
+    if (column_exists($db,'facturas','forma_pago'))   { $colsUp[]='forma_pago=?';   $typesUp.='s'; $bindUp[]=$formaPagoGlobal; }
     if (column_exists($db,'facturas','uso_cfdi'))     { $colsUp[]='uso_cfdi=?';     $typesUp.='s'; $bindUp[]=(string)($cliente['uso_cfdi'] ?? ''); }
     if ($colsUp) {
       $sqlUp = "UPDATE facturas SET ".implode(',', $colsUp)." WHERE id=?";
