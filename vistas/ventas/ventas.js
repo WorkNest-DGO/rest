@@ -724,12 +724,12 @@ async function abrirCaja() {
 async function cerrarCaja() {
     try {
         const resumenResp = await fetch(`../../api/corte_caja/resumen_corte_actual.php?corte_id=${corteIdActual}`);
-        const resumen = await resumenResp.json();
+        let resumen = null;
+        try { resumen = await resumenResp.json(); } catch (_) { resumen = null; }
 
         // Permitir cierre aunque no haya ventas; sólo detener si la API falla
-        if (!resumen || resumen.success === false) {
-            const msg = (resumen && (resumen.mensaje || resumen.error)) || 'No fue posible obtener el resumen del corte.';
-            alert(msg);
+        if (!resumenResp.ok || !resumen || resumen.success === false) {
+            mostrarPendientesCorte(resumen);
             return;
         }
 
@@ -740,6 +740,19 @@ async function cerrarCaja() {
         console.error("Error al obtener resumen:", error);
         alert("Ocurrió un error inesperado al consultar el corte.");
     }
+}
+
+function mostrarPendientesCorte(resumen) {
+    const ventasActivas = resumen?.detalle?.ventas_activas ?? 0;
+    const mesasOcupadas = resumen?.detalle?.mesas_ocupadas ?? 0;
+    const vLbl = document.getElementById('lblPendVentas');
+    const mLbl = document.getElementById('lblPendMesas');
+    if (vLbl) vLbl.textContent = ventasActivas;
+    if (mLbl) mLbl.textContent = mesasOcupadas;
+    const msg = (resumen && (resumen.mensaje || resumen.error)) || 'No se puede cerrar el corte hasta liberar pendientes.';
+    const body = document.querySelector('#modalPendientesCorte .modal-body p');
+    if (body) body.textContent = msg;
+    showModal('#modalPendientesCorte');
 }
 
 function abrirCorteTemporal() {

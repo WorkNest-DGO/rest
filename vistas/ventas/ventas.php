@@ -630,6 +630,27 @@ ob_start();
     </div>
   </div>
 </div>
+<!-- Modal: pendientes para corte -->
+<div class="modal fade" id="modalPendientesCorte" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">No se puede cerrar el corte</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <p>Existen pendientes que debes liberar antes de cerrar el corte.</p>
+        <ul class="mb-0">
+          <li>Ventas activas: <span id="lblPendVentas">0</span></li>
+          <li>Mesas ocupadas: <span id="lblPendMesas">0</span></li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn custom-btn" data-dismiss="modal">Entendido</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script src="../../utils/js/buscador.js"></script>
 <script src="ventas.js"></script>

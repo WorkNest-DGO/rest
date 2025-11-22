@@ -490,7 +490,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function obtenerPromosInicialesVenta() {
         const base = Array.isArray(window.__promocionesVentaIds) ? window.__promocionesVentaIds : [];
-        const normalizados = Array.from(new Set(base.map(id => parseInt(id, 10)).filter(id => id > 0)));
+        const normalizados = base
+            .map(id => parseInt(id, 10))
+            .filter(id => id > 0); // conservar duplicados tal como llegaron
         if (normalizados.length) {
             return normalizados;
         }
