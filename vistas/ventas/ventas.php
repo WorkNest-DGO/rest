@@ -79,22 +79,6 @@ ob_start();
           <textarea id="observacion" name="observacion" class="form-control"></textarea>
         </div>
 
-        <!-- Promociones aplicables a la venta (opcional, filtradas por tipo de entrega) -->
-        <div id="campoPromocion" class="form-group" style="display:none;">
-          <label class="text-white d-block">Promociones:</label>
-          <div id="panelPromosVenta" class="promos-panel bg-light text-dark rounded p-3">
-            <div class="promo-row d-flex flex-wrap gap-2 align-items-center">
-              <select id="promocion_id" name="promocion_id" class="form-control promo-select flex-grow-1"></select>
-              <button type="button" class="btn btn-secondary" id="btnAgregarPromoVenta">Agregar promoci&oacute;n</button>
-            </div>
-            <div id="promosVentaDinamicas"></div>
-            <small class="text-muted d-block mt-2">Puedes activar m&aacute;s de una promoci&oacute;n; se validar&aacute;n contra los productos capturados.</small>
-          </div>
-          <div class="text-white mt-2">
-            Promociones activas: <span id="lblPromosActivasVenta">0</span>
-          </div>
-        </div>
-
         <div id="campoMesa" class="form-group">
           <label for="mesa_id" class="text-white">Mesa:</label>
           <select id="mesa_id" name="mesa_id" class="form-control">
@@ -180,7 +164,24 @@ ob_start();
               </tbody>
             </table>
 
-          <!-- Panel Envío (mostrar solo si: tipo_entrega=domicilio && repartidor=Repartidor casa) -->
+          
+          <!-- Promociones aplicables a la venta (opcional, filtradas por tipo de entrega) -->
+          <div id="campoPromocion" class="form-group" style="display:none;">
+            <label class="text-white d-block">Promociones:</label>
+            <div id="panelPromosVenta" class="promos-panel bg-light text-dark rounded p-3">
+              <div class="promo-row d-flex flex-wrap gap-2 align-items-center">
+                <select id="promocion_id" name="promocion_id" class="form-control promo-select flex-grow-1"></select>
+                <button type="button" class="btn btn-secondary" id="btnAgregarPromoVenta">Agregar promoci&oacute;n</button>
+              </div>
+              <div id="promosVentaDinamicas"></div>
+              <small class="text-muted d-block mt-2">Puedes activar m&aacute;s de una promoci&oacute;n; se validar&aacute;n contra los productos capturados.</small>
+            </div>
+            <div class="text-white mt-2">
+              Promociones activas: <span id="lblPromosActivasVenta">0</span>
+            </div>
+          </div>
+
+<!-- Panel Envío (mostrar solo si: tipo_entrega=domicilio && repartidor=Repartidor casa) -->
           <div id="panelEnvioCasa" style="display:none; margin-top:12px;     color: #000000ff;">
             <div class="card">
               <div class="card-header" style="font-weight:600;">Envío</div>
@@ -247,7 +248,6 @@ ob_start();
     <table id="historial" class="table">
       <thead>
         <tr>
-          <th>ID</th>
           <th>Folio</th>
           <th>Fecha</th>
           <th>Total</th>
@@ -361,6 +361,23 @@ ob_start();
     </div>
   </div>
  </div>
+<!-- Modal: Información de envío/cliente -->
+<div class="modal fade" id="modalClienteEnvio" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Datos de envío</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <div id="clienteEnvioContenido" class="text-dark"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn custom-btn" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- MODAL NORMALIZED 2025-08-14 -->
 <div class="modal fade" id="modalDesglose" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog" role="document">
@@ -393,6 +410,8 @@ ob_start();
             <div>Efectivo: <span id="lblTmpEsperadoEfectivo">0.00</span></div>
             <div>Boucher:  <span id="lblTmpEsperadoBoucher">0.00</span></div>
             <div>Cheque:   <span id="lblTmpEsperadoCheque">0.00</span></div>
+            <div>Tarjeta:  <span id="lblTmpEsperadoTarjeta">0.00</span></div>
+            <div>Transferencia:  <span id="lblTmpEsperadoTransfer">0.00</span></div>
           </div>
           <br>
           <div class="tarjeta">
@@ -400,6 +419,14 @@ ob_start();
             <div><strong>Total bruto:</strong> <span id="lblTmpTotalBruto">0.00</span></div>            
             <div id="promocionesA" style="display:none">Promociones Aplicadas:</strong> <span id="lblTmpTotalPromociones">0.00</span></div>
             <div><strong>Total esperado:</strong> <span id="lblTmpTotalEsperado">0.00</span></div>
+          </div>
+
+          <div class="tarjeta" style="margin-top:8px;">
+            <div style="opacity:.8">Cuentas por estatus</div>
+            <div><strong>Cuentas abiertas:</strong> <span id="lblTmpCuentasActivas">0</span></div>
+            <div><strong>Monto abiertas:</strong> <span id="lblTmpTotalActivas">0.00</span></div>
+            <div><strong>Cuentas canceladas:</strong> <span id="lblTmpCuentasCanceladas">0</span></div>
+            <div><strong>Monto canceladas:</strong> <span id="lblTmpTotalCanceladas">0.00</span></div>
           </div>
 
           

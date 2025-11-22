@@ -23,6 +23,7 @@ DELETE FROM tickets;
 DELETE FROM venta_detalles;
 DELETE FROM ventas;
 DELETE FROM corte_caja;
+DELETE FROM cliente_venta;
 
 SET FOREIGN_KEY_CHECKS = 1;
 SET @ARCHIVE_MODE = NULL;

@@ -49,7 +49,7 @@
         for (const c of j.resultado.clientes) {
           const opt = document.createElement('option');
           opt.value = c.id;
-          opt.textContent = (c.nombre || '') + (c.rfc ? ` â€” ${c.rfc}` : '');
+          opt.textContent = (c.nombre || '') + (c.rfc ? ` :” ${c.rfc}` : '');
           sel.appendChild(opt);
         }
       }
@@ -347,7 +347,7 @@ function renderFacturadas(rows) {
       cont.innerHTML = '';
       const sum = dets.reduce((acc, d) => acc + Number(d.importe || (d.cantidad * d.precio_unitario) || 0), 0);
       const head = document.createElement('div');
-      head.innerHTML = `<p><strong>Factura #${id}</strong> â€” Tickets: ${tks.map(x => x.ticket_id).join(', ') || '(n/d)'} â€” Total calc: ${fmt(sum)}</p>`;
+      head.innerHTML = `<p><strong>Factura #${id}</strong> :” Tickets: ${tks.map(x => x.ticket_id).join(', ') || '(n/d)'} :” Total calc: ${fmt(sum)}</p>`;
       cont.appendChild(head);
       const table = document.createElement('table');
       table.innerHTML = `

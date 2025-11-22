@@ -12,7 +12,14 @@ if (!isset($_SESSION['usuario_id'])) {
 }
 
 // Se permite obtener el corte por parámetro o por sesión
-$corte_id = isset($_GET['corte_id']) ? (int)$_GET['corte_id'] : ($_SESSION['corte_id'] ?? null);
+$corte_id = null;
+
+if (isset($_GET['corte_id']) && $_GET['corte_id'] !== '' && $_GET['corte_id'] !== 'null') {
+    $corte_id = (int)$_GET['corte_id'];
+} elseif (isset($_SESSION['corte_id'])) {
+    $corte_id = (int)$_SESSION['corte_id'];
+}
+
 if (!$corte_id) {
     echo json_encode([
         'success' => false,
@@ -157,6 +164,20 @@ $totalEsperadoEfectivo = $__esperadoEfectivoProd + $totalPropinaEfectivo;
 // Esperado no efectivo (tarjeta/boucher/cheque/transferencia + propinas no efect.)
 $totalEsperadoNoEfectivo = ($__totalEsperadoProductos - $__esperadoEfectivoProd) + $totalPropinaNoEfectivo;
 
+// Contadores y totales por estatus (activa / cancelada)
+$sqlEstatus = "SELECT
+    COALESCE(SUM(CASE WHEN v.estatus = 'activa' THEN 1 ELSE 0 END), 0)     AS cuentas_activas,
+    COALESCE(SUM(CASE WHEN v.estatus = 'cancelada' THEN 1 ELSE 0 END), 0)  AS cuentas_canceladas,
+    COALESCE(SUM(CASE WHEN v.estatus = 'activa' THEN v.total ELSE 0 END), 0)    AS total_activas,
+    COALESCE(SUM(CASE WHEN v.estatus = 'cancelada' THEN v.total ELSE 0 END), 0) AS total_canceladas
+  FROM ventas v
+ WHERE v.corte_id = ?";
+$stmtEstatus = $conn->prepare($sqlEstatus);
+$stmtEstatus->bind_param('i', $corte_id);
+$stmtEstatus->execute();
+$rowEstatus = $stmtEstatus->get_result()->fetch_assoc();
+$stmtEstatus->close();
+
 // Obtener fondo inicial y fecha de inicio del corte
 $stmtFondo = $conn->prepare('SELECT c.fondo_inicial, c.fecha_inicio, u.nombre AS cajero
              FROM corte_caja c
@@ -300,6 +321,11 @@ $resultado['esperado_boucher']  = (float)($rowAgg['esperado_boucher']  ?? 0);
 $resultado['esperado_cheque']   = (float)($rowAgg['esperado_cheque']   ?? 0);
 $resultado['esperado_tarjeta']  = (float)($rowAgg['esperado_tarjeta']  ?? 0);
 $resultado['esperado_transferencia'] = (float)($rowAgg['esperado_transferencia'] ?? 0);
+// Totales y contadores por estatus
+$resultado['cuentas_activas']      = (int)($rowEstatus['cuentas_activas'] ?? 0);
+$resultado['total_cuentas_activas']= (float)($rowEstatus['total_activas'] ?? 0);
+$resultado['cuentas_canceladas']   = (int)($rowEstatus['cuentas_canceladas'] ?? 0);
+$resultado['total_cuentas_canceladas'] = (float)($rowEstatus['total_canceladas'] ?? 0);
 
 echo json_encode([
     'success'   => true,

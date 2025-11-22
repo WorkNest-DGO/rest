@@ -29,7 +29,7 @@ if (!function_exists('sincronizarPromosVenta')) {
             return;
         }
 
-        $ins = $conn->prepare('INSERT INTO venta_promos (venta_id, promo_id, descuento_aplicado) VALUES (?, ?, NULL)');
+        $ins = $conn->prepare('INSERT INTO venta_promos (venta_id, promo_id, descuento_aplicado, created_at) VALUES (?, ?, NULL, NOW())');
         if (!$ins) {
             return;
         }
@@ -47,22 +47,22 @@ if (!function_exists('sincronizarPromosVenta')) {
     }
 }
 
-// Config de envÃ­o automÃ¡tico (Repartidor casa)
+// Config de envi­o automático (Repartidor casa)
 if (!defined('ENVIO_CASA_PRODUCT_ID')) define('ENVIO_CASA_PRODUCT_ID', 9001);
-if (!defined('ENVIO_CASA_NOMBRE'))    define('ENVIO_CASA_NOMBRE', 'ENVÃO â€“ Repartidor casa');
+if (!defined('ENVIO_CASA_NOMBRE'))    define('ENVIO_CASA_NOMBRE', 'ENVIO :“ Repartidor casa');
 if (!defined('ENVIO_CASA_DEFAULT_PRECIO')) define('ENVIO_CASA_DEFAULT_PRECIO', 30.00);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    error('MÃ©todo no permitido');
+    error('Mátodo no permitido');
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
 if (!$input) {
-    error('JSON invÃ¡lido');
+    error('JSON inválido');
 }
 
 if (!isset($_SESSION['usuario_id'])) {
-    error('SesiÃ³n no iniciada');
+    error('Sesión no iniciada');
 }
 
 $cajero_id = (int)$_SESSION['usuario_id'];
@@ -71,7 +71,28 @@ $tipo          = isset($input['tipo']) ? $input['tipo'] : null;
 $mesa_id       = isset($input['mesa_id']) ? (int) $input['mesa_id'] : null;
 $repartidor_id = isset($input['repartidor_id']) ? (int) $input['repartidor_id'] : null;
 $usuario_id    = isset($input['usuario_id']) ? (int) $input['usuario_id'] : null;
-$corte_id      = isset($input['corte_id']) ? (int) $input['corte_id'] : null;
+$corte_id = isset($input['corte_id']) && $input['corte_id'] !== null && $input['corte_id'] !== ''
+    ? (int)$input['corte_id']
+    : (isset($_SESSION['corte_id']) ? (int)$_SESSION['corte_id'] : null);
+
+// Asegurar que haya un corte abierto asociado al usuario (evita FK corte_id)
+if (!$corte_id) {
+    $stmtCorte = $conn->prepare('SELECT id FROM corte_caja WHERE usuario_id = ? AND fecha_fin IS NULL ORDER BY fecha_inicio DESC LIMIT 1');
+    if ($stmtCorte) {
+        $stmtCorte->bind_param('i', $cajero_id);
+        $stmtCorte->execute();
+        $rowCorte = $stmtCorte->get_result()->fetch_assoc();
+        $stmtCorte->close();
+        if ($rowCorte) {
+            $corte_id = (int)$rowCorte['id'];
+            $_SESSION['corte_id'] = $corte_id;
+        }
+    }
+}
+if (!$corte_id) {
+    error('No hay corte abierto para registrar la venta.');
+}
+
 $productos     = isset($input['productos']) && is_array($input['productos']) ? $input['productos'] : null;
 $observacion   = isset($input['observacion']) ? $input['observacion'] : null;
 $sede_id       = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$input['sede_id'] : 1;
@@ -89,10 +110,8 @@ if (isset($input['promociones_ids']) && is_array($input['promociones_ids'])) {
             $promociones_ids[] = $pid;
         }
     }
-    $promociones_ids = array_values(array_unique($promociones_ids));
 }
-$usaPivotPromos = count($promociones_ids) > 1;
-if (!$usaPivotPromos && $promocion_id === null && count($promociones_ids) === 1) {
+if ($promocion_id === null && count($promociones_ids) >= 1) {
     $promocion_id = $promociones_ids[0];
 }
 // De momento el descuento por promoci&oacute;n se calcular&aacute; al cerrar el ticket
@@ -101,9 +120,9 @@ $promocion_descuento = 0.0;
 $propina_efectivo = isset($input['propina_efectivo']) ? (float)$input['propina_efectivo'] : 0.0;
 $propina_cheque   = isset($input['propina_cheque'])   ? (float)$input['propina_cheque']   : 0.0;
 $propina_tarjeta  = isset($input['propina_tarjeta'])  ? (float)$input['propina_tarjeta']  : 0.0;
-// Precio de envÃ­o opcional desde el front (si la lÃ­nea no vino por productos)
+// Precio de envi­o opcional desde el front (si la li­nea no vino por productos)
 $precio_envio  = isset($input['precio_envio']) ? (float)$input['precio_envio'] : null;
-// Cantidad de envÃ­o opcional
+// Cantidad de envi­o opcional
 $envio_cantidad = isset($input['envio_cantidad']) ? (int)$input['envio_cantidad'] : null;
 $cliente_id    = isset($input['cliente_id']) ? (int)$input['cliente_id'] : null;
 $costo_fore    = array_key_exists('costo_fore', $input) ? (float)$input['costo_fore'] : null;
@@ -133,10 +152,10 @@ if ($tipo === 'mesa') {
     }
     if (((int)($rowEstado['usuario_id'] ?? 0) !== 0) && ((int)($rowEstado['usuario_id'] ?? 0) !== $usuario_id)) {
         http_response_code(400);
-        error('La mesa seleccionada pertenece a otro mesero. Actualiza la pantalla e intÃ©ntalo de nuevo.');
+        error('La mesa seleccionada pertenece a otro mesero. Actualiza la pantalla e intántalo de nuevo.');
     }
     if ($rowEstado['estado'] !== 'libre') {
-        error('La mesa seleccionada no estÃ¡ libre');
+        error('La mesa seleccionada no está libre');
     }
 } elseif ($tipo === 'domicilio') {
     if (!$repartidor_id || $mesa_id) {
@@ -144,11 +163,11 @@ if ($tipo === 'mesa') {
     }
 } elseif ($tipo === 'rapido') {
     if ($mesa_id || $repartidor_id) {
-        error('Venta rÃ¡pida no debe incluir mesa ni repartidor');
+        error('Venta rápida no debe incluir mesa ni repartidor');
     }
     if (!$usuario_id) { $usuario_id = $cajero_id; }
 } else {
-    error('Tipo de venta invÃ¡lido');
+    error('Tipo de venta inválido');
 }
 
 $cliente_colonia_id = null;
@@ -217,7 +236,7 @@ if ($tipo === 'mesa') {
     $check->close();
     if ($existing) {
         $venta_id = (int)$existing['id'];
-        // Si se especificÃ³ un usuario distinto, actualizarlo
+        // Si se especificó un usuario distinto, actualizarlo
         if ($usuario_id && $usuario_id !== (int)$existing['usuario_id']) {
             $upUser = $conn->prepare('UPDATE ventas SET usuario_id = ? WHERE id = ?');
             if ($upUser) {
@@ -277,12 +296,12 @@ if (!isset($venta_id)) {
     }
 }
 
-// Insertar detalles de la venta y conservar el Ãºltimo ID generado
-// === Paso 3: Pre-chequeo de existencia de productos y creaciÃ³n del "envÃ­o" on-the-fly ===
+// Insertar detalles de la venta y conservar el último ID generado
+// === Paso 3: Pre-chequeo de existencia de productos y creación del "envi­o" on-the-fly ===
 $CHK_SQL = 'SELECT COUNT(*) AS c FROM productos WHERE id = ?';
 $INS_ENVIO_SQL = "
   INSERT IGNORE INTO productos (id, nombre, precio, descripcion, existencia, activo, imagen, categoria_id)
-  VALUES (?, ?, ?, 'Cargo por envÃ­o a domicilio (repartidor casa)', 99999, 1, NULL, ?)
+  VALUES (?, ?, ?, 'Cargo por envi­o a domicilio (repartidor casa)', 99999, 1, NULL, ?)
 ";
 
 $chk = $conn->prepare($CHK_SQL);
@@ -303,14 +322,14 @@ foreach ($detalles as $p) {
     if ($producto_id <= 0) {
         $chk->close();
         $insEnvio->close();
-        error('Producto invÃ¡lido en detalles');
+        error('Producto inválido en detalles');
     }
 
     $chk->bind_param('i', $producto_id);
     if (!$chk->execute()) {
         $chk->close();
         $insEnvio->close();
-        error('Fallo al verificar producto en catÃ¡logo (producto_id=' . $producto_id . '): ' . $chk->error);
+        error('Fallo al verificar producto en catálogo (producto_id=' . $producto_id . '): ' . $chk->error);
     }
     $res = $chk->get_result();
     $row = $res ? $res->fetch_assoc() : null;
@@ -319,19 +338,19 @@ foreach ($detalles as $p) {
     if ($count === 0) {
         if ($producto_id === (int)ENVIO_CASA_PRODUCT_ID) {
             $precioCrear = $precio_unitario > 0 ? $precio_unitario : (float)ENVIO_CASA_DEFAULT_PRECIO;
-            $categoriaId = 6; // categorÃ­a genÃ©rica existente
+            $categoriaId = 6; // categori­a genárica existente
             $nombreEnvio = (string)ENVIO_CASA_NOMBRE;
             $insEnvio->bind_param('isdi', $producto_id, $nombreEnvio, $precioCrear, $categoriaId);
             if (!$insEnvio->execute()) {
                 $chk->close();
                 $insEnvio->close();
-                error('No se pudo crear producto de envÃ­o (producto_id=' . $producto_id . '): ' . $insEnvio->error);
+                error('No se pudo crear producto de envi­o (producto_id=' . $producto_id . '): ' . $insEnvio->error);
             }
         } else {
             $chk->close();
             $insEnvio->close();
             http_response_code(400);
-            error('Producto inexistente en catÃ¡logo: ' . $producto_id);
+            error('Producto inexistente en catálogo: ' . $producto_id);
         }
     }
 }
@@ -361,7 +380,7 @@ foreach ($productos as $p) {
 }
 $detalle->close();
 
-// EnvÃ­o automÃ¡tico si aplica (domicilio + "Repartidor casa") e idempotente
+// Envi­o automático si aplica (domicilio + "Repartidor casa") e idempotente
 if ($tipo === 'domicilio' && $repartidor_id) {
     try {
         $esCasa = $esRepartidorCasa;
@@ -378,7 +397,7 @@ if ($tipo === 'domicilio' && $repartidor_id) {
         }
 
         if ($esCasa) {
-            // Â¿ya existe la lÃ­nea de envÃ­o?
+            // Â¿ya existe la li­nea de envi­o?
             $chk = $conn->prepare('SELECT id FROM venta_detalles WHERE venta_id = ? AND producto_id = ? LIMIT 1');
             if ($chk) {
                 $pid = (int)ENVIO_CASA_PRODUCT_ID;
@@ -414,11 +433,11 @@ if ($tipo === 'domicilio' && $repartidor_id) {
             }
         }
     } catch (Throwable $e) {
-        // No interrumpir si envÃ­o falla
+        // No interrumpir si envi­o falla
     }
 }
 
-// Recalcular el total a partir de venta_detalles (incluye envÃ­o si aplica)
+// Recalcular el total a partir de venta_detalles (incluye envi­o si aplica)
 $recalc = $conn->prepare("UPDATE ventas v JOIN (SELECT venta_id, SUM(cantidad * precio_unitario) AS total FROM venta_detalles WHERE venta_id = ? GROUP BY venta_id) x ON x.venta_id = v.id SET v.total = x.total WHERE v.id = ?");
 if ($recalc) {
     $recalc->bind_param('ii', $venta_id, $venta_id);
@@ -428,11 +447,11 @@ if ($recalc) {
 
 // Sincronizar promociones en la tabla pivote (solo aplica cuando hay más de una)
 if (isset($venta_id) && $venta_id > 0) {
-    if ($usaPivotPromos) {
-        sincronizarPromosVenta($conn, $venta_id, $promociones_ids);
-    } else {
-        sincronizarPromosVenta($conn, $venta_id, []);
+    $promosAInsertar = $promociones_ids;
+    if (empty($promosAInsertar) && $promocion_id) {
+        $promosAInsertar = [$promocion_id];
     }
+    sincronizarPromosVenta($conn, $venta_id, $promosAInsertar);
 }
 
 if ($cliente_id && isset($venta_id)) {
@@ -459,12 +478,12 @@ if ($costo_fore !== null && $cliente_colonia_id) {
     }
 }
 
-// LÃ³gica reemplazada por base de datos: ver bd.sql (Logs)
-// Registrar acciÃ³n en logs
+// Lógica reemplazada por base de datos: ver bd.sql (Logs)
+// Registrar acción en logs
 $log = $conn->prepare('INSERT INTO logs_accion (usuario_id, modulo, accion, referencia_id) VALUES (?, ?, ?, ?)');
 if ($log) {
     $mod = 'ventas';
-    $accion = $nueva_venta ? 'Alta de venta' : 'ActualizaciÃ³n de venta';
+    $accion = $nueva_venta ? 'Alta de venta' : 'Actualización de venta';
     $log->bind_param('issi', $usuario_id, $mod, $accion, $venta_id);
     $log->execute();
     $log->close();

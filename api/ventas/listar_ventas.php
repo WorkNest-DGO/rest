@@ -16,6 +16,9 @@ $offset = ($pagina - 1) * $limite;
 
 $baseFrom = "FROM vw_ventas_detalladas vw JOIN ventas v ON v.id = vw.venta_id "
           . "LEFT JOIN tickets t ON t.venta_id = v.id "
+          . "LEFT JOIN cliente_venta cv ON cv.idventa = v.id "
+          . "LEFT JOIN clientes c ON c.id = cv.idcliente "
+          . "LEFT JOIN colonias col ON col.id = c.colonia_id "
           . "LEFT JOIN (SELECT venta_id, COUNT(*) AS total_promos, SUM(COALESCE(descuento_aplicado,0)) AS total_descuento "
           . "FROM venta_promos GROUP BY venta_id) vp ON vp.venta_id = v.id";
 $conditions = [];
@@ -59,6 +62,19 @@ $query = "SELECT v.id AS venta_id, v.fecha, v.estatus, vw.usuario, vw.mesa, vw.r
                  COALESCE(vp.total_promos,0) AS total_promociones,
                  COALESCE(vp.total_descuento,0) AS total_descuento_promos,
                  $descuentoExpr AS total_descuento_aplicado,
+                 cv.idcliente AS cliente_id,
+                 c.`Nombre del Cliente` AS cliente_nombre,
+                 c.`Telefono` AS cliente_telefono,
+                 c.`Calle` AS cliente_calle,
+                 c.`Numero Exterior` AS cliente_numero_exterior,
+                 c.`Colonia` AS cliente_colonia_texto,
+                 c.`Delegacion/Municipio` AS cliente_municipio,
+                 c.`Entre Calle 1` AS cliente_entre_calle_1,
+                 c.`Entre Calle 2` AS cliente_entre_calle_2,
+                 c.`Referencias` AS cliente_referencias,
+                 col.colonia AS cliente_colonia_nombre,
+                 col.dist_km_la_forestal AS cliente_dist_km_la_forestal,
+                 col.costo_fore AS cliente_costo_fore,
                  GROUP_CONCAT(t.folio ORDER BY t.folio) AS folio,
                  MAX(t.mesa_nombre) AS mesa_nombre,
                  MAX(t.mesero_nombre) AS mesero_nombre,

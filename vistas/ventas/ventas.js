@@ -55,6 +55,9 @@ async function cargarHistorial(page = currentPage) {
                 const accion = v.estatus !== 'cancelada'
                     ? `<button class=\"btn custom-btn btn-cancelar\" data-id=\"${id}\">Cancelar</button>`
                     : '';
+                const btnEnvio = v.cliente_id
+                    ? `<button class=\"btn custom-btn btn-ver-envio\" data-id=\"${id}\" data-toggle=\"modal\" data-target=\"#modalClienteEnvio\">Ver envío</button>`
+                    : '';
                 const destino = v.tipo_entrega === 'mesa'
                     ? v.mesa
                     : v.tipo_entrega === 'domicilio'
@@ -64,7 +67,6 @@ async function cargarHistorial(page = currentPage) {
                     ? (parseInt(v.entregado) === 1 ? 'Entregado' : 'No entregado')
                     : 'N/A';
                 row.innerHTML = `
-                    <td>${id}</td>
                     <td>${v.folio ? v.folio : 'N/A'}</td>
                     <td>${fechaMostrar}</td>
                     <td>${totalMostrar}</td>
@@ -73,7 +75,10 @@ async function cargarHistorial(page = currentPage) {
                     <td>${v.observacion ? String(v.observacion) : ''}</td>
                     <td>${v.estatus}</td>
                     <td>${entregado}</td>
-                    <td><button class=\"btn custom-btn btn-detalle\" data-id=\"${id}\" data-toggle=\"modal\" data-target=\"#modal-detalles\">Ver detalles</button></td>
+                    <td>
+                      <button class=\"btn custom-btn btn-detalle\" data-id=\"${id}\" data-toggle=\"modal\" data-target=\"#modal-detalles\">Ver detalles</button>
+                      ${btnEnvio}
+                    </td>
                     <td>${accion}</td>
                 `;
                 tbody.appendChild(row);
@@ -905,6 +910,8 @@ function mostrarModalDesglose(dataApi) {
     const fondoInicial = Number.parseFloat(r.fondo) || 0;
     const totalEsperadoEfectivo = Number.parseFloat(r.totalEsperadoEfectivo ?? r.esperado_efectivo ?? 0);
     const totalIngresado = Number.parseFloat(r.totalFinalEfectivo ?? r.totalFinal) || (totalEsperadoEfectivo + fondoInicial);
+    const cuentasCanceladas = parseInt(r.cuentas_canceladas ?? 0, 10) || 0;
+    const totalCanceladas   = Number.parseFloat(r.total_cuentas_canceladas ?? 0) || 0;
 
     const modal = document.getElementById('modalDesglose');
     const body = modal.querySelector('.modal-body');
@@ -927,6 +934,7 @@ function mostrarModalDesglose(dataApi) {
     html += '<p>Retiros: $<strong id="lblTotalRetiros"></strong></p>';
     html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
     html += `<p>Total ingresado: $${totalIngresado.toFixed(2)}</p>`;
+    html += `<p>Cuentas canceladas: <strong>${cuentasCanceladas}</strong> (monto: $${totalCanceladas.toFixed(2)})</p>`;
    // html += `<p>Total productos S/descuento: $${totalProductos.toFixed(2)}</p>`;
     //Shtml += `<p>Total productos C/descuento: $${totalEsperado.toFixed(2)}</p>`;
     html += '<p>Totales por tipo de pago:</p><ul>';
@@ -1504,6 +1512,55 @@ function pintarTablaSimple(tbodySel, rows, cols) {
     });
 }
 
+// Muestra en modal la información del cliente asociado a la venta (envío)
+function mostrarClienteEnvio(ventaId) {
+    const v = ventasData[ventaId];
+    const clienteId = v ? (v.cliente_id || v.clienteId) : null;
+    if (!v || !clienteId) {
+        alert('Venta sin cliente asignado.');
+        return;
+    }
+    const cli = clientesDomicilio.find(c => String(c.id) === String(clienteId));
+    const data = cli || {
+        nombre: v.cliente_nombre,
+        telefono: v.cliente_telefono,
+        calle: v.cliente_calle,
+        numero_exterior: v.cliente_numero_exterior,
+        colonia_nombre: v.cliente_colonia_nombre,
+        colonia_texto: v.cliente_colonia_texto,
+        municipio: v.cliente_municipio,
+        entre_calle_1: v.cliente_entre_calle_1,
+        entre_calle_2: v.cliente_entre_calle_2,
+        referencias: v.cliente_referencias,
+        dist_km_la_forestal: v.cliente_dist_km_la_forestal,
+        costo_fore: v.cliente_costo_fore
+    };
+    const contenido = document.getElementById('clienteEnvioContenido');
+    if (contenido) {
+        const direccion = [data.calle, data.numero_exterior].filter(Boolean).join(' ');
+        const entre = [data.entre_calle_1, data.entre_calle_2].filter(Boolean).join(' / ');
+        const colonia = data.colonia_nombre || data.colonia_texto || '-';
+        const dist = (data.dist_km_la_forestal !== null && data.dist_km_la_forestal !== undefined)
+            ? `${data.dist_km_la_forestal} km`
+            : '-';
+        const costo = (data.costo_fore !== null && data.costo_fore !== undefined)
+            ? Number(data.costo_fore).toFixed(2)
+            : '-';
+        contenido.innerHTML = `
+            <p><strong>Nombre:</strong> ${data.nombre || '-'}</p>
+            <p><strong>Teléfono:</strong> ${data.telefono || '-'}</p>
+            <p><strong>Dirección:</strong> ${direccion || '-'}</p>
+            <p><strong>Colonia:</strong> ${colonia}</p>
+            <p><strong>Municipio:</strong> ${data.municipio || '-'}</p>
+            <p><strong>Entre calles:</strong> ${entre || '-'}</p>
+            <p><strong>Referencias:</strong> ${data.referencias || '-'}</p>
+            <p><strong>Distancia a La Forestal:</strong> ${dist}</p>
+            <p><strong>Costo de envío:</strong> ${costo}</p>
+        `;
+    }
+    showModal('#modalClienteEnvio');
+}
+
 function mostrarCorteTemporalBonito(data) {
     const cont = document.getElementById('corteTemporalBonito');
     if (!cont) return;
@@ -1542,6 +1599,10 @@ function mostrarCorteTemporalBonito(data) {
     setText('#lblTmpTotalEsperado', fmtMoneda(totalEsperado));
     setText('#lblTmpTotalEsperadoEfectivo', fmtMoneda(totalEsperadoEfectivo));
     setText('#lblTmpTotalEsperadoNoEfectivo', fmtMoneda(totalEsperadoNoEf));
+    setText('#lblTmpCuentasActivas', Number(r.cuentas_activas || 0));
+    setText('#lblTmpTotalActivas', fmtMoneda(Number(r.total_cuentas_activas || 0)));
+    setText('#lblTmpCuentasCanceladas', Number(r.cuentas_canceladas || 0));
+    setText('#lblTmpTotalCanceladas', fmtMoneda(Number(r.total_cuentas_canceladas || 0)));
     const meseros = Array.isArray(r.total_meseros) ? r.total_meseros : [];
     pintarTablaSimple('#tblTmpMeseros tbody', meseros, [
         { key: 'nombre' },
@@ -3363,6 +3424,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.classList.contains('btn-detalle')) {
             const id = e.target.dataset.id;
             verDetalles(id);
+        } else if (e.target.classList.contains('btn-ver-envio')) {
+            const id = e.target.dataset.id;
+            mostrarClienteEnvio(id);
         } else if (e.target.classList.contains('btn-cancelar')) {
             const id = e.target.dataset.id;
             if (cancelModal) {
