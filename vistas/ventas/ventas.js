@@ -796,7 +796,7 @@ async function abrirPropinasPorUsuario() {
 
         let html = '<div class="table-responsive">';
         html += '<table class="styled-table">';
-        html += '<thead><tr><th>Usuario</th><th>Efectivo</th><th>Cheque</th><th>Tarjeta</th><th>Total</th></tr></thead><tbody>';
+        html += '<thead><tr><th>Usuario</th><th>Efectivo</th><th>Transferencia</th><th>Tarjeta</th><th>Total</th></tr></thead><tbody>';
         detalle.forEach(r => {
             html += `<tr>
                         <td>${r.usuario || ''}</td>
@@ -921,8 +921,11 @@ function mostrarModalDesglose(dataApi) {
         ? (Number.parseFloat(r.totalEsperado) || (totalProductos + totalPropinas))
         : totalEsperadoNew;
     const fondoInicial = Number.parseFloat(r.fondo) || 0;
+    const totalDepositos = Number.parseFloat(r.total_depositos ?? 0) || 0;
+    const totalRetiros = Number.parseFloat(r.total_retiros ?? 0) || 0;
     const totalEsperadoEfectivo = Number.parseFloat(r.totalEsperadoEfectivo ?? r.esperado_efectivo ?? 0);
-    const totalIngresado = Number.parseFloat(r.totalFinalEfectivo ?? r.totalFinal) || (totalEsperadoEfectivo + fondoInicial);
+    const totalFinalEfectivo = Number.parseFloat(r.totalFinalEfectivo ?? r.totalFinal ?? 0) || 0;
+    const totalIngresado = totalFinalEfectivo  + totalDepositos - totalRetiros;
     const cuentasCanceladas = parseInt(r.cuentas_canceladas ?? 0, 10) || 0;
     const totalCanceladas   = Number.parseFloat(r.total_cuentas_canceladas ?? 0) || 0;
 
@@ -1029,8 +1032,8 @@ function mostrarModalDesglose(dataApi) {
     showModal('#modalDesglose');
 
     document.getElementById('lblFondo').textContent = fondoInicial.toFixed(2);
-    document.getElementById('lblTotalDepositos').textContent = (Number.parseFloat(r.total_depositos) || 0).toFixed(2);
-    document.getElementById('lblTotalRetiros').textContent = (Number.parseFloat(r.total_retiros) || 0).toFixed(2);
+    document.getElementById('lblTotalDepositos').textContent = totalDepositos.toFixed(2);
+    document.getElementById('lblTotalRetiros').textContent = totalRetiros.toFixed(2);
 
     if (!Array.isArray(catalogoDenominaciones) || !catalogoDenominaciones.length) {
         console.error('Error al cargar denominaciones');
@@ -1064,7 +1067,8 @@ function mostrarModalDesglose(dataApi) {
     cont.appendChild(frag);
 
         function calcular(ev) {
-        const efectivoEsperado = Number.parseFloat(r.totalEsperado ?? r.total_esperado ?? 0) || 0;
+        const efectivoEsperado = (Number.parseFloat(r.totalEsperadoEfectivo ?? r.esperado_efectivo ?? r.totalEsperado ?? r.total_esperado ?? 0) || 0)
+            + fondoInicial + totalDepositos - totalRetiros;
         if (ev && ev.target && ev.target.classList.contains('cantidad')) {
             const changed = ev.target;
             const valDen = parseFloat(changed.dataset.valor) || 0;
@@ -1581,37 +1585,89 @@ function mostrarCorteTemporalBonito(data) {
     if (pre) pre.style.display = 'none';
     cont.style.display = '';
     const r = (data && data.resultado) ? data.resultado : {};
+    const metodosPago = ['efectivo', 'boucher', 'cheque', 'tarjeta', 'transferencia'];
+    const totalProductos = Number(r.total_productos ?? 0) ||
+        metodosPago.reduce((acc, m) => acc + (Number(r[m]?.productos) || 0), 0);
+    const totalPropinas = Number(r.total_propinas ?? 0) ||
+        metodosPago.reduce((acc, m) => acc + (Number(r[m]?.propina) || 0), 0);
 
-    const totalBruto      = Number(r.total_bruto      ?? r.total ?? 0);
+    const totalBruto      = Number.isFinite(Number(r.total_bruto)) ? Number(r.total_bruto) : totalProductos;
     const totalDescuentos = Number(r.total_descuentos ?? 0);
-    const totalEsperado   = Number(r.total_esperado   ?? (totalBruto - totalDescuentos) ?? 0);
-    const totalEsperadoEfectivo = Number(r.totalEsperadoEfectivo ?? r.esperado_efectivo ?? 0);
-    const totalEsperadoNoEf = Number(r.totalEsperadoNoEfectivo ?? 0);
+    let totalEsperado     = Number(r.total_esperado ?? (totalBruto - totalDescuentos));
+    if (!Number.isFinite(totalEsperado) || totalEsperado === 0) {
+        totalEsperado = Number(r.totalEsperado ?? (totalProductos + totalPropinas) ?? 0);
+    }
+    const totalPromos = Number(r.total_descuento_promos ?? 0);
+    const totalEsperadoVisible = totalPromos > 0 ? (totalEsperado - totalPromos) : totalEsperado;
+
+    const fondo = Number(r.fondo ?? 0);
+    const totalDepositos = Number(r.total_depositos ?? 0);
+    const totalRetiros = Number(r.total_retiros ?? 0);
+    const totalFinalEfectivo = Number(r.totalFinalEfectivo ?? r.totalFinal ?? 0) || 0;
+    const totalIngresado = totalFinalEfectivo + totalDepositos - totalRetiros;
+
+    const propEfectivo = Number(r.total_propina_efectivo ?? 0);
+    const propTransfer = Number(r.total_propina_cheque ?? 0);
+    const propTarjeta  = Number(r.total_propina_tarjeta ?? 0);
+
+    const esperadoPorPago = {
+        efectivo: Number(r.esperado_efectivo || 0),
+        boucher: Number(r.esperado_boucher || 0),
+        cheque: Number(r.esperado_cheque || 0),
+        tarjeta: Number(r.esperado_tarjeta || 0),
+        transferencia: Number(r.esperado_transferencia || 0)
+    };
+
+    const totalesPorPago = {};
+    metodosPago.forEach(tipo => {
+        totalesPorPago[tipo] = Number(r[tipo]?.total ?? 0);
+    });
+
+    setText('#lblTmpCorteId', r.corte_id ?? '');
+    setText('#lblTmpFechaInicio', r.fecha_inicio || '-');
+    const folioInicio = r.folio_inicio ?? '';
+    const folioFin = r.folio_fin ?? '';
+    const totalFolios = r.total_folios ?? '';
+    const foliosTxt = (folioInicio || folioFin || totalFolios)
+        ? `${folioInicio || '-'} - ${folioFin || '-'} (${totalFolios || 0})`
+        : '-';
+    setText('#lblTmpFolios', foliosTxt);
 
     setText('#lblTmpTotalBruto', fmtMoneda(totalBruto));
     setText('#lblTmpTotalDescuentos', fmtMoneda(totalDescuentos));
-    setText('#lblTmpTotalEsperado', fmtMoneda(totalEsperado));
-
-    setText('#lblTmpEsperadoEfectivo', fmtMoneda(Number(r.esperado_efectivo || 0)));
-    setText('#lblTmpEsperadoBoucher',  fmtMoneda(Number(r.esperado_boucher  || 0)));
-    setText('#lblTmpEsperadoCheque',   fmtMoneda(Number(r.esperado_cheque   || 0)));
-    setText('#lblTmpEsperadoTarjeta',  fmtMoneda(Number(r.esperado_tarjeta  || 0)));
-    setText('#lblTmpEsperadoTransfer', fmtMoneda(Number(r.esperado_transferencia || 0)));
-
-    var totalPromos = Number(r.total_descuento_promos ?? 0);
-    if (totalPromos > 0){
-         var totalEsperado2  = totalEsperado-totalPromos;
-         setText('#lblTmpTotalEsperado', fmtMoneda(totalEsperado2));
-         setText('#lblTmpTotalPromociones', fmtMoneda(totalPromos));         
-         document.getElementById('promocionesA').style.display ='block';
+    const promoRow = document.getElementById('promocionesA');
+    if (totalPromos > 0) {
+        setText('#lblTmpTotalPromociones', fmtMoneda(totalPromos));
+        if (promoRow) promoRow.style.display = 'block';
+    } else if (promoRow) {
+        promoRow.style.display = 'none';
+        setText('#lblTmpTotalPromociones', fmtMoneda(0));
     }
-    else{
-        document.getElementById('promocionesA').style.display ='none';
-        setText('#lblTmpTotalEsperado', fmtMoneda(totalEsperado));
-    }
-    setText('#lblTmpTotalEsperado', fmtMoneda(totalEsperado));
-    setText('#lblTmpTotalEsperadoEfectivo', fmtMoneda(totalEsperadoEfectivo));
-    setText('#lblTmpTotalEsperadoNoEfectivo', fmtMoneda(totalEsperadoNoEf));
+    setText('#lblTmpTotalEsperado', fmtMoneda(totalEsperadoVisible));
+
+    setText('#lblTmpFondo', fmtMoneda(fondo));
+    setText('#lblTmpDepositos', fmtMoneda(totalDepositos));
+    setText('#lblTmpRetiros', fmtMoneda(totalRetiros));
+    setText('#lblTmpTotalPropinas', fmtMoneda(totalPropinas));
+    setText('#lblTmpTotalFinalEfectivo', fmtMoneda(totalFinalEfectivo));
+    setText('#lblTmpTotalIngresado', fmtMoneda(totalIngresado));
+
+    setText('#lblTmpTotalPagoEfectivo', fmtMoneda(totalesPorPago.efectivo));
+    setText('#lblTmpTotalPagoBoucher', fmtMoneda(totalesPorPago.boucher));
+    setText('#lblTmpTotalPagoCheque', fmtMoneda(totalesPorPago.cheque));
+    setText('#lblTmpTotalPagoTarjeta', fmtMoneda(totalesPorPago.tarjeta));
+    setText('#lblTmpTotalPagoTransfer', fmtMoneda(totalesPorPago.transferencia));
+
+    setText('#lblTmpEsperadoEfectivo', fmtMoneda(esperadoPorPago.efectivo));
+    setText('#lblTmpEsperadoBoucher',  fmtMoneda(esperadoPorPago.boucher));
+    setText('#lblTmpEsperadoCheque',   fmtMoneda(esperadoPorPago.cheque));
+    setText('#lblTmpEsperadoTarjeta',  fmtMoneda(esperadoPorPago.tarjeta));
+    setText('#lblTmpEsperadoTransfer', fmtMoneda(esperadoPorPago.transferencia));
+
+    setText('#lblTmpPropinaEfectivo', fmtMoneda(propEfectivo));
+    setText('#lblTmpPropinaTransfer', fmtMoneda(propTransfer));
+    setText('#lblTmpPropinaTarjeta', fmtMoneda(propTarjeta));
+
     setText('#lblTmpCuentasActivas', Number(r.cuentas_activas || 0));
     setText('#lblTmpTotalActivas', fmtMoneda(Number(r.total_cuentas_activas || 0)));
     setText('#lblTmpCuentasCanceladas', Number(r.cuentas_canceladas || 0));
@@ -1621,7 +1677,11 @@ function mostrarCorteTemporalBonito(data) {
         { key: 'nombre' },
         { key: 'total', format: (v) => fmtMoneda(v) }
     ]);
-    const reps = Array.isArray(r.total_repartidor) ? r.total_repartidor : [];
+    const reps = Array.isArray(r.total_repartidor) ? r.total_repartidor.slice() : [];
+    const totalRapido = Number(r.total_rapido || 0);
+    if (totalRapido) {
+        reps.unshift({ nombre: 'Mostrador/rapido', total: totalRapido });
+    }
     pintarTablaSimple('#tblTmpRepartidores tbody', reps, [
         { key: 'nombre' },
         { key: 'total', format: (v) => fmtMoneda(v) }
@@ -3544,10 +3604,6 @@ document.addEventListener('click', function (e) {
             .catch(() => alert('Error al actualizar estado'));
     }
 });
-
-
-
-
 
 
 

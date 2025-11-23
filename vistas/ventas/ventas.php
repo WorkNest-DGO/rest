@@ -113,7 +113,7 @@ ob_start();
             </div>
             <button type="button" class="btn btn-secondary" id="btnNuevoCliente">Nuevo</button>
           </div>
-          <div id="resumenCliente" class="p-2 rounded" style="background: #2c2c2c; color: #ffffff; display:none;">
+          <div  style="color:#fff"id="resumenCliente" class="p-2 rounded" style="background: #2c2c2c; color: #ffffff; display:none;">
             <div><strong>Teléfono:</strong> <span id="clienteTelefono">-</span></div>
             <div><strong>Dirección:</strong> <span id="clienteDireccion">-</span></div>
             <div class="d-flex flex-wrap gap-3 mt-2">
@@ -280,7 +280,7 @@ ob_start();
         <h5 class="modal-title">Nuevo cliente</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       </div>
-      <div class="modal-body">
+      <div  class="modal-body">
         <form id="formNuevoCliente">
           <div class="form-group">
             <label for="nuevoClienteNombre">Nombre</label>
@@ -406,6 +406,40 @@ ob_start();
         <!-- Vista formateada del corte temporal -->
         <div id="corteTemporalBonito" style="display:none;">
           <div class="tarjeta" style="margin-top:8px;">
+            <div style="opacity:.8">Datos del corte</div>
+            <div>Corte: <span id="lblTmpCorteId">-</span></div>
+            <div>Inicio: <span id="lblTmpFechaInicio">-</span></div>
+            <div>Folios: <span id="lblTmpFolios">-</span></div>
+          </div>
+
+          <div class="tarjeta" style="margin-top:8px;">
+            <div><strong>Totales de venta</strong></div>
+            <div>Total bruto: <span id="lblTmpTotalBruto">0.00</span></div>
+            <div>Descuentos: <span id="lblTmpTotalDescuentos">0.00</span></div>
+            <div id="promocionesA" style="display:none"><strong>Promociones Aplicadas:</strong> <span id="lblTmpTotalPromociones">0.00</span></div>
+            <div>Total esperado: <span id="lblTmpTotalEsperado">0.00</span></div>
+          </div>
+
+          <div class="tarjeta" style="margin-top:8px;">
+            <div><strong>Caja y movimientos</strong></div>
+            <div>Fondo inicial: <span id="lblTmpFondo">0.00</span></div>
+            <div>Depósitos: <span id="lblTmpDepositos">0.00</span></div>
+            <div>Retiros: <span id="lblTmpRetiros">0.00</span></div>
+            <div>Total propinas: <span id="lblTmpTotalPropinas">0.00</span></div>
+            <div>Efectivo esperado en caja: <span id="lblTmpTotalFinalEfectivo">0.00</span></div>
+            <div>Total ingresado: <span id="lblTmpTotalIngresado">0.00</span></div>
+          </div>
+
+          <div class="tarjeta" style="margin-top:8px;">
+            <div style="opacity:.8">Totales por tipo de pago</div>
+            <div>Efectivo: <span id="lblTmpTotalPagoEfectivo">0.00</span></div>
+            <div>Boucher:  <span id="lblTmpTotalPagoBoucher">0.00</span></div>
+            <div>Cheque:   <span id="lblTmpTotalPagoCheque">0.00</span></div>
+            <div>Tarjeta:  <span id="lblTmpTotalPagoTarjeta">0.00</span></div>
+            <div>Transferencia:  <span id="lblTmpTotalPagoTransfer">0.00</span></div>
+          </div>
+
+          <div class="tarjeta" style="margin-top:8px;">
             <div style="opacity:.8">Esperado por tipo de pago</div>
             <div>Efectivo: <span id="lblTmpEsperadoEfectivo">0.00</span></div>
             <div>Boucher:  <span id="lblTmpEsperadoBoucher">0.00</span></div>
@@ -413,12 +447,12 @@ ob_start();
             <div>Tarjeta:  <span id="lblTmpEsperadoTarjeta">0.00</span></div>
             <div>Transferencia:  <span id="lblTmpEsperadoTransfer">0.00</span></div>
           </div>
-          <br>
-          <div class="tarjeta">
-            <div><strong>Descuentos:</strong> <span id="lblTmpTotalDescuentos">0.00</span></div>
-            <div><strong>Total bruto:</strong> <span id="lblTmpTotalBruto">0.00</span></div>            
-            <div id="promocionesA" style="display:none">Promociones Aplicadas:</strong> <span id="lblTmpTotalPromociones">0.00</span></div>
-            <div><strong>Total esperado:</strong> <span id="lblTmpTotalEsperado">0.00</span></div>
+
+          <div class="tarjeta" style="margin-top:8px;">
+            <div><strong>Propinas por tipo de pago</strong></div>
+            <div>Efectivo: <span id="lblTmpPropinaEfectivo">0.00</span></div>
+            <div>Transferencia:  <span id="lblTmpPropinaTransfer">0.00</span></div>
+            <div>Tarjeta:  <span id="lblTmpPropinaTarjeta">0.00</span></div>
           </div>
 
           <div class="tarjeta" style="margin-top:8px;">
