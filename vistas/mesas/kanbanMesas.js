@@ -751,6 +751,7 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
                             usuario_id: info.usuario_id || 1,
                             fecha: info.fecha || '',
                             tipo_entrega: info.tipo_entrega || '',
+                            repartidor: info.repartidor || '',
                             productos: info.productos || [],
                             total,
                             sede_id: info.sede_id || 1,

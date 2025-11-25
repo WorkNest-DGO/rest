@@ -31,9 +31,11 @@ $descuento_porcentaje_in = isset($input['descuento_porcentaje']) ? (float)$input
 $descuento_porcentaje_in = max(0.0, min(100.0, $descuento_porcentaje_in));
 $cortesias_in = $input['cortesias'] ?? [];
 if (!is_array($cortesias_in)) { $cortesias_in = []; }
+$montoActualEditado = isset($input['monto_actual_editado']) ? (float)$input['monto_actual_editado'] : null;
+$montoActualCalculado = isset($input['monto_actual_calculado']) ? (float)$input['monto_actual_calculado'] : null;
 
 // Obtener datos de la venta, incluyendo el corte asociado
-$stmtVenta = $conn->prepare('SELECT mesa_id, usuario_id AS mesero_id, fecha_inicio, tipo_entrega, corte_id FROM ventas WHERE id = ?');
+$stmtVenta = $conn->prepare('SELECT v.mesa_id, v.usuario_id AS mesero_id, v.fecha_inicio, v.tipo_entrega, v.corte_id, v.repartidor_id, r.nombre AS repartidor_nombre FROM ventas v LEFT JOIN repartidores r ON r.id = v.repartidor_id WHERE v.id = ?');
 if (!$stmtVenta) {
     error('Error al preparar datos de venta: ' . $conn->error);
 }
@@ -52,6 +54,10 @@ if (!$venta) {
 $usuario_id = isset($input['usuario_id'])
     ? (int)$input['usuario_id']
     : (int)($venta['mesero_id'] ?? 0);
+
+$repartidorNombre = $venta['repartidor_nombre'] ?? '';
+$permiteAjustePlataforma = (strtolower(trim($venta['tipo_entrega'] ?? '')) === 'domicilio'
+    && in_array(strtolower(trim($repartidorNombre)), ['didi', 'uber', 'rappi']));
 
 //$usuario_id = (int)($venta['mesero_id'] ?? 0);
 //if (isset($input['usuario_id']) && (int)$input['usuario_id'] !== $usuario_id) {
@@ -407,6 +413,28 @@ foreach ($subProcesadas as $idx => &$subCalc) {
     $subCalc['monto_ticket'] = $montoRecibidoFinal;
 }
 unset($subCalc);
+
+$montoOverrideAplicable = ($permiteAjustePlataforma && $montoActualEditado !== null);
+if ($montoOverrideAplicable && count($subProcesadas) > 0) {
+    $montoDeseado = max(0.0, round((float)$montoActualEditado, 2));
+    $sumaCobrar = 0.0;
+    foreach ($subProcesadas as $s) {
+        $sumaCobrar += (float)($s['total_cobrar'] ?? 0);
+    }
+    $delta = round($montoDeseado - $sumaCobrar, 2);
+    if (abs($delta) >= 0.01) {
+        $lastIdx = count($subProcesadas) - 1;
+        $nuevoTotal = max(0.0, round(($subProcesadas[$lastIdx]['total_cobrar'] ?? 0) + $delta, 2));
+        $subProcesadas[$lastIdx]['total_cobrar'] = $nuevoTotal;
+        $subProcesadas[$lastIdx]['monto_ticket'] = $nuevoTotal;
+        $subProcesadas[$lastIdx]['total_esperado_sub'] = $nuevoTotal;
+    }
+    $total_esperado = 0.0;
+    foreach ($subProcesadas as $s) {
+        $total_esperado += (float)($s['total_cobrar'] ?? 0);
+    }
+}
+
 
 $descuentoPromoAplicado = $promoAplicadoTotal > 0 ? round($promoAplicadoTotal, 2) : 0.0;
 if ($descuentoPromoAplicado > 0) {

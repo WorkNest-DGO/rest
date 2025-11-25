@@ -1604,6 +1604,7 @@ function mostrarCorteTemporalBonito(data) {
     const totalDepositos = Number(r.total_depositos ?? 0);
     const totalRetiros = Number(r.total_retiros ?? 0);
     const totalFinalEfectivo = Number(r.totalFinalEfectivo ?? r.totalFinal ?? 0) || 0;
+    const totalFinalGeneral = Number(r.totalFinalGeneral ?? 0) || 0;
     const totalIngresado = totalFinalEfectivo + totalDepositos - totalRetiros;
 
     const propEfectivo = Number(r.total_propina_efectivo ?? 0);
@@ -1650,6 +1651,7 @@ function mostrarCorteTemporalBonito(data) {
     setText('#lblTmpRetiros', fmtMoneda(totalRetiros));
     setText('#lblTmpTotalPropinas', fmtMoneda(totalPropinas));
     setText('#lblTmpTotalFinalEfectivo', fmtMoneda(totalFinalEfectivo));
+    setText('#lblTmpTotalFinalGeneral', fmtMoneda(totalFinalGeneral));
     setText('#lblTmpTotalIngresado', fmtMoneda(totalIngresado));
 
     setText('#lblTmpTotalPagoEfectivo', fmtMoneda(totalesPorPago.efectivo));
@@ -2507,6 +2509,7 @@ async function verDetalles(id) {
                       usuario_id: venta.usuario_id || info.usuario_id || 1,
                       fecha: venta.fecha || info.fecha || '',
                       tipo_entrega: venta.tipo_entrega || info.tipo_entrega || '',
+                      repartidor: venta.repartidor || info.repartidor || '',
                       propina_efectivo: info.propina_efectivo,
                       propina_cheque: info.propina_cheque,
                       propina_tarjeta: info.propina_tarjeta,
@@ -2678,6 +2681,7 @@ async function imprimirSolicitud(mesaId, ventaId) {
                   usuario_id: venta.usuario_id || 1,
                   fecha: venta.fecha || '',
                   tipo_entrega: venta.tipo_entrega || '',
+                  repartidor: venta.repartidor || info.repartidor || '',
                   productos: info.productos,
                   total,
                   sede_id: sede,
@@ -3604,7 +3608,4 @@ document.addEventListener('click', function (e) {
             .catch(() => alert('Error al actualizar estado'));
     }
 });
-
-
-
 

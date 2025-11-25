@@ -148,9 +148,11 @@ ob_start();
       <button id="btnCrearTicket" class="btn custom-btn">imprimir Tickets</button>
     </div>
     <div id="subcuentas"></div>
-    <div class="monto-actual" style="margin-top:10px;">
-      <strong>Monto actual (suma de subcuentas):</strong>
+    <div class="monto-actual" style="margin-top:10px; gap:8px; flex-wrap:wrap;">
+      <strong class="mb-0">Monto actual (suma de subcuentas):</strong>
       <span id="lblMontoActualGlobal">0.00</span>
+      <input type="number" step="0.01" class="form-control form-control-sm" id="montoActualEditable" style="max-width:160px; display:none;" aria-label="Monto ajustable para plataformas">
+      <small id="montoActualHint" class="text-muted" style="display:none;">Ajustable para Didi/Uber/Rappi</small>
     </div>
     <br>
     <div class="mb-2">

@@ -427,6 +427,7 @@ ob_start();
             <div>Retiros: <span id="lblTmpRetiros">0.00</span></div>
             <div>Total propinas: <span id="lblTmpTotalPropinas">0.00</span></div>
             <div>Efectivo esperado en caja: <span id="lblTmpTotalFinalEfectivo">0.00</span></div>
+            <div>Total final (todos los medios): <span id="lblTmpTotalFinalGeneral">0.00</span></div>
             <div>Total ingresado: <span id="lblTmpTotalIngresado">0.00</span></div>
           </div>
 

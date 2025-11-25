@@ -345,6 +345,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const datos = JSON.parse(almacenado);
     // Exponer tipo_entrega de la venta de forma global para filtrar promociones por tipo_venta
     window.__tipoEntregaVenta = (datos.tipo_entrega || '').toLowerCase();
+    window.__repartidorVenta = (datos.repartidor || '').toString();
     // Exponer promoci&oacute;n seleccionada en la venta (si existe) para preseleccionar en ticket
     window.__promocionVentaId = datos.promocion_id || null;
     window.__promocionesVentaIds = Array.isArray(datos.promociones_ids)
@@ -355,6 +356,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (fallbackPromo) {
             window.__promocionesVentaIds = [fallbackPromo];
         }
+    }
+    try {
+        const repNom = (window.__repartidorVenta || '').trim().toLowerCase();
+        window.__permiteAjustePlataforma = (window.__tipoEntregaVenta === 'domicilio' && ['didi', 'uber', 'rappi'].includes(repNom));
+        const inp = document.getElementById('montoActualEditable');
+        const hint = document.getElementById('montoActualHint');
+        if (window.__permiteAjustePlataforma) {
+            if (inp) { inp.style.display = ''; }
+            if (hint) { hint.style.display = ''; }
+        } else {
+            if (inp) { inp.style.display = 'none'; }
+            if (hint) { hint.style.display = 'none'; }
+        }
+    } catch(_) { window.__permiteAjustePlataforma = false; }
+    const montoEditable = document.getElementById('montoActualEditable');
+    if (montoEditable) {
+        montoEditable.addEventListener('input', () => {
+            if (!window.__permiteAjustePlataforma) return;
+            try { pintarMontoActual(calcularMontoActualNeto()); } catch(_) {}
+        });
     }
     const totalPropinas = parseFloat(datos.propina_efectivo) + parseFloat(datos.propina_cheque) + parseFloat(datos.propina_tarjeta);
     if (parseFloat(totalPropinas) > parseFloat(0.00)){
@@ -523,6 +544,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (_) {}
     }
 
+
+    function obtenerDescuentoGlobalAplicado() {
+        if (window.__DESC_DATA__ && typeof window.__DESC_DATA__.descTotal === 'number') {
+            return Number(window.__DESC_DATA__.descTotal || 0);
+        }
+        return 0;
+    }
+
+    function calcularMontoActualNeto() {
+        let suma = 0;
+        if (window.__SUBS__ && Object.keys(window.__SUBS__).length) {
+            Object.values(window.__SUBS__).forEach(sub => { suma += Number(sub.totalEsperado || 0); });
+        } else if (window.__DESC_DATA__ && typeof window.__DESC_DATA__.totalBruto === 'number') {
+            suma = Number(window.__DESC_DATA__.totalBruto || 0);
+        }
+        const descGlobal = obtenerDescuentoGlobalAplicado();
+        return Math.max(0, suma - descGlobal);
+    }
+
+    function getOverrideMontoActual() {
+        if (!window.__permiteAjustePlataforma) return null;
+        const inp = document.getElementById('montoActualEditable');
+        if (!inp) return null;
+        const val = parseFloat(inp.value);
+        if (Number.isNaN(val)) return null;
+        return Math.max(0, val);
+    }
+
+    function pintarMontoActual(neto) {
+        const span = document.getElementById('lblMontoActualGlobal');
+        const inp = document.getElementById('montoActualEditable');
+        const override = getOverrideMontoActual();
+        const valor = override !== null ? override : neto;
+        if (span) span.textContent = valor.toFixed(2);
+        if (window.__permiteAjustePlataforma && inp && override === null) {
+            inp.value = neto.toFixed(2);
+        }
+    }
+
+    function refrescarMontoActual() {
+        const neto = calcularMontoActualNeto();
+        pintarMontoActual(neto);
+    }
+
+
     // === Descuentos y cortesías ===
     (function(){
       const $porc = document.getElementById('descuentoPorcentaje');
@@ -568,21 +634,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if ($lblE) $lblE.textContent = totalEsperado.toFixed(2);
 
         window.__DESC_DATA__ = { totalBruto, cort, pct, montoFijo, descPctMonto, descTotal, totalEsperado, cortesias: Array.from(cortesias) };
-        // Actualizar monto global mostrado considerando descuento global
-        try {
-          const g = document.getElementById('lblMontoActualGlobal');
-          if (g) {
-            // Si hay subcuentas calculadas, partir de su suma; si no, usar totalEsperado global
-            let suma = 0;
-            if (window.__SUBS__ && Object.keys(window.__SUBS__).length) {
-              Object.values(window.__SUBS__).forEach(sub => { suma += Number(sub.totalEsperado || 0); });
-            } else {
-              suma = totalBruto;
-            }
-            const neto = Math.max(0, suma - descTotal);
-            g.textContent = neto.toFixed(2);
-          }
-        } catch(_) {}
+        try { refrescarMontoActual(); } catch(_) {}
         // Recalcular totales y cambio por subcuenta
         try { mostrarTotal(); } catch(_) {}
       }
@@ -994,17 +1046,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.__SUBS__ = window.__SUBS__ || [];
         window.__SUBS__[idx] = { idx, detalleIds, cortesias: Array.from(cortSet), pct, montoFijo, totalBruto: Number(totalBruto.toFixed(2)), descuentoTotal, totalEsperado, promoTotal: totalPromo };
         // Actualizar monto actual global (suma de subcuentas)
-        try {
-            let suma = 0;
-            Object.values(window.__SUBS__).forEach(sub => { suma += Number(sub.totalEsperado || 0); });
-            // Si existe descuento global calculado, restarlo a la suma
-            const descGlobal = (window.__DESC_DATA__ && typeof window.__DESC_DATA__.descTotal === 'number')
-              ? Number(window.__DESC_DATA__.descTotal || 0)
-              : 0;
-            const neto = Math.max(0, suma - descGlobal);
-            const g = document.getElementById('lblMontoActualGlobal');
-            if (g) g.textContent = neto.toFixed(2);
-        } catch(_) {}
+        try { refrescarMontoActual(); } catch(_) {}
         // Sincroniza input recibido según tipo de pago
         try { mostrarTotal(); } catch(_) {}
     }
@@ -1330,6 +1372,8 @@ function mostrarTotal() {
         if (typeof window.__ticketRecalcDescuentos === 'function') {
             window.__ticketRecalcDescuentos();
         }
+        const montoActualOverride = getOverrideMontoActual();
+        const montoActualCalculado = calcularMontoActualNeto();
         const payload = {
             venta_id: info.venta_id,
             usuario_id: info.usuario_id || 1,
@@ -1342,7 +1386,11 @@ function mostrarTotal() {
             // Extras de descuentos
             descuento_porcentaje: window.__DESC_DATA__?.pct || 0,
             descuento_total: window.__DESC_DATA__?.descTotal || 0,
-            cortesias: window.__DESC_DATA__?.cortesias || []
+            cortesias: window.__DESC_DATA__?.cortesias || [],
+            monto_actual_editado: (window.__permiteAjustePlataforma && montoActualOverride !== null) ? montoActualOverride : null,
+            monto_actual_calculado: montoActualCalculado,
+            repartidor_nombre: window.__repartidorVenta || null,
+            tipo_entrega: window.__tipoEntregaVenta || null
         };
         for (let i = 1; i <= numSub; i++) {
             const prodsRaw = productos.filter(p => p.subcuenta === i);

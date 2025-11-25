@@ -393,6 +393,7 @@ async function imprimirTicketReparto(ventaId) {
                 usuario_id: info.usuario_id || 1,
                 fecha: info.fecha || '',
                 tipo_entrega: info.tipo_entrega || '',
+                repartidor: info.repartidor || '',
                 propina_efectivo: info.propina_efectivo || 0,
                 propina_cheque: info.propina_cheque || 0,
                 propina_tarjeta: info.propina_tarjeta || 0,
