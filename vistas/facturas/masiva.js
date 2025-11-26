@@ -4,6 +4,8 @@
     listar_cliente: '../../api/facturas/listar_cliente.php',
     crear: '../../api/facturas/crear.php',
     cancelar: '../../api/facturas/cancelar.php',
+    enviar: '../../api/facturas/enviar.php',
+    cliente_guardar: '../../api/facturas/cliente_guardar.php',
   };
 
   const el = (sel) => document.querySelector(sel);
@@ -17,6 +19,45 @@
   let pendientesIndex = new Map(); // ticket_id -> row
   let facturadasData = [];
   let formaPagoState = { codigo: null, tipo: null, tarjeta: null, mixto: false, hayTarjeta: false };
+  let clientesCache = [];
+  let facturaActualId = null;
+  let facturaActualCorreo = '';
+
+  function extraerIdsFacturas(res) {
+    const ids = [];
+    if (Array.isArray(res?.facturas)) {
+      res.facturas.forEach(f => {
+        const id = Number(f?.factura_id ?? f?.id ?? 0);
+        if (id > 0) ids.push(id);
+      });
+    }
+    const fid = Number(res?.factura_id ?? 0);
+    if (fid > 0) ids.push(fid);
+    return Array.from(new Set(ids));
+  }
+
+  async function enviarFacturasPorCorreo(ids) {
+    const lista = Array.isArray(ids) ? ids : [];
+    if (!lista.length) return;
+    const errores = [];
+    for (const id of lista) {
+      try {
+        const res = await fetch(API.enviar, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ factura_id: id })
+        });
+        const j = await res.json();
+        if (!j.success) throw new Error(j.mensaje || 'No se pudo enviar');
+      } catch (e) {
+        console.error('Error enviando factura', id, e);
+        errores.push({ id, error: e.message });
+      }
+    }
+    if (errores.length) {
+      alert('Algunas facturas no se pudieron enviar: ' + errores.map(x => `#${x.id}: ${x.error}`).join('; '));
+    }
+  }
   // Paginación de pendientes
   let pendPage = 1;
   let pendPageSize = 20;
@@ -45,14 +86,14 @@
       const j = await res.json();
       const sel = el('#select-cliente');
       sel.innerHTML = '<option value="">Seleccione...</option>';
-      if (j.success && j.resultado && Array.isArray(j.resultado.clientes)) {
-        for (const c of j.resultado.clientes) {
-          const opt = document.createElement('option');
-          opt.value = c.id;
-          opt.textContent = (c.nombre || '') + (c.rfc ? ` :” ${c.rfc}` : '');
-          sel.appendChild(opt);
-        }
+      clientesCache = Array.isArray(j.resultado?.clientes) ? j.resultado.clientes : [];
+      for (const c of clientesCache) {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = (c.nombre || '') + (c.rfc ? ` :" ${c.rfc}` : '');
+        sel.appendChild(opt);
       }
+      toggleEditarCliente();
     } catch (e) {
       console.error(e);
       alert('No fue posible cargar clientes');
@@ -90,6 +131,7 @@
     const bloquearGlobal = formaPagoState?.mixto || (hasSel && !formaPagoState?.codigo);
     el('#btn-uno-a-uno').disabled = !(hasSel && cliente > 0);
     el('#btn-global').disabled = !(hasSel && cliente > 0) || bloquearGlobal;
+    toggleEditarCliente();
   }
 
   function renderPendientes(rows) {
@@ -288,7 +330,9 @@ function renderFacturadas(rows) {
       });
       const j = await res.json();
       if (!j.success) throw new Error(j.mensaje || 'No se pudo crear');
-      alert('Facturas creadas: ' + (j.resultado?.facturas?.length || 0));
+      const ids = extraerIdsFacturas(j.resultado);
+      alert('Facturas creadas: ' + (ids.length || j.resultado?.facturas?.length || 0));
+      await enviarFacturasPorCorreo(ids);
       seleccion = [];
       await listar();
     } catch (e) {
@@ -321,7 +365,9 @@ function renderFacturadas(rows) {
       });
       const j = await res.json();
       if (!j.success) throw new Error(j.mensaje || 'No se pudo crear');
-      alert('Factura global creada: ID ' + (j.resultado?.factura_id));
+      const ids = extraerIdsFacturas(j.resultado);
+      alert('Factura global creada: ID ' + (ids[0] || j.resultado?.factura_id || ''));
+      await enviarFacturasPorCorreo(ids);
       seleccion = [];
       await listar();
     } catch (e) {
@@ -337,6 +383,8 @@ function renderFacturadas(rows) {
       const res = await fetch(url.toString());
       const j = await res.json();
       if (!j.success) throw new Error(j.mensaje || 'No se pudo obtener detalle');
+      facturaActualId = id;
+      facturaActualCorreo = (j.resultado?.correo || '').trim();
       // Set download links
       const base = new URL('../../api/facturas/descargar.php', window.location.href).toString();
       el('#btn-desc-xml').setAttribute('href', base + '?factura_id=' + encodeURIComponent(String(id)) + '&tipo=xml');
@@ -347,7 +395,9 @@ function renderFacturadas(rows) {
       cont.innerHTML = '';
       const sum = dets.reduce((acc, d) => acc + Number(d.importe || (d.cantidad * d.precio_unitario) || 0), 0);
       const head = document.createElement('div');
-      head.innerHTML = `<p><strong>Factura #${id}</strong> :” Tickets: ${tks.map(x => x.ticket_id).join(', ') || '(n/d)'} :” Total calc: ${fmt(sum)}</p>`;
+      const clienteTxt = j.resultado?.cliente ? ` :" Cliente: ${j.resultado.cliente}` : '';
+      const correoTxt = facturaActualCorreo ? ` :" Correo: ${facturaActualCorreo}` : '';
+      head.innerHTML = `<p><strong>Factura #${id}</strong> :" Tickets: ${tks.map(x => x.ticket_id).join(', ') || '(n/d)'} :" Total calc: ${fmt(sum)}${clienteTxt}${correoTxt}</p>`;
       cont.appendChild(head);
       const table = document.createElement('table');
       table.innerHTML = `
@@ -371,6 +421,115 @@ function renderFacturadas(rows) {
     } catch (e) {
       console.error(e);
       alert('Error al obtener detalle: ' + e.message);
+    }
+  }
+
+  async function reenviarFactura() {
+    if (!facturaActualId) {
+      alert('Abre primero una factura para reenviar.');
+      return;
+    }
+    const correo = prompt('Correo destino', facturaActualCorreo || '');
+    if (correo === null) return;
+    const correoTrim = correo.trim();
+    if (!correoTrim) {
+      alert('Debes capturar un correo destino');
+      return;
+    }
+    try {
+      const res = await fetch(API.enviar, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ factura_id: facturaActualId, correo: correoTrim })
+      });
+      const j = await res.json();
+      if (!j.success) throw new Error(j.mensaje || 'No se pudo reenviar');
+      facturaActualCorreo = correoTrim;
+      alert('Factura enviada a ' + (j.resultado?.enviado_a || correoTrim));
+    } catch (e) {
+      console.error(e);
+      alert('Error al reenviar: ' + e.message);
+    }
+  }
+
+  function toggleEditarCliente() {
+    const btnEdit = el('#btn-editar-cliente');
+    if (!btnEdit) return;
+    const tieneSeleccion = Number(el('#select-cliente')?.value || 0) > 0;
+    btnEdit.disabled = !tieneSeleccion;
+  }
+
+  function abrirModalCliente(modo = 'nuevo') {
+    const titulo = modo === 'editar' ? 'Editar cliente de facturaci�n' : 'Nuevo cliente de facturaci�n';
+    const modal = el('#modal-cliente');
+    if (!modal) return;
+    el('#modal-cliente-titulo').textContent = titulo;
+    const selId = Number(el('#select-cliente')?.value || 0);
+    const cliente = clientesCache.find(c => Number(c.id) === selId);
+    el('#cliente-id').value = modo === 'editar' && cliente ? cliente.id : '';
+    el('#cliente-rfc').value = cliente?.rfc || '';
+    el('#cliente-razon').value = cliente?.nombre || cliente?.razon_social || '';
+    el('#cliente-correo').value = cliente?.correo || '';
+    el('#cliente-telefono').value = cliente?.telefono || '';
+    el('#cliente-cp').value = cliente?.cp || '';
+    el('#cliente-regimen').value = cliente?.regimen || '';
+    el('#cliente-uso').value = cliente?.uso_cfdi || '';
+    el('#cliente-calle').value = cliente?.calle || '';
+    el('#cliente-numero-ext').value = cliente?.numero_ext || '';
+    el('#cliente-numero-int').value = cliente?.numero_int || '';
+    el('#cliente-colonia').value = cliente?.colonia || '';
+    el('#cliente-municipio').value = cliente?.municipio || '';
+    el('#cliente-estado').value = cliente?.estado || '';
+    el('#cliente-pais').value = cliente?.pais || '';
+    modal.style.display = 'flex';
+  }
+
+  function cerrarModalCliente() {
+    const modal = el('#modal-cliente');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function guardarCliente() {
+    const id = Number(el('#cliente-id').value || 0);
+    const payload = {
+      accion: id > 0 ? 'editar' : 'crear',
+      id: id > 0 ? id : undefined,
+      rfc: el('#cliente-rfc').value.trim(),
+      razon_social: el('#cliente-razon').value.trim(),
+      correo: el('#cliente-correo').value.trim(),
+      telefono: el('#cliente-telefono').value.trim(),
+      cp: el('#cliente-cp').value.trim(),
+      regimen: el('#cliente-regimen').value.trim(),
+      uso_cfdi: el('#cliente-uso').value.trim(),
+      calle: el('#cliente-calle').value.trim(),
+      numero_ext: el('#cliente-numero-ext').value.trim(),
+      numero_int: el('#cliente-numero-int').value.trim(),
+      colonia: el('#cliente-colonia').value.trim(),
+      municipio: el('#cliente-municipio').value.trim(),
+      estado: el('#cliente-estado').value.trim(),
+      pais: el('#cliente-pais').value.trim(),
+    };
+    if (!payload.rfc || !payload.razon_social) {
+      alert('RFC y Raz�n social son obligatorios');
+      return;
+    }
+    try {
+      const res = await fetch(API.cliente_guardar, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const j = await res.json();
+      if (!j.success) throw new Error(j.mensaje || 'No se pudo guardar');
+      const newId = j.resultado?.id || id;
+      await cargarClientes();
+      el('#select-cliente').value = newId;
+      updateAccionesState();
+      cerrarModalCliente();
+      alert('Cliente guardado');
+    } catch (e) {
+      console.error(e);
+      alert('Error al guardar cliente: ' + e.message);
     }
   }
 
@@ -418,12 +577,22 @@ function renderFacturadas(rows) {
     el('#btn-buscar').addEventListener('click', () => { pendPage = 1; listar(); });
     const sel = el('#pend-records'); if (sel) sel.addEventListener('change', () => { pendPage = 1; pendPageSize = Number(sel.value||20); listar(); });
     el('#select-cliente').addEventListener('change', updateAccionesState);
+    const btnNuevoCli = el('#btn-nuevo-cliente');
+    if (btnNuevoCli) btnNuevoCli.addEventListener('click', () => abrirModalCliente('nuevo'));
+    const btnEditCli = el('#btn-editar-cliente');
+    if (btnEditCli) btnEditCli.addEventListener('click', () => abrirModalCliente('editar'));
+    const btnCerrarCli = el('#btn-cerrar-modal-cliente');
+    if (btnCerrarCli) btnCerrarCli.addEventListener('click', cerrarModalCliente);
+    const btnGuardarCli = el('#btn-guardar-cliente');
+    if (btnGuardarCli) btnGuardarCli.addEventListener('click', guardarCliente);
+    el('#modal-cliente')?.addEventListener('click', (ev) => { if (ev.target.id === 'modal-cliente') ev.currentTarget.style.display = 'none'; });
     if (fpSelect) fpSelect.addEventListener('change', () => { actualizarFormaPagoUI(); updateAccionesState(); });
     el('#btn-uno-a-uno').addEventListener('click', facturarUnoAUno);
     el('#btn-global').addEventListener('click', facturarGlobal);
     el('#btn-cerrar-modal').addEventListener('click', () => el('#modal-detalle').style.display = 'none');
     // Cerrar modal al hacer click fuera
     el('#modal-detalle').addEventListener('click', (ev) => { if (ev.target.id === 'modal-detalle') ev.currentTarget.style.display = 'none'; });
+    el('#btn-reenviar-factura')?.addEventListener('click', reenviarFactura);
   });
 
   // Exponer helpers si se requiere en consola
@@ -433,4 +602,5 @@ function renderFacturadas(rows) {
   window.facturarGlobal = facturarGlobal;
   window.verFactura = verFactura;
   window.cancelarFactura = cancelarFactura;
+  window.reenviarFactura = reenviarFactura;
 })();

@@ -129,10 +129,14 @@ ob_start();
   <!-- 4) Datos del receptor -->
   <section>
     <h3>Datos del receptor</h3>
-    <div class="row">
-      <div>
+    <div class="row" style="align-items:flex-end; gap:8px;">
+      <div style="flex:2;">
         <label>Cliente</label>
         <select id="select-cliente"><option value="">Seleccione...</option></select>
+      </div>
+      <div style="flex:1; display:flex; gap:8px;">
+        <button type="button" class="btn custom-btn" id="btn-nuevo-cliente">Nuevo</button>
+        <button type="button" class="btn custom-btn" id="btn-editar-cliente" disabled>Editar</button>
       </div>
     </div>
   </section>
@@ -176,12 +180,95 @@ ob_start();
           <h3 style="margin-right:8px;">Detalle de factura</h3>
           <a id="btn-desc-xml" href="#" class="btn custom-btn" download>Descargar XML</a>
           <a id="btn-desc-pdf" href="#" class="btn custom-btn" download>Descargar PDF</a>
+          <button type="button" id="btn-reenviar-factura" class="btn custom-btn">Reenviar al cliente</button>
         </div>
         <button type="button" id="btn-cerrar-modal" class="btn custom-btn">Cerrar</button>
       </div>
       <div id="detalle-contenido">
         <p class="muted">Cargando...</p>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal Cliente (alta/edici��n) -->
+  <div class="modal" id="modal-cliente">
+    <div class="box">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <h3 id="modal-cliente-titulo">Cliente facturaci��n</h3>
+        <button type="button" id="btn-cerrar-modal-cliente" class="btn custom-btn">Cerrar</button>
+      </div>
+      <form id="form-cliente">
+        <input type="hidden" id="cliente-id">
+        <div class="row">
+          <div>
+            <label>RFC</label>
+            <input type="text" id="cliente-rfc" required maxlength="13">
+          </div>
+          <div>
+            <label>Raz��n social</label>
+            <input type="text" id="cliente-razon" required>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Correo</label>
+            <input type="email" id="cliente-correo">
+          </div>
+          <div>
+            <label>Tel��fono</label>
+            <input type="text" id="cliente-telefono">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>CP</label>
+            <input type="text" id="cliente-cp">
+          </div>
+          <div>
+            <label>R��gimen</label>
+            <input type="text" id="cliente-regimen">
+          </div>
+          <div>
+            <label>Uso CFDI</label>
+            <input type="text" id="cliente-uso">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Calle</label>
+            <input type="text" id="cliente-calle">
+          </div>
+          <div>
+            <label>N��mero ext.</label>
+            <input type="text" id="cliente-numero-ext">
+          </div>
+          <div>
+            <label>N��mero int.</label>
+            <input type="text" id="cliente-numero-int">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Colonia</label>
+            <input type="text" id="cliente-colonia">
+          </div>
+          <div>
+            <label>Municipio</label>
+            <input type="text" id="cliente-municipio">
+          </div>
+          <div>
+            <label>Estado</label>
+            <input type="text" id="cliente-estado">
+          </div>
+          <div>
+            <label>Pa��s</label>
+            <input type="text" id="cliente-pais">
+          </div>
+        </div>
+        <div class="mt-3" style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" class="btn custom-btn" id="btn-guardar-cliente">Guardar</button>
+        </div>
+      </form>
     </div>
   </div>
   <script src="masiva.js"></script>
