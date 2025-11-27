@@ -288,9 +288,13 @@ function buildCorteTicket(resultado, cajeroOpt) {
     const totalFinalGeneral = Number(r.totalFinalGeneral || totalFinalEfectivo);
     const dif = totalFinalEfectivo - (totalEsperadoEfectivo + fondo + totalDepositos - totalRetiros);
 
-    const totalMeseros = Array.isArray(r.total_meseros) ? r.total_meseros : [];
+    const totalMeseros = Array.isArray(r.total_meseros)
+        ? r.total_meseros
+        : (Array.isArray(r.totales_mesero) ? r.totales_mesero : []);
     const totalRapido = Number(r.total_rapido || 0);
-    const totalRepart = Array.isArray(r.total_repartidor) ? r.total_repartidor : [];
+    const totalRepart = Array.isArray(r.total_repartidor)
+        ? r.total_repartidor
+        : (Array.isArray(r.totales_repartidor) ? r.totales_repartidor : []);
 
     const desglose = Array.isArray(r.desglose) ? r.desglose : [];
     const desgEfectivo = desglose.filter(x => (x.tipo_pago || '').toLowerCase() === 'efectivo' && Number(x.denominacion) > 0);
@@ -491,7 +495,7 @@ async function verificarCorte() {
             cont.innerHTML = '';
 
             if (data.success && data.resultado.abierto) {
-                cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCorte">Cerrar corte</button> <button id="btnCorteTemporal" class="btn btn-warning">Corte Temporal</button> <button id="btnPropinasUsuarios" class="btn custom-btn">Propinas por usuario</button>`;
+                cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCorte">Cerrar corte</button> <button id="btnCorteTemporal" class="btn btn-warning">Corte Temporal</button> <button id="btnPropinasUsuarios" class="btn custom-btn">Propinas por usuario</button> <button id="btnEnviosRepartidor" class="btn custom-btn">Total envios</button>`;
                 const btnCerrar = document.getElementById('btnCerrarCorte');
                 if (btnCerrar) {
                     btnCerrar.addEventListener('click', (ev) => {
@@ -502,6 +506,8 @@ async function verificarCorte() {
                 document.getElementById('btnCorteTemporal').addEventListener('click', abrirCorteTemporal);
                 const btnProp = document.getElementById('btnPropinasUsuarios');
                 if (btnProp) btnProp.addEventListener('click', abrirPropinasPorUsuario);
+                const btnEnvios = document.getElementById('btnEnviosRepartidor');
+                if (btnEnvios) btnEnvios.addEventListener('click', abrirEnviosRepartidor);
                 habilitarCobro();
             } else {
                 cont.innerHTML = `<button class="btn custom-btn" id="btnAbrirCaja">Abrir caja</button>`;
@@ -825,6 +831,61 @@ async function abrirPropinasPorUsuario() {
     }
 }
 
+// Consulta y muestra los totales de envios (producto 9001) agrupados por repartidor
+async function abrirEnviosRepartidor() {
+    try {
+        const corte = (typeof corteIdActual !== 'undefined' && corteIdActual) ? corteIdActual : (window.corteId || null);
+        const url = '../../api/ventas/envios_por_repartidor.php' + (corte ? `?corte_id=${encodeURIComponent(corte)}` : '');
+        const resp = await fetch(url, { cache: 'no-store' });
+        const data = await resp.json();
+        if (!data || !data.success) {
+            alert((data && data.mensaje) || 'No se pudo consultar los envios');
+            return;
+        }
+        const payload = data.resultado || {};
+        const detalle = Array.isArray(payload.repartidores) ? payload.repartidores : [];
+        const cont = document.getElementById('enviosRepartidorContenido');
+        if (!cont) return;
+
+        if (!detalle.length) {
+            cont.innerHTML = '<div class="text-center text-muted">Sin envios registrados.</div>';
+            showModal('#modalEnviosRepartidor');
+            return;
+        }
+
+        const totalGeneral = Number(payload.total_envio_general || 0);
+        const totalLineas = Number(payload.total_lineas || 0);
+        const totalVentas = detalle.reduce((acc, it) => acc + Number(it.ventas || 0), 0);
+
+        let html = '<div class="table-responsive">';
+        html += '<table class="styled-table">';
+        html += '<thead><tr><th>Repartidor</th><th>Usuario</th><th>Total envios</th><th>Lineas</th><th>Ventas</th></tr></thead><tbody>';
+        detalle.forEach(r => {
+            html += `<tr>
+                        <td>${r.repartidor || ''}</td>
+                        <td>${r.usuario || ''}</td>
+                        <td>${money(Number(r.total_envio || 0))}</td>
+                        <td>${Number(r.lineas_envio || 0)}</td>
+                        <td>${Number(r.ventas || 0)}</td>
+                     </tr>`;
+        });
+        html += '</tbody>';
+        html += `<tfoot><tr><th colspan="2">Total</th><th>${money(totalGeneral)}</th><th>${totalLineas}</th><th>${totalVentas}</th></tr></tfoot>`;
+        html += '</table></div>';
+
+        if (payload.corte_id || payload.fecha) {
+            const label = payload.corte_id ? `Corte ${payload.corte_id}` : `Fecha ${payload.fecha}`;
+            html += `<p class="text-end mb-0 mt-2"><small>${label}</small></p>`;
+        }
+
+        cont.innerHTML = html;
+        showModal('#modalEnviosRepartidor');
+    } catch (e) {
+        console.error(e);
+        alert('Error de red al consultar envios');
+    }
+}
+
 function generarHTMLCorte(r) {
     let html = '<table class="table"><tbody>';
     for (const [key, val] of Object.entries(r)) {
@@ -835,9 +896,9 @@ function generarHTMLCorte(r) {
             const total = val.total ?? 0;
             displayVal = `Efectivo - Productos: ${productos}, Total: ${total}`;
         } else if (key === 'total_meseros' && Array.isArray(val)) {
-            displayVal = val.map(m => `${m.nombre}: ${m.total}`).join('<br>');
+            displayVal = val.map(m => `${m.nombre}: ${m.total ?? m.total_neto}`).join('<br>');
         } else if (key === 'total_repartidor' && Array.isArray(val)) {
-            displayVal = val.map(rp => `${rp.nombre}: ${rp.total}`).join('<br>');
+            displayVal = val.map(rp => `${rp.nombre}: ${rp.total ?? rp.total_neto}`).join('<br>');
         }
         html += `<tr><td>${key}</td><td>${displayVal}</td></tr>`;
     }
@@ -926,8 +987,13 @@ function mostrarModalDesglose(dataApi) {
     const totalEsperadoEfectivo = Number.parseFloat(r.totalEsperadoEfectivo ?? r.esperado_efectivo ?? 0);
     const totalFinalEfectivo = Number.parseFloat(r.totalFinalEfectivo ?? r.totalFinal ?? 0) || 0;
     const totalIngresado = totalFinalEfectivo  + totalDepositos - totalRetiros;
-    const cuentasCanceladas = parseInt(r.cuentas_canceladas ?? 0, 10) || 0;
-    const totalCanceladas   = Number.parseFloat(r.total_cuentas_canceladas ?? 0) || 0;
+    const cuentasCanceladas = Number.parseInt(
+        r.cuentas_canceladas ?? r.cuentas_por_estatus?.cerradas?.cantidad ?? 0,
+        10
+    ) || 0;
+    const totalCanceladas   = Number.parseFloat(
+        r.total_cuentas_canceladas ?? r.cuentas_por_estatus?.cerradas?.total ?? 0
+    ) || 0;
 
     const modal = document.getElementById('modalDesglose');
     const body = modal.querySelector('.modal-body');
@@ -993,11 +1059,14 @@ function mostrarModalDesglose(dataApi) {
 
 
     // Listado de ventas por mesero (si existe)
-    if (Array.isArray(r.total_meseros) && r.total_meseros.length) {
+    const listaMeseros = Array.isArray(r.total_meseros)
+        ? r.total_meseros
+        : (Array.isArray(r.totales_mesero) ? r.totales_mesero : []);
+    if (listaMeseros.length) {
         html += '<h4>Ventas por mesero</h4><ul>';
-        r.total_meseros.forEach(m => {
+        listaMeseros.forEach(m => {
             const nombre = (m?.nombre ?? '').toString();
-            const total = Number.parseFloat(m?.total) || 0;
+            const total = Number.parseFloat(m?.total ?? m?.total_neto) || 0;
             html += `<li>${nombre}: $${total.toFixed(2)}</li>`;
         });
         html += '</ul>';
@@ -1006,7 +1075,9 @@ function mostrarModalDesglose(dataApi) {
     // Totales por repartidor + mostrador/rapido
     {
         const totalRapido = Number.parseFloat(r.total_rapido || 0);
-        const listaRep = Array.isArray(r.total_repartidor) ? r.total_repartidor : [];
+        const listaRep = Array.isArray(r.total_repartidor)
+            ? r.total_repartidor
+            : (Array.isArray(r.totales_repartidor) ? r.totales_repartidor : []);
         if ((listaRep && listaRep.length) || totalRapido) {
             html += '<h4>Total por repartidor</h4><ul>';
             if (totalRapido) {
@@ -1014,7 +1085,7 @@ function mostrarModalDesglose(dataApi) {
             }
             (listaRep || []).forEach(x => {
                 const nombre = (x?.nombre ?? '').toString();
-                const total = Number.parseFloat(x?.total) || 0;
+                const total = Number.parseFloat(x?.total ?? x?.total_neto) || 0;
                 html += `<li>${nombre}: $${total.toFixed(2)}</li>`;
             });
             html += '</ul>';
@@ -1484,12 +1555,17 @@ async function cargarUsuariosPorRol() {
         select.innerHTML = '<option value="">--Selecciona--</option>';
 
         if (data && data.success) {
-            (data.resultado || []).forEach(u => {
+            const lista = data.resultado || [];
+            lista.forEach(u => {
                 const opt = document.createElement('option');
                 opt.value = u.id;
                 opt.textContent = u.nombre;
                 select.appendChild(opt);
             });
+            // Si la venta es domicilio con repartidor casa, preseleccionar el primer usuario disponible
+            if (esDomicilioConRepartidorCasa() && select.options.length > 1 && !select.value) {
+                select.selectedIndex = 1; // primer usuario
+            }
         } else {
             console.warn(data?.mensaje || 'No se pudieron cargar meseros.');
         }
@@ -1581,10 +1657,30 @@ function mostrarClienteEnvio(ventaId) {
 function mostrarCorteTemporalBonito(data) {
     const cont = document.getElementById('corteTemporalBonito');
     if (!cont) return;
-    const pre = document.querySelector('#modalCorteTemporal pre, #corteTemporalDatos');
-    if (pre) pre.style.display = 'none';
+    const pre = document.getElementById('corteTemporalDatos');
+    if (pre) {
+        pre.style.display = 'none';
+        pre.innerHTML = '';
+    }
     cont.style.display = '';
     const r = (data && data.resultado) ? data.resultado : {};
+    // Normaliza campos del API de resumen temporal para la vista
+    if (!r.total_productos && r.productos && typeof r.productos.total !== 'undefined') {
+        r.total_productos = r.productos.total;
+    }
+    if (!r.total_descuento_promos && r.promociones_aplicadas) {
+        r.total_descuento_promos = r.promociones_aplicadas.total_descuento || 0;
+    }
+    const fp = r.formas_pago_resumen || {};
+    if (!r.efectivo && fp.efectivo) {
+        r.efectivo = { total: fp.efectivo.total_neto ?? fp.efectivo.total_bruto ?? 0 };
+    }
+    if (!r.tarjeta && fp.tarjeta) {
+        r.tarjeta = { total: fp.tarjeta.total_neto ?? fp.tarjeta.total_bruto ?? 0 };
+    }
+    if (!r.boucher && fp.otros) {
+        r.boucher = { total: fp.otros.total_neto ?? fp.otros.total_bruto ?? 0 };
+    }
     const metodosPago = ['efectivo', 'boucher', 'cheque', 'tarjeta', 'transferencia'];
     const totalProductos = Number(r.total_productos ?? 0) ||
         metodosPago.reduce((acc, m) => acc + (Number(r[m]?.productos) || 0), 0);
@@ -1652,7 +1748,7 @@ function mostrarCorteTemporalBonito(data) {
     setText('#lblTmpTotalPropinas', fmtMoneda(totalPropinas));
     setText('#lblTmpTotalFinalEfectivo', fmtMoneda(totalFinalEfectivo));
     setText('#lblTmpTotalFinalGeneral', fmtMoneda(totalFinalGeneral));
-    setText('#lblTmpTotalIngresado', fmtMoneda(totalIngresado));
+    //setText('#lblTmpTotalIngresado', fmtMoneda(totalIngresado));
 
     setText('#lblTmpTotalPagoEfectivo', fmtMoneda(totalesPorPago.efectivo));
     setText('#lblTmpTotalPagoBoucher', fmtMoneda(totalesPorPago.boucher));
@@ -1670,23 +1766,54 @@ function mostrarCorteTemporalBonito(data) {
     setText('#lblTmpPropinaTransfer', fmtMoneda(propTransfer));
     setText('#lblTmpPropinaTarjeta', fmtMoneda(propTarjeta));
 
-    setText('#lblTmpCuentasActivas', Number(r.cuentas_activas || 0));
-    setText('#lblTmpTotalActivas', fmtMoneda(Number(r.total_cuentas_activas || 0)));
-    setText('#lblTmpCuentasCanceladas', Number(r.cuentas_canceladas || 0));
-    setText('#lblTmpTotalCanceladas', fmtMoneda(Number(r.total_cuentas_canceladas || 0)));
-    const meseros = Array.isArray(r.total_meseros) ? r.total_meseros : [];
+    const cuentasActivas = Number(r.cuentas_activas ?? r.cuentas_por_estatus?.abiertas?.cantidad ?? 0);
+    const totalActivas   = Number(r.total_cuentas_activas ?? r.cuentas_por_estatus?.abiertas?.total ?? 0);
+    const cuentasCanc    = Number(r.cuentas_canceladas ?? r.cuentas_por_estatus?.cerradas?.cantidad ?? 0);
+    const totalCanc      = Number(r.total_cuentas_canceladas ?? r.cuentas_por_estatus?.cerradas?.total ?? 0);
+    setText('#lblTmpCuentasActivas', cuentasActivas);
+    setText('#lblTmpTotalActivas', fmtMoneda(totalActivas));
+    setText('#lblTmpCuentasCanceladas', cuentasCanc);
+    setText('#lblTmpTotalCanceladas', fmtMoneda(totalCanc));
+    const meseros = Array.isArray(r.total_meseros)
+        ? r.total_meseros
+        : (Array.isArray(r.totales_mesero) ? r.totales_mesero : []);
     pintarTablaSimple('#tblTmpMeseros tbody', meseros, [
         { key: 'nombre' },
-        { key: 'total', format: (v) => fmtMoneda(v) }
+        { key: 'total', format: (v, row) => fmtMoneda(v ?? row.total_neto) }
     ]);
-    const reps = Array.isArray(r.total_repartidor) ? r.total_repartidor.slice() : [];
+    const reps = Array.isArray(r.total_repartidor)
+        ? r.total_repartidor.slice()
+        : (Array.isArray(r.totales_repartidor) ? r.totales_repartidor.slice() : []);
     const totalRapido = Number(r.total_rapido || 0);
     if (totalRapido) {
         reps.unshift({ nombre: 'Mostrador/rapido', total: totalRapido });
     }
     pintarTablaSimple('#tblTmpRepartidores tbody', reps, [
         { key: 'nombre' },
-        { key: 'total', format: (v) => fmtMoneda(v) }
+        { key: 'total', format: (v, row) => fmtMoneda(v ?? row.total_neto) }
+    ]);
+
+    // Totales por producto (alimentos/bebidas)
+    const prod = r.productos || {};
+    setText('#lblTmpProdAlimentos', fmtMoneda(prod.alimentos ?? 0));
+    setText('#lblTmpProdBebidas', fmtMoneda(prod.bebidas ?? 0));
+    setText('#lblTmpProdTotal', fmtMoneda(prod.total ?? r.total_productos ?? 0));
+
+    // Totales por servicio (comedor, domicilio, rapido)
+    const serv = r.por_servicio || {};
+    setText('#lblTmpServComedor', fmtMoneda(serv.comedor ?? 0));
+    setText('#lblTmpServDomicilio', fmtMoneda(serv.domicilio ?? 0));
+    setText('#lblTmpServRapido', fmtMoneda(serv.rapido ?? 0));
+
+    // Totales por plataforma (didi/rappi/uber)
+    const plataformas = (r.resumen && typeof r.resumen === 'object')
+        ? Object.values(r.resumen)
+        : [];
+    pintarTablaSimple('#tblTmpPlataformas tbody', plataformas, [
+        { key: 'nombre' },
+        { key: 'total_bruto', format: v => fmtMoneda(v ?? 0) },
+        { key: 'total_descuento', format: v => fmtMoneda(v ?? 0) },
+        { key: 'total_neto', format: v => fmtMoneda(v ?? 0) }
     ]);
 }
 
@@ -1736,6 +1863,10 @@ async function actualizarSelectorUsuario() {
         if (esRepartidorCasaSeleccionado()) {
             setLabelUsuario('Usuario:');
             await cargarUsuariosPorRol();
+            // Si sigue vac�o, intenta seleccionar algo por defecto
+            if (!usuarioSel.value && usuarioSel.options.length > 1) {
+                usuarioSel.selectedIndex = 1;
+            }
         } else {
             setLabelUsuario('Mesero:');
             await cargarMeseros();
@@ -2096,7 +2227,7 @@ async function registrarVenta() {
     const tipo = document.getElementById('tipo_entrega').value;
     const mesa_id = parseInt(document.getElementById('mesa_id').value);
     const repartidor_id = parseInt(document.getElementById('repartidor_id').value);
-    const usuario_id = (tipo === 'rapido')
+    let usuario_id = (tipo === 'rapido')
         ? (parseInt(window.usuarioId || '0', 10) || null)
         : parseInt(document.getElementById('usuario_id').value);
     const observacion = document.getElementById('observacion').value.trim();
@@ -2132,6 +2263,18 @@ async function registrarVenta() {
             return;
         }
         if (esDomicilioConRepartidorCasa()) {
+            // Forzar usuario por defecto cuando es reparto casa
+            if (isNaN(usuario_id) || !usuario_id) {
+                const selUsr = document.getElementById('usuario_id');
+                if (selUsr && selUsr.options.length > 1) {
+                    selUsr.selectedIndex = 1;
+                    usuario_id = parseInt(selUsr.value);
+                }
+            }
+            if (isNaN(usuario_id) || !usuario_id) {
+                alert('Selecciona un usuario para el reparto casa.');
+                return;
+            }
             const cliSel = document.getElementById('cliente_id');
             const costoInput = document.getElementById('costoForeInput');
             cliente_id = parseInt(cliSel?.value || '');
@@ -3608,4 +3751,3 @@ document.addEventListener('click', function (e) {
             .catch(() => alert('Error al actualizar estado'));
     }
 });
-

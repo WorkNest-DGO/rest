@@ -163,7 +163,10 @@ ob_start();
                 </tr>
               </tbody>
             </table>
-
+          <div class="text-center mb-3">
+            <button type="button" class="btn custom-btn" id="agregarProducto">Agregar Producto</button>
+            <button type="button" class="btn custom-btn" id="registrarVenta">Registrar Venta</button>
+          </div>
           
           <!-- Promociones aplicables a la venta (opcional, filtradas por tipo de entrega) -->
           <div id="campoPromocion" class="form-group" style="display:none;">
@@ -213,10 +216,6 @@ ob_start();
             window.ENVIO_CASA_DEFAULT_PRECIO = window.ENVIO_CASA_DEFAULT_PRECIO || 30.00;
             window.ENVIO_CASA_NOMBRE = window.ENVIO_CASA_NOMBRE || 'ENVÍO – Repartidor casa';
           </script>
-          <div class="text-center">
-            <button type="button" class="btn custom-btn" id="agregarProducto">Agregar Producto</button>
-            <button type="button" class="btn custom-btn" id="registrarVenta">Registrar Venta</button>
-          </div>
         </div>
       </form>
     </div>
@@ -361,6 +360,25 @@ ob_start();
     </div>
   </div>
  </div>
+<!-- Modal: Totales de envios -->
+<div class="modal fade" id="modalEnviosRepartidor" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Totales de envios</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <div id="enviosRepartidorContenido">
+          <div class="text-muted">Cargando...</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- Modal: Información de envío/cliente -->
 <div class="modal fade" id="modalClienteEnvio" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog" role="document">
@@ -370,7 +388,7 @@ ob_start();
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       </div>
       <div class="modal-body">
-        <div id="clienteEnvioContenido" class="text-dark"></div>
+        <div id="clienteEnvioContenido" class="text"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn custom-btn" data-dismiss="modal">Cerrar</button>
@@ -428,7 +446,7 @@ ob_start();
             <div>Total propinas: <span id="lblTmpTotalPropinas">0.00</span></div>
             <div>Efectivo esperado en caja: <span id="lblTmpTotalFinalEfectivo">0.00</span></div>
             <div>Total final (todos los medios): <span id="lblTmpTotalFinalGeneral">0.00</span></div>
-            <div>Total ingresado: <span id="lblTmpTotalIngresado">0.00</span></div>
+            <!-- <div>Total ingresado: <span id="lblTmpTotalIngresado">0.00</span></div> -->
           </div>
 
           <div class="tarjeta" style="margin-top:8px;">
@@ -478,6 +496,38 @@ ob_start();
             <div style="opacity:.8">Totales por repartidor</div>
             <table id="tblTmpRepartidores" class="tabla-compacta">
               <thead><tr><th>Repartidor</th><th>Total</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="tarjeta" style="margin-top:8px;">
+            <div style="opacity:.8">Totales por producto</div>
+            <table id="tblTmpProductos" class="tabla-compacta">
+              <thead><tr><th>Categoria</th><th>Total</th></tr></thead>
+              <tbody>
+                <tr><td>Alimentos</td><td id="lblTmpProdAlimentos">0.00</td></tr>
+                <tr><td>Bebidas</td><td id="lblTmpProdBebidas">0.00</td></tr>
+                <tr><td><strong>Total</strong></td><td id="lblTmpProdTotal"><strong>0.00</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tarjeta" style="margin-top:8px;">
+            <div style="opacity:.8">Totales por servicio</div>
+            <table id="tblTmpServicio" class="tabla-compacta">
+              <thead><tr><th>Servicio</th><th>Total</th></tr></thead>
+              <tbody>
+                <tr><td>Comedor</td><td id="lblTmpServComedor">0.00</td></tr>
+                <tr><td>Domicilio</td><td id="lblTmpServDomicilio">0.00</td></tr>
+                <tr><td>Rápido</td><td id="lblTmpServRapido">0.00</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tarjeta" style="margin-top:8px;">
+            <div style="opacity:.8">Totales por plataforma</div>
+            <table id="tblTmpPlataformas" class="tabla-compacta">
+              <thead><tr><th>Plataforma</th><th>Bruto</th><th>Descuento</th><th>Neto</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
