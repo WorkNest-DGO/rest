@@ -194,7 +194,7 @@ ob_start();
   <div class="modal" id="modal-cliente">
     <div class="box">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-        <h3 id="modal-cliente-titulo">Cliente facturaci��n</h3>
+        <h3 id="modal-cliente-titulo">Cliente facturación</h3>
         <button type="button" id="btn-cerrar-modal-cliente" class="btn custom-btn">Cerrar</button>
       </div>
       <form id="form-cliente">
@@ -205,7 +205,7 @@ ob_start();
             <input type="text" id="cliente-rfc" required maxlength="13">
           </div>
           <div>
-            <label>Raz��n social</label>
+            <label>Razón social</label>
             <input type="text" id="cliente-razon" required>
           </div>
         </div>
@@ -215,7 +215,7 @@ ob_start();
             <input type="email" id="cliente-correo">
           </div>
           <div>
-            <label>Tel��fono</label>
+            <label>Teléfono</label>
             <input type="text" id="cliente-telefono">
           </div>
         </div>
@@ -225,12 +225,17 @@ ob_start();
             <input type="text" id="cliente-cp">
           </div>
           <div>
-            <label>R��gimen</label>
-            <input type="text" id="cliente-regimen">
+            <label>Régimen</label>
+            <select id="cliente-regimen">
+              <option value="">Seleccione...</option>
+            </select>
           </div>
           <div>
             <label>Uso CFDI</label>
-            <input type="text" id="cliente-uso">
+            <select id="cliente-uso">
+              <option value="">Seleccione...</option>
+            </select>
+            <div class="muted" id="cliente-uso-hint"></div>
           </div>
         </div>
         <div class="row">
@@ -239,11 +244,11 @@ ob_start();
             <input type="text" id="cliente-calle">
           </div>
           <div>
-            <label>N��mero ext.</label>
+            <label>Número ext.</label>
             <input type="text" id="cliente-numero-ext">
           </div>
           <div>
-            <label>N��mero int.</label>
+            <label>Número int.</label>
             <input type="text" id="cliente-numero-int">
           </div>
         </div>
@@ -261,7 +266,7 @@ ob_start();
             <input type="text" id="cliente-estado">
           </div>
           <div>
-            <label>Pa��s</label>
+            <label>País</label>
             <input type="text" id="cliente-pais">
           </div>
         </div>
@@ -269,6 +274,25 @@ ob_start();
           <button type="button" class="btn custom-btn" id="btn-guardar-cliente">Guardar</button>
         </div>
       </form>
+    </div>
+  </div>
+  <!-- Modal Reenviar factura -->
+  <div class="modal" id="modal-reenviar">
+    <div class="box">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <h3>Reenviar factura</h3>
+        <button type="button" class="btn custom-btn" id="btn-cerrar-modal-reenviar">Cerrar</button>
+      </div>
+      <div class="row" style="margin-top:12px;">
+        <div style="flex:1;">
+          <label>Correo destino</label>
+          <input type="email" id="reenviar-correo" placeholder="cliente@ejemplo.com">
+          <div class="muted">Usa el correo del cliente o ingresa uno nuevo.</div>
+        </div>
+      </div>
+      <div class="mt-3" style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn custom-btn" id="btn-reenviar-confirmar">Enviar</button>
+      </div>
     </div>
   </div>
   <script src="masiva.js"></script>

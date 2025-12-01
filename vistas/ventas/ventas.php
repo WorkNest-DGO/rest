@@ -120,6 +120,11 @@ ob_start();
               <div><strong>Colonia:</strong> <span id="clienteColonia">-</span></div>
               <div><strong>Dist. a La Forestal:</strong> <span id="clienteDistancia">-</span></div>
             </div>
+            <div id="clienteColoniaSelectWrap" class="mt-2" style="display:none;">
+              <label for="clienteColoniaSelect" class="text-white">Selecciona colonia</label>
+              <select id="clienteColoniaSelect" class="form-control"></select>
+              <small class="text-muted">Solo se muestra cuando el cliente no tiene colonia asignada.</small>
+            </div>
             <div class="row mt-3">
               <div class="col-md-6">
                 <label for="costoForeInput" class="text-white mb-1">Costo de envío (costo_fore):</label>

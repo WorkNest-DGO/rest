@@ -2,6 +2,7 @@
 declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../../config/facturama.php';
 
 // Logger local si está disponible
 if (!function_exists('facturas_log')) {
@@ -17,12 +18,6 @@ if (!function_exists('facturas_log')) {
       @file_put_contents($file, json_encode($entry, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) . PHP_EOL, FILE_APPEND);
     } catch (Throwable $e) {}
   }
-}
-
-// Reusar Facturama helper si existe
-$TOKYO_FACTURAMA = realpath(__DIR__ . '/../../../tokyo/config/facturama.php');
-if ($TOKYO_FACTURAMA && is_file($TOKYO_FACTURAMA)) {
-  @require_once $TOKYO_FACTURAMA;
 }
 
 function unwrap_if_base64_or_json($input) {
@@ -120,4 +115,3 @@ try {
   http_response_code(500);
   echo json_encode(['success'=>false,'mensaje'=>'Error: '.$e->getMessage()], JSON_UNESCAPED_UNICODE);
 }
-

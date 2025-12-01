@@ -2,6 +2,7 @@
 declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../../config/facturama.php';
 
 // Local logger (same style as crear.php -> rest/logs/facturama-YYYY-MM.log)
 if (!function_exists('facturas_log')) {
@@ -23,12 +24,6 @@ if (!function_exists('facturas_log')) {
       @file_put_contents($file, $json . PHP_EOL, FILE_APPEND);
     } catch (Throwable $ignored) {}
   }
-}
-
-// Load Facturama integration if available
-$TOKYO_FACTURAMA = realpath(__DIR__ . '/../../../tokyo/config/facturama.php');
-if ($TOKYO_FACTURAMA && is_file($TOKYO_FACTURAMA)) {
-  @require_once $TOKYO_FACTURAMA;
 }
 
 function json_response($ok, $payloadOrMsg) {

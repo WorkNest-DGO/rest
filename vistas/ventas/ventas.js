@@ -1429,6 +1429,8 @@ function actualizarResumenCliente(cliente) {
     const col = document.getElementById('clienteColonia');
     const dist = document.getElementById('clienteDistancia');
     const costoInput = document.getElementById('costoForeInput');
+    const colSelectWrap = document.getElementById('clienteColoniaSelectWrap');
+    const colSelect = document.getElementById('clienteColoniaSelect');
     clienteSeleccionado = cliente || null;
 
     if (!resumen) return;
@@ -1436,6 +1438,8 @@ function actualizarResumenCliente(cliente) {
     if (!cliente) {
         resumen.style.display = 'none';
         if (costoInput) costoInput.value = '';
+        if (colSelectWrap) colSelectWrap.style.display = 'none';
+        if (colSelect) colSelect.value = '';
         // Si no hay cliente seleccionado, usa el costo por defecto del concepto "ENVÍO – Repartidor casa".
         actualizarPrecioEnvio(window.ENVIO_CASA_DEFAULT_PRECIO || 30);
         return;
@@ -1455,6 +1459,10 @@ function actualizarResumenCliente(cliente) {
     if (cliente.costo_fore !== null && cliente.costo_fore !== undefined) {
         actualizarPrecioEnvio(cliente.costo_fore);
     }
+    prepararColoniaSelect(cliente);
+    if (colSelect && colSelect.value) {
+        onSeleccionColoniaManual();
+    }
 }
 
 function actualizarPrecioEnvio(monto) {
@@ -1462,6 +1470,65 @@ function actualizarPrecioEnvio(monto) {
     if (precioInput && monto !== null && monto !== undefined && monto !== '') {
         precioInput.value = monto;
         window.recalcularTotalesUI();
+    }
+}
+
+function prepararColoniaSelect(cliente) {
+    const wrap = document.getElementById('clienteColoniaSelectWrap');
+    const select = document.getElementById('clienteColoniaSelect');
+    if (!wrap || !select) return;
+    if (!cliente || (cliente.colonia_id && Number(cliente.colonia_id) > 0)) {
+        wrap.style.display = 'none';
+        select.value = '';
+        return;
+    }
+    wrap.style.display = 'block';
+    const rellenar = () => {
+        pintarColoniasSelect(select);
+        const nombreBuscado = (cliente.colonia_nombre || cliente.colonia_texto || '').trim().toLowerCase();
+        if (cliente.colonia_id) {
+            select.value = cliente.colonia_id;
+        }
+        if (!select.value && nombreBuscado) {
+            const opt = Array.from(select.options).find(o => (o.textContent || '').trim().toLowerCase() === nombreBuscado);
+            if (opt) select.value = opt.value;
+        }
+        if (select.value) onSeleccionColoniaManual();
+    };
+    if (coloniasData.length) {
+        rellenar();
+    } else {
+        cargarColoniasCatalogo().then(rellenar).catch(() => {});
+    }
+}
+
+function onSeleccionColoniaManual() {
+    const select = document.getElementById('clienteColoniaSelect');
+    const spanCol = document.getElementById('clienteColonia');
+    const spanDist = document.getElementById('clienteDistancia');
+    const costoInput = document.getElementById('costoForeInput');
+    if (!select || !select.value) return;
+    const opt = select.selectedOptions && select.selectedOptions[0];
+    if (!opt) return;
+    const nombre = opt.textContent || '-';
+    if (spanCol) spanCol.textContent = nombre;
+    const dist = opt.dataset?.distancia;
+    if (spanDist && dist !== undefined && dist !== '') {
+        spanDist.textContent = `${dist} km`;
+    }
+    const costo = opt.dataset?.costoFore;
+    if (costoInput) costoInput.value = (costo !== undefined && costo !== '') ? costo : '';
+    if (costo !== undefined && costo !== '') {
+        const num = Number(costo);
+        if (!Number.isNaN(num)) actualizarPrecioEnvio(num);
+    }
+    if (clienteSeleccionado) {
+        clienteSeleccionado.colonia_id = parseInt(select.value, 10) || null;
+        clienteSeleccionado.colonia_nombre = nombre;
+        if (costo !== undefined && costo !== '') {
+            const num = Number(costo);
+            if (!Number.isNaN(num)) clienteSeleccionado.costo_fore = num;
+        }
     }
 }
 
@@ -1688,13 +1755,14 @@ function mostrarCorteTemporalBonito(data) {
         metodosPago.reduce((acc, m) => acc + (Number(r[m]?.propina) || 0), 0);
 
     const totalBruto      = Number.isFinite(Number(r.total_bruto)) ? Number(r.total_bruto) : totalProductos;
-    const totalDescuentos = Number(r.total_descuentos ?? 0);
-    let totalEsperado     = Number(r.total_esperado ?? (totalBruto - totalDescuentos));
+    const totalDescuentos = Number(r.total_descuentos ?? 0) - Number(r.total_descuento_promos ?? 0);
+    const totalPromos = Number(r.total_descuento_promos ?? 0);
+    let totalEsperado     = Number(r.total_esperado ?? (totalBruto - totalDescuentos - totalPromos ));
     if (!Number.isFinite(totalEsperado) || totalEsperado === 0) {
         totalEsperado = Number(r.totalEsperado ?? (totalProductos + totalPropinas) ?? 0);
     }
-    const totalPromos = Number(r.total_descuento_promos ?? 0);
-    const totalEsperadoVisible = totalPromos > 0 ? (totalEsperado - totalPromos) : totalEsperado;
+    
+    const totalEsperadoVisible = totalPromos > 0 ? (totalEsperado ) : totalEsperado;
 
     const fondo = Number(r.fondo ?? 0);
     const totalDepositos = Number(r.total_depositos ?? 0);
@@ -1752,7 +1820,7 @@ function mostrarCorteTemporalBonito(data) {
 
     setText('#lblTmpTotalPagoEfectivo', fmtMoneda(totalesPorPago.efectivo));
     setText('#lblTmpTotalPagoBoucher', fmtMoneda(totalesPorPago.boucher));
-    setText('#lblTmpTotalPagoCheque', fmtMoneda(totalesPorPago.cheque));
+    setText('#lblTmpTotalPagoCheque', fmtMoneda(esperadoPorPago.cheque));
     setText('#lblTmpTotalPagoTarjeta', fmtMoneda(totalesPorPago.tarjeta));
     setText('#lblTmpTotalPagoTransfer', fmtMoneda(totalesPorPago.transferencia));
 
@@ -3626,6 +3694,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnNuevoCliente) btnNuevoCliente.addEventListener('click', abrirModalNuevoCliente);
     const btnGuardarCliente = document.getElementById('guardarNuevoCliente');
     if (btnGuardarCliente) btnGuardarCliente.addEventListener('click', guardarNuevoCliente);
+    const clienteColoniaSelect = document.getElementById('clienteColoniaSelect');
+    if (clienteColoniaSelect) clienteColoniaSelect.addEventListener('change', onSeleccionColoniaManual);
     const costoForeInput = document.getElementById('costoForeInput');
     if (costoForeInput) {
         costoForeInput.addEventListener('input', () => {

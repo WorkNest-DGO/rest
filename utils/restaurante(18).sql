@@ -14092,7 +14092,7 @@ CREATE TABLE `clientes_facturacion` (
 --
 
 INSERT INTO `clientes_facturacion` (`id`, `rfc`, `razon_social`, `correo`, `telefono`, `calle`, `numero_ext`, `numero_int`, `colonia`, `municipio`, `estado`, `pais`, `cp`, `regimen`, `uso_cfdi`, `created_at`, `updated_at`) VALUES
-(1, 'marf9401109i5', 'fued majul', '', '', '', '', '', '', '', '', 'México', '34010', '605', 'g01', '2025-08-28 19:04:50', '2025-09-23 00:11:22'),
+(1, 'marf9401109i5', '                                                                                    majul', '', '', '', '', '', '', '', '', 'México', '34010', '605', 'g01', '2025-08-28 19:04:50', '2025-09-23 00:11:22'),
 (32, 'XAXX010101000', 'PUBLICO EN GENERAL', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'México', '34217', '601', 'G03', '2025-09-23 13:39:32', '2025-10-02 09:24:38');
 
 -- --------------------------------------------------------

@@ -7,6 +7,7 @@
     enviar: '../../api/facturas/enviar.php',
     cliente_guardar: '../../api/facturas/cliente_guardar.php',
   };
+  const SAT_JSON_URL = '../../config/sat_catalogos_4_0.json';
 
   const el = (sel) => document.querySelector(sel);
   const fmt = (n) => {
@@ -22,6 +23,85 @@
   let clientesCache = [];
   let facturaActualId = null;
   let facturaActualCorreo = '';
+  let facturaActualClienteId = null;
+  let catRegimenes = [];
+  let catUsos = [];
+  const catUsosPorRegimen = new Map();
+  let catCatalogosPromise = null;
+  let satCatalogosRaw = null;
+
+  function renderRegimenesSat() {
+    const sel = el('#cliente-regimen');
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Seleccione...</option>' + catRegimenes.map(r => `<option value="${r.code}">${r.code} - ${r.descripcion}</option>`).join('');
+    if (current) sel.value = current;
+  }
+
+  function renderUsosSat(allowed) {
+    const sel = el('#cliente-uso');
+    if (!sel) return;
+    const useAllowed = Array.isArray(allowed);
+    const allowSet = new Set(useAllowed ? allowed : catUsos.map(u => u.code));
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Seleccione...</option>' + catUsos.filter(u => allowSet.has(u.code)).map(u => `<option value="${u.code}">${u.code} - ${u.descripcion}</option>`).join('');
+    if (current && allowSet.has(current)) sel.value = current;
+    const hint = el('#cliente-uso-hint');
+    if (hint) hint.textContent = useAllowed && allowed.length ? `Usos permitidos para régimen seleccionado: ${allowed.join(', ')}` : '';
+  }
+
+  async function loadSatCatalogos() {
+    if (satCatalogosRaw) return satCatalogosRaw;
+    const res = await fetch(SAT_JSON_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error('No se pudieron cargar catálogos SAT');
+    let j;
+    try { j = await res.json(); } catch (e) { throw new Error('Catálogos SAT JSON inválido'); }
+    satCatalogosRaw = j || {};
+    catRegimenes = Array.isArray(j.regimenes) ? j.regimenes : [];
+    catUsos = Array.isArray(j.usos) ? j.usos : [];
+    catUsosPorRegimen.clear();
+    if (Array.isArray(j.compatibilidad)) {
+      j.compatibilidad.forEach(row => {
+        if (!row || !row.regimen) return;
+        catUsosPorRegimen.set(String(row.regimen), Array.isArray(row.usos) ? row.usos : []);
+      });
+    }
+    return satCatalogosRaw;
+  }
+
+  async function cargarRegimenesSat() {
+    await loadSatCatalogos();
+    renderRegimenesSat();
+  }
+
+  async function cargarUsosSat() {
+    await loadSatCatalogos();
+    renderUsosSat();
+  }
+
+  async function cargarUsosPorRegimen(regimen) {
+    const reg = (regimen || '').trim();
+    await loadSatCatalogos();
+    if (!reg) { renderUsosSat(); return; }
+    if (catUsosPorRegimen.has(reg)) {
+      renderUsosSat(catUsosPorRegimen.get(reg));
+    } else {
+      renderUsosSat();
+    }
+  }
+
+  function onRegimenClienteChange() {
+    const reg = el('#cliente-regimen')?.value || '';
+    cargarUsosPorRegimen(reg).catch((e) => console.error(e));
+  }
+
+  function initCatalogosSat() {
+    if (catCatalogosPromise) return catCatalogosPromise;
+    catCatalogosPromise = Promise.all([cargarRegimenesSat(), cargarUsosSat()]).catch((e) => {
+      console.error('No se pudieron cargar catálogos SAT', e);
+    });
+    return catCatalogosPromise;
+  }
 
   function extraerIdsFacturas(res) {
     const ids = [];
@@ -109,6 +189,12 @@
   }
 
   const normTipoPago = (tp) => String(tp || '').trim().toLowerCase();
+  const mostrarTipoPago = (tp) => {
+    const n = normTipoPago(tp);
+    if (n === 'boucher' || n === 'tarjeta') return 'tarjeta';
+    if (n === 'cheque') return 'transferencia';
+    return tp || '';
+  };
   const etiquetaFormaPago = (code) => {
     const c = String(code || '').trim();
     if (c === '01') return '01 - Efectivo';
@@ -146,7 +232,7 @@
       tr.innerHTML = `
         <td>${folio ?? ''}</td>
         <td>${(r.fecha || '').replace('T',' ')}</td>
-        <td>${r.tipo_pago ?? ''}</td>
+        <td>${mostrarTipoPago(r.tipo_pago)}</td>
         <td class="right">${fmt(r.total)}</td>
         <td class="right"><input type="checkbox" data-id="${r.id}"></td>
       `;
@@ -221,7 +307,7 @@
       const r = pendientesIndex.get(id);
       const item = document.createElement('div');
       item.className = 'item';
-      const tipoTxt = r?.tipo_pago ? ` (${r.tipo_pago})` : '';
+      const tipoTxt = r?.tipo_pago ? ` (${mostrarTipoPago(r.tipo_pago)})` : '';
       item.textContent = `Ticket ${id} - ${fmt(r?.total || 0)}${tipoTxt}`;
       item.title = 'Click para quitar';
       item.style.cursor = 'pointer';
@@ -384,7 +470,10 @@ function renderFacturadas(rows) {
       const j = await res.json();
       if (!j.success) throw new Error(j.mensaje || 'No se pudo obtener detalle');
       facturaActualId = id;
-      facturaActualCorreo = (j.resultado?.correo || '').trim();
+      facturaActualClienteId = Number(j.resultado?.cliente_id ?? 0) || null;
+      const correoDetalle = (j.resultado?.correo || '').trim();
+      const correoCache = clientesCache.find(c => Number(c.id) === facturaActualClienteId)?.correo || '';
+      facturaActualCorreo = correoDetalle || correoCache || '';
       // Set download links
       const base = new URL('../../api/facturas/descargar.php', window.location.href).toString();
       el('#btn-desc-xml').setAttribute('href', base + '?factura_id=' + encodeURIComponent(String(id)) + '&tipo=xml');
@@ -429,9 +518,22 @@ function renderFacturadas(rows) {
       alert('Abre primero una factura para reenviar.');
       return;
     }
-    const correo = prompt('Correo destino', facturaActualCorreo || '');
-    if (correo === null) return;
-    const correoTrim = correo.trim();
+    const modal = el('#modal-reenviar');
+    const input = el('#reenviar-correo');
+    if (input) input.value = facturaActualCorreo || '';
+    if (modal) {
+      modal.style.display = 'flex';
+      setTimeout(() => input?.focus(), 50);
+    }
+  }
+
+  async function reenviarFacturaConfirmar() {
+    if (!facturaActualId) {
+      alert('Abre primero una factura para reenviar.');
+      return;
+    }
+    const input = el('#reenviar-correo');
+    const correoTrim = (input?.value || '').trim();
     if (!correoTrim) {
       alert('Debes capturar un correo destino');
       return;
@@ -446,10 +548,16 @@ function renderFacturadas(rows) {
       if (!j.success) throw new Error(j.mensaje || 'No se pudo reenviar');
       facturaActualCorreo = correoTrim;
       alert('Factura enviada a ' + (j.resultado?.enviado_a || correoTrim));
+      cerrarModalReenviar();
     } catch (e) {
       console.error(e);
       alert('Error al reenviar: ' + e.message);
     }
+  }
+
+  function cerrarModalReenviar() {
+    const modal = el('#modal-reenviar');
+    if (modal) modal.style.display = 'none';
   }
 
   function toggleEditarCliente() {
@@ -459,8 +567,8 @@ function renderFacturadas(rows) {
     btnEdit.disabled = !tieneSeleccion;
   }
 
-  function abrirModalCliente(modo = 'nuevo') {
-    const titulo = modo === 'editar' ? 'Editar cliente de facturaci�n' : 'Nuevo cliente de facturaci�n';
+  async function abrirModalCliente(modo = 'nuevo') {
+    const titulo = modo === 'editar' ? 'Editar cliente de facturación' : 'Nuevo cliente de facturación';
     const modal = el('#modal-cliente');
     if (!modal) return;
     el('#modal-cliente-titulo').textContent = titulo;
@@ -472,7 +580,9 @@ function renderFacturadas(rows) {
     el('#cliente-correo').value = cliente?.correo || '';
     el('#cliente-telefono').value = cliente?.telefono || '';
     el('#cliente-cp').value = cliente?.cp || '';
+    await initCatalogosSat();
     el('#cliente-regimen').value = cliente?.regimen || '';
+    await cargarUsosPorRegimen(el('#cliente-regimen')?.value || '').catch((e) => console.error(e));
     el('#cliente-uso').value = cliente?.uso_cfdi || '';
     el('#cliente-calle').value = cliente?.calle || '';
     el('#cliente-numero-ext').value = cliente?.numero_ext || '';
@@ -510,7 +620,7 @@ function renderFacturadas(rows) {
       pais: el('#cliente-pais').value.trim(),
     };
     if (!payload.rfc || !payload.razon_social) {
-      alert('RFC y Raz�n social son obligatorios');
+      alert('RFC y Razón social son obligatorios');
       return;
     }
     try {
@@ -574,9 +684,12 @@ function renderFacturadas(rows) {
     setDefaultsFechas();
     listar();
     cargarClientes();
+    initCatalogosSat();
     el('#btn-buscar').addEventListener('click', () => { pendPage = 1; listar(); });
     const sel = el('#pend-records'); if (sel) sel.addEventListener('change', () => { pendPage = 1; pendPageSize = Number(sel.value||20); listar(); });
     el('#select-cliente').addEventListener('change', updateAccionesState);
+    const selRegimen = el('#cliente-regimen');
+    if (selRegimen) selRegimen.addEventListener('change', onRegimenClienteChange);
     const btnNuevoCli = el('#btn-nuevo-cliente');
     if (btnNuevoCli) btnNuevoCli.addEventListener('click', () => abrirModalCliente('nuevo'));
     const btnEditCli = el('#btn-editar-cliente');
@@ -593,6 +706,9 @@ function renderFacturadas(rows) {
     // Cerrar modal al hacer click fuera
     el('#modal-detalle').addEventListener('click', (ev) => { if (ev.target.id === 'modal-detalle') ev.currentTarget.style.display = 'none'; });
     el('#btn-reenviar-factura')?.addEventListener('click', reenviarFactura);
+    el('#btn-reenviar-confirmar')?.addEventListener('click', reenviarFacturaConfirmar);
+    el('#btn-cerrar-modal-reenviar')?.addEventListener('click', cerrarModalReenviar);
+    el('#modal-reenviar')?.addEventListener('click', (ev) => { if (ev.target.id === 'modal-reenviar') ev.currentTarget.style.display = 'none'; });
   });
 
   // Exponer helpers si se requiere en consola

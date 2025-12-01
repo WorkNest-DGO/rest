@@ -2,8 +2,9 @@
 declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../../config/facturama.php'; // Helpers y credenciales locales para Facturama
 
-// Logger local a REST (antes de cargar tokyo/config para que lo use el wrapper)
+// Logger local a REST (antes de cargar facturama.php para que lo use el wrapper)
 if (!function_exists('facturas_log')) {
   function facturas_log(string $label, $data = null): void {
     try {
@@ -26,10 +27,6 @@ if (!function_exists('facturas_log')) {
 }
 
 // Integración Facturama (reutiliza helper de /tokyo si existe)
-$TOKYO_FACTURAMA = realpath(__DIR__ . '/../../../tokyo/config/facturama.php');
-if ($TOKYO_FACTURAMA && is_file($TOKYO_FACTURAMA)) {
-  @require_once $TOKYO_FACTURAMA;
-}
 // Util para normalizar contenido CFDI al guardar (similar a /tokyo/utils/cfdi_content.php)
 if (!function_exists('unwrap_if_base64_or_json')) {
   function unwrap_if_base64_or_json($input) {

@@ -210,7 +210,7 @@ while ($row = $rsFormas->fetch_assoc()) {
 
     if ($tipo === 'efectivo') {
         $clave = 'efectivo';
-    } elseif (in_array($tipo, ['cheque', 'boucher', 'tarjeta'], true)) {
+    } elseif (in_array($tipo, ['boucher', 'tarjeta'], true)) {
         $clave = 'tarjeta';
     } else {
         $clave = 'otros';
@@ -532,7 +532,7 @@ $stmt->close();
 $efectivoBruto = (float)$rowEf['efectivo_bruto'];
 
 $efectivoEnCaja = $fondoInicial + $efectivoBruto + $totalDepositos - $totalRetiros;
-$saldoFinal     = $efectivoEnCaja + $tarjetaFormas + $otrosPlataformas + $totalDepositos;
+$saldoFinal     = $efectivoEnCaja + $tarjetaFormas + $otrosPlataformas  + $totalProp;
 
 $resultado['efectivo_caja'] = round($efectivoEnCaja, 2);
 $resultado['saldo_final']   = round($saldoFinal, 2);
@@ -551,15 +551,15 @@ $resultado['total_cobrado']   = round($ventaConImpuesto, 2);
 $resultado['total_esperado']  = round($ventaConImpuesto, 2);
 
 // Esperados (con propinas)
-$esperadoEfectivo    = (float)($formasPagoResumen['efectivo']['total_neto'] ?? 0);
+$esperadoEfectivo    = (float)($formasPagoResumen['efectivo']['total_neto'] ?? 0) ;
 $esperadoTarjeta     = (float)($formasPagoResumen['tarjeta']['total_neto'] ?? 0);
-$esperadoOtros       = (float)($formasPagoResumen['otros']['total_neto'] ?? 0) + $otrosPlataformas;
+$esperadoOtros       = (float)($formasPagoResumen['otros']['total_neto'] ?? 0) ;
 $resultado['totalEsperado']          = round($ventaConImpuesto + $totalProp, 2);
 $resultado['totalEsperadoEfectivo']  = round($esperadoEfectivo + $propEfec, 2);
 $resultado['totalEsperadoNoEfectivo']= round(($ventaConImpuesto - $esperadoEfectivo) + ($totalProp - $propEfec), 2);
 $resultado['esperado_efectivo']      = $resultado['totalEsperadoEfectivo'];
 $resultado['esperado_tarjeta']       = round($esperadoTarjeta + $propTjt, 2);
-$resultado['esperado_cheque']        = round($propCheq, 2);
+$resultado['esperado_cheque']        = round($esperadoOtros + $propCheq, 2);
 $resultado['esperado_boucher']       = 0.0;
 $resultado['esperado_transferencia'] = 0.0;
 
