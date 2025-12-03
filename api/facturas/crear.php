@@ -3,6 +3,8 @@ declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../config/facturama.php'; // Helpers y credenciales locales para Facturama
+if (!defined('ENVIO_CASA_PRODUCT_ID')) define('ENVIO_CASA_PRODUCT_ID', 9001);
+if (!defined('ENVIO_CASA_PRODUCT_CODE')) define('ENVIO_CASA_PRODUCT_CODE', '90101800');
 
 // Logger local a REST (antes de cargar facturama.php para que lo use el wrapper)
 if (!function_exists('facturas_log')) {
@@ -236,31 +238,41 @@ function cfdi_ticket_data(mysqli $db, int $ticketId): array {
     }
     $importeSum += $importe;
 
-    $unitPriceNeto = round($precioAjustado / 1.16, 6);
+    $productoId = isset($r['producto_id']) ? (int)$r['producto_id'] : 0;
     $catId = isset($r['categoria_id']) ? (int)$r['categoria_id'] : null;
     $descCfdi = descripcion_cfdi_from_categoria($catId, (string)$r['descripcion']);
+    $esEnvioCasa = ($productoId === (int)ENVIO_CASA_PRODUCT_ID);
+    $taxRate = $esEnvioCasa ? 0.0 : 0.16;
+    $taxObject = $esEnvioCasa ? '01' : '02';
+    $unitPriceNeto = round($taxRate > 0 ? ($precioAjustado / (1 + $taxRate)) : $precioAjustado, 6);
+    $baseNeta = (float)round($unitPriceNeto * $qty, 6);
+    $taxes = [];
+    if ($taxRate > 0) {
+      $taxes[] = [
+        'Name' => 'IVA',
+        'Base' => $baseNeta,
+        'Rate' => $taxRate,
+        'IsRetention' => false,
+        'FactorType' => 'Tasa',
+        'Total' => (float)round($baseNeta * $taxRate, 6),
+      ];
+    }
+
     $items[] = [
-      'ProductCode' => product_code_from_categoria($catId),
-      'IdentificationNumber' => (string)((int)$r['producto_id']),
+      'ProductCode' => $esEnvioCasa ? ENVIO_CASA_PRODUCT_CODE : product_code_from_categoria($catId),
+      'IdentificationNumber' => (string)$productoId,
       'Description' => $descCfdi,
       'Unit' => 'Pieza',
       'UnitCode' => 'H87',
       'UnitPrice' => (float)$unitPriceNeto,
       'Quantity' => (float)$qty,
-      'Taxes' => [[
-        'Name' => 'IVA',
-        'Base' => (float)round($unitPriceNeto * $qty, 6),
-        'Rate' => 0.16,
-        'IsRetention' => false,
-        'FactorType' => 'Tasa',
-        'Total' => (float)round($unitPriceNeto * $qty * 0.16, 6),
-      ]],
-      'TaxObject' => '02',
+      'Taxes' => $taxes,
+      'TaxObject' => $taxObject,
     ];
 
     $detalles[] = [
       'ticket_detalle_id' => (int)$r['ticket_detalle_id'],
-      'producto_id' => (int)$r['producto_id'],
+      'producto_id' => $productoId,
       'descripcion' => $descCfdi,
       'cantidad' => (float)$qty,
       'precio_unitario' => (float)money2($precioAjustado),
@@ -289,20 +301,41 @@ function cfdi_ticket_data(mysqli $db, int $ticketId): array {
     $currentGross = (float)($items[$idxAdj]['Total'] ?? 0.0);
     $newGross = money2($currentGross + $diff);
     if ($newGross < 0) { $newGross = 0.0; }
-    $unitPriceAdj = round(($newGross / 1.16) / $qtyAdj, 6);
-    $items[$idxAdj]['UnitPrice'] = $unitPriceAdj;
+    $itemAdj = &$items[$idxAdj];
+    $taxRateAdj = 0.0;
+    if (!empty($itemAdj['Taxes']) && is_array($itemAdj['Taxes'])) {
+      foreach ($itemAdj['Taxes'] as $txAdj) {
+        if (!empty($txAdj['IsRetention'])) continue;
+        $rateTmp = isset($txAdj['Rate']) ? (float)$txAdj['Rate'] : 0.0;
+        if ($rateTmp > $taxRateAdj) { $taxRateAdj = $rateTmp; }
+      }
+    }
+    $taxObjectAdj = $itemAdj['TaxObject'] ?? '02';
+    $tieneImpuesto = $taxRateAdj > 0 && $taxObjectAdj !== '01';
+    $unitPriceAdj = $tieneImpuesto
+      ? round(($newGross / (1 + $taxRateAdj)) / $qtyAdj, 6)
+      : round($qtyAdj > 0 ? ($newGross / $qtyAdj) : $newGross, 6);
+    $itemAdj['UnitPrice'] = $unitPriceAdj;
     if (isset($detalles[$idxAdj])) {
       $detalles[$idxAdj]['precio_unitario'] = (float)money2($qtyAdj > 0 ? ($newGross / $qtyAdj) : $newGross);
       $detalles[$idxAdj]['importe'] = (float)money2($newGross);
     }
-    $items[$idxAdj]['Taxes'] = [[
-      'Name' => 'IVA',
-      'Base' => (float)round($unitPriceAdj * $qtyAdj, 6),
-      'Rate' => 0.16,
-      'IsRetention' => false,
-      'FactorType' => 'Tasa',
-      'Total' => (float)round($unitPriceAdj * $qtyAdj * 0.16, 6),
-    ]];
+    if ($tieneImpuesto) {
+      $baseAdj = (float)round($unitPriceAdj * $qtyAdj, 6);
+      $itemAdj['Taxes'] = [[
+        'Name' => 'IVA',
+        'Base' => $baseAdj,
+        'Rate' => $taxRateAdj,
+        'IsRetention' => false,
+        'FactorType' => 'Tasa',
+        'Total' => (float)round($baseAdj * $taxRateAdj, 6),
+      ]];
+      $itemAdj['TaxObject'] = '02';
+    } else {
+      $itemAdj['Taxes'] = [];
+      $itemAdj['TaxObject'] = '01';
+    }
+    unset($itemAdj);
     $items = normalizar_items_cfdi($items);
     $sumSub = 0.0; $sumImp = 0.0; $sumTot = 0.0;
     foreach ($items as $it) {

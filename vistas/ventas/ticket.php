@@ -83,6 +83,12 @@ ob_start();
 </div>
 <!-- Page Header End -->
 <div id="sinDatos" class="container mt-5">Sin datos cargados</div>
+<div class="container mt-3" style="display:none;" id="selectorImpresoraWrap">
+  <label for="impresoraTicket" class="text-white">Impresora:</label>
+  <select id="impresoraTicket" class="form-control" style="max-width:320px;">
+    <option value="">Selecciona impresora</option>
+  </select>
+</div>
 <div id="divReimprimir" style="display:none;">
 <br>
 <button id="btnReimprimir" class="btn custom-btn">Re-Imprimir tickets</button>

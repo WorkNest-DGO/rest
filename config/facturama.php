@@ -5,7 +5,9 @@ class FacturamaCfg {
     public static function baseUrl(): string {
         $base = getenv('FACTURAMA_BASE') ?: getenv('FACTURAMA_BASE_URL');
         if ($base && trim($base) !== '') return rtrim($base, '/');
-        return 'https://api.facturama.mx';
+       return 'https://api.facturama.mx';
+        //return 'https://apisandbox.facturama.mx';
+
     }
 
     public static function user(): string {
@@ -17,7 +19,8 @@ class FacturamaCfg {
     public static function pass(): string {
         $p = getenv('FACTURAMA_PASS');
         if ($p && trim($p) !== '') return $p;
-        return 'Marf9401109i5';
+    return 'Marf9401109i5'; 
+    //return 'k"2ix=+g&QqyZ9y';
     }
 
     public static function expeditionPlace(): string {
@@ -76,7 +79,16 @@ if (!function_exists('netearIvaItem')) {
  * Si $jsonBody es distinto de null se envia como JSON, de lo contrario se envia como form-data.
  */
 function facturama_request(string $method, string $path, array $fields = [], ?array $jsonBody = null): array {
-    $url = rtrim(FacturamaCfg::baseUrl(), '/') . '/' . ltrim($path, '/');
+    $baseUrl = FacturamaCfg::baseUrl();
+    $url = rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
+    $skipSsl = false;
+    $skipEnv = getenv('FACTURAMA_SKIP_SSL_VERIFY');
+    if ($skipEnv !== false && trim((string)$skipEnv) !== '' && trim((string)$skipEnv) !== '0') {
+        $skipSsl = true;
+    } elseif (stripos($baseUrl, 'apisandbox.facturama.mx') !== false) {
+        // Sandbox suele presentar problemas de certificado en Windows
+        $skipSsl = true;
+    }
     $ch = curl_init();
     $headers = ['Accept: application/json'];
     $opts = [
@@ -88,6 +100,10 @@ function facturama_request(string $method, string $path, array $fields = [], ?ar
         CURLOPT_CONNECTTIMEOUT => 15,
         CURLOPT_HTTPHEADER => $headers,
     ];
+    if ($skipSsl) {
+        $opts[CURLOPT_SSL_VERIFYPEER] = false;
+        $opts[CURLOPT_SSL_VERIFYHOST] = false;
+    }
     $m = strtoupper($method);
     if ($m === 'POST') {
         $opts[CURLOPT_POST] = true;
@@ -165,10 +181,18 @@ function facturama_create_cfdi_json(array $cfdi): array {
  */
 function facturama_download_issued(string $type, string $facturamaId): array {
     $type = strtolower($type) === 'pdf' ? 'pdf' : 'xml';
+    $baseUrl = FacturamaCfg::baseUrl();
+    $skipSsl = false;
+    $skipEnv = getenv('FACTURAMA_SKIP_SSL_VERIFY');
+    if ($skipEnv !== false && trim((string)$skipEnv) !== '' && trim((string)$skipEnv) !== '0') {
+        $skipSsl = true;
+    } elseif (stripos($baseUrl, 'apisandbox.facturama.mx') !== false) {
+        $skipSsl = true;
+    }
     $path = "/api/Cfdi/{$type}/issued/" . rawurlencode($facturamaId);
-    $url = rtrim(FacturamaCfg::baseUrl(), '/') . '/' . ltrim($path, '/');
+    $url = rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
     $ch = curl_init();
-    curl_setopt_array($ch, [
+    $opts = [
         CURLOPT_URL => $url,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_USERPWD => FacturamaCfg::user() . ':' . FacturamaCfg::pass(),
@@ -176,7 +200,12 @@ function facturama_download_issued(string $type, string $facturamaId): array {
         CURLOPT_TIMEOUT => 40,
         CURLOPT_CONNECTTIMEOUT => 15,
         CURLOPT_HEADER => true,
-    ]);
+    ];
+    if ($skipSsl) {
+        $opts[CURLOPT_SSL_VERIFYPEER] = false;
+        $opts[CURLOPT_SSL_VERIFYHOST] = false;
+    }
+    curl_setopt_array($ch, $opts);
     $resp = curl_exec($ch);
     if ($resp === false) {
         $err = curl_error($ch);

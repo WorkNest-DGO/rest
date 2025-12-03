@@ -1,6 +1,7 @@
 <?php 
 require __DIR__ . '/../../vendor/autoload.php';
 require __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../impresoras/helpers.php';
 use Mike42\Escpos\Printer;
 use Mike42\Escpos\PrintConnectors\FilePrintConnector;
 use Mike42\Escpos\EscposImage;
@@ -83,7 +84,9 @@ $datos2 =json_decode($datos,true);
 
 
 //$connector = new WindowsPrintConnector("smb://ip_maquina/nombre_impresora");
-$connector = new WindowsPrintConnector("smb://FUED/pos58");
+$printId = isset($_GET['print_id']) ? (int)$_GET['print_id'] : null;
+$printerIp = obtener_impresora_ip($conn, $printId);
+$connector = new WindowsPrintConnector($printerIp);
 //$connector = new WindowsPrintConnector("smb://DESKTOP-O4CO4GV/58");
 //$connector = new FilePrintConnector("php://stdout");
 $printer = new Printer($connector);

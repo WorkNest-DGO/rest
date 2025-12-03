@@ -138,6 +138,8 @@ let mesas = [];
 let coloniasData = [];
 let clientesDomicilio = [];
 let clienteSeleccionado = null;
+let impresorasData = [];
+let impresoraSeleccionada = null;
 // Catálogo de promociones para selección en ventas
 let catalogoPromocionesVenta = [];
 let catalogoPromocionesVentaFiltradas = [];
@@ -414,7 +416,7 @@ function buildCorteTicket(resultado, cajeroOpt) {
 
 // ====== Controladores del modal ======
 function showCortePreview(resultado, cajero) {
-    window.open('../../api/corte_caja/imprime_corte.php?datos=' + JSON.stringify(resultado) + '&detalle=' + JSON.stringify(cajero));
+    window.open(urlConImpresora('../../api/corte_caja/imprime_corte.php?datos=' + JSON.stringify(resultado) + '&detalle=' + JSON.stringify(cajero)));
     // try {
     //   const txt = buildCorteTicket(resultado, cajero);
     //   const pre = document.getElementById('corteTicketText');
@@ -472,6 +474,105 @@ function deshabilitarCobro() {
         });
     const btns = ['#btnDeposito', '#btnRetiro', '#btnDetalleMovs'];
     btns.forEach(sel => { const b = document.querySelector(sel); if (b) b.disabled = true; });
+}
+
+// ===== Impresoras =====
+function getImpresoraSeleccionada() {
+    return impresoraSeleccionada || localStorage.getItem('impresora_print_id') || '';
+}
+
+function setImpresoraSeleccionada(val) {
+    impresoraSeleccionada = val || '';
+    localStorage.setItem('impresora_print_id', impresoraSeleccionada);
+    const sel = document.getElementById('impresora_id');
+    if (sel) sel.value = impresoraSeleccionada;
+}
+
+function urlConImpresora(url) {
+    const pid = getImpresoraSeleccionada();
+    if (!pid) return url;
+    return url + (url.includes('?') ? '&' : '?') + 'print_id=' + encodeURIComponent(pid);
+}
+
+async function cargarImpresoras() {
+    try {
+        const res = await fetch('../../api/impresoras/listar.php');
+        const data = await res.json();
+        if (!data.success) throw new Error(data.mensaje || 'Error al listar impresoras');
+        impresorasData = Array.isArray(data.resultado) ? data.resultado : [];
+        const sel = document.getElementById('impresora_id');
+        if (sel) {
+            sel.innerHTML = '<option value="">Selecciona impresora</option>';
+            impresorasData.forEach(imp => {
+                const opt = document.createElement('option');
+                opt.value = imp.print_id;
+                opt.textContent = `${imp.lugar} (${imp.ip})`;
+                sel.appendChild(opt);
+            });
+            const stored = getImpresoraSeleccionada();
+            if (stored) sel.value = stored;
+            sel.addEventListener('change', () => setImpresoraSeleccionada(sel.value));
+            // Mostrar select solo si hay datos
+            const wrap = sel.closest('.form-group');
+            if (wrap) wrap.style.display = '';
+        }
+    } catch (e) {
+        console.error('No se pudieron cargar impresoras', e);
+    }
+}
+
+async function imprimirComanda(ventaId) {
+    if (!ventaId) return;
+    try {
+        const url = urlConImpresora('../../api/tickets/imprime_comanda.php?venta_id=' + encodeURIComponent(ventaId));
+        console.log('[COMANDA] solicitando impresión', url);
+        const res = await fetch(url, { method: 'GET' });
+        if (!res.ok) {
+            console.error('[COMANDA] error HTTP', res.status);
+            alert('No se pudo enviar la comanda (' + res.status + ')');
+        }
+    } catch (e) {
+        console.error('[COMANDA] excepción', e);
+        alert('No se pudo imprimir la comanda');
+    }
+}
+
+function mostrarModalVentaRegistrada(ventaId) {
+    const ventaTarget = ventaId || window.__ultimaVentaRegistrada || null;
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.inset = '0';
+    overlay.style.background = 'rgba(0,0,0,0.6)';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.zIndex = '2000';
+
+    const box = document.createElement('div');
+    box.style.background = '#111';
+    box.style.color = '#fff';
+    box.style.padding = '20px';
+    box.style.borderRadius = '10px';
+    box.style.maxWidth = '360px';
+    box.style.width = '90%';
+    box.innerHTML = `<h4 style="margin-top:0;">Venta registrada</h4><p>La venta se guardó correctamente.</p>`;
+
+    const btn = document.createElement('button');
+    btn.className = 'btn custom-btn';
+    btn.textContent = 'Cerrar';
+    btn.addEventListener('click', async () => {
+        if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        if (ventaTarget) {
+            console.log('[COMANDA][modal] disparando impresión para venta', ventaTarget);
+            try { await imprimirComanda(ventaTarget); } catch (e) { console.error('[COMANDA][modal] fallo', e); }
+        } else {
+            console.warn('[COMANDA][modal] sin ventaId para imprimir');
+        }
+    });
+
+    box.appendChild(btn);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
 }
 
 function habilitarCobro() {
@@ -934,7 +1035,7 @@ function guardarCorteTemporal(datos) {
 }
 
 function imprimirCorteTemporal(datos) {
-    window.open('../../api/corte_caja/imprime_corte_temp.php?datos=' + JSON.stringify(datos));
+    window.open(urlConImpresora('../../api/corte_caja/imprime_corte_temp.php?datos=' + JSON.stringify(datos)));
 
     // const win = window.open('', '_blank', 'width=600,height=800');
     // if (!win) {
@@ -2429,10 +2530,14 @@ async function registrarVenta() {
         });
         const data = await resp.json();
         if (data.success) {
-            alert('Venta registrada');
-            if (data.ultimo_detalle_id) {
-                window.ultimoDetalleCocina = data.ultimo_detalle_id;
-                localStorage.setItem('ultimoDetalleCocina', String(data.ultimo_detalle_id));
+            const resultado = data.resultado || {};
+            const vid = resultado.venta_id || resultado.id || data.venta_id || data.id || null;
+            window.__ultimaVentaRegistrada = vid;
+            mostrarModalVentaRegistrada(vid);
+            const ultimoDetalle = resultado.ultimo_detalle_id || data.ultimo_detalle_id || null;
+            if (ultimoDetalle) {
+                window.ultimoDetalleCocina = ultimoDetalle;
+                localStorage.setItem('ultimoDetalleCocina', String(ultimoDetalle));
             }
             await cargarHistorial();
             await resetFormularioVenta();
@@ -2682,6 +2787,7 @@ async function verDetalles(id) {
             html += `<div class="mt-2">
                         <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button>
                         ${ventaCerrada ? '<button class="btn custom-btn" id="reimprimirTicket" style="margin-left:8px;">Reimprimir ticket</button>' : ''}
+                        <button class="btn custom-btn" id="imprimirComandaDetalle" style="margin-left:8px;">Comanda</button>
                         <button hidden class="btn custom-btn" id="cerrarDetalle" data-dismiss="modal">Cerrar</button>
                       </div>`;
 
@@ -2741,9 +2847,13 @@ async function verDetalles(id) {
                 if (btnReimp) {
                     btnReimp.addEventListener('click', () => {
                         // Reimprime los tickets ya generados para esta venta desde el backend
-                        window.open('../../api/tickets/reimprime_ticket.php?venta_id=' + encodeURIComponent(id));
+                        window.open(urlConImpresora('../../api/tickets/reimprime_ticket.php?venta_id=' + encodeURIComponent(id)));
                     });
                 }
+            }
+            const btnComanda = document.getElementById('imprimirComandaDetalle');
+            if (btnComanda) {
+                btnComanda.addEventListener('click', () => imprimirComanda(id));
             }
         } else {
             alert(data.mensaje);
@@ -3649,6 +3759,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarHistorial();
     cargarSolicitudes();
     cargarPromocionesVenta();
+    cargarImpresoras();
     cargarColoniasCatalogo();
     cargarClientesDomicilio();
     document.getElementById('registrarVenta').addEventListener('click', registrarVenta);

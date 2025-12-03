@@ -337,6 +337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const imprimir = params.get('print') === '1';
     const almacenado = localStorage.getItem('ticketData');
     const sinDatos = document.getElementById('sinDatos');
+    cargarImpresorasTicket();
     if (!almacenado) {
         if (sinDatos) sinDatos.style.display = 'block';
         return;
@@ -1539,7 +1540,7 @@ function mostrarTotal() {
 
     async function imprimirTicketsVenta(ventaId) {
         try {
-            window.open('../../api/tickets/imprime_ticket.php?venta_id='+ventaId);
+            window.open(urlConImpresora('../../api/tickets/imprime_ticket.php?venta_id='+ventaId));
             // Si la venta está asociada a una mesa, liberarla al imprimir
             try { await liberarMesa(ventaId); } catch(_) {}
                         // const resp = await fetch('../../api/tickets/reimprimir_ticket.php', {
@@ -1577,7 +1578,7 @@ function mostrarTotal() {
         const datos2 = JSON.parse(almacenado2);
         ventaId=datos2.venta_id;
         try {
-            window.open('../../api/tickets/reimprime_ticket.php?venta_id='+ventaId);
+            window.open(urlConImpresora('../../api/tickets/reimprime_ticket.php?venta_id='+ventaId));
         } catch (err) {
             console.error('Error al imprimir tickets', err);
         }
@@ -1622,6 +1623,53 @@ function mostrarTotal() {
             <div>${data.total_letras || ''}</div>
             <p>Gracias por su compra</p>
         </div>`;
+    }
+
+    // ===== Impresoras =====
+    let impresorasData = [];
+    let impresoraSeleccionada = localStorage.getItem('impresora_print_id') || '';
+
+    function getImpresoraSeleccionada() {
+        return impresoraSeleccionada || localStorage.getItem('impresora_print_id') || '';
+    }
+
+    function setImpresoraSeleccionada(val) {
+        impresoraSeleccionada = val || '';
+        localStorage.setItem('impresora_print_id', impresoraSeleccionada);
+        const sel = document.getElementById('impresoraTicket');
+        if (sel) sel.value = impresoraSeleccionada;
+    }
+
+    function urlConImpresora(url) {
+        const pid = getImpresoraSeleccionada();
+        if (!pid) return url;
+        return url + (url.includes('?') ? '&' : '?') + 'print_id=' + encodeURIComponent(pid);
+    }
+
+    async function cargarImpresorasTicket() {
+        try {
+            const res = await fetch('../../api/impresoras/listar.php');
+            const data = await res.json();
+            if (!data.success) throw new Error(data.mensaje || 'Error al listar impresoras');
+            impresorasData = Array.isArray(data.resultado) ? data.resultado : [];
+            const sel = document.getElementById('impresoraTicket');
+            const wrap = document.getElementById('selectorImpresoraWrap');
+            if (sel) {
+                sel.innerHTML = '<option value="">Selecciona impresora</option>';
+                impresorasData.forEach(imp => {
+                    const opt = document.createElement('option');
+                    opt.value = imp.print_id;
+                    opt.textContent = `${imp.lugar} (${imp.ip})`;
+                    sel.appendChild(opt);
+                });
+                const stored = getImpresoraSeleccionada();
+                if (stored) sel.value = stored;
+                sel.addEventListener('change', () => setImpresoraSeleccionada(sel.value));
+                if (wrap) wrap.style.display = '';
+            }
+        } catch (e) {
+            console.error('No se pudieron cargar impresoras', e);
+        }
     }
 
     async function liberarMesa(ventaId) {
