@@ -17,7 +17,7 @@ $query = "SELECT m.id, m.nombre, m.estado, m.capacidad, m.mesa_principal_id,
           LEFT JOIN alineacion al ON m.alineacion_id = al.id
           LEFT JOIN mesas mp ON m.mesa_principal_id = mp.id
           LEFT JOIN ventas v ON v.mesa_id = m.id AND v.estatus = 'activa'
-          ORDER BY area_nombre, m.id";
+          ORDER BY m.id";
 $result = $conn->query($query);
 
 if (!$result) {
