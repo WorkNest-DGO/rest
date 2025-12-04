@@ -343,7 +343,7 @@ ob_start();
 </div>
 <!-- MODAL NORMALIZED 2025-08-14 -->
 <div class="modal fade" id="modal-detalles" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Detalle de venta</h5>
@@ -358,7 +358,7 @@ ob_start();
 </div>
 <!-- Modal: Propinas por usuario -->
 <div class="modal fade" id="modalPropinasUsuarios" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Propinas por usuario</h5>
@@ -428,7 +428,7 @@ ob_start();
 </div>
 <!-- MODAL NORMALIZED 2025-08-14 -->
 <div class="modal fade" id="modalCorteTemporal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Corte Temporal</h5>
@@ -629,7 +629,7 @@ ob_start();
 
 <!-- MODAL NORMALIZED 2025-08-14 -->
 <div class="modal fade" id="modalCortePreview" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Previsualización – Corte / Cierre de caja</h5>
@@ -648,7 +648,7 @@ ob_start();
 
 <!-- Modal de confirmación de cancelación -->
 <div class="modal fade" id="cancelVentaModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-body">¿Deseas cancelar la venta?</div>
       <div class="modal-footer">
