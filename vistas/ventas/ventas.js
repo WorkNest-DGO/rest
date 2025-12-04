@@ -146,6 +146,12 @@ let catalogoPromocionesVentaFiltradas = [];
 let panelPromosVentaInicializado = false;
 window.__promosVentaSeleccionadas = [];
 const promocionesUrlVentas = '../../api/tickets/promociones.php';
+let clienteColoniaOriginalId = null;
+let clienteSeleccionadoIdRef = null;
+const normalizarClienteTexto = (txt) => {
+    if (typeof normalizarTexto === 'function') return normalizarTexto(txt);
+    return (txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+};
 
 // ==== [INICIO BLOQUE valida: validación para cierre de corte] ====
 const VENTAS_URL = typeof API_LISTAR_VENTAS !== 'undefined' ? API_LISTAR_VENTAS : '../../api/ventas/listar_ventas.php';
@@ -1415,6 +1421,10 @@ async function cargarColoniasCatalogo() {
         const data = await resp.json();
         if (data.success) {
             coloniasData = data.resultado || [];
+            const busc = document.getElementById('buscarColoniaCliente');
+            if (busc && busc.value && busc.value.trim()) {
+                mostrarSugerenciasColonias(busc.value);
+            }
         }
     } catch (err) {
         console.error('No se pudieron cargar las colonias', err);
@@ -1446,6 +1456,64 @@ function pintarColoniasSelect(select) {
         opt.dataset.costoFore = col.costo_fore ?? '';
         select.appendChild(opt);
     });
+}
+
+function formatearEtiquetaColonia(col) {
+    if (!col) return '';
+    const dist = (col.dist_km_la_forestal !== undefined && col.dist_km_la_forestal !== null && col.dist_km_la_forestal !== '')
+        ? ` - ${col.dist_km_la_forestal} km` : '';
+    const costo = (col.costo_fore !== undefined && col.costo_fore !== null && col.costo_fore !== '')
+        ? ` - $${Number(col.costo_fore).toFixed(2)}` : '';
+    return `${col.colonia || ''}${dist}${costo}`;
+}
+
+function mostrarSugerenciasColonias(termino = '', lista = coloniasData) {
+    const ul = document.getElementById('listaColoniasCliente');
+    if (!ul) return;
+    ul.innerHTML = '';
+    const needle = normalizarClienteTexto(termino.trim());
+    if (!needle) {
+        ul.style.display = 'none';
+        return;
+    }
+    const coincidencias = (lista || []).filter(col => normalizarClienteTexto(col.colonia || '').includes(needle)).slice(0, 50);
+    coincidencias.forEach(col => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item list-group-item-action';
+        li.textContent = formatearEtiquetaColonia(col);
+        li.addEventListener('click', () => seleccionarColoniaDesdeLista(col));
+        ul.appendChild(li);
+    });
+    ul.style.display = coincidencias.length ? 'block' : 'none';
+}
+
+function seleccionarColoniaDesdeLista(col) {
+    const select = document.getElementById('clienteColoniaSelect');
+    const busc = document.getElementById('buscarColoniaCliente');
+    const ul = document.getElementById('listaColoniasCliente');
+    if (select && col) {
+        let opt = select.querySelector(`option[value="${col.id}"]`);
+        if (!opt) {
+            opt = document.createElement('option');
+            opt.value = col.id;
+            opt.textContent = col.colonia || '';
+            opt.dataset.distancia = col.dist_km_la_forestal ?? '';
+            opt.dataset.costoFore = col.costo_fore ?? '';
+            select.appendChild(opt);
+        }
+        select.value = col.id;
+        onSeleccionColoniaManual();
+    }
+    if (busc) busc.value = col ? (col.colonia || '') : '';
+    if (ul) ul.style.display = 'none';
+}
+
+function sincronizarBuscadorColonia() {
+    const select = document.getElementById('clienteColoniaSelect');
+    const busc = document.getElementById('buscarColoniaCliente');
+    if (!select || !busc) return;
+    const opt = select.selectedOptions && select.selectedOptions[0];
+    busc.value = opt ? (opt.textContent || '') : '';
 }
 
 function formatearEtiquetaCliente(cli) {
@@ -1532,6 +1600,11 @@ function actualizarResumenCliente(cliente) {
     const costoInput = document.getElementById('costoForeInput');
     const colSelectWrap = document.getElementById('clienteColoniaSelectWrap');
     const colSelect = document.getElementById('clienteColoniaSelect');
+    const clienteIdActual = cliente ? Number(cliente.id) : null;
+    if (clienteIdActual !== clienteSeleccionadoIdRef) {
+        clienteColoniaOriginalId = cliente && cliente.colonia_id ? Number(cliente.colonia_id) : null;
+        clienteSeleccionadoIdRef = clienteIdActual;
+    }
     clienteSeleccionado = cliente || null;
 
     if (!resumen) return;
@@ -1577,10 +1650,14 @@ function actualizarPrecioEnvio(monto) {
 function prepararColoniaSelect(cliente) {
     const wrap = document.getElementById('clienteColoniaSelectWrap');
     const select = document.getElementById('clienteColoniaSelect');
+    const busc = document.getElementById('buscarColoniaCliente');
+    const ul = document.getElementById('listaColoniasCliente');
     if (!wrap || !select) return;
     if (!cliente || (cliente.colonia_id && Number(cliente.colonia_id) > 0)) {
         wrap.style.display = 'none';
         select.value = '';
+        if (busc) busc.value = '';
+        if (ul) ul.style.display = 'none';
         return;
     }
     wrap.style.display = 'block';
@@ -1595,6 +1672,10 @@ function prepararColoniaSelect(cliente) {
             if (opt) select.value = opt.value;
         }
         if (select.value) onSeleccionColoniaManual();
+        sincronizarBuscadorColonia();
+        if (busc && busc.value.trim()) {
+            mostrarSugerenciasColonias(busc.value);
+        }
     };
     if (coloniasData.length) {
         rellenar();
@@ -1623,6 +1704,9 @@ function onSeleccionColoniaManual() {
         const num = Number(costo);
         if (!Number.isNaN(num)) actualizarPrecioEnvio(num);
     }
+    sincronizarBuscadorColonia();
+    const ul = document.getElementById('listaColoniasCliente');
+    if (ul) ul.style.display = 'none';
     if (clienteSeleccionado) {
         clienteSeleccionado.colonia_id = parseInt(select.value, 10) || null;
         clienteSeleccionado.colonia_nombre = nombre;
@@ -2404,6 +2488,7 @@ async function registrarVenta() {
     const productos = obtenerCarritoActual();
     let cliente_id = null;
     let costoForeCapturado = null;
+    let clienteColoniaSeleccionadaId = null;
 
     if (!validarInventario()) {
         return;
@@ -2472,6 +2557,13 @@ async function registrarVenta() {
         return;
     }
 
+    if (cliente_id && clienteSeleccionado && Number(clienteSeleccionado.id) === Number(cliente_id) && !clienteColoniaOriginalId) {
+        const cand = parseInt(clienteSeleccionado.colonia_id, 10);
+        if (!Number.isNaN(cand) && cand > 0) {
+            clienteColoniaSeleccionadaId = cand;
+        }
+    }
+
     const payload = {
         tipo,
         mesa_id: tipo === 'mesa' ? mesa_id : null,
@@ -2484,6 +2576,9 @@ async function registrarVenta() {
     };
     if (cliente_id) {
         payload.cliente_id = cliente_id;
+    }
+    if (clienteColoniaSeleccionadaId) {
+        payload.cliente_colonia_id = clienteColoniaSeleccionadaId;
     }
     if (cliente_id && costoForeCapturado !== null && !isNaN(costoForeCapturado)) {
         payload.costo_fore = costoForeCapturado;
@@ -3794,11 +3889,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         buscadorCliente.addEventListener('focus', () => aplicarFiltroClientesDomicilio());
     }
+    const buscadorColonia = document.getElementById('buscarColoniaCliente');
+    if (buscadorColonia) {
+        buscadorColonia.addEventListener('input', () => mostrarSugerenciasColonias(buscadorColonia.value));
+        buscadorColonia.addEventListener('focus', () => {
+            if (buscadorColonia.value.trim()) mostrarSugerenciasColonias(buscadorColonia.value);
+        });
+    }
     document.addEventListener('click', e => {
         const listaEl = document.getElementById('listaClientesDomicilio');
         const seccion = document.getElementById('seccionClienteDomicilio');
         if (listaEl && seccion && !seccion.contains(e.target)) {
             listaEl.style.display = 'none';
+        }
+    });
+    document.addEventListener('click', e => {
+        const wrap = document.getElementById('clienteColoniaSelectWrap');
+        const ul = document.getElementById('listaColoniasCliente');
+        if (wrap && ul && !wrap.contains(e.target)) {
+            ul.style.display = 'none';
         }
     });
     const btnNuevoCliente = document.getElementById('btnNuevoCliente');

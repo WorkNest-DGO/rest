@@ -11,7 +11,10 @@ try {
   if (!in_array($side, ['bd1','bd2'], true)) {
     json_error('Parámetro side inválido');
   }
-  $pdo = $side === 'bd1' ? $pdoOp : $pdoEsp;
+  $pdo = $side === 'bd1' ? ($pdoOp ?? null) : ($pdoEsp ?? null);
+  if (!($pdo instanceof PDO)) {
+    json_error("Conexión PDO no disponible para {$side}", 500);
+  }
 
   $q = isset($_GET['q']) ? trim((string)$_GET['q']) : '';
   $page = max(1, (int)($_GET['page'] ?? 1));

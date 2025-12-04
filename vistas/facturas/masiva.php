@@ -38,6 +38,10 @@ ob_start();
     .totales div { min-width: 160px; text-align:right; }
     .modal { position: fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,.5); }
     .modal .box { background:#111; width:min(900px, 96vw); max-height:90vh; overflow:auto; border-radius:10px; padding:16px; }
+    .selector-autocomplete { position: relative; }
+    .selector-autocomplete .sugerencias { list-style:none; padding:0; margin:4px 0 0 0; position:absolute; left:0; right:0; background:#111; border:1px solid #333; border-radius:6px; max-height:220px; overflow:auto; z-index:20; display:none; }
+    .selector-autocomplete .sugerencias li { padding:6px 10px; cursor:pointer; }
+    .selector-autocomplete .sugerencias li:hover { background:#222; }
   </style>
 
   <!-- 1) Filtros del periodo -->
@@ -132,7 +136,11 @@ ob_start();
     <div class="row" style="align-items:flex-end; gap:8px;">
       <div style="flex:2;">
         <label>Cliente</label>
-        <select id="select-cliente"><option value="">Seleccione...</option></select>
+        <div class="selector-autocomplete" id="selector-cliente">
+          <input type="text" id="buscador-cliente" placeholder="RFC o razon social">
+          <ul id="lista-clientes" class="sugerencias"></ul>
+          <select id="select-cliente" style="display:none;"><option value="">Seleccione...</option></select>
+        </div>
       </div>
       <div style="flex:1; display:flex; gap:8px;">
         <button type="button" class="btn custom-btn" id="btn-nuevo-cliente">Nuevo</button>

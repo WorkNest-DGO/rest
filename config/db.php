@@ -47,18 +47,18 @@ if (!class_exists('PDO')) {
             return $pdo;
         }
     }
-
+     //esta es la BD origen de aqui tomamos los cobros
     $db1_dsn  = env('DB1_DSN', 'mysql:host=localhost;dbname=restaurante;charset=utf8mb4');
-    $db1_user = env('DB1_USER', env('DB_USER', 'accesorest'));
-    $db1_pass = env('DB1_PASS', env('DB_PASS', 'accesorest1994'));
-
+    $db1_user = env('DB1_USER', env('DB_USER', 'root'));
+    $db1_pass = env('DB1_PASS', env('DB_PASS', ''));
+    //esta BD es la q mueve los cobros
     $db2_dsn  = env('DB2_DSN', 'mysql:host=localhost;dbname=restaurante_espejo;charset=utf8mb4');
-    $db2_user = env('DB2_USER', env('DB_USER', 'accesorest'));
-    $db2_pass = env('DB2_PASS', env('DB_PASS', 'accesorest1994'));
-
+    $db2_user = env('DB2_USER', env('DB_USER', 'root'));
+    $db2_pass = env('DB2_PASS', env('DB_PASS', ''));
+    //esta BD es CDI para tomar las reques 
     $db3_dsn  = env('DB3_DSN', 'mysql:host=localhost;dbname=restaurante_cdi;charset=utf8mb4');
-    $db3_user = env('DB3_USER', env('DB_USER', 'accesorest'));
-    $db3_pass = env('DB3_PASS', env('DB_PASS', 'accesorest1994'));
+    $db3_user = env('DB3_USER', env('DB_USER', 'root'));
+    $db3_pass = env('DB3_PASS', env('DB_PASS', ''));
 
     try {
         $pdoOp  = pdo_connect($db1_dsn, $db1_user, $db1_pass);

@@ -17,17 +17,25 @@ try {
   if (empty($ids)) {
     json_error('ticket_ids vacío');
   }
+  $pdoOperativo = $pdoOp ?? null;
+  $pdoEspejo    = $pdoEsp ?? null;
+  if ($direction === 'to_espejo' && !($pdoOperativo instanceof PDO)) {
+    json_error('Conexión PDO no disponible para bd1', 500);
+  }
+  if ($direction === 'to_operativo' && !($pdoEspejo instanceof PDO)) {
+    json_error('Conexión PDO no disponible para bd2', 500);
+  }
 
   $result = [ 'succeed' => [], 'failed' => [] ];
 
   foreach ($ids as $id) {
     try {
       if ($direction === 'to_espejo') {
-        $stmt = $pdoOp->prepare('CALL sp_archivar_transaccion(:id)');
+        $stmt = $pdoOperativo->prepare('CALL sp_archivar_transaccion(:id)');
         $stmt->execute([':id' => $id]);
         $stmt->closeCursor();
       } else { // to_operativo
-        $stmt = $pdoEsp->prepare('CALL sp_desarchivar_transaccion(:id)');
+        $stmt = $pdoEspejo->prepare('CALL sp_desarchivar_transaccion(:id)');
         $stmt->execute([':id' => $id]);
         $stmt->closeCursor();
       }

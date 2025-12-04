@@ -30,6 +30,76 @@
   let catCatalogosPromise = null;
   let satCatalogosRaw = null;
 
+  const normalizarTexto = (str) => (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const textoCliente = (cli) => {
+    if (!cli) return '';
+    const nombre = (cli.nombre || cli.razon_social || '').trim();
+    const rfc = (cli.rfc || '').trim();
+    return [nombre, rfc].filter(Boolean).join(' - ');
+  };
+
+  function limpiarSugerenciasClientes() {
+    const lista = el('#lista-clientes');
+    if (lista) {
+      lista.innerHTML = '';
+      lista.style.display = 'none';
+    }
+  }
+
+  function syncClienteSeleccionadoInput() {
+    const input = el('#buscador-cliente');
+    if (!input) return;
+    const selId = Number(el('#select-cliente')?.value || 0);
+    const cli = clientesCache.find(c => Number(c.id) === selId);
+    input.value = cli ? textoCliente(cli) : '';
+  }
+
+  function setClienteSeleccionado(cli) {
+    const sel = el('#select-cliente');
+    if (sel) {
+      if (cli) {
+        let opt = sel.querySelector(`option[value="${cli.id}"]`);
+        if (!opt) {
+          opt = document.createElement('option');
+          opt.value = cli.id;
+          opt.textContent = textoCliente(cli);
+          sel.appendChild(opt);
+        }
+        sel.value = cli.id;
+      } else {
+        sel.value = '';
+      }
+      sel.dispatchEvent(new Event('change'));
+    }
+    const input = el('#buscador-cliente');
+    if (input) input.value = cli ? textoCliente(cli) : '';
+    limpiarSugerenciasClientes();
+  }
+
+  function renderSugerenciasClientes(term) {
+    const lista = el('#lista-clientes');
+    if (!lista) return;
+    lista.innerHTML = '';
+    const q = normalizarTexto(term || '');
+    if (!q) {
+      lista.style.display = 'none';
+      return;
+    }
+    const coincidencias = clientesCache.filter(c => {
+      const nombre = normalizarTexto(c.nombre || c.razon_social || '');
+      const rfc = normalizarTexto(c.rfc || '');
+      return nombre.includes(q) || rfc.includes(q);
+    }).slice(0, 30);
+    coincidencias.forEach(c => {
+      const li = document.createElement('li');
+      li.textContent = textoCliente(c) || `Cliente ${c.id}`;
+      li.dataset.id = c.id;
+      li.addEventListener('click', () => setClienteSeleccionado(c));
+      lista.appendChild(li);
+    });
+    lista.style.display = coincidencias.length ? 'block' : 'none';
+  }
+
   function renderRegimenesSat() {
     const sel = el('#cliente-regimen');
     if (!sel) return;
@@ -165,14 +235,19 @@
       const res = await fetch(url.toString());
       const j = await res.json();
       const sel = el('#select-cliente');
+      const prev = sel ? sel.value : '';
       sel.innerHTML = '<option value="">Seleccione...</option>';
       clientesCache = Array.isArray(j.resultado?.clientes) ? j.resultado.clientes : [];
       for (const c of clientesCache) {
         const opt = document.createElement('option');
         opt.value = c.id;
-        opt.textContent = (c.nombre || '') + (c.rfc ? ` :" ${c.rfc}` : '');
+        opt.textContent = textoCliente(c) || (c.id ? `Cliente ${c.id}` : '');
         sel.appendChild(opt);
       }
+      if (prev) sel.value = prev;
+      syncClienteSeleccionadoInput();
+      const busc = el('#buscador-cliente');
+      if (busc && busc.value.trim()) renderSugerenciasClientes(busc.value);
       toggleEditarCliente();
     } catch (e) {
       console.error(e);
@@ -633,8 +708,8 @@ function renderFacturadas(rows) {
       if (!j.success) throw new Error(j.mensaje || 'No se pudo guardar');
       const newId = j.resultado?.id || id;
       await cargarClientes();
-      el('#select-cliente').value = newId;
-      updateAccionesState();
+      const cli = clientesCache.find(c => Number(c.id) === Number(newId));
+      setClienteSeleccionado(cli || null);
       cerrarModalCliente();
       alert('Cliente guardado');
     } catch (e) {
@@ -687,7 +762,28 @@ function renderFacturadas(rows) {
     initCatalogosSat();
     el('#btn-buscar').addEventListener('click', () => { pendPage = 1; listar(); });
     const sel = el('#pend-records'); if (sel) sel.addEventListener('change', () => { pendPage = 1; pendPageSize = Number(sel.value||20); listar(); });
-    el('#select-cliente').addEventListener('change', updateAccionesState);
+    const selectCliente = el('#select-cliente');
+    if (selectCliente) selectCliente.addEventListener('change', () => { updateAccionesState(); syncClienteSeleccionadoInput(); });
+    const buscadorCliente = el('#buscador-cliente');
+    if (buscadorCliente) {
+      buscadorCliente.addEventListener('input', () => {
+        const term = buscadorCliente.value || '';
+        if (!term.trim()) {
+          setClienteSeleccionado(null);
+          return;
+        }
+        renderSugerenciasClientes(term);
+        if (selectCliente) selectCliente.value = '';
+        updateAccionesState();
+      });
+      buscadorCliente.addEventListener('focus', () => {
+        if (buscadorCliente.value.trim()) renderSugerenciasClientes(buscadorCliente.value);
+      });
+    }
+    document.addEventListener('click', (ev) => {
+      const cont = el('#selector-cliente');
+      if (cont && !cont.contains(ev.target)) limpiarSugerenciasClientes();
+    });
     const selRegimen = el('#cliente-regimen');
     if (selRegimen) selRegimen.addEventListener('change', onRegimenClienteChange);
     const btnNuevoCli = el('#btn-nuevo-cliente');

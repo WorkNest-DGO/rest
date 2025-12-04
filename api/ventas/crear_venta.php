@@ -126,6 +126,10 @@ $precio_envio  = isset($input['precio_envio']) ? (float)$input['precio_envio'] :
 $envio_cantidad = isset($input['envio_cantidad']) ? (int)$input['envio_cantidad'] : null;
 $cliente_id    = isset($input['cliente_id']) ? (int)$input['cliente_id'] : null;
 $costo_fore    = array_key_exists('costo_fore', $input) ? (float)$input['costo_fore'] : null;
+$cliente_colonia_id_input = isset($input['cliente_colonia_id']) ? (int)$input['cliente_colonia_id'] : null;
+if ($cliente_colonia_id_input !== null && $cliente_colonia_id_input <= 0) {
+    $cliente_colonia_id_input = null;
+}
 
 if (!$tipo || !$productos) {
     error('Datos incompletos para crear la venta');
@@ -171,6 +175,8 @@ if ($tipo === 'mesa') {
 }
 
 $cliente_colonia_id = null;
+$cliente_colonia_id_original = null;
+$cliente_colonia_cambio = false;
 $cliente_costo_fore = null;
 $esRepartidorCasa = false;
 if ($tipo === 'domicilio' && $repartidor_id) {
@@ -199,7 +205,27 @@ if ($cliente_id) {
         error('Cliente no encontrado');
     }
     $cliente_colonia_id = $cliRow['colonia_id'] ? (int)$cliRow['colonia_id'] : null;
+    $cliente_colonia_id_original = $cliente_colonia_id;
     $cliente_costo_fore = $cliRow['costo_fore'] !== null ? (float)$cliRow['costo_fore'] : null;
+}
+
+if ($cliente_id && $cliente_colonia_id_input && !$cliente_colonia_id_original) {
+    $colStmt = $conn->prepare('SELECT id, costo_fore FROM colonias WHERE id = ? LIMIT 1');
+    if (!$colStmt) {
+        error('No se pudo validar la colonia seleccionada: ' . $conn->error);
+    }
+    $colStmt->bind_param('i', $cliente_colonia_id_input);
+    $colStmt->execute();
+    $colRes = $colStmt->get_result()->fetch_assoc();
+    $colStmt->close();
+    if (!$colRes) {
+        error('La colonia seleccionada no existe');
+    }
+    $cliente_colonia_id = (int)$colRes['id'];
+    $cliente_colonia_cambio = true;
+    if ($colRes['costo_fore'] !== null) {
+        $cliente_costo_fore = (float)$colRes['costo_fore'];
+    }
 }
 
 if ($costo_fore !== null) {
@@ -466,6 +492,15 @@ if ($cliente_id && isset($venta_id)) {
         $cliVenta->bind_param('ii', $cliente_id, $venta_id);
         $cliVenta->execute();
         $cliVenta->close();
+    }
+}
+
+if ($cliente_id && $cliente_colonia_cambio && $cliente_colonia_id) {
+    $updCliCol = $conn->prepare('UPDATE clientes SET colonia_id = ? WHERE id = ?');
+    if ($updCliCol) {
+        $updCliCol->bind_param('ii', $cliente_colonia_id, $cliente_id);
+        $updCliCol->execute();
+        $updCliCol->close();
     }
 }
 

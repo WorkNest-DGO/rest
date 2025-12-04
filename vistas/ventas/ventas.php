@@ -128,7 +128,11 @@ ob_start();
             </div>
             <div id="clienteColoniaSelectWrap" class="mt-2" style="display:none;">
               <label for="clienteColoniaSelect" class="text-white">Selecciona colonia</label>
-              <select id="clienteColoniaSelect" class="form-control"></select>
+              <div class="position-relative">
+                <input type="text" id="buscarColoniaCliente" class="form-control" placeholder="Buscar colonia...">
+                <ul class="list-group list-group-flush position-absolute w-100" id="listaColoniasCliente" style="z-index: 11;"></ul>
+              </div>
+              <select id="clienteColoniaSelect" class="d-none"></select>
               <small class="text-muted">Solo se muestra cuando el cliente no tiene colonia asignada.</small>
             </div>
             <div class="row mt-3">
