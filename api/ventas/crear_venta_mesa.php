@@ -19,9 +19,27 @@ if (!$input) {
 $mesa_id   = isset($input['mesa_id']) ? (int)$input['mesa_id'] : null;
 $productos = isset($input['productos']) && is_array($input['productos']) ? $input['productos'] : null;
 $sede_id   = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$input['sede_id'] : 1;
+$mesero_id = isset($input['usuario_id']) ? (int)$input['usuario_id'] : null; // mesero asignado a la mesa
 
 if (!$mesa_id || !$productos) {
     error('Datos incompletos');
+}
+
+// Si no llega el mesero en el payload, obtenerlo de la mesa
+if (!$mesero_id) {
+    $qMesero = $conn->prepare('SELECT usuario_id FROM mesas WHERE id = ? LIMIT 1');
+    if (!$qMesero) { error('Error al preparar consulta de mesero: ' . $conn->error); }
+    $qMesero->bind_param('i', $mesa_id);
+    if ($qMesero->execute()) {
+        $rMesero = $qMesero->get_result()->fetch_assoc();
+        if ($rMesero && !empty($rMesero['usuario_id'])) {
+            $mesero_id = (int)$rMesero['usuario_id'];
+        }
+    }
+    $qMesero->close();
+}
+if (!$mesero_id) {
+    error('No se encontró mesero asignado a la mesa.');
 }
 
 // Determinar cajero y corte abiertos
@@ -83,14 +101,14 @@ foreach ($productos as $p) {
     $total += $p['cantidad'] * $p['precio_unitario'];
 }
 
-$stmt = $conn->prepare('INSERT INTO ventas (mesa_id, tipo_entrega, total, corte_id, cajero_id, sede_id, propina_efectivo, propina_cheque, propina_tarjeta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+$stmt = $conn->prepare('INSERT INTO ventas (mesa_id, usuario_id, tipo_entrega, total, corte_id, cajero_id, sede_id, propina_efectivo, propina_cheque, propina_tarjeta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 if (!$stmt) {
     error('Error al preparar venta: ' . $conn->error);
 }
 $tipo = 'mesa';
 // Propinas iniciales en 0 para cumplir con NOT NULL sin default
 $propina_efectivo = 0.0; $propina_cheque = 0.0; $propina_tarjeta = 0.0;
-$stmt->bind_param('isdiiiddd', $mesa_id, $tipo, $total, $corte_id, $cajero_id, $sede_id, $propina_efectivo, $propina_cheque, $propina_tarjeta);
+$stmt->bind_param('iisdiiiddd', $mesa_id, $mesero_id, $tipo, $total, $corte_id, $cajero_id, $sede_id, $propina_efectivo, $propina_cheque, $propina_tarjeta);
 if (!$stmt->execute()) {
     $stmt->close();
     error('Error al crear venta: ' . $stmt->error);

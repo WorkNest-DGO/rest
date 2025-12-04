@@ -12,6 +12,7 @@ const usuarioActual = window.usuarioActual || { id: null, rol: '' };
 let ventaIdActual = null;
 let mesaIdActual = null;
 let estadoMesaActual = null;
+let mesaMeseroIdActual = null;
 let huboCambios = false;
 // Autorización temporal para cambio de estado
 window.__mesaAuthTemp = null; // { mesaId, pass }
@@ -620,6 +621,7 @@ async function agregarDetalle() {
         }
         const crearPayload = {
             mesa_id: parseInt(mesaIdActual),
+            usuario_id: mesaMeseroIdActual ? parseInt(mesaMeseroIdActual) : null,
             productos: [{ producto_id: productoId, cantidad, precio_unitario: precio }]
         };
         try {
@@ -676,6 +678,7 @@ function abrirDetalles(mesa) {
         const mesaId = parseInt(mesa.id);
         const asignadoA = mesa.usuario_id ? parseInt(mesa.usuario_id) : null;
         const requiereAuth = (usuarioActual.rol !== 'admin') && (asignadoA && asignadoA !== usuarioActual.id);
+        mesaMeseroIdActual = asignadoA || null;
 
         const continuar = async () => {
             try {
@@ -736,6 +739,14 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
     ventaIdActual = ventaId;
     mesaIdActual = mesaId;
     estadoMesaActual = estado;
+    if (!mesaMeseroIdActual && mesaId) {
+        try {
+            const mesaCache = (mesasCache || []).find(m => String(m.id) === String(mesaId));
+            if (mesaCache && mesaCache.usuario_id) {
+                mesaMeseroIdActual = parseInt(mesaCache.usuario_id);
+            }
+        } catch (_) { /* noop */ }
+    }
 
     // Verificar cajero con corte abierto siempre antes de mostrar detalles
     try {
