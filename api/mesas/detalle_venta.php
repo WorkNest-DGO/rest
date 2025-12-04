@@ -19,6 +19,7 @@ $info = $conn->prepare(
             v.tipo_entrega,
             v.usuario_id,
             v.sede_id,
+            v.observacion,
             v.promocion_id,
             v.promocion_descuento,
             m.nombre AS mesa,
@@ -91,6 +92,7 @@ success([
     'promociones'         => $promosVenta,
     'promociones_ids'     => $promosIds,
     'promociones_total_descuento' => $promosTotal,
+    'observacion'         => $datosVenta['observacion'] ?? '',
     'mesa'                => $datosVenta['mesa'] ?? '',
     'mesero'              => $datosVenta['mesero'] ?? '',
     'productos'           => $productos

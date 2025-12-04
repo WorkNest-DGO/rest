@@ -15,6 +15,42 @@ ob_start();
 <script src="../../utils/js/dragula.min.js"></script>
 
 <link href="../../utils/css/style2.css" rel="stylesheet">
+<style>
+/* Mosaico de 4 columnas para las tarjetas de mesas */
+#kanban-list .kanban-dropzone {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    padding: 10px;
+}
+#kanban-list .kanban-item {
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 1200px) {
+    #kanban-list .kanban-dropzone { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+    #kanban-list .kanban-dropzone { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+    #kanban-list .kanban-dropzone { grid-template-columns: 1fr; }
+}
+/* Permitir que la lista crezca sin scroll vertical */
+#kanban-list .drag-column {
+    overflow: visible;
+}
+#kanban-list .kanban-dropzone {
+    max-height: none !important;
+    overflow: visible;
+}
+/* Modal Detalle de venta en mesa: ancho fijo y centrado */
+.modal-venta-detalle {
+    max-width: 900px;
+    width: 90%;
+    margin: 1.75rem auto;
+}
+</style>
 
 <div class="page-header mb-0">
     <div class="container">
@@ -37,7 +73,7 @@ ob_start();
 </div>
 <div id="tablero"></div>
 <div id="modalVenta" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-venta-detalle" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Detalle de venta en mesa</h5>

@@ -449,6 +449,51 @@ function solicitarTicket(mesaId, nombre, ventaId) {
         .catch(() => alert('Error al solicitar ticket'));
 }
 
+async function imprimirComanda(ventaId) {
+    if (!ventaId) {
+        alert('No hay venta para imprimir');
+        return;
+    }
+    try {
+        const res = await fetch('../../api/tickets/imprime_comanda.php?venta_id=' + encodeURIComponent(ventaId));
+        if (!res.ok) {
+            alert('No se pudo enviar la comanda (' + res.status + ')');
+        }
+    } catch (e) {
+        console.error('[COMANDA] No se pudo imprimir', e);
+        alert('No se pudo imprimir la comanda');
+    }
+}
+
+async function guardarObservacionVenta(ventaId, silent = false) {
+    const obsInput = document.getElementById('ventaObservacion');
+    if (!obsInput) return true;
+    const observacion = (obsInput.value || '').trim();
+    try {
+        const resp = await fetch('../../api/ventas/actualizar_observacion.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ venta_id: parseInt(ventaId), observacion })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            const info = document.getElementById('observacionInfo');
+            if (info) {
+                info.textContent = 'Comentarios guardados';
+                setTimeout(() => { info.textContent = ''; }, 2000);
+            }
+            if (!silent) alert('Comentarios guardados');
+            return true;
+        }
+        alert(data.mensaje || 'No se pudo guardar comentarios');
+        return false;
+    } catch (e) {
+        console.error('No se pudo guardar observación', e);
+        if (!silent) alert('Error al guardar comentarios');
+        return false;
+    }
+}
+
 function textoEstado(e) {
     return (e || '').replace('_', ' ');
 }
@@ -727,10 +772,25 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
         if (data.success) {
             const info = data.resultado;
             const header = `<p>Fecha inicio: ${info.fecha || ''}<br>Mesero: ${info.mesero || ''}<br>Destino: ${info.mesa || ''}</p>`;
-            let html = header + crearTablaProductos(info.productos);
+            let html = header;
+            html += crearTablaProductos(info.productos);
             html += `<br>`;
+            html += `<div class="mb-2">`;
             html += `<button  class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button>`;
+            html += `<button  class="btn custom-btn" id="imprimirComanda" style="margin-left:8px;">Comanda</button>`;
+            html += `</div>`;
+            html += `
+                <div class="mt-2">
+                    <label for="ventaObservacion"><strong>Comentarios para comanda</strong></label>
+                    <textarea id="ventaObservacion" class="form-control" rows="3" placeholder="Notas para cocina / comanda"></textarea>
+                    <small id="observacionInfo" class="text-muted"></small>
+                </div>
+            `;
             contenedor.innerHTML = html;
+            const obsInput = contenedor.querySelector('#ventaObservacion');
+            if (obsInput) {
+                obsInput.value = info.observacion || '';
+            }
             contenedor.querySelectorAll('.eliminar').forEach(btn => {
                 btn.addEventListener('click', () => eliminarDetalle(btn.dataset.id, ventaId));
             });
@@ -765,6 +825,13 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
                         localStorage.setItem('ticketData', JSON.stringify(payload));
                     } catch (_) { /* noop */ }
                     window.location.href = `../ventas/ticket.php?venta=${encodeURIComponent(ventaId)}`;
+                });
+            }
+            const btnComanda = contenedor.querySelector('#imprimirComanda');
+            if (btnComanda) {
+                btnComanda.addEventListener('click', async () => {
+                    const ok = await guardarObservacionVenta(ventaId, true);
+                    if (ok) imprimirComanda(ventaId);
                 });
             }
             showModal('#modalVenta');
