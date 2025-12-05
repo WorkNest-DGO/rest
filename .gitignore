@@ -7,3 +7,8 @@ api/horarios/debug_serie.log
 logs/php_error.log
 restfin.rar
 api/cocina/runtime/cocina_events.jsonl
+api/cocina/runtime/cocina_events.jsonl
+api/cocina/runtime/cocina_version.txt
+api/ventas/runtime/ventas_events.jsonl
+api/ventas/runtime/ventas_version.txt
+logs/facturama-2025-12.log
