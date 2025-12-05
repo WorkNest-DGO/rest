@@ -78,6 +78,16 @@ function sanitize_forma_pago(?string $fp): ?string {
   $fp = preg_replace('/\D/','',(string)$fp);
   return in_array($fp, ['01','03','04','28'], true) ? $fp : null;
 }
+function normalizar_nombre_fiscal(string $nombre): string {
+  $nombre = trim((string)$nombre);
+  $nombre = preg_replace('/\s+/u', ' ', $nombre);
+  if (function_exists('mb_strtoupper')) {
+    $nombre = mb_strtoupper($nombre, 'UTF-8');
+  } else {
+    $nombre = strtoupper($nombre);
+  }
+  return $nombre;
+}
 function forma_pago_desde_tipo(?string $tipoPago, ?string $formaTarjeta = null, ?string $fallback = null): string {
   $tp = strtolower(trim((string)$tipoPago));
   $formaTarjeta = sanitize_forma_pago($formaTarjeta);
@@ -358,6 +368,19 @@ function cfdi_ticket_data(mysqli $db, int $ticketId): array {
     'total' => money2($sumTot),
     'target_total' => $targetBruto,
   ];
+  // Asegurar coherencia TaxObject/Taxes para Facturama:
+  // - Si hay impuestos, TaxObject debe ser 02.
+  // - Si no hay impuestos, TaxObject debe ser 01 y el nodo Taxes debe omitirse.
+  foreach ($cache[$ticketId]['items'] as &$it) {
+    $tieneImp = !empty($it['Taxes']) && is_array($it['Taxes']);
+    if ($tieneImp) {
+      $it['TaxObject'] = '02';
+    } else {
+      $it['TaxObject'] = '01';
+      if (isset($it['Taxes'])) unset($it['Taxes']);
+    }
+  }
+  unset($it);
   return $cache[$ticketId];
 }
 
@@ -371,14 +394,25 @@ function cfdi_items_from_ticket(mysqli $db, int $ticketId): array {
 function obtener_cliente_fiscal(mysqli $db, int $clienteId): array {
   $cols = ['id'];
   $has = fn(string $c)=>column_exists($db,'clientes_facturacion',$c);
+  // Preferir razon_social; si no existe, usar nombre como alias
+  if ($has('razon_social')) { $cols[] = 'razon_social AS razon_social'; }
+  elseif ($has('nombre'))  { $cols[] = 'nombre AS razon_social'; }
+  else { $cols[] = "NULL AS razon_social"; }
   $map = [
-    'rfc'=>'rfc','razon_social'=>'razon_social','correo'=>'correo','regimen'=>'regimen','cp'=>'cp','uso_cfdi'=>'uso_cfdi',
+    'rfc'=>'rfc','correo'=>'correo','regimen'=>'regimen','cp'=>'cp','uso_cfdi'=>'uso_cfdi',
+    'calle'=>'calle','numero_ext'=>'numero_ext','numero_int'=>'numero_int',
+    'colonia'=>'colonia','municipio'=>'municipio','estado'=>'estado','pais'=>'pais'
   ];
   foreach ($map as $c=>$alias) { if ($has($c)) $cols[] = "$c AS $alias"; else $cols[] = "NULL AS $alias"; }
   $sql = "SELECT ".implode(',', $cols)." FROM clientes_facturacion WHERE id = ? LIMIT 1";
   $st = $db->prepare($sql); $st->bind_param('i',$clienteId); $st->execute();
   $res = $st->get_result(); $row = $res ? ($res->fetch_assoc() ?: []) : [];
   $st->close();
+  if ($row) {
+    foreach ($row as $k => $v) {
+      if (is_string($v)) $row[$k] = trim($v);
+    }
+  }
   return $row ?: [];
 }
 
@@ -396,11 +430,11 @@ function build_cfdi_for_tickets(mysqli $db, array $ticketIds, array $cliente, ?s
     'PaymentMethod' => 'PUE',
     'PaymentForm' => $fp,
     'Receiver' => [
-      'Rfc' => strtoupper((string)($cliente['rfc'] ?? '')),
-      'Name' => (string)($cliente['razon_social'] ?? ''),
-      'FiscalRegime' => (string)($cliente['regimen'] ?? ''),
-      'TaxZipCode' => (string)($cliente['cp'] ?? ''),
-      'CfdiUse' => (string)($cliente['uso_cfdi'] ?? ''),
+      'Rfc' => strtoupper(trim((string)($cliente['rfc'] ?? ''))),
+      'Name' => trim((string)($cliente['razon_social'] ?? '')),
+      'FiscalRegime' => trim((string)($cliente['regimen'] ?? '')),
+      'TaxZipCode' => trim((string)($cliente['cp'] ?? '')),
+      'CfdiUse' => trim((string)($cliente['uso_cfdi'] ?? '')),
     ],
     'Items' => $items,
   ];
@@ -639,7 +673,16 @@ try {
         $errores[] = ['ticket_id'=>$tk,'error'=>$e->getMessage()];
       }
     }
-    if (count($emitidas) === 0) { json_response(false, 'No se pudieron timbrar los tickets seleccionados'); }
+    if (count($emitidas) === 0) {
+      $detalleErr = '';
+      if (!empty($errores)) {
+        $detalleErr = ' Detalles: ' . implode('; ', array_map(function($e){
+          $tk = isset($e['ticket_id']) ? ('Ticket '.$e['ticket_id'].': ') : '';
+          return $tk . ($e['error'] ?? 'Error no especificado');
+        }, array_slice($errores, 0, 3)));
+      }
+      json_response(false, 'No se pudieron timbrar los tickets seleccionados.' . $detalleErr);
+    }
     json_response(true, ['facturas'=>$emitidas,'errores'=>$errores]);
   }
 

@@ -66,6 +66,11 @@ try {
         $st = $db->prepare($sql);
         $st->bind_param($types, ...$params);
         $st->execute();
+        if ($st->errno === 1062 || $db->errno === 1062) {
+            $msgDup = 'Registro duplicado (RFC/correo ya existe)';
+            $st->close();
+            json_out(false, $msgDup, 409);
+        }
         $newId = $st->insert_id;
         $st->close();
         json_out(true, ['id' => $newId]);
@@ -85,6 +90,11 @@ try {
         $st = $db->prepare($sql);
         $st->bind_param($types, ...$params);
         $st->execute();
+        if ($st->errno === 1062 || $db->errno === 1062) {
+            $msgDup = 'Registro duplicado (RFC/correo ya existe)';
+            $st->close();
+            json_out(false, $msgDup, 409);
+        }
         $st->close();
         json_out(true, ['id' => $clienteId]);
     }

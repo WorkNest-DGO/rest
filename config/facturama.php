@@ -5,8 +5,8 @@ class FacturamaCfg {
     public static function baseUrl(): string {
         $base = getenv('FACTURAMA_BASE') ?: getenv('FACTURAMA_BASE_URL');
         if ($base && trim($base) !== '') return rtrim($base, '/');
-       return 'https://api.facturama.mx';
-        //return 'https://apisandbox.facturama.mx';
+       //return 'https://api.facturama.mx';
+        return 'https://apisandbox.facturama.mx';
 
     }
 
@@ -19,8 +19,8 @@ class FacturamaCfg {
     public static function pass(): string {
         $p = getenv('FACTURAMA_PASS');
         if ($p && trim($p) !== '') return $p;
-    return 'Marf9401109i5'; 
-    //return 'k"2ix=+g&QqyZ9y';
+    //return 'Marf9401109i5'; 
+     return 'k"2ix=+g&QqyZ9y';
     }
 
     public static function expeditionPlace(): string {

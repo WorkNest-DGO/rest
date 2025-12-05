@@ -41,16 +41,30 @@ try {
   $hasUso = column_exists($db,'clientes_facturacion','uso_cfdi');
   $hasRegimen = column_exists($db,'clientes_facturacion','regimen');
   $hasCP = column_exists($db,'clientes_facturacion','cp');
+  $hasCalle = column_exists($db,'clientes_facturacion','calle');
+  $hasNumExt = column_exists($db,'clientes_facturacion','numero_ext');
+  $hasNumInt = column_exists($db,'clientes_facturacion','numero_int');
+  $hasColonia = column_exists($db,'clientes_facturacion','colonia');
+  $hasMunicipio = column_exists($db,'clientes_facturacion','municipio');
+  $hasEstado = column_exists($db,'clientes_facturacion','estado');
+  $hasPais = column_exists($db,'clientes_facturacion','pais');
 
   // SELECT dinámico
   $parts = [ 'cf.id' ];
   if ($nameCol)   $parts[] = "cf.$nameCol AS nombre"; else $parts[] = "NULL AS nombre";
-  if ($hasRFC)    $parts[] = 'cf.rfc';
-  if ($hasCorreo) $parts[] = 'cf.correo';
+  if ($hasRFC)      $parts[] = 'cf.rfc';
+  if ($hasCorreo)   $parts[] = 'cf.correo';
   if ($hasTelefono) $parts[] = 'cf.telefono';
-  if ($hasUso)    $parts[] = 'cf.uso_cfdi';
-  if ($hasRegimen)$parts[] = 'cf.regimen';
-  if ($hasCP)     $parts[] = 'cf.cp';
+  if ($hasUso)      $parts[] = 'cf.uso_cfdi';
+  if ($hasRegimen)  $parts[] = 'cf.regimen';
+  if ($hasCP)       $parts[] = 'cf.cp';
+  if ($hasCalle)    $parts[] = 'cf.calle';
+  if ($hasNumExt)   $parts[] = 'cf.numero_ext';
+  if ($hasNumInt)   $parts[] = 'cf.numero_int';
+  if ($hasColonia)  $parts[] = 'cf.colonia';
+  if ($hasMunicipio)$parts[] = 'cf.municipio';
+  if ($hasEstado)   $parts[] = 'cf.estado';
+  if ($hasPais)     $parts[] = 'cf.pais';
   $select = implode(', ', $parts);
 
   $sql = "SELECT $select FROM clientes_facturacion cf";

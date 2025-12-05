@@ -14,6 +14,7 @@ let mesaIdActual = null;
 let estadoMesaActual = null;
 let mesaMeseroIdActual = null;
 let huboCambios = false;
+let catalogoPromosMesa = [];
 // Autorización temporal para cambio de estado
 window.__mesaAuthTemp = null; // { mesaId, pass }
 // Estado global de corte abierto (de cualquier usuario)
@@ -483,6 +484,118 @@ async function imprimirComandaDetalle(ventaId, detalleId) {
     }
 }
 
+async function cargarPromocionesMesa() {
+    if (Array.isArray(catalogoPromosMesa) && catalogoPromosMesa.length) {
+        return catalogoPromosMesa;
+    }
+    try {
+        const resp = await fetch('../../api/tickets/promociones.php');
+        const data = await resp.json();
+        if (data && data.success && Array.isArray(data.promociones)) {
+            catalogoPromosMesa = data.promociones.filter(p => {
+                const tipo = String(p.tipo_venta || '').toLowerCase();
+                return !tipo || tipo === 'mesa';
+            });
+        } else {
+            catalogoPromosMesa = [];
+        }
+    } catch (e) {
+        console.error('No se pudieron cargar promociones', e);
+        catalogoPromosMesa = [];
+    }
+    return catalogoPromosMesa;
+}
+
+function construirOpcionesPromoMesa(selectEl) {
+    if (!selectEl) return;
+    selectEl.innerHTML = '<option value=\"\">Seleccione promoción</option>';
+    (catalogoPromosMesa || []).forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nombre;
+        selectEl.appendChild(opt);
+    });
+}
+
+function agregarSelectPromoMesa(valor = '') {
+    const cont = document.getElementById('listaPromosMesa');
+    if (!cont) return;
+    const row = document.createElement('div');
+    row.className = 'd-flex align-items-center gap-2 mb-2';
+    const sel = document.createElement('select');
+    sel.className = 'form-control promo-mesa-select';
+    sel.style.maxWidth = '320px';
+    construirOpcionesPromoMesa(sel);
+    if (valor && sel.querySelector(`option[value=\"${valor}\"]`)) {
+        sel.value = valor;
+    }
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-danger btn-sm';
+    btn.textContent = 'Quitar';
+    btn.addEventListener('click', () => row.remove());
+    row.appendChild(sel);
+    row.appendChild(btn);
+    cont.appendChild(row);
+}
+
+function preseleccionarPromosMesa(ids = []) {
+    const cont = document.getElementById('listaPromosMesa');
+    if (!cont) return;
+    cont.innerHTML = '';
+    if (!Array.isArray(ids) || !ids.length) {
+        agregarSelectPromoMesa();
+        return;
+    }
+    ids.forEach(id => agregarSelectPromoMesa(id));
+}
+
+function obtenerPromosSeleccionadasMesa() {
+    const sels = Array.from(document.querySelectorAll('#listaPromosMesa select.promo-mesa-select'));
+    const ids = [];
+    sels.forEach(sel => {
+        const val = parseInt(sel.value || '0', 10);
+        if (val > 0) ids.push(val);
+    });
+    return Array.from(new Set(ids));
+}
+
+async function guardarPromocionesMesa(ventaId, silencioso = false) {
+    const panel = document.getElementById('panelPromosMesa');
+    if (!panel) return true;
+    if (panel.style.display === 'none') return true;
+    if (!ventaId) {
+        if (!silencioso) alert('No hay venta para guardar promociones');
+        return false;
+    }
+    const seleccionadas = obtenerPromosSeleccionadasMesa();
+    const payload = {
+        venta_id: parseInt(ventaId, 10),
+        promociones_ids: seleccionadas
+    };
+    if (seleccionadas.length) {
+        payload.promocion_id = seleccionadas[0];
+    }
+    try {
+        const resp = await fetch('../../api/mesas/actualizar_promociones.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        if (!data || !data.success) {
+            if (!silencioso) alert((data && data.mensaje) || 'No se pudieron guardar las promociones');
+            return false;
+        }
+        if (!silencioso) alert('Promociones guardadas');
+        return true;
+    } catch (e) {
+        console.error('No se pudieron guardar promociones', e);
+        if (!silencioso) alert('Error al guardar promociones');
+        return false;
+    }
+}
+
 async function imprimirTicketMesa(ventaId) {
     if (!ventaId) {
         alert('No hay venta para imprimir');
@@ -850,11 +963,42 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
                     <textarea id="ventaObservacion" class="form-control" rows="3" placeholder="Notas para cocina / comanda"></textarea>
                     <small id="observacionInfo" class="text-muted"></small>
                 </div>
+                <div class="mt-3" id="panelPromosMesa" style="display:none;">
+                    <label><strong>Promociones</strong></label>
+                    <div id="listaPromosMesa" class="mt-2"></div>
+                    <div class="d-flex" style="gap:8px; margin-top:6px;">
+                        <button type="button" class="btn btn-secondary" id="btnAgregarPromoMesa">Agregar promocion</button>
+                        <button type="button" class="btn custom-btn" id="btnGuardarPromosMesa">Guardar promociones</button>
+                    </div>
+                </div>
             `;
             contenedor.innerHTML = html;
             const obsInput = contenedor.querySelector('#ventaObservacion');
             if (obsInput) {
                 obsInput.value = info.observacion || '';
+            }
+            try {
+                await cargarPromocionesMesa();
+                const panelPromos = contenedor.querySelector('#panelPromosMesa');
+                if (panelPromos) {
+                    if (Array.isArray(catalogoPromosMesa) && catalogoPromosMesa.length) {
+                        panelPromos.style.display = '';
+                        const seleccionadas = (Array.isArray(info.promociones_ids) && info.promociones_ids.length)
+                            ? info.promociones_ids
+                            : (info.promocion_id ? [info.promocion_id] : []);
+                        preseleccionarPromosMesa(seleccionadas);
+                        const btnAddPromo = contenedor.querySelector('#btnAgregarPromoMesa');
+                        if (btnAddPromo) btnAddPromo.addEventListener('click', () => agregarSelectPromoMesa());
+                        const btnGuardarPromo = contenedor.querySelector('#btnGuardarPromosMesa');
+                        if (btnGuardarPromo) btnGuardarPromo.addEventListener('click', async () => {
+                            await guardarPromocionesMesa(ventaId);
+                        });
+                    } else {
+                        panelPromos.style.display = 'none';
+                    }
+                }
+            } catch (e) {
+                console.error('No se pudieron inicializar promociones', e);
             }
             contenedor.querySelectorAll('.eliminar').forEach(btn => {
                 btn.addEventListener('click', () => eliminarDetalle(btn.dataset.id, ventaId));
@@ -873,10 +1017,11 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
             const btnImp = contenedor.querySelector('#imprimirTicket');
             if (btnImp) {
                 btnImp.addEventListener('click', async () => {
-                    const ok = await guardarObservacionVenta(ventaId, true);
-                    if (ok) {
-                        await imprimirTicketMesa(ventaId);
-                    }
+                    const okObs = await guardarObservacionVenta(ventaId, true);
+                    if (!okObs) return;
+                    const okPromos = await guardarPromocionesMesa(ventaId, true);
+                    if (!okPromos) return;
+                    await imprimirTicketMesa(ventaId);
                 });
             }
             const btnComanda = contenedor.querySelector('#imprimirComanda');
@@ -1021,3 +1166,5 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error(err);
     }
 });
+
+
