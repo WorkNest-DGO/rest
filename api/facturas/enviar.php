@@ -262,8 +262,8 @@ try {
         $body .= "Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n";
         $body .= "Hola $razon,\r\n";
         $body .= "Adjuntamos tu factura generada el $fecha por un monto de $total.\r\n\r\n";
-        //$body .= "Si no ves los adjuntos, también puedes descargar los archivos con estos enlaces:\r\n";
-       // $body .= "PDF: $linkPdf\r\nXML: $linkXml\r\n\r\n";
+        $body .= "Si no ves los adjuntos, también puedes descargar los archivos con estos enlaces:\r\n";
+       $body .= "PDF: $linkPdf\r\nXML: $linkXml\r\n\r\n";
 
         foreach ($attachments as $att) {
             $bin = @file_get_contents($att['path']);

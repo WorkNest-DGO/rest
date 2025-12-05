@@ -7,13 +7,14 @@ use Mike42\Escpos\Printer;
 use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 
 $ventaId = isset($_GET['venta_id']) ? (int)$_GET['venta_id'] : 0;
+$detalleId = isset($_GET['detalle_id']) ? (int)$_GET['detalle_id'] : 0;
 if ($ventaId <= 0) {
     http_response_code(400);
     echo 'venta_id requerido';
     exit;
 }
 
-function obtenerComanda(mysqli $db, int $ventaId): array {
+function obtenerComanda(mysqli $db, int $ventaId, int $detalleId = 0): array {
     $info = [
         'venta_id' => $ventaId,
         'mesa' => '-',
@@ -37,8 +38,14 @@ function obtenerComanda(mysqli $db, int $ventaId): array {
         $st->close();
     }
 
-    if ($det = $db->prepare('SELECT p.nombre, d.cantidad, d.precio_unitario FROM venta_detalles d JOIN productos p ON p.id = d.producto_id WHERE d.venta_id = ? ORDER BY d.id ASC')) {
-        $det->bind_param('i', $ventaId);
+    if ($detalleId > 0) {
+        $det = $db->prepare('SELECT p.nombre, d.cantidad, d.precio_unitario FROM venta_detalles d JOIN productos p ON p.id = d.producto_id WHERE d.venta_id = ? AND d.id = ? ORDER BY d.id ASC');
+        if ($det) $det->bind_param('ii', $ventaId, $detalleId);
+    } else {
+        $det = $db->prepare('SELECT p.nombre, d.cantidad, d.precio_unitario FROM venta_detalles d JOIN productos p ON p.id = d.producto_id WHERE d.venta_id = ? ORDER BY d.id ASC');
+        if ($det) $det->bind_param('i', $ventaId);
+    }
+    if ($det) {
         if ($det->execute()) {
             $res = $det->get_result();
             while ($row = $res->fetch_assoc()) {
@@ -61,7 +68,7 @@ $connector = new WindowsPrintConnector($printerIp);
 $printer = new Printer($connector);
 $printer->initialize();
 
-$comanda = obtenerComanda($conn, $ventaId);
+$comanda = obtenerComanda($conn, $ventaId, $detalleId);
 
 // Encabezado simple
 $printer->setJustification(Printer::JUSTIFY_CENTER);

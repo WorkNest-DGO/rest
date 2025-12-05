@@ -466,6 +466,23 @@ async function imprimirComanda(ventaId) {
     }
 }
 
+async function imprimirComandaDetalle(ventaId, detalleId) {
+    if (!ventaId || !detalleId) {
+        alert('Faltan datos para imprimir');
+        return;
+    }
+    try {
+        const url = '../../api/tickets/imprime_comanda.php?venta_id=' + encodeURIComponent(ventaId) + '&detalle_id=' + encodeURIComponent(detalleId);
+        const res = await fetch(url);
+        if (!res.ok) {
+            alert('No se pudo imprimir el producto (' + res.status + ')');
+        }
+    } catch (e) {
+        console.error('[COMANDA DETALLE] No se pudo imprimir', e);
+        alert('No se pudo imprimir el producto');
+    }
+}
+
 async function guardarObservacionVenta(ventaId, silent = false) {
     const obsInput = document.getElementById('ventaObservacion');
     if (!obsInput) return true;
@@ -808,6 +825,12 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
             contenedor.querySelectorAll('.entregar').forEach(btn => {
                 btn.addEventListener('click', () => marcarEntregado(btn.dataset.id, ventaId));
             });
+            contenedor.querySelectorAll('.imprimir-detalle').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const ok = await guardarObservacionVenta(ventaId, true);
+                    if (ok) imprimirComandaDetalle(ventaId, btn.dataset.id);
+                });
+            });
             inicializarBuscadorDetalle();
             modal.querySelector('#btnAgregarDetalle').addEventListener('click', agregarDetalle);
             const btnImp = contenedor.querySelector('#imprimirTicket');
@@ -862,8 +885,9 @@ function crearTablaProductos(productos) {
         const btnEliminar = (p.estado_producto !== 'entregado' && p.estado_producto !== 'en_preparacion') ? `<button class="eliminar" data-id="${p.id}">Eliminar</button>` : '';
         const puedeEntregar = p.estado_producto === 'listo';
         const btnEntregar = p.estado_producto !== 'entregado' ? `<button class="entregar" data-id="${p.id}" ${puedeEntregar ? '' : 'disabled'}>Entregar</button>` : '';
+        const btnImprimir = `<button class="imprimir-detalle" data-id="${p.id}" style="margin-left:6px;">Imprimir</button>`;
         const hora = p.entregado_hr ? p.entregado_hr : '';
-        html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${est}</td><td>${hora}</td><td>${btnEliminar}</td><td>${btnEntregar}</td></tr>`;
+        html += `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>${p.precio_unitario}</td><td>${p.subtotal}</td><td>${est}</td><td>${hora}</td><td>${btnEliminar}</td><td>${btnEntregar} ${btnImprimir}</td></tr>`;
     });
     html += `<tr id="detalle_nuevo">
         <td>
