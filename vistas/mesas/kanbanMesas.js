@@ -483,6 +483,43 @@ async function imprimirComandaDetalle(ventaId, detalleId) {
     }
 }
 
+async function imprimirTicketMesa(ventaId) {
+    if (!ventaId) {
+        alert('No hay venta para imprimir');
+        return;
+    }
+    try {
+        const res = await fetch('../../api/tickets/imprime_ticket_mesa.php?venta_id=' + encodeURIComponent(ventaId));
+        const raw = await res.text();
+        let ok = res.ok;
+        let mensaje = 'Ticket enviado a la impresora';
+        if (raw) {
+            try {
+                const data = JSON.parse(raw);
+                if (data && typeof data === 'object') {
+                    ok = !!data.success;
+                    if (data.success) {
+                        if (data.resultado && data.resultado.mensaje) {
+                            mensaje = data.resultado.mensaje;
+                        }
+                    } else {
+                        mensaje = data.mensaje || mensaje;
+                    }
+                }
+            } catch (_) {
+                // respuesta plana, continuar
+            }
+        }
+        if (!ok) {
+            throw new Error(mensaje || 'No se pudo imprimir el ticket');
+        }
+        alert(mensaje);
+    } catch (e) {
+        console.error('[TICKET MESA] No se pudo imprimir', e);
+        alert(e.message || 'No se pudo imprimir el ticket');
+    }
+}
+
 async function guardarObservacionVenta(ventaId, silent = false) {
     const obsInput = document.getElementById('ventaObservacion');
     if (!obsInput) return true;
@@ -835,30 +872,11 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
             modal.querySelector('#btnAgregarDetalle').addEventListener('click', agregarDetalle);
             const btnImp = contenedor.querySelector('#imprimirTicket');
             if (btnImp) {
-                btnImp.addEventListener('click', () => {
-                    try {
-                        const total = Array.isArray(info.productos)
-                            ? info.productos.reduce((s, p) => s + parseFloat(p.subtotal || 0), 0)
-                            : 0;
-                        const payload = {
-                            venta_id: parseInt(ventaId),
-                            usuario_id: info.usuario_id || 1,
-                            fecha: info.fecha || '',
-                            tipo_entrega: info.tipo_entrega || '',
-                            repartidor: info.repartidor || '',
-                            productos: info.productos || [],
-                            total,
-                            sede_id: info.sede_id || 1,
-                            propina_efectivo: info.propina_efectivo || 0,
-                            propina_cheque: info.propina_cheque || 0,
-                            propina_tarjeta: info.propina_tarjeta || 0,
-                            promocion_id: info.promocion_id || null,
-                            promocion_descuento: info.promocion_descuento || 0,
-                            promociones_ids: Array.isArray(info.promociones_ids) ? info.promociones_ids : []
-                        };
-                        localStorage.setItem('ticketData', JSON.stringify(payload));
-                    } catch (_) { /* noop */ }
-                    window.location.href = `../ventas/ticket.php?venta=${encodeURIComponent(ventaId)}`;
+                btnImp.addEventListener('click', async () => {
+                    const ok = await guardarObservacionVenta(ventaId, true);
+                    if (ok) {
+                        await imprimirTicketMesa(ventaId);
+                    }
                 });
             }
             const btnComanda = contenedor.querySelector('#imprimirComanda');
