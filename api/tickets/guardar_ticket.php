@@ -34,6 +34,18 @@ if (!is_array($cortesias_in)) { $cortesias_in = []; }
 $montoActualEditado = isset($input['monto_actual_editado']) ? (float)$input['monto_actual_editado'] : null;
 $montoActualCalculado = isset($input['monto_actual_calculado']) ? (float)$input['monto_actual_calculado'] : null;
 
+function obtenerFechaServidor(mysqli $conn) {
+    $ahora = date('Y-m-d H:i:s');
+    if ($res = $conn->query('SELECT NOW() AS ahora')) {
+        $row = $res->fetch_assoc();
+        if (!empty($row['ahora'])) {
+            $ahora = $row['ahora'];
+        }
+        $res->close();
+    }
+    return $ahora;
+}
+
 // Obtener datos de la venta, incluyendo el corte asociado
 $stmtVenta = $conn->prepare('SELECT v.mesa_id, v.usuario_id AS mesero_id, v.fecha_inicio, v.tipo_entrega, v.corte_id, v.repartidor_id, r.nombre AS repartidor_nombre FROM ventas v LEFT JOIN repartidores r ON r.id = v.repartidor_id WHERE v.id = ?');
 if (!$stmtVenta) {
@@ -99,7 +111,7 @@ if (!empty($venta['mesero_id'])) {
 }
 
 $fecha_inicio = $venta['fecha_inicio'] ?? null;
-$fecha_fin = date('Y-m-d H:i:s');
+$fecha_fin = obtenerFechaServidor($conn);
 $tiempo_servicio = $fecha_inicio ? (int) ((strtotime($fecha_fin) - strtotime($fecha_inicio)) / 60) : 0;
 
 $stmtSede = $conn->prepare('SELECT nombre, direccion, rfc, telefono, activo FROM sedes WHERE id = ?');
@@ -228,7 +240,7 @@ if (!$insTicket || !$insDetalle) {
 
 $subProcesadas = [];
 $totalEsperadoGlobal = 0.0;
-$fechaAhora = date('Y-m-d H:i:s');
+$fechaAhora = $fecha_fin;
 
 $ticketsResp = [];
 foreach ($subcuentas as $sub) {
@@ -497,7 +509,8 @@ foreach ($subProcesadas as $sub) {
     $cheque_numero = $sub['cheque_numero'];
     $cheque_banco_id = $sub['cheque_banco_id'];
     $motivo_desc = $sub['motivo_desc'];
-    $fecha = $sub['fecha'] ?: $fechaAhora;
+    // Forzar fecha del servidor al generar ticket (evita desfaces de cliente)
+    $fecha = $fechaAhora;
 
     $insTicket->bind_param(
         'iiidsidsissssisssssiissi',

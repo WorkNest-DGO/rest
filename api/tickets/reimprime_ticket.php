@@ -100,9 +100,29 @@ foreach ($recibos  as $recibo) {
 	$printer -> text("Mesero: " . $datosT['mesero_nombre'] ."\n");
 	$printer -> text("Tipo entrega: " . $datosT['tipo_entrega'] ."\n");
 	$printer -> text("Tipo pago: " . $datosT['tipo_pago'] ."\n");
-	$printer -> text("Inicio: " . $datosT['fecha_inicio'] ."\n");
-	$printer -> text("Fin: " . $datosT['fecha_fin'] ."\n");
-	$printer -> text("Tiempo: " . $datosT['tiempo_servicio'] ."\n");
+$fmtTiempo = function($minutos, $inicio = null, $fin = null) {
+    $mins = null;
+    if ($inicio && $fin) {
+        $ini = strtotime($inicio);
+        $end = strtotime($fin);
+        if ($ini && $end) {
+            $diff = max(0, $end - $ini);
+            $mins = (int) round($diff / 60);
+        }
+    }
+    if ($mins === null && is_numeric($minutos)) {
+        $mins = (int)$minutos;
+    }
+    if ($mins === null) return 'N/A';
+    $secs = $mins * 60;
+    $h = floor($secs / 3600);
+    $m = floor(($secs % 3600) / 60);
+    $s = $secs % 60;
+    return sprintf('%02d:%02d:%02d', $h, $m, $s);
+};
+$printer -> text("Inicio: " . $datosT['fecha_inicio'] ."\n");
+$printer -> text("Fin: " . $datosT['fecha_fin'] ."\n");
+$printer -> text("Tiempo: " . $fmtTiempo($datosT['tiempo_servicio'] ?? null, $datosT['fecha_inicio'] ?? null, $datosT['fecha_fin'] ?? null) ."\n");
 
 	$printer -> setEmphasis(false);
 

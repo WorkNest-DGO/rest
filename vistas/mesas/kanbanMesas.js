@@ -15,6 +15,9 @@ let estadoMesaActual = null;
 let mesaMeseroIdActual = null;
 let huboCambios = false;
 let catalogoPromosMesa = [];
+let productosVentaMesaActual = [];
+let tipoEntregaMesaActual = '';
+let totalPromoMesaActual = 0;
 // Autorización temporal para cambio de estado
 window.__mesaAuthTemp = null; // { mesaId, pass }
 // Estado global de corte abierto (de cualquier usuario)
@@ -484,6 +487,554 @@ async function imprimirComandaDetalle(ventaId, detalleId) {
     }
 }
 
+function normalizarProductosVentaMesa(lista) {
+    if (!Array.isArray(lista)) return [];
+    return lista.map(p => {
+        const cantidad = Number(p.cantidad || 0);
+        const precio = Number(p.precio_unitario || 0);
+        const prodId = parseInt(p.producto_id || p.id_producto || p.id || 0, 10);
+        const catId = parseInt(p.categoria_id || 0, 10);
+        const subtotal = (typeof p.subtotal !== 'undefined')
+            ? Number(p.subtotal || 0)
+            : Number((cantidad * precio).toFixed(2));
+        return Object.assign({}, p, {
+            producto_id: prodId,
+            categoria_id: catId,
+            cantidad,
+            precio_unitario: precio,
+            subtotal
+        });
+    });
+}
+
+function mostrarErrorPromosMesa(mensajes) {
+    const body = document.getElementById('promoErrorMsg');
+    if (body) {
+        if (Array.isArray(mensajes)) {
+            body.innerHTML = '<p>La promocion no aplica porque:</p><ul>' +
+                mensajes.map(m => '<li>' + m + '</li>').join('') +
+                '</ul>';
+        } else {
+            body.textContent = mensajes || 'La promocion no aplica';
+        }
+    }
+    try {
+        if (window.jQuery && $('#modalPromoError').modal) {
+            $('#modalPromoError').modal('show');
+            return;
+        }
+    } catch (_) { /* sin modal */ }
+    const texto = Array.isArray(mensajes) ? mensajes.join('\n') : (mensajes || 'La promocion no aplica');
+    alert(texto);
+}
+
+function actualizarResumenPromoMesa(total) {
+    totalPromoMesaActual = Number(total || 0);
+    const resumen = document.getElementById('promoMesaResumen');
+    if (resumen) {
+        if (totalPromoMesaActual > 0) {
+            resumen.textContent = 'Descuento promociones aplicado: $' + totalPromoMesaActual.toFixed(2);
+        } else {
+            resumen.textContent = 'Sin promociones aplicadas';
+        }
+    }
+}
+
+function distribuirDescuentoPorPromo(ids, total) {
+    const res = [];
+    const totalDesc = Number(total || 0);
+    if (!Array.isArray(ids) || !ids.length || totalDesc <= 0) return res;
+    const count = ids.length;
+    const base = Number((totalDesc / count).toFixed(2));
+    let acumulado = 0.0;
+    ids.forEach((id, idx) => {
+        const promoId = parseInt(id, 10);
+        if (!promoId) return;
+        let monto = base;
+        if (idx === count - 1) {
+            monto = Number((totalDesc - acumulado).toFixed(2));
+        } else {
+            acumulado += base;
+        }
+        res.push({ promo_id: promoId, descuento_aplicado: monto });
+    });
+    return res;
+}
+
+function validarPromoSeleccionMesa(selectEl) {
+    const promoId = parseInt((selectEl && selectEl.value) || '0', 10);
+    if (!promoId) {
+        return { ok: true };
+    }
+    const promo = (catalogoPromosMesa || []).find(p => parseInt(p.id, 10) === promoId);
+    if (!promo) return { ok: true };
+    let reglasArray = [];
+    if (promo.regla) {
+        try {
+            const rj = JSON.parse(promo.regla);
+            reglasArray = Array.isArray(rj) ? rj : (rj ? [rj] : []);
+        } catch (_) { reglasArray = []; }
+    }
+    const tipoPromo = String(promo.tipo || '').toLowerCase();
+    if (promoId === 6 && tipoPromo === 'combo') {
+        const rollIds = reglasArray.map(r => parseInt(r.id_producto || 0, 10)).filter(Boolean);
+        const teaId = 66;
+        let rollUnits = 0;
+        let teaUnits = 0;
+        productosVentaMesaActual.forEach(p => {
+            const pid = parseInt(p.producto_id || p.id || 0, 10);
+            const cant = Number(p.cantidad || 0);
+            if (rollIds.includes(pid)) rollUnits += cant;
+            if (pid === teaId) teaUnits += cant;
+        });
+        if (rollUnits < 2 || teaUnits < 1) {
+            const msg = 'La promocion es la combinacion de 2 rollos mas te. Faltan productos para aplicarla.';
+            mostrarErrorPromosMesa(msg);
+            if (selectEl) selectEl.value = '0';
+            return { ok: false, mensajes: [msg] };
+        }
+    }
+
+    const mensajes = [];
+    reglasArray.forEach(r => {
+        const reqCant = parseInt(r.cantidad || 0, 10) || 0;
+        if (!reqCant) return;
+
+        if (r.id_producto) {
+            const pid = parseInt(r.id_producto, 10);
+            const exist = productosVentaMesaActual.reduce((s, p) => {
+                const pId = parseInt(p.producto_id || p.id || 0, 10);
+                const cant = Number(p.cantidad || 0);
+                return s + (pId === pid ? cant : 0);
+            }, 0);
+
+            if (exist < reqCant) {
+                let nombre = null;
+                if (promo && Array.isArray(promo.productos_regla)) {
+                    const prodRegla = promo.productos_regla.find(pr => parseInt(pr.id, 10) === pid);
+                    if (prodRegla && prodRegla.nombre) {
+                        nombre = prodRegla.nombre;
+                    }
+                }
+                mensajes.push(`Producto ${nombre ? nombre : 'ID ' + pid}: se requieren ${reqCant}, solo hay ${exist}.`);
+            }
+        } else if (r.categoria_id) {
+            const cid = parseInt(r.categoria_id, 10);
+            const exist = productosVentaMesaActual.reduce((s, p) => {
+                const cId = parseInt(p.categoria_id || 0, 10);
+                const cant = Number(p.cantidad || 0);
+                return s + (cId === cid ? cant : 0);
+            }, 0);
+
+            if (exist < reqCant) {
+                mensajes.push(`Categoria ${cid}: se requieren ${reqCant}, solo hay ${exist}.`);
+            }
+        }
+    });
+
+    if (mensajes.length) {
+        mostrarErrorPromosMesa(mensajes);
+        if (selectEl) selectEl.value = '0';
+        return { ok: false, mensajes };
+    }
+    return { ok: true };
+}
+
+function validarPromosAcumulablesMesa(selectedIds = []) {
+    const tipoEntrega = (tipoEntregaMesaActual || '').toLowerCase();
+    if (tipoEntrega !== 'domicilio' && tipoEntrega !== 'rapido' && tipoEntrega !== 'llevar') {
+        return { ok: true };
+    }
+    if (!Array.isArray(selectedIds) || !selectedIds.length) return { ok: true };
+
+    const promosSel = selectedIds
+        .map(pid => (catalogoPromosMesa || []).find(p => parseInt(p.id, 10) === pid))
+        .filter(Boolean);
+
+    const combos = promosSel.filter(p => {
+        const tipo = String(p.tipo || '').toLowerCase();
+        const monto = Number(p.monto || 0);
+        const tipoVenta = String(p.tipo_venta || '').toLowerCase();
+        return tipo === 'combo' && monto > 0 && tipoVenta === 'llevar';
+    });
+    if (!combos.length) return { ok: true };
+
+    const countPromos = (id) => combos.filter(p => parseInt(p.id, 10) === id).length;
+    const promo5Count = countPromos(5);
+    const promo6Count = countPromos(6);
+    const promo9Count = countPromos(9);
+    if (!promo5Count && !promo6Count && !promo9Count) return { ok: true };
+
+    const promo6 = combos.find(p => parseInt(p.id, 10) === 6);
+    const promo9Obj = combos.find(p => parseInt(p.id, 10) === 9) || {};
+
+    let rollPromo6Ids = [];
+    if (promo6Count && promo6 && promo6.regla) {
+        let rj;
+        try { rj = JSON.parse(promo6.regla); } catch (e) { rj = null; }
+        const arr = Array.isArray(rj) ? rj : (rj ? [rj] : []);
+        rollPromo6Ids = arr
+            .map(r => parseInt(r.id_producto || 0, 10))
+            .filter(v => !!v);
+    }
+
+    const categoriasConteo = {};
+    let rollSubsetCount = 0;
+    let teaCount = 0;
+    productosVentaMesaActual.forEach(p => {
+        const cant = Number(p.cantidad || 0);
+        if (!cant) return;
+        const pid = parseInt(p.producto_id || p.id || 0, 10);
+        const catId = parseInt(p.categoria_id || 0, 10);
+        if (catId) {
+            categoriasConteo[catId] = (categoriasConteo[catId] || 0) + cant;
+        }
+        if (rollPromo6Ids.indexOf(pid) !== -1) rollSubsetCount += cant;
+        if (pid === 66) teaCount += cant;
+    });
+
+    const extraerCategoriasPromo = function(promo) {
+        const ids = [];
+        if (!promo) return ids;
+        if (Array.isArray(promo.categorias_regla)) {
+            promo.categorias_regla.forEach(cat => {
+                const cId = parseInt(cat && cat.id, 10);
+                if (cId) ids.push(cId);
+            });
+        }
+        if (!ids.length && promo && promo.regla) {
+            let regla;
+            try { regla = JSON.parse(promo.regla); } catch (e) { regla = null; }
+            const arr = Array.isArray(regla) ? regla : (regla ? [regla] : []);
+            arr.forEach(r => {
+                const cId = parseInt(r && r.categoria_id, 10);
+                if (cId) ids.push(cId);
+            });
+        }
+        return Array.from(new Set(ids.filter(Boolean)));
+    };
+
+    const categoriasPromo9 = extraerCategoriasPromo(promo9Obj);
+    const categoriasParaConteo = categoriasPromo9.length ? categoriasPromo9 : [9];
+    const catPromoCount = categoriasParaConteo.reduce((sum, cId) => sum + (categoriasConteo[cId] || 0), 0);
+
+    if (!catPromoCount && !rollSubsetCount && !teaCount) {
+        return { ok: true };
+    }
+
+    const describirPromos = function(nombres) {
+        const lista = (nombres || []).filter(Boolean);
+        if (!lista.length) return '';
+        const fraseBase = lista.length === 1 ? 'La promocion' : 'Las promociones';
+        if (lista.length === 1) {
+            return `${fraseBase} "${lista[0]}"`;
+        }
+        if (lista.length === 2) {
+            return `${fraseBase} "${lista[0]}" y "${lista[1]}"`;
+        }
+        const ult = lista.pop();
+        return `${fraseBase} "${lista.join('", "')}" y "${ult}"`;
+    };
+
+    const errores = [];
+    const nombrePromo5 = (combos.find(p => parseInt(p.id, 10) === 5) || {}).nombre || '2 Tes';
+    const nombrePromo6 = (promo6 || {}).nombre || '2 rollos y te';
+    const nombrePromo9 = (promo9Obj && promo9Obj.nombre) || '3x $209 en rollos';
+    let nombreCat9 = 'categoria 9';
+    if (promo9Obj && Array.isArray(promo9Obj.categorias_regla) && promo9Obj.categorias_regla.length) {
+        const nombres = promo9Obj.categorias_regla.map(cat => cat && cat.nombre ? cat.nombre : null).filter(Boolean);
+        if (nombres.length === 1) {
+            nombreCat9 = nombres[0];
+        } else if (nombres.length > 1) {
+            nombreCat9 = nombres.join(', ');
+        }
+    } else if (categoriasParaConteo.length === 1) {
+        nombreCat9 = 'categoria ' + categoriasParaConteo[0];
+    } else if (categoriasParaConteo.length > 1) {
+        nombreCat9 = 'categorias ' + categoriasParaConteo.join(', ');
+    }
+
+    const totalTeaNeeded = (promo6Count * 1) + (promo5Count * 2);
+    if ((promo5Count || promo6Count) && totalTeaNeeded > teaCount) {
+        errores.push(`${describirPromos([
+            promo6Count ? nombrePromo6 : null,
+            promo5Count ? nombrePromo5 : null,
+        ])} requieren ${totalTeaNeeded} tes y solo hay ${teaCount}.`);
+    }
+
+    const totalRollPromo6Needed = promo6Count * 2;
+    if (promo6Count && totalRollPromo6Needed > rollSubsetCount) {
+        errores.push(`${describirPromos([nombrePromo6])} requiere ${totalRollPromo6Needed} rollos validos y solo hay ${rollSubsetCount}.`);
+    }
+
+    const totalRollsNeeded = totalRollPromo6Needed + (promo9Count * 3);
+    if ((promo6Count || promo9Count) && totalRollsNeeded > catPromoCount) {
+        errores.push(`${describirPromos([
+            promo6Count ? nombrePromo6 : null,
+            promo9Count ? nombrePromo9 : null,
+        ])} requieren ${totalRollsNeeded} rollos (${nombreCat9}) y solo hay ${catPromoCount}.`);
+    }
+
+    if (errores.length) {
+        return { ok: false, mensajes: errores };
+    }
+    return { ok: true };
+}
+
+function calcularDescuentoCombosEspecialesMesa(prodsSub, promoCountMap) {
+    try {
+        const countPromo5 = promoCountMap[5] || 0;
+        const countPromo6 = promoCountMap[6] || 0;
+        const countPromo9 = promoCountMap[9] || 0;
+        if (!countPromo5 && !countPromo6 && !countPromo9) {
+            return 0;
+        }
+        const buscarPromo = (id) => (catalogoPromosMesa || []).find(p => parseInt(p.id, 10) === id) || null;
+        const promo5 = countPromo5 ? buscarPromo(5) : null;
+        const promo6 = countPromo6 ? buscarPromo(6) : null;
+        const promo9 = countPromo9 ? buscarPromo(9) : null;
+
+        const promo6RollIds = [];
+        if (promo6 && promo6.regla) {
+            try {
+                const regla6 = JSON.parse(promo6.regla);
+                const arr = Array.isArray(regla6) ? regla6 : (regla6 ? [regla6] : []);
+                arr.forEach(r => {
+                    const pid = parseInt(r && r.id_producto, 10);
+                    if (pid) promo6RollIds.push(pid);
+                });
+            } catch (_) {}
+        }
+
+        const teaId = 66;
+        const unidadesRollCat9 = [];
+        const unidadesRollPromo6 = [];
+        const unidadesTea = [];
+        let unique = 0;
+        prodsSub.forEach(p => {
+            const pid = parseInt(p.producto_id || p.id || 0, 10);
+            const cat = parseInt(p.categoria_id || 0, 10);
+            const qty = Math.max(1, parseInt(p.cantidad || 1, 10));
+            const price = Number(p.precio_unitario || 0);
+            for (let i = 0; i < qty; i++) {
+                const unit = { pid, cat, price, key: `${pid}-${cat}-${unique++}` };
+                if (cat === 9) unidadesRollCat9.push(unit);
+                if (promo6RollIds.includes(pid)) unidadesRollPromo6.push(unit);
+                if (pid === teaId) unidadesTea.push(unit);
+            }
+        });
+
+        if (!unidadesRollCat9.length && !unidadesRollPromo6.length && !unidadesTea.length) {
+            return 0;
+        }
+
+        const sortDesc = arr => arr.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+        sortDesc(unidadesRollCat9);
+        sortDesc(unidadesRollPromo6);
+        sortDesc(unidadesTea);
+
+        const tomarUnidades = (arr, cantidad) => {
+            if (cantidad <= 0) return [];
+            return arr.splice(0, Math.min(cantidad, arr.length));
+        };
+        const eliminarDe = (arr, unidades) => {
+            unidades.forEach(u => {
+                const idx = arr.findIndex(item => item.key === u.key);
+                if (idx !== -1) arr.splice(idx, 1);
+            });
+        };
+
+        let totalDescuento = 0;
+
+        if (promo6 && countPromo6 > 0) {
+            const monto6 = Number(promo6.monto || 0);
+            const maxCombos6 = Math.min(
+                countPromo6,
+                Math.floor(unidadesRollPromo6.length / 2),
+                unidadesTea.length
+            );
+            for (let i = 0; i < maxCombos6; i++) {
+                const rollos = tomarUnidades(unidadesRollPromo6, 2);
+                eliminarDe(unidadesRollCat9, rollos);
+                const tes = tomarUnidades(unidadesTea, 1);
+                const sumaGrupo = rollos.concat(tes).reduce((s, u) => s + Number(u.price || 0), 0);
+                totalDescuento += Math.max(0, sumaGrupo - monto6);
+            }
+        }
+
+        if (promo9 && countPromo9 > 0) {
+            const monto9 = Number(promo9.monto || 0);
+            const maxCombos9 = Math.min(countPromo9, Math.floor(unidadesRollCat9.length / 3));
+            for (let i = 0; i < maxCombos9; i++) {
+                const rollos = tomarUnidades(unidadesRollCat9, 3);
+                const sumaGrupo = rollos.reduce((s, u) => s + Number(u.price || 0), 0);
+                totalDescuento += Math.max(0, sumaGrupo - monto9);
+            }
+        }
+
+        if (promo5 && countPromo5 > 0) {
+            const monto5 = Number(promo5.monto || 0);
+            const maxCombos5 = Math.min(countPromo5, Math.floor(unidadesTea.length / 2));
+            for (let i = 0; i < maxCombos5; i++) {
+                const tes = tomarUnidades(unidadesTea, 2);
+                const sumaGrupo = tes.reduce((s, u) => s + Number(u.price || 0), 0);
+                totalDescuento += Math.max(0, sumaGrupo - monto5);
+            }
+        }
+
+        return totalDescuento;
+    } catch (err) {
+        console.error('Error al calcular combos especiales', err);
+        return 0;
+    }
+}
+
+function calcularDescuentoPromosMesa(selectedIds = []) {
+    const prods = Array.isArray(productosVentaMesaActual) ? productosVentaMesaActual : [];
+    const totalBruto = prods.reduce((s, p) => s + (Number(p.cantidad || 0) * Number(p.precio_unitario || 0)), 0);
+    const promoCountMap = {};
+    selectedIds.forEach(id => {
+        const pid = parseInt(id, 10);
+        if (!pid) return;
+        promoCountMap[pid] = (promoCountMap[pid] || 0) + 1;
+    });
+    if (!selectedIds.length) {
+        return { ok: true, totalPromo: 0, totalBruto };
+    }
+
+    const resAcum = validarPromosAcumulablesMesa(selectedIds);
+    if (resAcum && resAcum.ok === false) {
+        return { ok: false, mensajes: resAcum.mensajes || [] };
+    }
+
+    let totalPromo = 0;
+    try {
+        const poolByPromo = (promo) => {
+            let reglaJson = {};
+            try { reglaJson = promo.regla ? JSON.parse(promo.regla) : {}; } catch(_) { reglaJson = {}; }
+            const reglasArray = Array.isArray(reglaJson) ? reglaJson : [reglaJson];
+            const prodIds  = reglasArray.map(r => parseInt(r.id_producto || 0, 10)).filter(Boolean);
+            const catIds   = reglasArray.map(r => parseInt(r.categoria_id || 0, 10)).filter(Boolean);
+            const items = prods.filter(p => (prodIds.length ? prodIds.includes(parseInt(p.producto_id || p.id || 0, 10)) : true)
+                                          && (catIds.length ? catIds.includes(parseInt(p.categoria_id || 0, 10)) : true));
+            const unitPrices = [];
+            items.forEach(it => {
+                const qty = Math.max(1, parseInt(it.cantidad || 1, 10));
+                const price = Number(it.precio_unitario || 0);
+                for (let k = 0; k < qty; k++) unitPrices.push(price);
+            });
+            unitPrices.sort((a,b)=>Number(a)-Number(b));
+            return unitPrices;
+        };
+        let sumNonMonto = 0;
+        let montoMin = null;
+        selectedIds.forEach(pid => {
+            const promo = (catalogoPromosMesa || []).find(p => parseInt(p.id) === pid);
+            if (!promo) return;
+            const tipo = String(promo.tipo||'').toLowerCase();
+            const monto = Number(promo.monto||0);
+            let reglaJson = {};
+            try { reglaJson = promo.regla ? JSON.parse(promo.regla) : {}; } catch(_) { reglaJson = {}; }
+            const cantidad = parseInt((Array.isArray(reglaJson) ? (reglaJson[0]?.cantidad) : (reglaJson?.cantidad)) || '0', 10) || (tipo==='bogo'?2:1);
+            if (tipo === 'combo' && monto > 0) {
+                return;
+            }
+            if (monto>0 && (tipo==='monto_fijo' || tipo==='bogo')) {
+                montoMin = (montoMin===null) ? monto : Math.min(montoMin, monto);
+            } else {
+                const pool = poolByPromo(promo);
+                if (pool.length >= cantidad) {
+                    if (tipo==='categoria_gratis') {
+                        const take = pool.slice(0, cantidad);
+                        sumNonMonto += take.reduce((s,x)=>s+Number(x||0),0);
+                    } else {
+                        sumNonMonto += Number(pool[0]||0);
+                    }
+                }
+            }
+        });
+        let discMonto = 0;
+        if (montoMin!==null) {
+            discMonto = Math.max(0, Number((totalBruto - montoMin).toFixed(2)));
+        }
+        totalPromo = Math.min(totalBruto, Number((discMonto + sumNonMonto).toFixed(2)));
+    } catch(_) { totalPromo = 0; }
+
+    try {
+        const selectedIdsCat = Array.from(new Set(selectedIds));
+        let totalPromoCatCombo = 0;
+        selectedIdsCat.forEach(pid => {
+            const promo = (catalogoPromosMesa || []).find(p => parseInt(p.id) === pid);
+            if (!promo) return;
+            const tipo = String(promo.tipo || '').toLowerCase();
+            const monto = Number(promo.monto || 0);
+            if (tipo !== 'combo' || !promo.regla) return;
+            if (parseInt(promo.id, 10) === 9) return;
+            let reglaJson = {};
+            try { reglaJson = JSON.parse(promo.regla); } catch(_) { reglaJson = {}; }
+            const reglasArray = Array.isArray(reglaJson) ? reglaJson : [reglaJson];
+            const categoriaIds = reglasArray.map(r => parseInt(r.categoria_id || 0, 10)).filter(Boolean);
+            if (!categoriaIds.length) return;
+            const categoriaId = categoriaIds[0];
+            let cantidadReq = reglasArray.reduce((s, r) => s + (parseInt(r.cantidad || 0, 10) || 0), 0);
+            if (!cantidadReq) cantidadReq = 1;
+            const unitPricesCat = [];
+            prods.forEach(p => {
+                if (parseInt(p.categoria_id || 0, 10) === categoriaId) {
+                    const qty = Math.max(1, parseInt(p.cantidad || 1, 10));
+                    const price = Number(p.precio_unitario || 0);
+                    for (let k = 0; k < qty; k++) unitPricesCat.push(price);
+                }
+            });
+            if (!unitPricesCat.length) return;
+            unitPricesCat.sort((a, b) => Number(b) - Number(a));
+            const grupos = Math.floor(unitPricesCat.length / cantidadReq);
+            const maxAplicaciones = Math.min(grupos, promoCountMap[pid] || 0);
+            for (let g = 0; g < maxAplicaciones; g++) {
+                const offset = g * cantidadReq;
+                const grupo = unitPricesCat.slice(offset, offset + cantidadReq);
+                const sumaGrupo = grupo.reduce((s, x) => s + Number(x || 0), 0);
+                const desc = Math.max(0, sumaGrupo - monto);
+                totalPromoCatCombo += desc;
+            }
+        });
+        if (totalPromoCatCombo > 0) {
+            totalPromo = Math.min(totalBruto, Number((totalPromo + totalPromoCatCombo).toFixed(2)));
+        }
+    } catch(_) {}
+    try {
+        const descuentoEspecial = calcularDescuentoCombosEspecialesMesa(prods, promoCountMap);
+        if (descuentoEspecial > 0) {
+            totalPromo = Math.min(totalBruto, Number((totalPromo + descuentoEspecial).toFixed(2)));
+        }
+    } catch (_) {}
+    return { ok: true, totalPromo: Number((totalPromo || 0).toFixed(2)), totalBruto };
+}
+
+function validarPromosMesaYRecalcular() {
+    const ids = obtenerPromosSeleccionadasMesa();
+    if (!ids.length) {
+        actualizarResumenPromoMesa(0);
+        return { ok: true, ids, totalPromo: 0 };
+    }
+    const selects = Array.from(document.querySelectorAll('#listaPromosMesa select.promo-mesa-select'));
+    for (const sel of selects) {
+        const res = validarPromoSeleccionMesa(sel);
+        if (!res.ok) {
+            actualizarResumenPromoMesa(0);
+            return { ok: false };
+        }
+    }
+    const calc = calcularDescuentoPromosMesa(ids);
+    if (!calc || calc.ok === false) {
+        mostrarErrorPromosMesa((calc && calc.mensajes) || ['La promocion seleccionada no es valida']);
+        actualizarResumenPromoMesa(0);
+        return { ok: false };
+    }
+    actualizarResumenPromoMesa(calc.totalPromo || 0);
+    return { ok: true, ids, totalPromo: calc.totalPromo || 0 };
+}
+
 async function cargarPromocionesMesa() {
     if (Array.isArray(catalogoPromosMesa) && catalogoPromosMesa.length) {
         return catalogoPromosMesa;
@@ -529,14 +1080,19 @@ function agregarSelectPromoMesa(valor = '') {
     if (valor && sel.querySelector(`option[value=\"${valor}\"]`)) {
         sel.value = valor;
     }
+    sel.addEventListener('change', () => validarPromosMesaYRecalcular());
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'btn btn-danger btn-sm';
     btn.textContent = 'Quitar';
-    btn.addEventListener('click', () => row.remove());
+    btn.addEventListener('click', () => {
+        row.remove();
+        validarPromosMesaYRecalcular();
+    });
     row.appendChild(sel);
     row.appendChild(btn);
     cont.appendChild(row);
+    validarPromosMesaYRecalcular();
 }
 
 function preseleccionarPromosMesa(ids = []) {
@@ -548,6 +1104,7 @@ function preseleccionarPromosMesa(ids = []) {
         return;
     }
     ids.forEach(id => agregarSelectPromoMesa(id));
+    validarPromosMesaYRecalcular();
 }
 
 function obtenerPromosSeleccionadasMesa() {
@@ -568,10 +1125,17 @@ async function guardarPromocionesMesa(ventaId, silencioso = false) {
         if (!silencioso) alert('No hay venta para guardar promociones');
         return false;
     }
-    const seleccionadas = obtenerPromosSeleccionadasMesa();
+    const validacion = validarPromosMesaYRecalcular();
+    if (!validacion || !validacion.ok) {
+        return false;
+    }
+    const seleccionadas = Array.isArray(validacion.ids) ? validacion.ids : obtenerPromosSeleccionadasMesa();
+    const totalDesc = Number(validacion.totalPromo || 0);
     const payload = {
         venta_id: parseInt(ventaId, 10),
-        promociones_ids: seleccionadas
+        promociones_ids: seleccionadas,
+        descuento_total: totalDesc,
+        promociones_detalle: distribuirDescuentoPorPromo(seleccionadas, totalDesc)
     };
     if (seleccionadas.length) {
         payload.promocion_id = seleccionadas[0];
@@ -933,6 +1497,9 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
     const contenedor = modal.querySelector('.modal-body');
 
     if (!ventaId) {
+        productosVentaMesaActual = [];
+        tipoEntregaMesaActual = '';
+        actualizarResumenPromoMesa(0);
         contenedor.innerHTML = `<p>Destino: ${mesaNombre}</p>` + crearTablaProductos([]);
         inicializarBuscadorDetalle();
         modal.querySelector('#btnAgregarDetalle').addEventListener('click', agregarDetalle);
@@ -949,6 +1516,9 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
         const data = await resp.json();
         if (data.success) {
             const info = data.resultado;
+            productosVentaMesaActual = normalizarProductosVentaMesa(info.productos || []);
+            tipoEntregaMesaActual = String(info.tipo_entrega || '').toLowerCase();
+            actualizarResumenPromoMesa(0);
             const header = `<p>Fecha inicio: ${info.fecha || ''}<br>Mesero: ${info.mesero || ''}<br>Destino: ${info.mesa || ''}</p>`;
             let html = header;
             html += crearTablaProductos(info.productos);
@@ -970,6 +1540,7 @@ async function verDetalles(ventaId, mesaId, mesaNombre, estado) {
                         <button type="button" class="btn btn-secondary" id="btnAgregarPromoMesa">Agregar promocion</button>
                         <button type="button" class="btn custom-btn" id="btnGuardarPromosMesa">Guardar promociones</button>
                     </div>
+                    <div id="promoMesaResumen" class="mt-2 text-muted"></div>
                 </div>
             `;
             contenedor.innerHTML = html;
@@ -1152,6 +1723,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     modal.addEventListener('modal:hidden', () => {
         const body = modal.querySelector('.modal-body');
         if (body) body.innerHTML = '';
+        productosVentaMesaActual = [];
+        tipoEntregaMesaActual = '';
+        totalPromoMesaActual = 0;
         if (huboCambios) {
             cargarMesas();
             huboCambios = false;

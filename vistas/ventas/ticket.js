@@ -28,9 +28,9 @@ function llenarTicket(data) {
             document.getElementById('chequeNumero').textContent = data.cheque_numero || 'No definido';
             document.getElementById('chequeBanco').textContent = data.banco_cheque || 'No definido';
         }
-        document.getElementById('horaInicio').textContent = (data.fecha_inicio && data.fecha_inicio !== 'N/A') ? new Date(data.fecha_inicio).toLocaleString() : (data.fecha_inicio || 'N/A');
-        document.getElementById('horaFin').textContent = (data.fecha_fin && data.fecha_fin !== 'N/A') ? new Date(data.fecha_fin).toLocaleString() : (data.fecha_fin || 'N/A');
-        document.getElementById('tiempoServicio').textContent = data.tiempo_servicio ? data.tiempo_servicio + ' min' : 'N/A';
+        document.getElementById('horaInicio').textContent = data.fecha_inicio || 'N/A';
+        document.getElementById('horaFin').textContent = data.fecha_fin || 'N/A';
+        document.getElementById('tiempoServicio').textContent = formatTiempoServicio(data.tiempo_servicio, data.fecha_inicio, data.fecha_fin);
         const tbody = document.querySelector('#productos tbody');
         tbody.innerHTML = '';
         data.productos.forEach(p => {
@@ -43,6 +43,27 @@ function llenarTicket(data) {
         document.getElementById('cambio').textContent = '$' + parseFloat(data.cambio || 0).toFixed(2);
         document.getElementById('totalVenta').textContent = 'Total: $' + parseFloat(data.total).toFixed(2);
         document.getElementById('totalLetras').textContent = data.total_letras || '';
+    }
+
+    function formatTiempoServicio(tiempoMin, fechaInicio, fechaFin) {
+        let mins = null;
+        if (fechaInicio && fechaFin) {
+            const ini = Date.parse(fechaInicio);
+            const fin = Date.parse(fechaFin);
+            if (!Number.isNaN(ini) && !Number.isNaN(fin) && fin >= ini) {
+                mins = Math.round((fin - ini) / 60000);
+            }
+        }
+        if (mins === null && typeof tiempoMin !== 'undefined' && tiempoMin !== null && tiempoMin !== '') {
+            const n = Number(tiempoMin);
+            if (!Number.isNaN(n)) mins = Math.max(0, Math.floor(n));
+        }
+        if (mins === null) return 'N/A';
+        const totalSecs = mins * 60;
+        const h = Math.floor(totalSecs / 3600);
+        const m = Math.floor((totalSecs % 3600) / 60);
+        const s = totalSecs % 60;
+        return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
     }
 
     // Validación extra para promociones de tipo "llevar" (versión con nombre de categoría)
@@ -1615,7 +1636,7 @@ function mostrarTotal() {
             ${extra}
             <div><strong>Inicio:</strong> ${data.fecha_inicio || ''}</div>
             <div><strong>Fin:</strong> ${data.fecha_fin || ''}</div>
-            <div><strong>Tiempo:</strong> ${data.tiempo_servicio ? data.tiempo_servicio + ' min' : 'N/A'}</div>
+            <div><strong>Tiempo:</strong> ${formatTiempoServicio(data.tiempo_servicio, data.fecha_inicio, data.fecha_fin)}</div>
             <table class="styled-table" style="margin-top: 10px;"><tbody>${productosHtml}</tbody></table>
             
             <div class="mt-2"><strong>Cambio:</strong> $${parseFloat(data.cambio || 0).toFixed(2)}</div>

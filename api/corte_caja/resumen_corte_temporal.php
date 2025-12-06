@@ -184,8 +184,7 @@ $sqlFormas = "
     FROM ventas v
     JOIN tickets t ON t.venta_id = v.id
     WHERE v.estatus = 'cerrada'
-      AND v.corte_id = ?
-      AND (v.repartidor_id IS NULL OR v.repartidor_id NOT IN (1,2,3))
+      AND v.corte_id = ?      
     GROUP BY t.tipo_pago
 ";
 
@@ -568,7 +567,7 @@ $resultado['efectivo'] = ['total' => round($esperadoEfectivo, 2)];
 $resultado['tarjeta']  = ['total' => round($esperadoTarjeta, 2)];
 $resultado['boucher']  = ['total' => 0.0];
 $resultado['cheque']   = ['total' => 0.0];
-$resultado['transferencia'] = ['total' => 0.0];
+$resultado['transferencia'] = ['total' =>round($esperadoOtros, 2)];
 
 // Folios planos
 $resultado['folio_inicio'] = $resultado['folios']['inicio'];

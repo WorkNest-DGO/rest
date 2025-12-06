@@ -275,7 +275,7 @@ try {
     $printer->text(str_pad('Total:', 20) . '$ ' . $fmt($precuenta['total_a_pagar']) . "\n");
     $printer->setEmphasis(false);
     $printer->feed();
-    $printer->text("Ticket de mesa (no cierra venta)\n");
+    $printer->text("Ticket de mesa \n");
     $printer->feed(2);
     $printer->cut();
     $printer->close();

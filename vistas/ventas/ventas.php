@@ -467,19 +467,19 @@ ob_start();
           <div class="tarjeta" style="margin-top:8px;">
             <div style="opacity:.8">Totales por tipo de pago</div>
             <div>Efectivo: <span id="lblTmpTotalPagoEfectivo">0.00</span></div>
-            <div>Boucher:  <span id="lblTmpTotalPagoBoucher">0.00</span></div>
+            <!-- <div>Boucher:  <span id="lblTmpTotalPagoBoucher">0.00</span></div> -->
             <div>Cheque:   <span id="lblTmpTotalPagoCheque">0.00</span></div>
             <div>Tarjeta:  <span id="lblTmpTotalPagoTarjeta">0.00</span></div>
-            <div>Transferencia:  <span id="lblTmpTotalPagoTransfer">0.00</span></div>
+            <!-- <div>Transferencia:  <span id="lblTmpTotalPagoTransfer">0.00</span></div> -->
           </div>
 
           <div class="tarjeta" style="margin-top:8px;">
             <div style="opacity:.8">Esperado por tipo de pago</div>
             <div>Efectivo: <span id="lblTmpEsperadoEfectivo">0.00</span></div>
-            <div>Boucher:  <span id="lblTmpEsperadoBoucher">0.00</span></div>
+            <!-- <div>Boucher:  <span id="lblTmpEsperadoBoucher">0.00</span></div> -->
             <div>Cheque:   <span id="lblTmpEsperadoCheque">0.00</span></div>
             <div>Tarjeta:  <span id="lblTmpEsperadoTarjeta">0.00</span></div>
-            <div>Transferencia:  <span id="lblTmpEsperadoTransfer">0.00</span></div>
+            <!-- <div>Transferencia:  <span id="lblTmpEsperadoTransfer">0.00</span></div> -->
           </div>
 
           <div class="tarjeta" style="margin-top:8px;">
@@ -493,8 +493,8 @@ ob_start();
             <div style="opacity:.8">Cuentas por estatus</div>
             <div><strong>Cuentas abiertas:</strong> <span id="lblTmpCuentasActivas">0</span></div>
             <div><strong>Monto abiertas:</strong> <span id="lblTmpTotalActivas">0.00</span></div>
-            <div><strong>Cuentas canceladas:</strong> <span id="lblTmpCuentasCanceladas">0</span></div>
-            <div><strong>Monto canceladas:</strong> <span id="lblTmpTotalCanceladas">0.00</span></div>
+            <div><strong>Cuentas cerradas:</strong> <span id="lblTmpCuentasCanceladas">0</span></div>
+            <div><strong>Monto cerradas:</strong> <span id="lblTmpTotalCanceladas">0.00</span></div>
           </div>
 
           

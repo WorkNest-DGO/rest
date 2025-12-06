@@ -148,9 +148,30 @@ try { foreach ($recibos  as $recibo) {
 	$printer -> text("Mesero: " . $datosT['mesero_nombre'] ."\n");
 	$printer -> text("Tipo entrega: " . $datosT['tipo_entrega'] ."\n");
 	$printer -> text("Tipo pago: " . $datosT['tipo_pago'] ."\n");
-	$printer -> text("Inicio: " . $datosT['fecha_inicio'] ."\n");
-	$printer -> text("Fin: " . $datosT['fecha_fin'] ."\n");
-	$printer -> text("Tiempo: " . $datosT['tiempo_servicio'] ."\n");
+// Formato HH:MM:SS para tiempo de servicio (usando server time)
+$fmtTiempo = function($minutos, $inicio = null, $fin = null) {
+    $mins = null;
+    if ($inicio && $fin) {
+        $ini = strtotime($inicio);
+        $end = strtotime($fin);
+        if ($ini && $end) {
+            $diff = max(0, $end - $ini);
+            $mins = (int) round($diff / 60);
+        }
+    }
+    if ($mins === null && is_numeric($minutos)) {
+        $mins = (int)$minutos;
+    }
+    if ($mins === null) return 'N/A';
+    $secs = $mins * 60;
+    $h = floor($secs / 3600);
+    $m = floor(($secs % 3600) / 60);
+    $s = $secs % 60;
+    return sprintf('%02d:%02d:%02d', $h, $m, $s);
+};
+$printer -> text("Inicio: " . $datosT['fecha_inicio'] ."\n");
+$printer -> text("Fin: " . $datosT['fecha_fin'] ."\n");
+$printer -> text("Tiempo: " . $fmtTiempo($datosT['tiempo_servicio'] ?? null, $datosT['fecha_inicio'] ?? null, $datosT['fecha_fin'] ?? null) ."\n");
 
 	$printer -> setEmphasis(false);
 
@@ -210,8 +231,8 @@ try { foreach ($recibos  as $recibo) {
 	$printer -> text($datosT['total_letras'] ."\n");
 	$printer -> feed();
 	// Leyendas adicionales
-	$printer->text("\nPara facturación visita nuestro sitio\n");
-	$printer->text("https://tokyosushiprime.com/tokyo/vistas/facturacion.php\n");
+	$printer->text("\nPara facturación solicitar\n en mostrador o por whatsapp\n el mes de expedición\n");
+	//$printer->text("https://tokyosushiprime.com/tokyo/vistas/facturacion.php\n");
 	//$printer->text("------------------------------\n");
 	//$printer->text("Obtén un descuento en tu próxima compra.\n");
 	//$printer->text("Contesta una encuesta de satisfacción en\nnuestro sitio y obtén una sorpresa en tu\npróxima visita (aplica en todos nuestros\nrestaurantes).\n");

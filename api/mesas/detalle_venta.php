@@ -60,7 +60,12 @@ if ($promoStmt = $conn->prepare('SELECT vp.promo_id, cp.nombre, COALESCE(vp.desc
 
 // Obtener productos con estatus de preparación
 $stmt = $conn->prepare(
-    'SELECT vd.id, p.nombre, vd.cantidad, vd.precio_unitario,
+    'SELECT vd.id,
+            vd.producto_id,
+            p.categoria_id,
+            p.nombre,
+            vd.cantidad,
+            vd.precio_unitario,
             (vd.cantidad * vd.precio_unitario) AS subtotal,
             vd.estado_producto
      FROM venta_detalles vd

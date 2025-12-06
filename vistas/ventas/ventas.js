@@ -2004,16 +2004,16 @@ function mostrarCorteTemporalBonito(data) {
     //setText('#lblTmpTotalIngresado', fmtMoneda(totalIngresado));
 
     setText('#lblTmpTotalPagoEfectivo', fmtMoneda(totalesPorPago.efectivo));
-    setText('#lblTmpTotalPagoBoucher', fmtMoneda(totalesPorPago.boucher));
+    // setText('#lblTmpTotalPagoBoucher', fmtMoneda(totalesPorPago.boucher));
     setText('#lblTmpTotalPagoCheque', fmtMoneda(esperadoPorPago.cheque));
     setText('#lblTmpTotalPagoTarjeta', fmtMoneda(totalesPorPago.tarjeta));
-    setText('#lblTmpTotalPagoTransfer', fmtMoneda(totalesPorPago.transferencia));
+    // setText('#lblTmpTotalPagoTransfer', fmtMoneda(totalesPorPago.transferencia));
 
     setText('#lblTmpEsperadoEfectivo', fmtMoneda(esperadoPorPago.efectivo));
-    setText('#lblTmpEsperadoBoucher',  fmtMoneda(esperadoPorPago.boucher));
+    // setText('#lblTmpEsperadoBoucher',  fmtMoneda(esperadoPorPago.boucher));
     setText('#lblTmpEsperadoCheque',   fmtMoneda(esperadoPorPago.cheque));
     setText('#lblTmpEsperadoTarjeta',  fmtMoneda(esperadoPorPago.tarjeta));
-    setText('#lblTmpEsperadoTransfer', fmtMoneda(esperadoPorPago.transferencia));
+    // setText('#lblTmpEsperadoTransfer', fmtMoneda(esperadoPorPago.transferencia));
 
     setText('#lblTmpPropinaEfectivo', fmtMoneda(propEfectivo));
     setText('#lblTmpPropinaTransfer', fmtMoneda(propTransfer));
