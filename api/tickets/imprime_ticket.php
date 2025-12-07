@@ -54,8 +54,6 @@ $ventaId= $_GET['venta_id'];
 $elementos = obtenerDatos($ventaId,$conn);
 $desglose = array();
 $datosT = $elementos[0];
-$promocion_descuento2 = $datosT['promocion_descuento'];
-$promocion_nombre2    = isset($datosT['promocion_nombre']) ? $datosT['promocion_nombre'] : '';
 $recibos = $elementos;
 //var_dump($recibos);
 
@@ -78,6 +76,8 @@ try { foreach ($recibos  as $recibo) {
 	// Descuentos del ticket + detalle de producto si aplica
 	$descuentos = [];
 	$descuentoTotal = 0.0;
+    $promosTicket = [];
+    $promosTicketTotal = 0.0;
 	if ($ticketId > 0) {
 		if ($q = $conn->prepare("SELECT td.tipo, td.porcentaje, td.monto, td.motivo, td.venta_detalle_id,
 		                               vd.cantidad, vd.precio_unitario, p.nombre AS producto
@@ -89,7 +89,16 @@ try { foreach ($recibos  as $recibo) {
 			$q->bind_param('i', $ticketId);
 			if ($q->execute()) {
 				$resD = $q->get_result();
-				while ($row = $resD->fetch_assoc()) { $descuentos[] = $row; $descuentoTotal += (float)($row['monto'] ?? 0); }
+				while ($row = $resD->fetch_assoc()) {
+                    $tipoDesc = strtolower($row['tipo'] ?? '');
+                    if ($tipoDesc === 'promocion') {
+                        $promosTicket[] = $row;
+                        $promosTicketTotal += (float)($row['monto'] ?? 0);
+                        continue;
+                    }
+                    $descuentos[] = $row;
+                    $descuentoTotal += (float)($row['monto'] ?? 0);
+                }
 			}
 			$q->close();
 		}
@@ -108,8 +117,31 @@ try { foreach ($recibos  as $recibo) {
 		}
 	}
 
+    // Promociones por venta (detalle desde venta_promos si existe)
+    $promosVenta = isset($recibo['promociones']) && is_array($recibo['promociones']) ? $recibo['promociones'] : [];
+    $promoLista = $promosVenta;
+    $promoTotal = isset($recibo['promociones_total']) ? (float)$recibo['promociones_total'] : 0.0;
+    // Si no hay lista pero hay promos en ticket_descuentos como tipo 'promocion', usarlas como respaldo
+    if (empty($promoLista) && !empty($promosTicket)) {
+        foreach ($promosTicket as $pr) {
+            $promoLista[] = [
+                'nombre' => $pr['producto'] ?? 'Promocion',
+                'descuento_aplicado' => (float)($pr['monto'] ?? 0)
+            ];
+        }
+        $promoTotal = max($promoTotal, $promosTicketTotal);
+    }
+    // Si tampoco hay lista pero viene promocion_descuento/nombre en el ticket, muéstralo como fallback único
+    if (empty($promoLista) && !empty($recibo['promocion_descuento'])) {
+        $promoLista[] = [
+            'nombre' => $recibo['promocion_nombre'] ?? 'Promocion',
+            'descuento_aplicado' => (float)$recibo['promocion_descuento']
+        ];
+        $promoTotal = max($promoTotal, (float)$recibo['promocion_descuento']);
+    }
+
 	// Total final a pagar
-	$totalAPagar = max(0, $totalBruto - $descuentoTotal- $promocion_descuento2);
+	$totalAPagar = max(0, $totalBruto - $descuentoTotal - $promoTotal);
 	
 
 	$items3 = array();
@@ -187,44 +219,44 @@ $printer -> text("Tiempo: " . $fmtTiempo($datosT['tiempo_servicio'] ?? null, $da
 	$printer->text(str_pad('Subtotal:', 20) . '$ ' . $fmt($totalBruto) . "\n");
 
 	// ----- Descuentos (si hay) -----
-	if (!empty($descuentos)) {
-		$printer->text("------------------------------\n");
-		$printer->text("DESCUENTOS APLICADOS\n");
-		foreach ($descuentos as $d) {
-			$linea = '';
-			$tipo = $d['tipo'] ?? '';
-			if ($tipo === 'cortesia') {
-				$prod = !empty($d['producto']) ? $d['producto'] : 'Producto';
-				$cant = !empty($d['cantidad']) ? (' x' . (int)$d['cantidad']) : '';
-				$linea = "Cortesí­a: {$prod}{$cant}";
-			} elseif ($tipo === 'porcentaje') {
-				$porc  = ($d['porcentaje'] !== null) ? $fmt($d['porcentaje']) : '0';
-				$linea = "Descuento {$porc}%";
-			} else {
-				$linea = "Descuento monto fijo";
-			}
-			$importe = '$ ' . $fmt($d['monto'] ?? 0);
-			$texto  = function_exists('mb_substr') ? mb_substr($linea, 0, 30) : substr($linea, 0, 30);
-			$lenT   = function_exists('mb_strlen') ? mb_strlen($texto) : strlen($texto);
-			$printer->text($texto . str_repeat(' ', max(1, 32 - $lenT - strlen($importe))) . $importe . "\n");
-			if (!empty($d['motivo'])) { $printer->text("Motivo: " . $d['motivo'] . "\n"); }
-		}
-		$printer->text(str_pad('Total descuento:', 20) . "-$ " . $fmt($descuentoTotal) . "\n");
-	}
-	// Promociones aplicadas (por venta). Imprime leyenda y, debajo, el/los nombres.
-	if ($promocion_descuento2 > 0 || !empty($promocion_nombre2)) {
-		$printer->text("------------------------------\n");
-		$printer->text("PROMOCIONES APLICADAS\n");
-		if ($promocion_descuento2 > 0) {
-			$printer->text("Acumulado Promociones : " . $promocion_descuento2 . "\n");
-		}
-		if (!empty($promocion_nombre2)) {
-			// Imprimir nombre de la promoción asociada a la venta
-			$printer->text("- " . $promocion_nombre2 . "\n");
-		}
-	}
-
-	// ----- Total a pagar -----
+    if (!empty($descuentos)) {
+        $printer->text("------------------------------\n");
+        $printer->text("DESCUENTOS APLICADOS\n");
+        foreach ($descuentos as $d) {
+            $linea = '';
+            $tipo = $d['tipo'] ?? '';
+            if ($tipo === 'cortesia') {
+                $prod = !empty($d['producto']) ? $d['producto'] : 'Producto';
+                $cant = !empty($d['cantidad']) ? (' x' . (int)$d['cantidad']) : '';
+                $linea = "Cortesia: {$prod}{$cant}";
+            } elseif ($tipo === 'porcentaje') {
+                $porc  = ($d['porcentaje'] !== null) ? $fmt($d['porcentaje']) : '0';
+                $linea = "Descuento {$porc}%";
+            } else {
+                $linea = "Descuento monto fijo";
+            }
+            $importe = '$ ' . $fmt($d['monto'] ?? 0);
+            $texto  = function_exists('mb_substr') ? mb_substr($linea, 0, 30) : substr($linea, 0, 30);
+            $lenT   = function_exists('mb_strlen') ? mb_strlen($texto) : strlen($texto);
+            $printer->text($texto . str_repeat(' ', max(1, 32 - $lenT - strlen($importe))) . $importe . "\n");
+            if (!empty($d['motivo'])) { $printer->text("Motivo: " . $d['motivo'] . "\n"); }
+        }
+        $printer->text(str_pad('Total descuento:', 20) . "-$ " . $fmt($descuentoTotal) . "\n");
+    }
+    // Promociones aplicadas (por venta). Imprime leyenda y desglose.
+    if (!empty($promoLista) || $promoTotal > 0) {
+        $printer->text("------------------------------\n");
+        $printer->text("PROMOCIONES APLICADAS\n");
+        foreach ($promoLista as $pr) {
+            $nombrePromo = $pr['nombre'] ?? ($pr['promo_nombre'] ?? ($pr['promocion_nombre'] ?? 'Promocion'));
+            $montoPromo = isset($pr['descuento_aplicado']) ? (float)$pr['descuento_aplicado'] : 0.0;
+            $printer->text("- " . $nombrePromo . " $" . $fmt($montoPromo) . "\n");
+        }
+        if ($promoTotal > 0) {
+            $printer->text(str_pad('Total promociones:', 20) . "-$ " . $fmt($promoTotal) . "\n");
+        }
+    }
+    // ----- Total a pagar -----
 	$printer -> text(str_pad('Total:', 20) . '$ ' . $fmt($totalAPagar) . "\n");
 	// Mantener campos existentes
 	$printer -> text("Cambio: " . $datosT['cambio'] ."\n");
@@ -353,6 +385,23 @@ function obtenerDatos($ventaId,$conn){
 	    }
 	    $det->close();
 
+        // Promociones de la venta (desglose)
+        $promosVenta = [];
+        $promosTotal = 0.0;
+        if ($pv = $conn->prepare('SELECT vp.promo_id, cp.nombre, COALESCE(vp.descuento_aplicado,0) AS descuento_aplicado FROM venta_promos vp JOIN catalogo_promos cp ON cp.id = vp.promo_id WHERE vp.venta_id = ? ORDER BY vp.id')) {
+            $pv->bind_param('i', $t['venta_id']);
+            if ($pv->execute()) {
+                $rsP = $pv->get_result();
+                while ($rp = $rsP->fetch_assoc()) {
+                    $rp['promo_id'] = (int)($rp['promo_id'] ?? 0);
+                    $rp['descuento_aplicado'] = (float)($rp['descuento_aplicado'] ?? 0);
+                    $promosTotal += $rp['descuento_aplicado'];
+                    $promosVenta[] = $rp;
+                }
+            }
+            $pv->close();
+        }
+
 	    $mesa_nombre      = $t['mesa_nombre']      ?? 'N/A';
 	    $mesero_nombre    = $t['mesero_nombre']    ?? 'N/A';
 	    $fecha_inicio     = $t['fecha_inicio']     ?? 'N/A';
@@ -371,9 +420,11 @@ function obtenerDatos($ventaId,$conn){
 	          'fecha'            => $t['fecha'] ?? 'N/A',
 	          'venta_id'         => (int)$t['venta_id'],
 	          'propina'          => (float)$t['propina'],
-          'promocion_descuento'          => (float)$t['promocion_descuento'],
+	          'promocion_descuento'          => (float)$t['promocion_descuento'],
           'promocion_id'        => isset($t['promocion_id']) ? (int)$t['promocion_id'] : null,
           'promocion_nombre'    => $t['promocion_nombre'] ?? null,
+          'promociones'        => $promosVenta,
+          'promociones_total'  => $promosTotal,
 	          'total'            => (float)$t['total'],
 	          'mesa_nombre'      => $mesa_nombre,
 	          'mesero_nombre'    => $mesero_nombre,
