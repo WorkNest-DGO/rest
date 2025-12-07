@@ -1014,7 +1014,7 @@ function generarHTMLCorte(r) {
 }
 
 function guardarCorteTemporal(datos) {
-    const obs = document.getElementById('observacionesCorteTemp').value;
+    const obs = document.getElementById('observacionesCorteTemp').value || '';
     const payload = {
         corte_id: datos.corte_id,
         usuario_id: usuarioId,
@@ -1032,7 +1032,7 @@ function guardarCorteTemporal(datos) {
         .then(resp => {
             if (resp.success) {
                 alert('Corte temporal guardado.');
-                imprimirCorteTemporal(datos);
+                imprimirCorteTemporal(datos, obs);
                 hideModal('#modalCorteTemporal');
             } else {
                 alert('Error al guardar corte temporal.');
@@ -1040,8 +1040,10 @@ function guardarCorteTemporal(datos) {
         });
 }
 
-function imprimirCorteTemporal(datos) {
-    window.open(urlConImpresora('../../api/corte_caja/imprime_corte_temp.php?datos=' + JSON.stringify(datos)));
+function imprimirCorteTemporal(datos, observaciones = '') {
+    const payload = Object.assign({}, datos, { observaciones });
+    const url = urlConImpresora('../../api/corte_caja/imprime_corte_temp.php?datos=' + encodeURIComponent(JSON.stringify(payload)));
+    window.open(url);
 
     // const win = window.open('', '_blank', 'width=600,height=800');
     // if (!win) {

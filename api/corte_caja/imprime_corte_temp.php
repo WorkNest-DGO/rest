@@ -66,12 +66,16 @@ if (!isset($r['total_productos']) && isset($r['productos']['total'])) {
 if (!isset($r['total_descuento_promos']) && isset($r['promociones_aplicadas']['total_descuento'])) {
     $r['total_descuento_promos'] = $r['promociones_aplicadas']['total_descuento'];
 }
+$observaciones = trim($r['observaciones'] ?? ($_GET['observaciones'] ?? ''));
 $totalProductos = $num($r['total_productos'] ?? 0);
 $totalBruto = $num($r['total_bruto'] ?? $totalProductos);
-$totalDescuentos = $num($r['total_descuentos'] ?? 0);
 $totalPromos = $num($r['total_descuento_promos'] ?? 0);
-$totalEsperado = $num($r['total_esperado'] ?? ($r['totalEsperado'] ?? ($totalBruto - $totalDescuentos)));
-$totalEsperadoVisible = $totalPromos > 0 ? ($totalEsperado - $totalPromos) : $totalEsperado;
+$totalDescuentos = $num($r['total_descuentos'] ?? 0) - $totalPromos;
+$totalEsperado = $num($r['total_esperado'] ?? ($r['totalEsperado'] ?? ($totalBruto - $totalDescuentos - $totalPromos)));
+if (!is_finite($totalEsperado) || $totalEsperado == 0.0) {
+    $totalEsperado = $num($r['totalEsperado'] ?? ($totalProductos + $num($r['total_propinas'] ?? 0)));
+}
+$totalEsperadoVisible = $totalEsperado;
 
 // Caja y movimientos
 $fondo = $num($r['fondo'] ?? $r['fondo_inicial'] ?? 0);
@@ -132,7 +136,7 @@ $connector = new WindowsPrintConnector($printerIp);
 $printer = new Printer($connector);
 $printer->initialize();
 
-// Cabecera
+// Cabecera y datos del corte
 $printer->setJustification(Printer::JUSTIFY_LEFT);
 $filename = "../../archivos/logo_login2.png";
 $logo = EscposImage::load($filename, true);
@@ -142,11 +146,9 @@ $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
 $printer->text("Corte de Caja Temporal \n");
 $printer->selectPrintMode();
 $printer->setJustification(Printer::JUSTIFY_LEFT);
-
+$folioTxt = trim(($folioInicio !== null ? $folioInicio : '-') . " - " . ($folioFin !== null ? $folioFin : '-') . " (" . ($folioTotal ?? 0) . ")");
 $printer->text((new item('Corte', $r['corte_id'] ?? '-', false))->getAsString(32));
 $printer->text((new item('Inicio', $r['fecha_inicio'] ?? '-', false))->getAsString(32));
-$printer->text((new item('Fin', $r['fecha_fin'] ?? '-', false))->getAsString(32));
-$folioTxt = trim(($folioInicio !== null ? $folioInicio : '-') . " - " . ($folioFin !== null ? $folioFin : '-') . " (" . ($folioTotal ?? 0) . ")");
 $printer->text((new item('Folios', $folioTxt, false))->getAsString(48));
 $printer->feed();
 
@@ -174,33 +176,30 @@ $printer->text((new item('Fondo inicial', $fmt($fondo), true))->getAsString(32))
 $printer->text((new item('Depositos', $fmt($totalDepositos), true))->getAsString(32));
 $printer->text((new item('Retiros', $fmt($totalRetiros), true))->getAsString(32));
 $printer->text((new item('Total propinas', $fmt($totalPropinas), true))->getAsString(32));
-$printer->text((new item('Efectivo en caja', $fmt($totalFinalEf), true))->getAsString(32));
-$printer->text((new item('Total final', $fmt($totalFinalGral), true))->getAsString(32));
-$printer->text((new item('Total ingresado', $fmt($totalIngresado), true))->getAsString(32));
+$printer->text((new item('Efectivo esperado en caja', $fmt($totalFinalEf), true))->getAsString(32));
+$printer->text((new item('Total final (todos los medios)', $fmt($totalFinalGral), true))->getAsString(32));
 $printer->feed();
 
-// Totales por tipo de pago
+// Totales por tipo de pago (segun vista)
 $printer->setJustification(Printer::JUSTIFY_CENTER);
 $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
 $printer->text("Totales por tipo de pago\n");
 $printer->selectPrintMode();
 $printer->setJustification(Printer::JUSTIFY_LEFT);
-foreach ($metodosPago as $m) {
-    $label = ucfirst($m);
-    $printer->text((new item($label, $fmt($totalesPago[$m]), true))->getAsString(32));
-}
+$printer->text((new item('Efectivo', $fmt($totalesPago['efectivo'] ?? 0), true))->getAsString(32));
+$printer->text((new item('Cheque', $fmt($esperadoPago['cheque'] ?? 0), true))->getAsString(32));
+$printer->text((new item('Tarjeta', $fmt($totalesPago['tarjeta'] ?? 0), true))->getAsString(32));
 $printer->feed();
 
-// Esperados por tipo de pago
+// Esperado por tipo de pago
 $printer->setJustification(Printer::JUSTIFY_CENTER);
 $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
 $printer->text("Esperado por tipo de pago\n");
 $printer->selectPrintMode();
 $printer->setJustification(Printer::JUSTIFY_LEFT);
-foreach ($metodosPago as $m) {
-    $label = ucfirst($m);
-    $printer->text((new item($label, $fmt($esperadoPago[$m]), true))->getAsString(32));
-}
+$printer->text((new item('Efectivo', $fmt($esperadoPago['efectivo'] ?? 0), true))->getAsString(32));
+$printer->text((new item('Cheque', $fmt($esperadoPago['cheque'] ?? 0), true))->getAsString(32));
+$printer->text((new item('Tarjeta', $fmt($esperadoPago['tarjeta'] ?? 0), true))->getAsString(32));
 $printer->feed();
 
 // Propinas
@@ -220,8 +219,10 @@ $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
 $printer->text("Cuentas por estatus\n");
 $printer->selectPrintMode();
 $printer->setJustification(Printer::JUSTIFY_LEFT);
-$printer->text((new item('Abiertas', ($cuentasAbiertas ?? 0) . ' / ' . $fmt($totalAbiertas), false))->getAsString(48));
-$printer->text((new item('Canceladas', ($cuentasCanc ?? 0) . ' / ' . $fmt($totalCanc), false))->getAsString(48));
+$printer->text((new item('Cuentas abiertas', (string)($cuentasAbiertas ?? 0), false))->getAsString(48));
+$printer->text((new item('Monto abiertas', $fmt($totalAbiertas), true))->getAsString(32));
+$printer->text((new item('Cuentas cerradas', (string)($cuentasCanc ?? 0), false))->getAsString(48));
+$printer->text((new item('Monto cerradas', $fmt($totalCanc), true))->getAsString(32));
 $printer->feed();
 
 // Totales por mesero
@@ -239,14 +240,19 @@ if (!empty($meseros)) {
     $printer->feed();
 }
 
-// Totales por repartidor
-if (!empty($repartidores)) {
+// Totales por repartidor (incluye rapido/mostrador)
+$repartidoresLista = is_array($repartidores) ? array_values($repartidores) : [];
+$totalRapido = $num($r['total_rapido'] ?? 0);
+if ($totalRapido > 0) {
+    array_unshift($repartidoresLista, ['nombre' => 'Mostrador/rapido', 'total' => $totalRapido]);
+}
+if (!empty($repartidoresLista)) {
     $printer->setJustification(Printer::JUSTIFY_CENTER);
     $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
     $printer->text("Totales por repartidor\n");
     $printer->selectPrintMode();
     $printer->setJustification(Printer::JUSTIFY_LEFT);
-    foreach ($repartidores as $rep) {
+    foreach ($repartidoresLista as $rep) {
         $nombre = $rep['nombre'] ?? '';
         $total = $fmt($rep['total'] ?? $rep['total_neto'] ?? 0);
         $printer->text((new item($nombre, $total, true))->getAsString(32));
@@ -254,11 +260,65 @@ if (!empty($repartidores)) {
     $printer->feed();
 }
 
-// Folios finales
-$printer->text("Fecha inicio: " . ($r['fecha_inicio'] ?? '-') . "\n");
-$printer->text("Folio inicio: " . ($folioInicio ?? '-') . "\n");
-$printer->text("Folio final: " . ($folioFin ?? '-') . "\n");
-$printer->text("Total folios: " . ($folioTotal ?? '-') . "\n");
+// Totales por producto
+$prod = $r['productos'] ?? [];
+$printer->setJustification(Printer::JUSTIFY_CENTER);
+$printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
+$printer->text("Totales por producto\n");
+$printer->selectPrintMode();
+$printer->setJustification(Printer::JUSTIFY_LEFT);
+$printer->text((new item('Alimentos', $fmt($prod['alimentos'] ?? 0), true))->getAsString(32));
+$printer->text((new item('Bebidas', $fmt($prod['bebidas'] ?? 0), true))->getAsString(32));
+$printer->text((new item('Total', $fmt($prod['total'] ?? $totalProductos), true))->getAsString(32));
+$printer->feed();
+
+// Totales por servicio
+$serv = $r['por_servicio'] ?? [];
+$printer->setJustification(Printer::JUSTIFY_CENTER);
+$printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
+$printer->text("Totales por servicio\n");
+$printer->selectPrintMode();
+$printer->setJustification(Printer::JUSTIFY_LEFT);
+$printer->text((new item('Comedor', $fmt($serv['comedor'] ?? 0), true))->getAsString(32));
+$printer->text((new item('Domicilio', $fmt($serv['domicilio'] ?? 0), true))->getAsString(32));
+$printer->text((new item('Rapido', $fmt($serv['rapido'] ?? 0), true))->getAsString(32));
+$printer->feed();
+
+// Totales por plataforma
+$plataformas = (isset($r['resumen']) && is_array($r['resumen'])) ? array_values($r['resumen']) : [];
+if (!empty($plataformas)) {
+    $printer->setJustification(Printer::JUSTIFY_CENTER);
+    $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
+    $printer->text("Totales por plataforma\n");
+    $printer->selectPrintMode();
+    $printer->setJustification(Printer::JUSTIFY_LEFT);
+    $printer->text(str_pad('Plataforma', 14) . str_pad('Bruto', 11, ' ', STR_PAD_LEFT) . str_pad('Desc', 11, ' ', STR_PAD_LEFT) . str_pad('Neto', 10, ' ', STR_PAD_LEFT) . "\n");
+    foreach ($plataformas as $plat) {
+        $nombre = substr($plat['nombre'] ?? 'Plataforma', 0, 14);
+        $bruto = $fmt($plat['total_bruto'] ?? 0);
+        $desc = $fmt($plat['total_descuento'] ?? 0);
+        $neto = $fmt($plat['total_neto'] ?? 0);
+        $line = str_pad($nombre, 14) .
+            str_pad($bruto, 11, ' ', STR_PAD_LEFT) .
+            str_pad($desc, 11, ' ', STR_PAD_LEFT) .
+            str_pad($neto, 10, ' ', STR_PAD_LEFT);
+        $printer->text($line . "\n");
+    }
+    $printer->feed();
+}
+
+// Observaciones
+if ($observaciones !== '') {
+    $printer->setJustification(Printer::JUSTIFY_CENTER);
+    $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
+    $printer->text("Observaciones\n");
+    $printer->selectPrintMode();
+    $printer->setJustification(Printer::JUSTIFY_LEFT);
+    foreach (preg_split("/\\r?\\n/", $observaciones) as $lineaObs) {
+        $printer->text(trim($lineaObs) . "\n");
+    }
+    $printer->feed();
+}
 
 // Corta
 $printer->cut();
