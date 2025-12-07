@@ -15,16 +15,17 @@ $nombre      = isset($input['nombre']) ? trim($input['nombre']) : '';
 $precio      = isset($input['precio']) ? (float)$input['precio'] : null;
 $descripcion = isset($input['descripcion']) ? trim($input['descripcion']) : '';
 $existencia  = isset($input['existencia']) ? (int)$input['existencia'] : 0;
+$categoriaId = isset($input['categoria_id']) ? (int)$input['categoria_id'] : 0;
 
-if ($nombre === '' || $precio === null) {
+if ($nombre === '' || $precio === null || $categoriaId <= 0) {
     error('Datos incompletos');
 }
 
-$stmt = $conn->prepare('INSERT INTO productos (nombre, precio, descripcion, existencia, activo) VALUES (?, ?, ?, ?, 1)');
+$stmt = $conn->prepare('INSERT INTO productos (nombre, precio, descripcion, existencia, categoria_id, activo) VALUES (?, ?, ?, ?, ?, 1)');
 if (!$stmt) {
     error('Error al preparar inserción: ' . $conn->error);
 }
-$stmt->bind_param('sdsi', $nombre, $precio, $descripcion, $existencia);
+$stmt->bind_param('sdsii', $nombre, $precio, $descripcion, $existencia, $categoriaId);
 if (!$stmt->execute()) {
     $stmt->close();
     error('Error al agregar producto: ' . $stmt->error);

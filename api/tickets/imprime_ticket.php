@@ -80,6 +80,7 @@ try { foreach ($recibos  as $recibo) {
     $promosTicketTotal = 0.0;
 	if ($ticketId > 0) {
 		if ($q = $conn->prepare("SELECT td.tipo, td.porcentaje, td.monto, td.motivo, td.venta_detalle_id,
+                                       td.catalogo_promo_id,
 		                               vd.cantidad, vd.precio_unitario, p.nombre AS producto
 		                        FROM ticket_descuentos td
 		                        LEFT JOIN venta_detalles vd ON vd.id = td.venta_detalle_id
@@ -91,7 +92,8 @@ try { foreach ($recibos  as $recibo) {
 				$resD = $q->get_result();
 				while ($row = $resD->fetch_assoc()) {
                     $tipoDesc = strtolower($row['tipo'] ?? '');
-                    if ($tipoDesc === 'promocion') {
+                    $esPromo = ($tipoDesc === 'promocion') || (!empty($row['catalogo_promo_id']));
+                    if ($esPromo) {
                         $promosTicket[] = $row;
                         $promosTicketTotal += (float)($row['monto'] ?? 0);
                         continue;

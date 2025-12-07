@@ -8,6 +8,35 @@ window.alert = showAppMsg;
 let productos = [];
 const itemsPorPaginaInv = 20;
 let paginaActualInv = 1;
+let categoriasInv = [];
+
+async function cargarCategoriasInventario() {
+    try {
+        const resp = await fetch('../../api/inventario/listar_categorias.php');
+        const data = await resp.json();
+        if (data && data.success && Array.isArray(data.categorias)) {
+            categoriasInv = data.categorias;
+            pintarSelectCategorias();
+        } else {
+            categoriasInv = [];
+        }
+    } catch (e) {
+        console.error('No se pudieron cargar categorías', e);
+        categoriasInv = [];
+    }
+}
+
+function pintarSelectCategorias() {
+    const sel = document.getElementById('categoriaProducto');
+    if (!sel) return;
+    sel.innerHTML = '<option value=\"\">Seleccione</option>';
+    categoriasInv.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.nombre;
+        sel.appendChild(opt);
+    });
+}
 
 async function cargarProductos() {
     try {
@@ -179,8 +208,14 @@ document.getElementById('formAgregar').addEventListener('submit', async (e) => {
     const precio = parseFloat(document.getElementById('precioProducto').value);
     const descripcion = document.getElementById('descripcionProducto').value;
     const existencia = parseInt(document.getElementById('existenciaProducto').value);
+    const categoriaId = parseInt(document.getElementById('categoriaProducto').value);
 
-    const payload = { nombre, precio, descripcion, existencia };
+    if (!categoriaId) {
+        alert('Seleccione una categoría');
+        return;
+    }
+
+    const payload = { nombre, precio, descripcion, existencia, categoria_id: categoriaId };
     try {
         const resp = await fetch('../../api/inventario/agregar_producto.php', {
             method: 'POST',
@@ -215,8 +250,13 @@ function mostrarConfirmacion(mensaje) {
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    cargarProductos();
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await Promise.all([cargarCategoriasInventario(), cargarProductos()]);
+    } catch (e) {
+        console.error(e);
+        await cargarProductos();
+    }
     document.getElementById('agregarProducto').addEventListener('click', abrirModalAgregar);
 });
 

@@ -499,7 +499,8 @@ foreach ($subProcesadas as $sub) {
     $folio_insert = (int)$row['folio_actual'];
     $folio_siguiente = $folio_insert + 1;
 
-    $total = $sub['total_bruto'];
+    // Si hubo ajuste manual (Didi/Uber/Rappi) usamos el total a cobrar calculado/ajustado
+    $total = $sub['total_cobrar'];
     $total_esperado_sub = $sub['total_cobrar'];
     $monto_ticket = $sub['monto_ticket'];
     $tipo_pago = $sub['tipo_pago'];

@@ -966,18 +966,18 @@ async function abrirEnviosRepartidor() {
 
         let html = '<div class="table-responsive">';
         html += '<table class="styled-table">';
-        html += '<thead><tr><th>Repartidor</th><th>Usuario</th><th>Total envios</th><th>Lineas</th><th>Ventas</th></tr></thead><tbody>';
+        html += '<thead><tr><th>Repartidor</th><th>Usuario</th><th>Total envios</th><th>Ventas</th></tr></thead><tbody>';
         detalle.forEach(r => {
             html += `<tr>
                         <td>${r.repartidor || ''}</td>
                         <td>${r.usuario || ''}</td>
                         <td>${money(Number(r.total_envio || 0))}</td>
-                        <td>${Number(r.lineas_envio || 0)}</td>
+                        
                         <td>${Number(r.ventas || 0)}</td>
                      </tr>`;
         });
         html += '</tbody>';
-        html += `<tfoot><tr><th colspan="2">Total</th><th>${money(totalGeneral)}</th><th>${totalLineas}</th><th>${totalVentas}</th></tr></tfoot>`;
+        html += `<tfoot><tr><th colspan="2">Total</th><th>${money(totalGeneral)}</th><th>${totalVentas}</th></tr></tfoot>`;
         html += '</table></div>';
 
         if (payload.corte_id || payload.fecha) {
@@ -2839,6 +2839,7 @@ async function verDetalles(id) {
             const ventaListado = ventasData[id] || {};
             const estatusVenta = String(ventaListado.estatus || info.estatus || '').toLowerCase();
             const ventaCerrada = estatusVenta === 'cerrada';
+            const botonTicketTexto = ventaCerrada ? 'Agregar propina' : 'Imprimir ticket';
             const destino = info.tipo_entrega === 'mesa'
                 ? info.mesa
                 : info.tipo_entrega === 'domicilio'
@@ -2880,7 +2881,7 @@ async function verDetalles(id) {
                 html += `<p>Evidencia:<br><img src="../../uploads/evidencias/${info.foto_entrega}" width="300"></p>`;
             }
             html += `<div class="mt-2">
-                        <button class="btn custom-btn" id="imprimirTicket">Imprimir ticket</button>
+                        <button class="btn custom-btn" id="imprimirTicket">${botonTicketTexto}</button>
                         ${ventaCerrada ? '<button class="btn custom-btn" id="reimprimirTicket" style="margin-left:8px;">Reimprimir ticket</button>' : ''}
                         <button class="btn custom-btn" id="imprimirComandaDetalle" style="margin-left:8px;">Comanda</button>
                         <button hidden class="btn custom-btn" id="cerrarDetalle" data-dismiss="modal">Cerrar</button>

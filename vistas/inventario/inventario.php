@@ -80,6 +80,12 @@ ob_start();
             <input type="number" step="0.01" id="precioProducto" class="form-control" required>
           </div>
           <div class="form-group">
+            <label for="categoriaProducto">Categor?a:</label>
+            <select id="categoriaProducto" class="form-control" required>
+              <option value="">Seleccione</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label for="descripcionProducto">Descripción:</label>
             <textarea id="descripcionProducto" class="form-control"></textarea>
           </div>
