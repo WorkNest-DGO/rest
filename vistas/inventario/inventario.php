@@ -61,7 +61,7 @@ ob_start();
 
 <!-- MODAL NORMALIZED 2025-08-14 -->
 <div class="modal fade" id="modalAgregar" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <form id="formAgregar">
         <div class="modal-header">
@@ -105,7 +105,7 @@ ob_start();
 
 <!-- MODAL NORMALIZED 2025-08-14 -->
 <div class="modal fade" id="modalAlerta" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="modalTitulo">Resultado</h5>
@@ -139,7 +139,7 @@ ob_start();
 
 <!-- Modal global de mensajes -->
 <div class="modal fade" id="appMsgModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Mensaje</h5>

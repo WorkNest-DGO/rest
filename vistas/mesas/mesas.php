@@ -89,7 +89,7 @@ ob_start();
 
 <!-- Modal de autorización para cambio de estado -->
 <div id="modalAuthMesa" class="modal-flotante modal fade" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Autorización requerida</h5>
@@ -110,7 +110,7 @@ ob_start();
 
 <!-- Modal para seleccionar nuevo estado de mesa -->
 <div id="modalCambioEstado" class="modal-flotante modal fade" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Cambiar estado de mesa</h5>
@@ -122,7 +122,7 @@ ob_start();
                     <div id="estadoOpciones" class="d-flex flex-column" style="gap:6px;">
                         <label class="mb-0"><input type="checkbox" name="estado" value="libre"> Libre</label>
                         <label class="mb-0"><input type="checkbox" name="estado" value="ocupada"> Ocupada</label>
-                        <label class="mb-0"><input type="checkbox" name="estado" value="reservada"> Reservada</label>
+                        <!--label class="mb-0"><input type="checkbox" name="estado" value="reservada"> Reservada</label-->
                     </div>
                 </div>
                 <div id="reservaCampos" class="form-group" style="display:none;">
@@ -142,7 +142,7 @@ ob_start();
 
 <!-- Modal para asignar mesero (embebido) -->
 <div id="modalAsignarMesero" class="modal-flotante modal fade" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Asignar mesero a mesa</h5>
@@ -182,7 +182,7 @@ ob_start();
 
 <!-- Modal global de mensajes -->
 <div class="modal fade" id="appMsgModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Mensaje</h5>
@@ -198,7 +198,7 @@ ob_start();
 
 <!-- Modal de error de promocion -->
 <div class="modal fade" id="modalPromoError" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Promocion no aplicable</h5>

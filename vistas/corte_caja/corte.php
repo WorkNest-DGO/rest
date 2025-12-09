@@ -57,7 +57,7 @@ ob_start();
 
 <!-- MODAL NORMALIZED 2025-08-14 -->
 <div class="modal fade" id="modalDesglose" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Desglose de caja</h5>
@@ -73,7 +73,7 @@ ob_start();
 
 <!-- MODAL NORMALIZED 2025-08-14 -->
 <div class="modal fade" id="modalDetalle" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Detalle de corte</h5>
@@ -136,7 +136,7 @@ ob_start();
 </div>
 <!-- Modal global de mensajes -->
 <div class="modal fade" id="appMsgModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Mensaje</h5>

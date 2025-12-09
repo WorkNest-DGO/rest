@@ -204,7 +204,7 @@ async function marcarEntregada(id) {
         modal.setAttribute('tabindex', '-1');
 
         const dialog = document.createElement('div');
-        dialog.className = 'modal-dialog';
+        dialog.className = 'modal-dialog modal-dialog-centered';
 
         const content = document.createElement('div');
         content.className = 'modal-content';

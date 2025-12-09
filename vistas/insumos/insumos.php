@@ -56,7 +56,7 @@ ob_start();
         <div class="row" id="catalogoInsumos"></div>
 
         <div class="modal fade" id="modalInsumo" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog" role="document">
+            <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <form id="formInsumo">
                         <div class="modal-header">
@@ -194,7 +194,7 @@ ob_start();
 
 <!-- Modal Nuevo Proveedor -->
 <div class="modal fade" id="modalProveedor" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <form id="formProveedor">
                 <div class="modal-header">
@@ -234,7 +234,7 @@ ob_start();
 <!-- Modal Nuevo Proveedor End -->
 <!-- Modal global de mensajes -->
 <div class="modal fade" id="appMsgModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Mensaje</h5>

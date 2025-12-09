@@ -47,7 +47,7 @@ ob_start();
 </div>
 
 <div class="modal fade" id="modalAgregarArea" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <form id="formAgregarArea">
         <div class="modal-header">
@@ -72,7 +72,7 @@ ob_start();
 </div>
 
 <div class="modal fade" id="modalEditarArea" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <form id="formEditarArea">
         <div class="modal-header">
@@ -98,7 +98,7 @@ ob_start();
 </div>
 
 <div class="modal fade" id="modalMsgArea" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Mensaje</h5>

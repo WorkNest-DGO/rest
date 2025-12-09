@@ -60,7 +60,7 @@ ob_start();
 
 <!-- Form-->
 <div class="modal fade" id="modalAgregar" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <form id="formAgregar">
         <input type="hidden" id="bancoId">
@@ -88,7 +88,7 @@ ob_start();
 
 <!-- Modal global de mensajes -->
 <div class="modal fade" id="appMsgModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Mensaje</h5>

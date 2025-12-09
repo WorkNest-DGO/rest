@@ -225,7 +225,7 @@ ob_start();
 
 <!-- Modal login admin para activar descuentos -->
 <div class="modal fade" id="modalDescuentos" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Desbloquear descuentos</h5>
@@ -254,7 +254,7 @@ ob_start();
 
 <!-- Modal de error de promoción -->
 <div class="modal fade" id="modalPromoError" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Promoción no aplicable</h5>
