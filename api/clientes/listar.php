@@ -6,7 +6,7 @@ $sql = "SELECT c.id, c.colonia_id, c.`Nombre del Cliente` AS nombre, c.`Telefono
                c.`Calle` AS calle, c.`Numero Exterior` AS numero_exterior, c.`Colonia` AS colonia_texto,
                c.`Delegacion/Municipio` AS municipio, c.`Entre Calle 1` AS entre_calle_1,
                c.`Entre Calle 2` AS entre_calle_2, c.`Referencias` AS referencias,
-               col.colonia AS colonia_nombre, col.dist_km_la_forestal, col.costo_fore, col.costo_madero
+               col.colonia AS colonia_nombre, col.dist_km_la_forestal, col.costo_fore
         FROM clientes c
         LEFT JOIN colonias col ON col.id = c.colonia_id
         ORDER BY nombre ASC";
@@ -33,7 +33,6 @@ while ($row = $result->fetch_assoc()) {
         'colonia_nombre' => $row['colonia_nombre'],
         'dist_km_la_forestal' => $row['dist_km_la_forestal'] !== null ? (float)$row['dist_km_la_forestal'] : null,
         'costo_fore' => $row['costo_fore'] !== null ? (float)$row['costo_fore'] : null,
-        'costo_madero' => $row['costo_madero'] !== null ? (float)$row['costo_madero'] : null,
     ];
 }
 

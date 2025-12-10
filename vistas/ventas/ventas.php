@@ -34,7 +34,7 @@ ob_start();
   </div>
 </div>
 <!-- Page Header End -->
-<div class="container mt-5 mb-5">
+<div >
   <div class="section-header text-center">
     <p>Control de ventas</p>
     <h2>Registro de Venta</h2>
@@ -288,7 +288,7 @@ ob_start();
 
 <!-- Modales -->
 <div class="modal fade" id="modalNuevoCliente" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Nuevo cliente</h5>
@@ -397,6 +397,7 @@ ob_start();
 <!-- Modal: Información de envío/cliente -->
 <div class="modal fade" id="modalClienteEnvio" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Datos de envío</h5>
@@ -413,7 +414,7 @@ ob_start();
 </div>
 <!-- MODAL NORMALIZED 2025-08-14 -->
 <div class="modal fade" id="modalDesglose" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Desglose de caja</h5>
@@ -661,7 +662,7 @@ ob_start();
 
 <!-- Modal global de mensajes -->
 <div class="modal fade" id="appMsgModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Mensaje</h5>
@@ -695,7 +696,7 @@ ob_start();
 </script>
 <!-- Modal de error de promoción -->
 <div class="modal fade" id="modalPromoError" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Promoci&oacute;n no aplicable</h5>
@@ -715,7 +716,7 @@ ob_start();
 
 <!-- Modal: Corte enviado -->
 <div class="modal fade" id="modalCorteEnviado" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Corte enviado</h5>
@@ -732,7 +733,7 @@ ob_start();
 </div>
 <!-- Modal: pendientes para corte -->
 <div class="modal fade" id="modalPendientesCorte" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">No se puede cerrar el corte</h5>

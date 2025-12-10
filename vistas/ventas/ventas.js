@@ -638,7 +638,7 @@ async function abrirCaja() {
         modal.setAttribute('tabindex', '-1');
 
         const dialog = document.createElement('div');
-        dialog.className = 'modal-dialog';
+        dialog.className = 'modal-dialog modal-dialog-centered';
 
         const content = document.createElement('div');
         content.className = 'modal-content';
@@ -1075,145 +1075,181 @@ function imprimirCorteTemporal(datos, observaciones = '') {
 
 function mostrarModalDesglose(dataApi) {
     const r = dataApi?.resultado || {};
-    const metodosPago = ['efectivo', 'boucher', 'cheque', 'tarjeta', 'transferencia'];
-
-    // Usa los totales del API si vienen; si no, calcula con metodosPago
-    const totalProductos = Number.parseFloat(r.total_productos) ||
-        metodosPago.reduce((acc, m) => acc + (Number.parseFloat(r[m]?.productos) || 0), 0);
-
-    const totalPropinas = Number.parseFloat(r.total_propinas) ||
-        metodosPago.reduce((acc, m) => acc + (Number.parseFloat(r[m]?.propina) || 0), 0);
-
-    const totalBrutoTickets = Number.parseFloat(r.total_bruto ?? 0);
-    const totalDescuentos   = Number.parseFloat(r.total_descuentos ?? 0);
-    const totalEsperadoNew  = Number.parseFloat(r.total_esperado ?? (totalBrutoTickets - totalDescuentos));
-    const totalEsperado = (isNaN(totalEsperadoNew) || totalEsperadoNew === 0)
-        ? (Number.parseFloat(r.totalEsperado) || (totalProductos + totalPropinas))
-        : totalEsperadoNew;
-    const fondoInicial = Number.parseFloat(r.fondo) || 0;
-    const totalDepositos = Number.parseFloat(r.total_depositos ?? 0) || 0;
-    const totalRetiros = Number.parseFloat(r.total_retiros ?? 0) || 0;
-    const totalEsperadoEfectivo = Number.parseFloat(r.totalEsperadoEfectivo ?? r.esperado_efectivo ?? 0);
-    const totalFinalEfectivo = Number.parseFloat(r.totalFinalEfectivo ?? r.totalFinal ?? 0) || 0;
-    const totalIngresado = totalFinalEfectivo  + totalDepositos - totalRetiros;
-    const cuentasCanceladas = Number.parseInt(
-        r.cuentas_canceladas ?? r.cuentas_por_estatus?.cerradas?.cantidad ?? 0,
-        10
-    ) || 0;
-    const totalCanceladas   = Number.parseFloat(
-        r.total_cuentas_canceladas ?? r.cuentas_por_estatus?.cerradas?.total ?? 0
-    ) || 0;
+    const datos = prepararDatosCorteVista(r);
 
     const modal = document.getElementById('modalDesglose');
     const body = modal.querySelector('.modal-body');
-    let html = '<div class="bg-dark text-white p-3 border">';
-    html += '<h3>Detalle de dinero ingresado</h3>';
-    // Datos de cabecera del corte (si existen)
-    if (r.fecha_inicio) { html += `<p>Fecha inicio: ${r.fecha_inicio}</p>`; }
-    if (r.folio_inicio != null) { html += `<p>Folio inicio: ${r.folio_inicio}</p>`; }
-    if (r.folio_fin != null) { html += `<p>Folio fin: ${r.folio_fin}</p>`; }
-    if (r.total_folios != null) { html += `<p>Total folios: ${r.total_folios}</p>`; }
+    let html = `
+    <div class="tarjeta" style="margin-top:8px;">
+      <div style="opacity:.8">Datos del corte</div>
+      <div>Corte: <span id="lblDesgCorteId">-</span></div>
+      <div>Inicio: <span id="lblDesgFechaInicio">-</span></div>
+      <div>Folios: <span id="lblDesgFolios">-</span></div>
+    </div>
 
-    // Totales incluyendo descuentos por tickets
-    if (!isNaN(totalBrutoTickets) && (totalBrutoTickets > 0 || totalDescuentos >= 0)) {
-        html += `<p>Total sin descuentos: $${(totalBrutoTickets || 0).toFixed(2)}</p>`;
-        html += `<p>Descuentos acumulados: $<span id="lblCorteActualDescuentos">${(totalDescuentos || 0).toFixed(2)}</span></p>`;
-    }
-    html += `<p><strong>Total esperado:</strong> $${totalEsperado.toFixed(2)}</p>`;
-    html += '<p>Fondo inicial: $<strong id="lblFondo"></strong></p>';
-    html += '<p>Depósitos: $<strong id="lblTotalDepositos"></strong></p>';
-    html += '<p>Retiros: $<strong id="lblTotalRetiros"></strong></p>';
-    html += `<p>Total propinas: $${totalPropinas.toFixed(2)}</p>`;
-    html += `<p>Total ingresado: $${totalIngresado.toFixed(2)}</p>`;
-    html += `<p>Cuentas canceladas: <strong>${cuentasCanceladas}</strong> (monto: $${totalCanceladas.toFixed(2)})</p>`;
-   // html += `<p>Total productos S/descuento: $${totalProductos.toFixed(2)}</p>`;
-    //Shtml += `<p>Total productos C/descuento: $${totalEsperado.toFixed(2)}</p>`;
-    html += '<p>Totales por tipo de pago:</p><ul>';
-    metodosPago.forEach(tipo => {
-        const p = r[tipo] || {};
-        html += `<li>${tipo}: $${(Number.parseFloat(p.total) || 0).toFixed(2)}</li>`;
-    });
-    html += '</ul>';
-    // Esperado por tipo de pago (post-descuentos) si viene del API
-    const esperadoEfec   = Number.parseFloat(r.esperado_efectivo || 0);
-    const esperadoBouch  = Number.parseFloat(r.esperado_boucher  || 0);
-    const esperadoCheque = Number.parseFloat(r.esperado_cheque   || 0);
-    if (esperadoEfec || esperadoBouch || esperadoCheque) {
-        html += '<p>Esperado post-descuentos por tipo de pago:</p><ul>';
-        html += `<li>efectivo: $${esperadoEfec.toFixed(2)}</li>`;
-        html += `<li>boucher: $${esperadoBouch.toFixed(2)}</li>`;
-        html += `<li>Transferencia: $${esperadoCheque.toFixed(2)}</li>`;
-        html += '</ul>';
-    }  
-   
-    
-    html += '<p>Propinas por tipo de pago:</p><ul>';
-    html += `<li>Efectivo: $${(Number.parseFloat(r.total_propina_efectivo) || 0).toFixed(2)}</li>`;
-    html += `<li>Transferencia: $${(Number.parseFloat(r.total_propina_cheque) || 0).toFixed(2)}</li>`;
-    html += `<li>Tarjeta: $${(Number.parseFloat(r.total_propina_tarjeta) || 0).toFixed(2)}</li></ul>`;
+    <div class="tarjeta" style="margin-top:8px;">
+      <div><strong>Totales de venta</strong></div>
+      <div>Total bruto: <span id="lblDesgTotalBruto">0.00</span></div>
+      <div>Descuentos: <span id="lblDesgTotalDescuentos">0.00</span><span id="lblCorteActualDescuentos" style="display:none;">0.00</span></div>
+      <div id="desgPromos" style="display:none"><strong>Promociones Aplicadas:</strong> <span id="lblDesgTotalPromociones">0.00</span></div>
+      <div>Total esperado: <span id="lblDesgTotalEsperado">0.00</span></div>
+    </div>
 
-    var totalPromos = Number(r.total_descuento_promos ?? 0);
-     if (totalPromos > 0) {
-        html += '<p>Promociones:</p><ul>';
-        html += `<li>Descuento Total Promociones: $${totalPromos.toFixed(2)}</li>`;
-        html += `<li>Total ingresado Post-Promociones: $${totalEsperado.toFixed(2)}</li>`;        
-        html += '</ul>';
-    }
+    <div class="tarjeta" style="margin-top:8px;">
+      <div><strong>Caja y movimientos</strong></div>
+      <div>Fondo inicial: <span id="lblFondo">0.00</span></div>
+      <div>Depósitos: <span id="lblTotalDepositos">0.00</span></div>
+      <div>Retiros: <span id="lblTotalRetiros">0.00</span></div>
+      <div>Total propinas: <span id="lblDesgTotalPropinas">0.00</span></div>
+      <div>Efectivo esperado en caja: <span id="lblDesgTotalFinalEfectivo">0.00</span></div>
+      <div>Total final (todos los medios): <span id="lblDesgTotalFinalGeneral">0.00</span></div>
+    </div>
 
-    // metodosPago.forEach(tipo => {
-    //     const p = r[tipo] || {};
-    //     html += `<li>${tipo}: $${(Number.parseFloat(p.propina) || 0).toFixed(2)}</li></ul>`;
-    // });
+    <div class="tarjeta" style="margin-top:8px;">
+      <div style="opacity:.8">Totales por tipo de pago</div>
+      <div>Efectivo: <span id="lblDesgTotalPagoEfectivo">0.00</span></div>
+      <div>Cheque:   <span id="lblDesgTotalPagoCheque">0.00</span></div>
+      <div>Tarjeta:  <span id="lblDesgTotalPagoTarjeta">0.00</span></div>
+    </div>
 
+    <div class="tarjeta" style="margin-top:8px;">
+      <div style="opacity:.8">Esperado por tipo de pago</div>
+      <div>Efectivo: <span id="lblDesgEsperadoEfectivo">0.00</span></div>
+      <div>Cheque:   <span id="lblDesgEsperadoCheque">0.00</span></div>
+      <div>Tarjeta:  <span id="lblDesgEsperadoTarjeta">0.00</span></div>
+    </div>
 
+    <div class="tarjeta" style="margin-top:8px;">
+      <div><strong>Propinas por tipo de pago</strong></div>
+      <div>Efectivo: <span id="lblDesgPropinaEfectivo">0.00</span></div>
+      <div>Transferencia:  <span id="lblDesgPropinaTransfer">0.00</span></div>
+      <div>Tarjeta:  <span id="lblDesgPropinaTarjeta">0.00</span></div>
+    </div>
 
-    // Listado de ventas por mesero (si existe)
-    const listaMeseros = Array.isArray(r.total_meseros)
-        ? r.total_meseros
-        : (Array.isArray(r.totales_mesero) ? r.totales_mesero : []);
-    if (listaMeseros.length) {
-        html += '<h4>Ventas por mesero</h4><ul>';
-        listaMeseros.forEach(m => {
-            const nombre = (m?.nombre ?? '').toString();
-            const total = Number.parseFloat(m?.total ?? m?.total_neto) || 0;
-            html += `<li>${nombre}: $${total.toFixed(2)}</li>`;
-        });
-        html += '</ul>';
-    }
+    <div class="tarjeta" style="margin-top:8px;">
+      <div style="opacity:.8">Cuentas por estatus</div>
+      <div><strong>Cuentas abiertas:</strong> <span id="lblDesgCuentasActivas">0</span></div>
+      <div><strong>Monto abiertas:</strong> <span id="lblDesgTotalActivas">0.00</span></div>
+      <div><strong>Cuentas cerradas:</strong> <span id="lblDesgCuentasCerradas">0</span></div>
+      <div><strong>Monto cerradas:</strong> <span id="lblDesgTotalCerradas">0.00</span></div>
+    </div>
 
-    // Totales por repartidor + mostrador/rapido
-    {
-        const totalRapido = Number.parseFloat(r.total_rapido || 0);
-        const listaRep = Array.isArray(r.total_repartidor)
-            ? r.total_repartidor
-            : (Array.isArray(r.totales_repartidor) ? r.totales_repartidor : []);
-        if ((listaRep && listaRep.length) || totalRapido) {
-            html += '<h4>Total por repartidor</h4><ul>';
-            if (totalRapido) {
-                html += `<li>Mostrador/rapido: $${totalRapido.toFixed(2)}</li>`;
-            }
-            (listaRep || []).forEach(x => {
-                const nombre = (x?.nombre ?? '').toString();
-                const total = Number.parseFloat(x?.total ?? x?.total_neto) || 0;
-                html += `<li>${nombre}: $${total.toFixed(2)}</li>`;
-            });
-            html += '</ul>';
-        }
-    }
+    <div class="tarjeta" style="margin-top:8px;">
+      <div style="opacity:.8">Totales por mesero</div>
+      <table id="tblDesgMeseros" class="tabla-compacta">
+        <thead><tr><th>Mesero</th><th>Total</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
 
+    <div class="tarjeta" style="margin-top:8px;">
+      <div style="opacity:.8">Totales por repartidor</div>
+      <table id="tblDesgRepartidores" class="tabla-compacta">
+        <thead><tr><th>Repartidor</th><th>Total</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
 
+    <div class="tarjeta" style="margin-top:8px;">
+      <div style="opacity:.8">Totales por producto</div>
+      <table id="tblDesgProductos" class="tabla-compacta">
+        <thead><tr><th>Categoria</th><th>Total</th></tr></thead>
+        <tbody>
+          <tr><td>Alimentos</td><td id="lblDesgProdAlimentos">0.00</td></tr>
+          <tr><td>Bebidas</td><td id="lblDesgProdBebidas">0.00</td></tr>
+          <tr><td><strong>Total</strong></td><td id="lblDesgProdTotal"><strong>0.00</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
 
+    <div class="tarjeta" style="margin-top:8px;">
+      <div style="opacity:.8">Totales por servicio</div>
+      <table id="tblDesgServicio" class="tabla-compacta">
+        <thead><tr><th>Servicio</th><th>Total</th></tr></thead>
+        <tbody>
+          <tr><td>Comedor</td><td id="lblDesgServComedor">0.00</td></tr>
+          <tr><td>Domicilio</td><td id="lblDesgServDomicilio">0.00</td></tr>
+          <tr><td>Rápido</td><td id="lblDesgServRapido">0.00</td></tr>
+        </tbody>
+      </table>
+    </div>
 
-    html += '<div id="camposDesglose"></div>';
-    html += '<p>Efectivo contado: $<span id="totalEfectivo">0.00</span> | Dif.: $<span id="difIngresado">0.00</span></p>';
-    html += '<button class="btn custom-btn" id="guardarDesglose">Guardar</button> <button class="btn custom-btn" id="cancelarDesglose" data-dismiss="modal">Cancelar</button>';
-    html += '</div>';
+    <div class="tarjeta" style="margin-top:8px;">
+      <div style="opacity:.8">Totales por plataforma</div>
+      <table id="tblDesgPlataformas" class="tabla-compacta">
+        <thead><tr><th>Plataforma</th><th>Bruto</th><th>Descuento</th><th>Neto</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="tarjeta" style="margin-top:8px;">
+      <div><strong>Desglose de corte</strong></div>
+      <div id="camposDesglose"></div>
+      <p style="margin-top:8px;">Efectivo contado: $<span id="totalEfectivo">0.00</span> | Dif.: $<span id="difIngresado">0.00</span></p>
+      <div class="mt-2">
+        <button class="btn custom-btn" id="guardarDesglose">Guardar</button>
+        <button class="btn custom-btn" id="cancelarDesglose" data-dismiss="modal">Cancelar</button>
+      </div>
+    </div>
+    `;
     body.innerHTML = html;
     showModal('#modalDesglose');
 
-    document.getElementById('lblFondo').textContent = fondoInicial.toFixed(2);
-    document.getElementById('lblTotalDepositos').textContent = totalDepositos.toFixed(2);
-    document.getElementById('lblTotalRetiros').textContent = totalRetiros.toFixed(2);
+    const setTxt = (sel, val) => { const el = document.querySelector(sel); if (el) el.textContent = val; };
+    const dinero = v => fmtMoneda(Number(v || 0));
+    setTxt('#lblDesgCorteId', datos.corteId ?? '');
+    setTxt('#lblDesgFechaInicio', datos.fechaInicio || '-');
+    setTxt('#lblDesgFolios', datos.foliosTxt);
+    setTxt('#lblDesgTotalBruto', dinero(datos.totalBruto));
+    setTxt('#lblDesgTotalDescuentos', dinero(datos.totalDescuentos));
+    setTxt('#lblCorteActualDescuentos', dinero(datos.totalDescuentos));
+    const promoRow = document.getElementById('desgPromos');
+    if (datos.totalPromos > 0 && promoRow) {
+        promoRow.style.display = 'block';
+        setTxt('#lblDesgTotalPromociones', dinero(datos.totalPromos));
+    } else if (promoRow) {
+        promoRow.style.display = 'none';
+    }
+    setTxt('#lblDesgTotalEsperado', dinero(datos.totalEsperadoVisible));
+    setTxt('#lblFondo', dinero(datos.fondo));
+    setTxt('#lblTotalDepositos', dinero(datos.totalDepositos));
+    setTxt('#lblTotalRetiros', dinero(datos.totalRetiros));
+    setTxt('#lblDesgTotalPropinas', dinero(datos.totalPropinas));
+    setTxt('#lblDesgTotalFinalEfectivo', dinero(datos.totalFinalEfectivo));
+    setTxt('#lblDesgTotalFinalGeneral', dinero(datos.totalFinalGeneral));
+    setTxt('#lblDesgTotalPagoEfectivo', dinero(datos.totalesPorPago.efectivo));
+    setTxt('#lblDesgTotalPagoCheque', dinero(datos.esperadoPorPago.cheque));
+    setTxt('#lblDesgTotalPagoTarjeta', dinero(datos.totalesPorPago.tarjeta));
+    setTxt('#lblDesgEsperadoEfectivo', dinero(datos.esperadoPorPago.efectivo));
+    setTxt('#lblDesgEsperadoCheque', dinero(datos.esperadoPorPago.cheque));
+    setTxt('#lblDesgEsperadoTarjeta', dinero(datos.esperadoPorPago.tarjeta));
+    setTxt('#lblDesgPropinaEfectivo', dinero(datos.propEfectivo));
+    setTxt('#lblDesgPropinaTransfer', dinero(datos.propTransfer));
+    setTxt('#lblDesgPropinaTarjeta', dinero(datos.propTarjeta));
+    setTxt('#lblDesgCuentasActivas', datos.cuentasActivas);
+    setTxt('#lblDesgTotalActivas', dinero(datos.totalActivas));
+    setTxt('#lblDesgCuentasCerradas', datos.cuentasCerradas);
+    setTxt('#lblDesgTotalCerradas', dinero(datos.totalCerradas));
+    pintarTablaSimple('#tblDesgMeseros tbody', datos.meseros, [
+        { key: 'nombre' },
+        { key: 'total', format: (v, row) => dinero(v ?? row.total_neto) }
+    ]);
+    pintarTablaSimple('#tblDesgRepartidores tbody', datos.repartidores, [
+        { key: 'nombre' },
+        { key: 'total', format: (v, row) => dinero(v ?? row.total_neto) }
+    ]);
+    setTxt('#lblDesgProdAlimentos', dinero(datos.prod.alimentos));
+    setTxt('#lblDesgProdBebidas', dinero(datos.prod.bebidas));
+    setTxt('#lblDesgProdTotal', dinero(datos.prod.total ?? datos.totalProductos));
+    setTxt('#lblDesgServComedor', dinero(datos.serv.comedor));
+    setTxt('#lblDesgServDomicilio', dinero(datos.serv.domicilio));
+    setTxt('#lblDesgServRapido', dinero(datos.serv.rapido));
+    pintarTablaSimple('#tblDesgPlataformas tbody', datos.plataformas, [
+        { key: 'nombre' },
+        { key: 'total_bruto', format: v => dinero(v ?? 0) },
+        { key: 'total_descuento', format: v => dinero(v ?? 0) },
+        { key: 'total_neto', format: v => dinero(v ?? 0) }
+    ]);
 
     if (!Array.isArray(catalogoDenominaciones) || !catalogoDenominaciones.length) {
         console.error('Error al cargar denominaciones');
@@ -1247,8 +1283,8 @@ function mostrarModalDesglose(dataApi) {
     cont.appendChild(frag);
 
         function calcular(ev) {
-        const efectivoEsperado = (Number.parseFloat(r.totalEsperadoEfectivo ?? r.esperado_efectivo ?? r.totalEsperado ?? r.total_esperado ?? 0) || 0)
-            + fondoInicial + totalDepositos - totalRetiros;
+        const efectivoEsperado = (Number.parseFloat(datos.totalEsperadoEfectivo ?? r.totalEsperadoEfectivo ?? r.esperado_efectivo ?? r.totalEsperado ?? r.total_esperado ?? 0) || 0)
+            + datos.fondo + datos.totalDepositos - datos.totalRetiros;
         if (ev && ev.target && ev.target.classList.contains('cantidad')) {
             const changed = ev.target;
             const valDen = parseFloat(changed.dataset.valor) || 0;
@@ -1918,153 +1954,73 @@ function mostrarCorteTemporalBonito(data) {
     }
     cont.style.display = '';
     const r = (data && data.resultado) ? data.resultado : {};
-    // Normaliza campos del API de resumen temporal para la vista
-    if (!r.total_productos && r.productos && typeof r.productos.total !== 'undefined') {
-        r.total_productos = r.productos.total;
-    }
-    if (!r.total_descuento_promos && r.promociones_aplicadas) {
-        r.total_descuento_promos = r.promociones_aplicadas.total_descuento || 0;
-    }
-    const fp = r.formas_pago_resumen || {};
-    if (!r.efectivo && fp.efectivo) {
-        r.efectivo = { total: fp.efectivo.total_neto ?? fp.efectivo.total_bruto ?? 0 };
-    }
-    if (!r.tarjeta && fp.tarjeta) {
-        r.tarjeta = { total: fp.tarjeta.total_neto ?? fp.tarjeta.total_bruto ?? 0 };
-    }
-    if (!r.boucher && fp.otros) {
-        r.boucher = { total: fp.otros.total_neto ?? fp.otros.total_bruto ?? 0 };
-    }
-    const metodosPago = ['efectivo', 'boucher', 'cheque', 'tarjeta', 'transferencia'];
-    const totalProductos = Number(r.total_productos ?? 0) ||
-        metodosPago.reduce((acc, m) => acc + (Number(r[m]?.productos) || 0), 0);
-    const totalPropinas = Number(r.total_propinas ?? 0) ||
-        metodosPago.reduce((acc, m) => acc + (Number(r[m]?.propina) || 0), 0);
+    const datos = prepararDatosCorteVista(r);
 
-    const totalBruto      = Number.isFinite(Number(r.total_bruto)) ? Number(r.total_bruto) : totalProductos;
-    const totalDescuentos = Number(r.total_descuentos ?? 0) - Number(r.total_descuento_promos ?? 0);
-    const totalPromos = Number(r.total_descuento_promos ?? 0);
-    let totalEsperado     = Number(r.total_esperado ?? (totalBruto - totalDescuentos - totalPromos ));
-    if (!Number.isFinite(totalEsperado) || totalEsperado === 0) {
-        totalEsperado = Number(r.totalEsperado ?? (totalProductos + totalPropinas) ?? 0);
-    }
-    
-    const totalEsperadoVisible = totalPromos > 0 ? (totalEsperado ) : totalEsperado;
+    setText('#lblTmpCorteId', datos.corteId ?? '');
+    setText('#lblTmpFechaInicio', datos.fechaInicio || '-');
+    setText('#lblTmpFolios', datos.foliosTxt);
 
-    const fondo = Number(r.fondo ?? 0);
-    const totalDepositos = Number(r.total_depositos ?? 0);
-    const totalRetiros = Number(r.total_retiros ?? 0);
-    const totalFinalEfectivo = Number(r.totalFinalEfectivo ?? r.totalFinal ?? 0) || 0;
-    const totalFinalGeneral = Number(r.totalFinalGeneral ?? 0) || 0;
-    const totalIngresado = totalFinalEfectivo + totalDepositos - totalRetiros;
-
-    const propEfectivo = Number(r.total_propina_efectivo ?? 0);
-    const propTransfer = Number(r.total_propina_cheque ?? 0);
-    const propTarjeta  = Number(r.total_propina_tarjeta ?? 0);
-
-    const esperadoPorPago = {
-        efectivo: Number(r.esperado_efectivo || 0),
-        boucher: Number(r.esperado_boucher || 0),
-        cheque: Number(r.esperado_cheque || 0),
-        tarjeta: Number(r.esperado_tarjeta || 0),
-        transferencia: Number(r.esperado_transferencia || 0)
-    };
-
-    const totalesPorPago = {};
-    metodosPago.forEach(tipo => {
-        totalesPorPago[tipo] = Number(r[tipo]?.total ?? 0);
-    });
-
-    setText('#lblTmpCorteId', r.corte_id ?? '');
-    setText('#lblTmpFechaInicio', r.fecha_inicio || '-');
-    const folioInicio = r.folio_inicio ?? '';
-    const folioFin = r.folio_fin ?? '';
-    const totalFolios = r.total_folios ?? '';
-    const foliosTxt = (folioInicio || folioFin || totalFolios)
-        ? `${folioInicio || '-'} - ${folioFin || '-'} (${totalFolios || 0})`
-        : '-';
-    setText('#lblTmpFolios', foliosTxt);
-
-    setText('#lblTmpTotalBruto', fmtMoneda(totalBruto));
-    setText('#lblTmpTotalDescuentos', fmtMoneda(totalDescuentos));
+    setText('#lblTmpTotalBruto', fmtMoneda(datos.totalBruto));
+    setText('#lblTmpTotalDescuentos', fmtMoneda(datos.totalDescuentos));
     const promoRow = document.getElementById('promocionesA');
-    if (totalPromos > 0) {
-        setText('#lblTmpTotalPromociones', fmtMoneda(totalPromos));
+    if (datos.totalPromos > 0) {
+        setText('#lblTmpTotalPromociones', fmtMoneda(datos.totalPromos));
         if (promoRow) promoRow.style.display = 'block';
     } else if (promoRow) {
         promoRow.style.display = 'none';
         setText('#lblTmpTotalPromociones', fmtMoneda(0));
     }
-    setText('#lblTmpTotalEsperado', fmtMoneda(totalEsperadoVisible));
+    setText('#lblTmpTotalEsperado', fmtMoneda(datos.totalEsperadoVisible));
 
-    setText('#lblTmpFondo', fmtMoneda(fondo));
-    setText('#lblTmpDepositos', fmtMoneda(totalDepositos));
-    setText('#lblTmpRetiros', fmtMoneda(totalRetiros));
-    setText('#lblTmpTotalPropinas', fmtMoneda(totalPropinas));
-    setText('#lblTmpTotalFinalEfectivo', fmtMoneda(totalFinalEfectivo));
-    setText('#lblTmpTotalFinalGeneral', fmtMoneda(totalFinalGeneral));
+    setText('#lblTmpFondo', fmtMoneda(datos.fondo));
+    setText('#lblTmpDepositos', fmtMoneda(datos.totalDepositos));
+    setText('#lblTmpRetiros', fmtMoneda(datos.totalRetiros));
+    setText('#lblTmpTotalPropinas', fmtMoneda(datos.totalPropinas));
+    setText('#lblTmpTotalFinalEfectivo', fmtMoneda(datos.totalFinalEfectivo));
+    setText('#lblTmpTotalFinalGeneral', fmtMoneda(datos.totalFinalGeneral));
     //setText('#lblTmpTotalIngresado', fmtMoneda(totalIngresado));
 
-    setText('#lblTmpTotalPagoEfectivo', fmtMoneda(totalesPorPago.efectivo));
+    setText('#lblTmpTotalPagoEfectivo', fmtMoneda(datos.totalesPorPago.efectivo));
     // setText('#lblTmpTotalPagoBoucher', fmtMoneda(totalesPorPago.boucher));
-    setText('#lblTmpTotalPagoCheque', fmtMoneda(esperadoPorPago.cheque));
-    setText('#lblTmpTotalPagoTarjeta', fmtMoneda(totalesPorPago.tarjeta));
+    setText('#lblTmpTotalPagoCheque', fmtMoneda(datos.esperadoPorPago.cheque));
+    setText('#lblTmpTotalPagoTarjeta', fmtMoneda(datos.totalesPorPago.tarjeta));
     // setText('#lblTmpTotalPagoTransfer', fmtMoneda(totalesPorPago.transferencia));
 
-    setText('#lblTmpEsperadoEfectivo', fmtMoneda(esperadoPorPago.efectivo));
+    setText('#lblTmpEsperadoEfectivo', fmtMoneda(datos.esperadoPorPago.efectivo));
     // setText('#lblTmpEsperadoBoucher',  fmtMoneda(esperadoPorPago.boucher));
-    setText('#lblTmpEsperadoCheque',   fmtMoneda(esperadoPorPago.cheque));
-    setText('#lblTmpEsperadoTarjeta',  fmtMoneda(esperadoPorPago.tarjeta));
+    setText('#lblTmpEsperadoCheque',   fmtMoneda(datos.esperadoPorPago.cheque));
+    setText('#lblTmpEsperadoTarjeta',  fmtMoneda(datos.esperadoPorPago.tarjeta));
     // setText('#lblTmpEsperadoTransfer', fmtMoneda(esperadoPorPago.transferencia));
 
-    setText('#lblTmpPropinaEfectivo', fmtMoneda(propEfectivo));
-    setText('#lblTmpPropinaTransfer', fmtMoneda(propTransfer));
-    setText('#lblTmpPropinaTarjeta', fmtMoneda(propTarjeta));
+    setText('#lblTmpPropinaEfectivo', fmtMoneda(datos.propEfectivo));
+    setText('#lblTmpPropinaTransfer', fmtMoneda(datos.propTransfer));
+    setText('#lblTmpPropinaTarjeta', fmtMoneda(datos.propTarjeta));
 
-    const cuentasActivas = Number(r.cuentas_activas ?? r.cuentas_por_estatus?.abiertas?.cantidad ?? 0);
-    const totalActivas   = Number(r.total_cuentas_activas ?? r.cuentas_por_estatus?.abiertas?.total ?? 0);
-    const cuentasCanc    = Number(r.cuentas_canceladas ?? r.cuentas_por_estatus?.cerradas?.cantidad ?? 0);
-    const totalCanc      = Number(r.total_cuentas_canceladas ?? r.cuentas_por_estatus?.cerradas?.total ?? 0);
-    setText('#lblTmpCuentasActivas', cuentasActivas);
-    setText('#lblTmpTotalActivas', fmtMoneda(totalActivas));
-    setText('#lblTmpCuentasCanceladas', cuentasCanc);
-    setText('#lblTmpTotalCanceladas', fmtMoneda(totalCanc));
-    const meseros = Array.isArray(r.total_meseros)
-        ? r.total_meseros
-        : (Array.isArray(r.totales_mesero) ? r.totales_mesero : []);
-    pintarTablaSimple('#tblTmpMeseros tbody', meseros, [
+    setText('#lblTmpCuentasActivas', datos.cuentasActivas);
+    setText('#lblTmpTotalActivas', fmtMoneda(datos.totalActivas));
+    setText('#lblTmpCuentasCanceladas', datos.cuentasCerradas);
+    setText('#lblTmpTotalCanceladas', fmtMoneda(datos.totalCerradas));
+    pintarTablaSimple('#tblTmpMeseros tbody', datos.meseros, [
         { key: 'nombre' },
         { key: 'total', format: (v, row) => fmtMoneda(v ?? row.total_neto) }
     ]);
-    const reps = Array.isArray(r.total_repartidor)
-        ? r.total_repartidor.slice()
-        : (Array.isArray(r.totales_repartidor) ? r.totales_repartidor.slice() : []);
-    const totalRapido = Number(r.total_rapido || 0);
-    if (totalRapido) {
-        reps.unshift({ nombre: 'Mostrador/rapido', total: totalRapido });
-    }
-    pintarTablaSimple('#tblTmpRepartidores tbody', reps, [
+    pintarTablaSimple('#tblTmpRepartidores tbody', datos.repartidores, [
         { key: 'nombre' },
         { key: 'total', format: (v, row) => fmtMoneda(v ?? row.total_neto) }
     ]);
 
     // Totales por producto (alimentos/bebidas)
-    const prod = r.productos || {};
-    setText('#lblTmpProdAlimentos', fmtMoneda(prod.alimentos ?? 0));
-    setText('#lblTmpProdBebidas', fmtMoneda(prod.bebidas ?? 0));
-    setText('#lblTmpProdTotal', fmtMoneda(prod.total ?? r.total_productos ?? 0));
+    setText('#lblTmpProdAlimentos', fmtMoneda(datos.prod.alimentos ?? 0));
+    setText('#lblTmpProdBebidas', fmtMoneda(datos.prod.bebidas ?? 0));
+    setText('#lblTmpProdTotal', fmtMoneda(datos.prod.total ?? datos.totalProductos ?? 0));
 
     // Totales por servicio (comedor, domicilio, rapido)
-    const serv = r.por_servicio || {};
-    setText('#lblTmpServComedor', fmtMoneda(serv.comedor ?? 0));
-    setText('#lblTmpServDomicilio', fmtMoneda(serv.domicilio ?? 0));
-    setText('#lblTmpServRapido', fmtMoneda(serv.rapido ?? 0));
+    setText('#lblTmpServComedor', fmtMoneda(datos.serv.comedor ?? 0));
+    setText('#lblTmpServDomicilio', fmtMoneda(datos.serv.domicilio ?? 0));
+    setText('#lblTmpServRapido', fmtMoneda(datos.serv.rapido ?? 0));
 
     // Totales por plataforma (didi/rappi/uber)
-    const plataformas = (r.resumen && typeof r.resumen === 'object')
-        ? Object.values(r.resumen)
-        : [];
-    pintarTablaSimple('#tblTmpPlataformas tbody', plataformas, [
+    pintarTablaSimple('#tblTmpPlataformas tbody', datos.plataformas, [
         { key: 'nombre' },
         { key: 'total_bruto', format: v => fmtMoneda(v ?? 0) },
         { key: 'total_descuento', format: v => fmtMoneda(v ?? 0) },
@@ -2085,6 +2041,104 @@ function fmtMoneda(v) {
     }
 }
 function setText(sel, val){ const el = document.querySelector(sel); if (el) el.textContent = String(val); }
+
+function prepararDatosCorteVista(rRaw) {
+    const r = rRaw || {};
+    const metodosPago = ['efectivo', 'boucher', 'cheque', 'tarjeta', 'transferencia'];
+    const fp = r.formas_pago_resumen || {};
+    const totalesPorPago = {
+        efectivo: Number(r.efectivo?.total ?? fp.efectivo?.total_neto ?? fp.efectivo?.total_bruto ?? 0),
+        boucher: Number(r.boucher?.total ?? fp.otros?.total_neto ?? fp.otros?.total_bruto ?? 0),
+        cheque: Number(r.cheque?.total ?? 0),
+        tarjeta: Number(r.tarjeta?.total ?? fp.tarjeta?.total_neto ?? fp.tarjeta?.total_bruto ?? 0),
+        transferencia: Number(r.transferencia?.total ?? 0)
+    };
+    const totalProductos = Number(r.total_productos ?? 0) ||
+        metodosPago.reduce((acc, m) => acc + (Number(r[m]?.productos) || 0), 0);
+    const totalPropinas = Number(r.total_propinas ?? 0) ||
+        metodosPago.reduce((acc, m) => acc + (Number(r[m]?.propina) || 0), 0);
+    const totalBruto = Number.isFinite(Number(r.total_bruto)) ? Number(r.total_bruto) : totalProductos;
+    const totalPromos = Number(r.total_descuento_promos ?? r.promociones_aplicadas?.total_descuento ?? 0);
+    const totalDescuentos = Number(r.total_descuentos ?? 0) - totalPromos;
+    let totalEsperado = Number(r.total_esperado ?? r.totalEsperado ?? (totalBruto - totalDescuentos - totalPromos));
+    if (!Number.isFinite(totalEsperado) || totalEsperado === 0) {
+        totalEsperado = Number(r.totalEsperado ?? (totalProductos + totalPropinas) ?? 0);
+    }
+    const totalEsperadoVisible = totalEsperado;
+    const fondo = Number(r.fondo ?? 0);
+    const totalDepositos = Number(r.total_depositos ?? 0);
+    const totalRetiros = Number(r.total_retiros ?? 0);
+    const totalFinalEfectivo = Number(r.totalFinalEfectivo ?? r.totalFinal ?? 0);
+    const totalFinalGeneral = Number(r.totalFinalGeneral ?? r.saldo_final ?? 0);
+    const propEfectivo = Number(r.total_propina_efectivo ?? r.propinas?.efectivo ?? 0);
+    const propTransfer = Number(r.total_propina_cheque ?? r.propinas?.cheque ?? 0);
+    const propTarjeta  = Number(r.total_propina_tarjeta ?? r.propinas?.tarjeta ?? 0);
+    const esperadoPorPago = {
+        efectivo: Number(r.esperado_efectivo || 0),
+        boucher: Number(r.esperado_boucher || 0),
+        cheque: Number(r.esperado_cheque || 0),
+        tarjeta: Number(r.esperado_tarjeta || 0),
+        transferencia: Number(r.esperado_transferencia || 0)
+    };
+    const cuentasActivas = Number(r.cuentas_por_estatus?.abiertas?.cantidad ?? r.cuentas_activas ?? 0);
+    const totalActivas = Number(r.cuentas_por_estatus?.abiertas?.total ?? r.total_cuentas_activas ?? 0);
+    const cuentasCerradas = Number(r.cuentas_por_estatus?.cerradas?.cantidad ?? r.cuentas_canceladas ?? 0);
+    const totalCerradas = Number(r.cuentas_por_estatus?.cerradas?.total ?? r.total_cuentas_canceladas ?? 0);
+    const meseros = Array.isArray(r.total_meseros)
+        ? r.total_meseros
+        : (Array.isArray(r.totales_mesero) ? r.totales_mesero : []);
+    const repartidores = Array.isArray(r.total_repartidor)
+        ? r.total_repartidor.slice()
+        : (Array.isArray(r.totales_repartidor) ? r.totales_repartidor.slice() : []);
+    const totalRapido = Number(r.total_rapido || 0);
+    if (totalRapido) {
+        repartidores.unshift({ nombre: 'Mostrador/rapido', total: totalRapido });
+    }
+    const prod = r.productos || {};
+    const serv = r.por_servicio || {};
+    const plataformas = (r.resumen && typeof r.resumen === 'object')
+        ? Object.values(r.resumen)
+        : [];
+    const folioInicio = r.folio_inicio ?? '';
+    const folioFin = r.folio_fin ?? '';
+    const totalFolios = r.total_folios ?? '';
+    const foliosTxt = (folioInicio || folioFin || totalFolios)
+        ? `${folioInicio || '-'} - ${folioFin || '-'} (${totalFolios || 0})`
+        : '-';
+    const totalEsperadoEfectivo = Number(r.totalEsperadoEfectivo ?? r.esperado_efectivo ?? 0);
+
+    return {
+        corteId: r.corte_id,
+        fechaInicio: r.fecha_inicio,
+        foliosTxt,
+        totalProductos,
+        totalPropinas,
+        totalBruto,
+        totalDescuentos,
+        totalPromos,
+        totalEsperadoVisible,
+        fondo,
+        totalDepositos,
+        totalRetiros,
+        totalFinalEfectivo,
+        totalFinalGeneral,
+        propEfectivo,
+        propTransfer,
+        propTarjeta,
+        esperadoPorPago,
+        totalesPorPago,
+        cuentasActivas,
+        totalActivas,
+        cuentasCerradas,
+        totalCerradas,
+        meseros,
+        repartidores,
+        prod,
+        serv,
+        plataformas,
+        totalEsperadoEfectivo
+    };
+}
 
 // ====== Enví­o automático: helpers ======
 function esDomicilioConRepartidorCasa() {

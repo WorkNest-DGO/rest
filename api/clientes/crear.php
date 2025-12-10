@@ -21,7 +21,6 @@ $entre1 = $input['entre_calle_1'] ?? null;
 $entre2 = $input['entre_calle_2'] ?? null;
 $referencias = $input['referencias'] ?? null;
 $costo_fore = isset($input['costo_fore']) ? $input['costo_fore'] : null;
-$costo_madero = isset($input['costo_madero']) ? $input['costo_madero'] : null;
 
 if ($nombre === '' || !$colonia_id) {
     error('Nombre y colonia son obligatorios');
@@ -69,29 +68,18 @@ if (!$stmt->execute()) {
 $nuevoId = $stmt->insert_id;
 $stmt->close();
 
-if ($colonia_id) {
-    if ($costo_fore !== null) {
-        $costo = (float)$costo_fore;
-        $upd = $conn->prepare('UPDATE colonias SET costo_fore = ? WHERE id = ?');
-        if ($upd) {
-            $upd->bind_param('di', $costo, $colonia_id);
-            $upd->execute();
-            $upd->close();
-        }
-    }
-    if ($costo_madero !== null) {
-        $costoMad = (float)$costo_madero;
-        $updMad = $conn->prepare('UPDATE colonias SET costo_madero = ? WHERE id = ?');
-        if ($updMad) {
-            $updMad->bind_param('di', $costoMad, $colonia_id);
-            $updMad->execute();
-            $updMad->close();
-        }
+if ($costo_fore !== null && $colonia_id) {
+    $costo = (float)$costo_fore;
+    $upd = $conn->prepare('UPDATE colonias SET costo_fore = ? WHERE id = ?');
+    if ($upd) {
+        $upd->bind_param('di', $costo, $colonia_id);
+        $upd->execute();
+        $upd->close();
     }
 }
 
 // Devolver el cliente recién creado con datos de colonia
-$select = $conn->prepare('SELECT c.id, c.colonia_id, c.`Nombre del Cliente` AS nombre, c.`Telefono` AS telefono, c.`Calle` AS calle, c.`Numero Exterior` AS numero_exterior, c.`Colonia` AS colonia_texto, c.`Delegacion/Municipio` AS municipio, c.`Entre Calle 1` AS entre_calle_1, c.`Entre Calle 2` AS entre_calle_2, c.`Referencias` AS referencias, col.colonia AS colonia_nombre, col.dist_km_la_forestal, col.costo_fore, col.costo_madero FROM clientes c LEFT JOIN colonias col ON col.id = c.colonia_id WHERE c.id = ?');
+$select = $conn->prepare('SELECT c.id, c.colonia_id, c.`Nombre del Cliente` AS nombre, c.`Telefono` AS telefono, c.`Calle` AS calle, c.`Numero Exterior` AS numero_exterior, c.`Colonia` AS colonia_texto, c.`Delegacion/Municipio` AS municipio, c.`Entre Calle 1` AS entre_calle_1, c.`Entre Calle 2` AS entre_calle_2, c.`Referencias` AS referencias, col.colonia AS colonia_nombre, col.dist_km_la_forestal, col.costo_fore FROM clientes c LEFT JOIN colonias col ON col.id = c.colonia_id WHERE c.id = ?');
 if ($select) {
     $select->bind_param('i', $nuevoId);
     $select->execute();
@@ -114,7 +102,6 @@ if ($select) {
             'colonia_nombre' => $row['colonia_nombre'],
             'dist_km_la_forestal' => $row['dist_km_la_forestal'] !== null ? (float)$row['dist_km_la_forestal'] : null,
             'costo_fore' => $row['costo_fore'] !== null ? (float)$row['costo_fore'] : null,
-            'costo_madero' => $row['costo_madero'] !== null ? (float)$row['costo_madero'] : null,
         ];
         success($cliente);
     }

@@ -125,16 +125,7 @@ $precio_envio  = isset($input['precio_envio']) ? (float)$input['precio_envio'] :
 // Cantidad de envi­o opcional
 $envio_cantidad = isset($input['envio_cantidad']) ? (int)$input['envio_cantidad'] : null;
 $cliente_id    = isset($input['cliente_id']) ? (int)$input['cliente_id'] : null;
-$costo_envio   = null;
-if (array_key_exists('costo_envio', $input)) {
-    $costo_envio = $input['costo_envio'] !== null ? (float)$input['costo_envio'] : null;
-} elseif (array_key_exists('costo_fore', $input)) {
-    $costo_envio = $input['costo_fore'] !== null ? (float)$input['costo_fore'] : null;
-}
-$costo_envio_tipo = isset($input['costo_envio_tipo']) ? strtolower(trim($input['costo_envio_tipo'])) : 'fore';
-if (!in_array($costo_envio_tipo, ['fore', 'madero'], true)) {
-    $costo_envio_tipo = 'fore';
-}
+$costo_fore    = array_key_exists('costo_fore', $input) ? (float)$input['costo_fore'] : null;
 $cliente_colonia_id_input = isset($input['cliente_colonia_id']) ? (int)$input['cliente_colonia_id'] : null;
 if ($cliente_colonia_id_input !== null && $cliente_colonia_id_input <= 0) {
     $cliente_colonia_id_input = null;
@@ -187,7 +178,6 @@ $cliente_colonia_id = null;
 $cliente_colonia_id_original = null;
 $cliente_colonia_cambio = false;
 $cliente_costo_fore = null;
-$cliente_costo_madero = null;
 $esRepartidorCasa = false;
 if ($tipo === 'domicilio' && $repartidor_id) {
     $repStmt = $conn->prepare('SELECT LOWER(TRIM(nombre)) AS nombre FROM repartidores WHERE id = ?');
@@ -202,7 +192,7 @@ if ($tipo === 'domicilio' && $repartidor_id) {
 }
 
 if ($cliente_id) {
-    $cliStmt = $conn->prepare('SELECT c.id, c.colonia_id, col.costo_fore, col.costo_madero FROM clientes c LEFT JOIN colonias col ON col.id = c.colonia_id WHERE c.id = ?');
+    $cliStmt = $conn->prepare('SELECT c.id, c.colonia_id, col.costo_fore FROM clientes c LEFT JOIN colonias col ON col.id = c.colonia_id WHERE c.id = ?');
     if (!$cliStmt) {
         error('No se pudo validar el cliente: ' . $conn->error);
     }
@@ -217,11 +207,10 @@ if ($cliente_id) {
     $cliente_colonia_id = $cliRow['colonia_id'] ? (int)$cliRow['colonia_id'] : null;
     $cliente_colonia_id_original = $cliente_colonia_id;
     $cliente_costo_fore = $cliRow['costo_fore'] !== null ? (float)$cliRow['costo_fore'] : null;
-    $cliente_costo_madero = $cliRow['costo_madero'] !== null ? (float)$cliRow['costo_madero'] : null;
 }
 
 if ($cliente_id && $cliente_colonia_id_input && !$cliente_colonia_id_original) {
-    $colStmt = $conn->prepare('SELECT id, costo_fore, costo_madero FROM colonias WHERE id = ? LIMIT 1');
+    $colStmt = $conn->prepare('SELECT id, costo_fore FROM colonias WHERE id = ? LIMIT 1');
     if (!$colStmt) {
         error('No se pudo validar la colonia seleccionada: ' . $conn->error);
     }
@@ -237,22 +226,13 @@ if ($cliente_id && $cliente_colonia_id_input && !$cliente_colonia_id_original) {
     if ($colRes['costo_fore'] !== null) {
         $cliente_costo_fore = (float)$colRes['costo_fore'];
     }
-    if ($colRes['costo_madero'] !== null) {
-        $cliente_costo_madero = (float)$colRes['costo_madero'];
-    }
 }
 
-if ($costo_envio !== null) {
-    $precio_envio = (float)$costo_envio;
+if ($costo_fore !== null) {
+    $precio_envio = (float)$costo_fore;
 }
-if ($precio_envio === null) {
-    if ($costo_envio_tipo === 'madero' && $cliente_costo_madero !== null) {
-        $precio_envio = (float)$cliente_costo_madero;
-    } elseif ($cliente_costo_fore !== null) {
-        $precio_envio = (float)$cliente_costo_fore;
-    } elseif ($cliente_costo_madero !== null) {
-        $precio_envio = (float)$cliente_costo_madero;
-    }
+if ($cliente_costo_fore !== null && $precio_envio === null) {
+    $precio_envio = (float)$cliente_costo_fore;
 }
 if ($esRepartidorCasa && $envio_cantidad === null) {
     $envio_cantidad = 1;
@@ -524,11 +504,10 @@ if ($cliente_id && $cliente_colonia_cambio && $cliente_colonia_id) {
     }
 }
 
-if ($costo_envio !== null && $cliente_colonia_id) {
-    $columna = ($costo_envio_tipo === 'madero') ? 'costo_madero' : 'costo_fore';
-    $updCol = $conn->prepare("UPDATE colonias SET {$columna} = ? WHERE id = ?");
+if ($costo_fore !== null && $cliente_colonia_id) {
+    $updCol = $conn->prepare('UPDATE colonias SET costo_fore = ? WHERE id = ?');
     if ($updCol) {
-        $updCol->bind_param('di', $costo_envio, $cliente_colonia_id);
+        $updCol->bind_param('di', $costo_fore, $cliente_colonia_id);
         $updCol->execute();
         $updCol->close();
     }
