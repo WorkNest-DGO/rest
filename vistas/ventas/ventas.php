@@ -125,6 +125,7 @@ ob_start();
             <div class="d-flex flex-wrap gap-3 mt-2">
               <div><strong>Colonia:</strong> <span id="clienteColonia">-</span></div>
               <div><strong>Dist. a La Forestal:</strong> <span id="clienteDistancia">-</span></div>
+              <div><strong>Dist. a El Naranjal:</strong> <span id="clienteDistanciaNaranjal">-</span></div>
             </div>
             <div id="clienteColoniaSelectWrap" class="mt-2" style="display:none;">
               <label for="clienteColoniaSelect" class="text-white">Selecciona colonia</label>
@@ -136,11 +137,15 @@ ob_start();
               <small class="text-muted">Solo se muestra cuando el cliente no tiene colonia asignada.</small>
             </div>
             <div class="row mt-3">
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label for="costoForeInput" class="text-white mb-1">Costo de envío (costo_fore):</label>
                 <input type="number" step="0.01" min="0" class="form-control" id="costoForeInput" placeholder="Captura el costo">
               </div>
-              <div class="col-md-6 align-self-end">
+              <div class="col-md-4">
+                <label for="costoMaderoInput" class="text-white mb-1">Costo de envío (costo_madero):</label>
+                <input type="number" step="0.01" min="0" class="form-control" id="costoMaderoInput" placeholder="Solo lectura" readonly>
+              </div>
+              <div class="col-md-4 align-self-end">
                 <small class="text-muted">Este monto se usará para el envío y se guardará en la colonia del cliente.</small>
               </div>
             </div>

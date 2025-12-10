@@ -1491,7 +1491,9 @@ function pintarColoniasSelect(select) {
         opt.value = col.id;
         opt.textContent = col.colonia;
         opt.dataset.distancia = col.dist_km_la_forestal ?? '';
+        opt.dataset.distNaranjal = col.dist_km_el_naranjal ?? '';
         opt.dataset.costoFore = col.costo_fore ?? '';
+        opt.dataset.costoMadero = col.costo_madero ?? '';
         select.appendChild(opt);
     });
 }
@@ -1500,9 +1502,11 @@ function formatearEtiquetaColonia(col) {
     if (!col) return '';
     const dist = (col.dist_km_la_forestal !== undefined && col.dist_km_la_forestal !== null && col.dist_km_la_forestal !== '')
         ? ` - ${col.dist_km_la_forestal} km` : '';
-    const costo = (col.costo_fore !== undefined && col.costo_fore !== null && col.costo_fore !== '')
-        ? ` - $${Number(col.costo_fore).toFixed(2)}` : '';
-    return `${col.colonia || ''}${dist}${costo}`;
+    const costoFore = (col.costo_fore !== undefined && col.costo_fore !== null && col.costo_fore !== '')
+        ? ` - $${Number(col.costo_fore).toFixed(2)} (Forestal)` : '';
+    const costoMadero = (col.costo_madero !== undefined && col.costo_madero !== null && col.costo_madero !== '')
+        ? ` - $${Number(col.costo_madero).toFixed(2)} (Madero)` : '';
+    return `${col.colonia || ''}${dist}${costoFore}${costoMadero}`;
 }
 
 function mostrarSugerenciasColonias(termino = '', lista = coloniasData) {
@@ -1536,7 +1540,9 @@ function seleccionarColoniaDesdeLista(col) {
             opt.value = col.id;
             opt.textContent = col.colonia || '';
             opt.dataset.distancia = col.dist_km_la_forestal ?? '';
+            opt.dataset.distNaranjal = col.dist_km_el_naranjal ?? '';
             opt.dataset.costoFore = col.costo_fore ?? '';
+            opt.dataset.costoMadero = col.costo_madero ?? '';
             select.appendChild(opt);
         }
         select.value = col.id;
@@ -1635,7 +1641,9 @@ function actualizarResumenCliente(cliente) {
     const dir = document.getElementById('clienteDireccion');
     const col = document.getElementById('clienteColonia');
     const dist = document.getElementById('clienteDistancia');
+    const distNaranjal = document.getElementById('clienteDistanciaNaranjal');
     const costoInput = document.getElementById('costoForeInput');
+    const costoMaderoInput = document.getElementById('costoMaderoInput');
     const colSelectWrap = document.getElementById('clienteColoniaSelectWrap');
     const colSelect = document.getElementById('clienteColoniaSelect');
     const clienteIdActual = cliente ? Number(cliente.id) : null;
@@ -1650,8 +1658,11 @@ function actualizarResumenCliente(cliente) {
     if (!cliente) {
         resumen.style.display = 'none';
         if (costoInput) costoInput.value = '';
+        if (costoMaderoInput) costoMaderoInput.value = '';
         if (colSelectWrap) colSelectWrap.style.display = 'none';
         if (colSelect) colSelect.value = '';
+        if (dist) dist.textContent = '-';
+        if (distNaranjal) distNaranjal.textContent = '-';
         // Si no hay cliente seleccionado, usa el costo por defecto del concepto "ENVÍO – Repartidor casa".
         actualizarPrecioEnvio(window.ENVIO_CASA_DEFAULT_PRECIO || 30);
         return;
@@ -1661,15 +1672,38 @@ function actualizarResumenCliente(cliente) {
     const direccion = [cliente.calle, cliente.numero_exterior].filter(Boolean).join(' ');
     if (dir) dir.textContent = direccion || '-';
     if (col) col.textContent = cliente.colonia_nombre || cliente.colonia_texto || '-';
+    const coloniaCatalogo = (coloniasData.length && cliente.colonia_id)
+        ? coloniasData.find(c => Number(c.id) === Number(cliente.colonia_id))
+        : null;
     const distanciaTxt = cliente.dist_km_la_forestal !== null && cliente.dist_km_la_forestal !== undefined
         ? `${cliente.dist_km_la_forestal} km`
         : 'Sin dato';
     if (dist) dist.textContent = distanciaTxt;
-    if (costoInput) costoInput.value = cliente.costo_fore !== null && cliente.costo_fore !== undefined ? cliente.costo_fore : '';
+    const distNaranjalVal = (cliente.dist_km_el_naranjal !== null && cliente.dist_km_el_naranjal !== undefined)
+        ? cliente.dist_km_el_naranjal
+        : (coloniaCatalogo && coloniaCatalogo.dist_km_el_naranjal !== null && coloniaCatalogo.dist_km_el_naranjal !== undefined
+            ? coloniaCatalogo.dist_km_el_naranjal
+            : null);
+    const distanciaNaranjalTxt = distNaranjalVal !== null && distNaranjalVal !== undefined
+        ? `${distNaranjalVal} km`
+        : 'Sin dato';
+    if (distNaranjal) distNaranjal.textContent = distanciaNaranjalTxt;
+    const costoForeVal = (cliente.costo_fore !== null && cliente.costo_fore !== undefined)
+        ? cliente.costo_fore
+        : (coloniaCatalogo && coloniaCatalogo.costo_fore !== undefined && coloniaCatalogo.costo_fore !== null
+            ? coloniaCatalogo.costo_fore
+            : '');
+    const costoMaderoVal = (cliente.costo_madero !== null && cliente.costo_madero !== undefined)
+        ? cliente.costo_madero
+        : (coloniaCatalogo && coloniaCatalogo.costo_madero !== undefined && coloniaCatalogo.costo_madero !== null
+            ? coloniaCatalogo.costo_madero
+            : '');
+    if (costoInput) costoInput.value = costoForeVal !== null && costoForeVal !== undefined ? costoForeVal : '';
+    if (costoMaderoInput) costoMaderoInput.value = costoMaderoVal !== null && costoMaderoVal !== undefined ? costoMaderoVal : '';
 
     resumen.style.display = 'block';
-    if (cliente.costo_fore !== null && cliente.costo_fore !== undefined) {
-        actualizarPrecioEnvio(cliente.costo_fore);
+    if (costoForeVal !== null && costoForeVal !== undefined && costoForeVal !== '') {
+        actualizarPrecioEnvio(costoForeVal);
     }
     prepararColoniaSelect(cliente);
     if (colSelect && colSelect.value) {
@@ -1726,18 +1760,26 @@ function onSeleccionColoniaManual() {
     const select = document.getElementById('clienteColoniaSelect');
     const spanCol = document.getElementById('clienteColonia');
     const spanDist = document.getElementById('clienteDistancia');
+    const spanDistNaranjal = document.getElementById('clienteDistanciaNaranjal');
     const costoInput = document.getElementById('costoForeInput');
+    const costoMaderoInput = document.getElementById('costoMaderoInput');
     if (!select || !select.value) return;
     const opt = select.selectedOptions && select.selectedOptions[0];
     if (!opt) return;
     const nombre = opt.textContent || '-';
     if (spanCol) spanCol.textContent = nombre;
     const dist = opt.dataset?.distancia;
+    const distNaranjal = opt.dataset?.distNaranjal;
     if (spanDist && dist !== undefined && dist !== '') {
         spanDist.textContent = `${dist} km`;
     }
+    if (spanDistNaranjal && distNaranjal !== undefined && distNaranjal !== '') {
+        spanDistNaranjal.textContent = `${distNaranjal} km`;
+    }
     const costo = opt.dataset?.costoFore;
+    const costoMadero = opt.dataset?.costoMadero;
     if (costoInput) costoInput.value = (costo !== undefined && costo !== '') ? costo : '';
+    if (costoMaderoInput) costoMaderoInput.value = (costoMadero !== undefined && costoMadero !== '') ? costoMadero : '';
     if (costo !== undefined && costo !== '') {
         const num = Number(costo);
         if (!Number.isNaN(num)) actualizarPrecioEnvio(num);
@@ -1751,6 +1793,10 @@ function onSeleccionColoniaManual() {
         if (costo !== undefined && costo !== '') {
             const num = Number(costo);
             if (!Number.isNaN(num)) clienteSeleccionado.costo_fore = num;
+        }
+        if (costoMadero !== undefined && costoMadero !== '') {
+            const numMadero = Number(costoMadero);
+            if (!Number.isNaN(numMadero)) clienteSeleccionado.costo_madero = numMadero;
         }
     }
 }
@@ -1916,6 +1962,7 @@ function mostrarClienteEnvio(ventaId) {
         entre_calle_2: v.cliente_entre_calle_2,
         referencias: v.cliente_referencias,
         dist_km_la_forestal: v.cliente_dist_km_la_forestal,
+        dist_km_el_naranjal: v.cliente_dist_km_el_naranjal,
         costo_fore: v.cliente_costo_fore
     };
     const contenido = document.getElementById('clienteEnvioContenido');
@@ -1925,6 +1972,9 @@ function mostrarClienteEnvio(ventaId) {
         const colonia = data.colonia_nombre || data.colonia_texto || '-';
         const dist = (data.dist_km_la_forestal !== null && data.dist_km_la_forestal !== undefined)
             ? `${data.dist_km_la_forestal} km`
+            : '-';
+        const distNaranjal = (data.dist_km_el_naranjal !== null && data.dist_km_el_naranjal !== undefined)
+            ? `${data.dist_km_el_naranjal} km`
             : '-';
         const costo = (data.costo_fore !== null && data.costo_fore !== undefined)
             ? Number(data.costo_fore).toFixed(2)
@@ -1938,6 +1988,7 @@ function mostrarClienteEnvio(ventaId) {
             <p><strong>Entre calles:</strong> ${entre || '-'}</p>
             <p><strong>Referencias:</strong> ${data.referencias || '-'}</p>
             <p><strong>Distancia a La Forestal:</strong> ${dist}</p>
+            <p><strong>Distancia a El Naranjal:</strong> ${distNaranjal}</p>
             <p><strong>Costo de envío:</strong> ${costo}</p>
         `;
     }
