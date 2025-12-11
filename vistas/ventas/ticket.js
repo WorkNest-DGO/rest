@@ -412,7 +412,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!ok) return;
         await cargarCatalogosTarjeta();
         await cargarPromociones();
-        serieActual = await obtenerSerieActual();
         inicializarDividir(datos);
         preseleccionarPromoVenta();
     }
@@ -429,7 +428,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // }).then(r=>r.json()).then(d=>{ /* manejar respuesta */ });
 
 
-    let serieActual = null;
+    const serieDescUsuario = (window.__SERIE_DESC_TICKET__ || '').trim();
     let denomBoucherId = null;
     let denomChequeId = null;
     let catalogoTarjetas = [];
@@ -492,19 +491,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             return false;
         }
         return true;
-    }
-
-    async function obtenerSerieActual() {
-        try {
-            const resp = await fetch('../../api/horarios/serie_actual.php');
-            const data = await resp.json();
-            if (data.success) return data.resultado;
-            alert(data.mensaje);
-        } catch (err) {
-            console.error(err);
-            alert('Error al obtener serie');
-        }
-        return null;
     }
 
     let productos = [];
@@ -753,7 +739,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 html += `<tr data-detalle-id="${detId}" data-subtotal="${(p.cantidad * p.precio_unitario).toFixed(2)}"><td>${p.nombre}</td><td>${p.cantidad} x ${p.precio_unitario}</td><td class=\"text-center\"><input type=\"checkbox\" class=\"chk-cortesia-sub\" data-sub=\"${i}\" data-detalle-id=\"${detId}\"></td></tr>`;
             });
             html += '</tbody></table>';
-            const serieDesc = serieActual ? serieActual.descripcion : '';
+            const serieDesc = serieDescUsuario || 'Serie asignada por la sede del usuario';
             html += `Serie: <span class="serie">${serieDesc}</span>`;
             // html += ` Propina: <input type="number" step="0.01" id="propina${i}" value="0">`;
             html += ` <select id="pago${i}" class="pago">
@@ -1384,6 +1370,11 @@ function mostrarTotal() {
         }
     });
 
+    const serieLabel = document.getElementById('serieNombre');
+    if (serieLabel) {
+        serieLabel.textContent = serieDescUsuario || 'Serie asignada por la sede del usuario';
+    }
+
     async function guardarSubcuentas() {
         const info = JSON.parse(localStorage.getItem('ticketData'));
         if (!denomBoucherId || !denomChequeId) {
@@ -1399,7 +1390,6 @@ function mostrarTotal() {
         const payload = {
             venta_id: info.venta_id,
             usuario_id: info.usuario_id || 1,
-            sede_id: info.sede_id || null,
             subcuentas: [],
             promocion_id: idPromocion,
             promocion_descuento: descuentoPromocion,
@@ -1429,11 +1419,6 @@ function mostrarTotal() {
             });
             if (prods.length === 0) continue;
             // const prop = parseFloat(document.getElementById('propina' + i).value || 0);
-            if (!serieActual) {
-                serieActual = await obtenerSerieActual();
-                if (!serieActual) return;
-            }
-            const serie = serieActual.id;
             const tipo = document.getElementById('pago' + i).value;
             const pagoCapturado = parseFloat(document.getElementById('recibido' + i).value || 0);
             const stateSub = window.__SUBS__ && window.__SUBS__[i] ? window.__SUBS__[i] : null;
@@ -1502,7 +1487,6 @@ function mostrarTotal() {
                 cortesias: cortesiasSubFiltradas,
                 descuento_porcentaje: pctSub,
                 descuento_monto_fijo: montoFijoSub,
-                serie_id: serie,
                 tipo_pago: tipo,
                 // Para efectivo registrar lo capturado por el usuario; en tarjeta/transferencia
                 // el campo está bloqueado con el total a cobrar para evitar discrepancias.

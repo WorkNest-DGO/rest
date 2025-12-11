@@ -90,6 +90,10 @@ function editarUsuario(id) {
     document.getElementById('usuario').value = u.usuario;
     document.getElementById('contrasena').value = '';
     document.getElementById('rol').value = u.rol;
+    const sedeInput = document.getElementById('sede');
+    if (sedeInput) {
+        sedeInput.value = u.sede_nombre || u.sede_id || '';
+    }
     document.getElementById('activo').value = u.activo;
     showModal('#modalUsuario');
 }

@@ -33,6 +33,28 @@ $montoCobrado = 0.00; // monto realmente cobrado en tickets (monto_recibido)
 $totalTickets = 0.00; // suma de totales de tickets generados
 $totalVenta = 0.00; // total de la venta (sin propinas, desde ventas.total o sum(detalles))
 $propinaTotal = 0.00;
+$serieUsuario = ['id' => null, 'descripcion' => null];
+if (!empty($_SESSION['usuario_id'])) {
+    $stmtSerie = $conn->prepare('SELECT s.serie_id, cf.descripcion FROM usuarios u LEFT JOIN sedes s ON s.id = u.sede_id LEFT JOIN catalogo_folios cf ON cf.id = s.serie_id WHERE u.id = ? LIMIT 1');
+    if ($stmtSerie) {
+        $stmtSerie->bind_param('i', $_SESSION['usuario_id']);
+        if ($stmtSerie->execute()) {
+            $serieUsuario = $stmtSerie->get_result()->fetch_assoc() ?: $serieUsuario;
+        }
+        $stmtSerie->close();
+    }
+}
+$serieUsuario = ['id' => null, 'descripcion' => null];
+if (!empty($_SESSION['usuario_id'])) {
+    $stmtSerie = $conn->prepare('SELECT s.serie_id, cf.descripcion FROM usuarios u LEFT JOIN sedes s ON s.id = u.sede_id LEFT JOIN catalogo_folios cf ON cf.id = s.serie_id WHERE u.id = ? LIMIT 1');
+    if ($stmtSerie) {
+        $stmtSerie->bind_param('i', $_SESSION['usuario_id']);
+        if ($stmtSerie->execute()) {
+            $serieUsuario = $stmtSerie->get_result()->fetch_assoc() ?: $serieUsuario;
+        }
+        $stmtSerie->close();
+    }
+}
 if ($ventaIdParam > 0) {
     // ¿Existe ticket?
     if ($st = $conn->prepare('SELECT COALESCE(SUM(total),0) AS total_tickets, COALESCE(SUM(monto_recibido),0) AS monto_cobrado FROM tickets WHERE venta_id = ?')) {
@@ -194,7 +216,8 @@ ob_start();
         <div id="fechaHora" style="margin-bottom:10px;"></div>
         <div><strong>Folio:</strong> <span id="folio"></span></div>
         <div><strong>Venta:</strong> <span id="ventaId"></span></div>
-        <div><strong>Sede:</strong> <span id="sedeId"></span></div>
+        <div><strong>Serie:</strong> <span id="serieNombre"><?php echo htmlspecialchars($serieUsuario['descripcion'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></div>
+        <!--div><strong>Sede:</strong> <span id="sedeId"></span></div-->
         <div><strong>Mesa:</strong> <span id="mesaNombre"></span></div>
         <div><strong>Mesero:</strong> <span id="meseroNombre"></span></div>
         <div><strong>Tipo entrega:</strong> <span id="tipoEntrega"></span></div>
@@ -310,6 +333,8 @@ ob_start();
     });
     </script>
 <script>
+window.serieUsuarioTicket = <?php echo json_encode($serieUsuario); ?>;
+window.__SERIE_DESC_TICKET__ = window.serieUsuarioTicket && window.serieUsuarioTicket.descripcion ? window.serieUsuarioTicket.descripcion : '';
 // Al cargar, si el servidor indica SOLO_PROPINAS, ocultar controles de cobro y mostrar solo propinas
 document.addEventListener('DOMContentLoaded', function(){
   try {

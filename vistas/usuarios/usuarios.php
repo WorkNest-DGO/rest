@@ -94,6 +94,10 @@ ob_start();
                         </select>
                     </div>
                     <div class="form-group">
+                        <label for="sede">Sede:</label>
+                        <input type="text" id="sede" class="form-control" placeholder="Sede" readonly>
+                    </div>
+                    <div class="form-group">
                         <label for="activo">Activo:</label>
                         <select id="activo" class="form-control">
                             <option value="1">Sí</option>

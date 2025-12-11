@@ -2,6 +2,10 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error('Método no permitido');
 }
@@ -25,7 +29,6 @@ if (isset($input['promociones_ids']) && is_array($input['promociones_ids'])) {
 }
 $venta_id   = (int)$input['venta_id'];
 $subcuentas = $input['subcuentas'];
-$sede_id    = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$input['sede_id'] : 1;
 // Campos de descuento opcionales desde UI
 $descuento_porcentaje_in = isset($input['descuento_porcentaje']) ? (float)$input['descuento_porcentaje'] : 0.0;
 $descuento_porcentaje_in = max(0.0, min(100.0, $descuento_porcentaje_in));
@@ -63,9 +66,13 @@ if (!$venta) {
     error('Venta no encontrada');
 }
 
-$usuario_id = isset($input['usuario_id'])
-    ? (int)$input['usuario_id']
-    : (int)($venta['mesero_id'] ?? 0);
+$usuarioSesion = isset($_SESSION['usuario_id']) ? (int)$_SESSION['usuario_id'] : null;
+$usuario_id = $usuarioSesion
+    ? $usuarioSesion
+    : (isset($input['usuario_id']) ? (int)$input['usuario_id'] : (int)($venta['mesero_id'] ?? 0));
+if (!$usuario_id) {
+    error('Usuario no autenticado');
+}
 
 $repartidorNombre = $venta['repartidor_nombre'] ?? '';
 $permiteAjustePlataforma = (strtolower(trim($venta['tipo_entrega'] ?? '')) === 'domicilio'
@@ -114,18 +121,26 @@ $fecha_inicio = $venta['fecha_inicio'] ?? null;
 $fecha_fin = obtenerFechaServidor($conn);
 $tiempo_servicio = $fecha_inicio ? (int) ((strtotime($fecha_fin) - strtotime($fecha_inicio)) / 60) : 0;
 
-$stmtSede = $conn->prepare('SELECT nombre, direccion, rfc, telefono, activo FROM sedes WHERE id = ?');
+$stmtSede = $conn->prepare('SELECT u.id, u.sede_id, s.nombre, s.direccion, s.rfc, s.telefono, s.activo, s.serie_id FROM usuarios u LEFT JOIN sedes s ON s.id = u.sede_id WHERE u.id = ?');
 if (!$stmtSede) {
-    error('Error al preparar datos de sede: ' . $conn->error);
+    error('Error al preparar datos de sede/serie: ' . $conn->error);
 }
-$stmtSede->bind_param('i', $sede_id);
+$stmtSede->bind_param('i', $usuario_id);
 if (!$stmtSede->execute()) {
     $stmtSede->close();
-    error('Error al obtener datos de sede: ' . $stmtSede->error);
+    error('Error al obtener sede del usuario: ' . $stmtSede->error);
 }
 $resSede = $stmtSede->get_result();
 $sede = $resSede->fetch_assoc();
 $stmtSede->close();
+if (!$sede || !$sede['sede_id'] || isset($sede['activo']) && !(int)$sede['activo']) {
+    error('Usuario sin sede asignada o sede inactiva');
+}
+$sede_id = (int)$sede['sede_id'];
+$serieBase = isset($sede['serie_id']) ? (int)$sede['serie_id'] : 0; // serie se deriva de la sede del usuario, ya no del payload/horario
+if (!$serieBase) {
+    error('Sede sin serie de folios configurada');
+}
 $query =$conn->prepare("SELECT id FROM tickets WHERE venta_id = ? ORDER BY id asc");
 $query->bind_param('i', $venta_id);
 if (!$query->execute()) {
@@ -200,21 +215,6 @@ do {
     $descuento_total = round($cortesias_total + $desc_pct_monto, 2);
     $total_esperado = round($total_bruto - $descuento_total, 2);
 } while (false);
-if (!$sede || (isset($sede['activo']) && !$sede['activo'])) {
-    $sede_id = 1;
-    $stmtSede = $conn->prepare('SELECT nombre, direccion, rfc, telefono, activo FROM sedes WHERE id = ?');
-    if ($stmtSede) {
-        $stmtSede->bind_param('i', $sede_id);
-        if ($stmtSede->execute()) {
-            $resSede = $stmtSede->get_result();
-            $sede = $resSede->fetch_assoc();
-        }
-        $stmtSede->close();
-    }
-    if (!$sede || (isset($sede['activo']) && !$sede['activo'])) {
-        error('Sede no válida o inactiva');
-    }
-}
 $nombre_negocio    = $sede['nombre'] ?? '';
 $direccion_negocio = $sede['direccion'] ?? '';
 $rfc_negocio       = $sede['rfc'] ?? '';
@@ -248,27 +248,17 @@ foreach ($subcuentas as $sub) {
         $conn->rollback();
         error('Subcuenta inválida');
     }
-    $serie = isset($sub['serie_id']) ? (int)$sub['serie_id'] : null;
-    if (!$serie && isset($input['serie_id'])) {
-        $serie = (int)$input['serie_id'];
-    }
-    // Si no viene serie en el payload, derivarla por negocio (horario actual)
+    $serie = $serieBase; // serie definida por sede del usuario
     if (!$serie) {
-        @require_once __DIR__ . '/../corte_caja/helpers.php';
-        if (function_exists('getSerieActiva')) {
-            $serie = (int) getSerieActiva($conn);
-        }
+        $conn->rollback();
+        error('Sede sin serie de folios configurada');
     }
-    $folioStmt = $serie
-        ? $conn->prepare('SELECT id, folio_actual, descripcion FROM catalogo_folios WHERE id = ? FOR UPDATE')
-        : $conn->prepare('SELECT id, folio_actual, descripcion FROM catalogo_folios LIMIT 1 FOR UPDATE');
+    $folioStmt = $conn->prepare('SELECT id, folio_actual, descripcion FROM catalogo_folios WHERE id = ? FOR UPDATE');
     if (!$folioStmt) {
         $conn->rollback();
         error('Error al preparar folio: ' . $conn->error);
     }
-    if ($serie) {
-        $folioStmt->bind_param('i', $serie);
-    }
+    $folioStmt->bind_param('i', $serie);
     if (!$folioStmt->execute()) {
         $conn->rollback();
         error('Error al obtener folio: ' . $folioStmt->error);
@@ -463,26 +453,17 @@ if (count($promociones_ids) === 1) {
 }
 
 foreach ($subProcesadas as $sub) {
-    $serie = $sub['serie'];
-    if (!$serie && isset($input['serie_id'])) {
-        $serie = (int)$input['serie_id'];
-    }
+    $serie = $serieBase; // mismo folio para todas las subcuentas, derivado de la sede del usuario
     if (!$serie) {
-        @require_once __DIR__ . '/../corte_caja/helpers.php';
-        if (function_exists('getSerieActiva')) {
-            $serie = (int) getSerieActiva($conn);
-        }
+        $conn->rollback();
+        error('Sede sin serie de folios configurada');
     }
-    $folioStmt = $serie
-        ? $conn->prepare('SELECT id, folio_actual, descripcion FROM catalogo_folios WHERE id = ? FOR UPDATE')
-        : $conn->prepare('SELECT id, folio_actual, descripcion FROM catalogo_folios LIMIT 1 FOR UPDATE');
+    $folioStmt = $conn->prepare('SELECT id, folio_actual, descripcion FROM catalogo_folios WHERE id = ? FOR UPDATE');
     if (!$folioStmt) {
         $conn->rollback();
         error('Error al preparar folio: ' . $conn->error);
     }
-    if ($serie) {
-        $folioStmt->bind_param('i', $serie);
-    }
+    $folioStmt->bind_param('i', $serie);
     if (!$folioStmt->execute()) {
         $conn->rollback();
         error('Error al obtener folio: ' . $folioStmt->error);

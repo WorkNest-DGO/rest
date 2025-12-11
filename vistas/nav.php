@@ -16,6 +16,25 @@ $base_url = BASE_URL;
 
 require_once __DIR__ . '/../utils/cargar_permisos.php';
 
+$navUserName = 'Usuario';
+$navUserRol = '';
+$navUserSede = '';
+if (!empty($_SESSION['usuario_id'])) {
+    $stmtUserNav = $conn->prepare('SELECT u.nombre, u.rol, s.nombre AS sede_nombre FROM usuarios u LEFT JOIN sedes s ON s.id = u.sede_id WHERE u.id = ? LIMIT 1');
+    if ($stmtUserNav) {
+        $stmtUserNav->bind_param('i', $_SESSION['usuario_id']);
+        if ($stmtUserNav->execute()) {
+            $rowNav = $stmtUserNav->get_result()->fetch_assoc();
+            if ($rowNav) {
+                $navUserName = $rowNav['nombre'] ?? $navUserName;
+                $navUserRol = $rowNav['rol'] ?? '';
+                $navUserSede = $rowNav['sede_nombre'] ?? '';
+            }
+        }
+        $stmtUserNav->close();
+    }
+}
+
 $rutas_permitidas = $_SESSION['rutas_permitidas'];
 $rutas = [];
 if ($rutas_permitidas) {
@@ -106,7 +125,7 @@ foreach ($rutas as $ruta) {
 
 <body>
 <div class="navbar navbar-expand-lg bg-light navbar-light">
-    <div class="container-fluid">
+    <div class="container-fluid d-flex align-items-center">
         <a href="<?= $base_url ?>/vistas/index.php" class="navbar-brand">Tokyo <span style="text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;">Sushi</span></a>
         <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
             <span class="navbar-toggler-icon"></span>
@@ -131,7 +150,23 @@ foreach ($rutas as $ruta) {
                     <?php endif; ?>
                 <?php endforeach; ?>
 
-                <a href="<?= $base_url ?>/vistas/logout.php" class="nav-item nav-link">Cerrar sesión</a>
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" data-toggle="dropdown">
+                        <i class="fas fa-user-circle mr-2"></i>
+                        <span class="d-none d-sm-inline"><?php echo htmlspecialchars($navUserName); ?></span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <span class="dropdown-item-text font-weight-bold"><?php echo htmlspecialchars($navUserName); ?></span>
+                        <?php if ($navUserRol): ?>
+                            <span class="dropdown-item-text">Rol: <?php echo htmlspecialchars($navUserRol); ?></span>
+                        <?php endif; ?>
+                        <?php if ($navUserSede): ?>
+                            <span class="dropdown-item-text">Sede: <?php echo htmlspecialchars($navUserSede); ?></span>
+                        <?php endif; ?>
+                        <div class="dropdown-divider"></div>
+                        <a href="<?= $base_url ?>/vistas/logout.php" class="dropdown-item">Cerrar sesión</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
