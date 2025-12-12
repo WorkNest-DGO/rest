@@ -66,36 +66,41 @@ if (!isset($_SESSION['usuario_id'])) {
 }
 
 $cajero_id = (int)$_SESSION['usuario_id'];
+$sede_id = null;
+$sedeStmt = $conn->prepare('SELECT sede_id FROM usuarios WHERE id = ?');
+if ($sedeStmt) {
+    $sedeStmt->bind_param('i', $cajero_id);
+    $sedeStmt->execute();
+    $sede_id = (int)($sedeStmt->get_result()->fetch_assoc()['sede_id'] ?? 0);
+    $sedeStmt->close();
+}
+if (!$sede_id) {
+    error('Usuario sin sede asignada');
+}
 
 $tipo          = isset($input['tipo']) ? $input['tipo'] : null;
 $mesa_id       = isset($input['mesa_id']) ? (int) $input['mesa_id'] : null;
 $repartidor_id = isset($input['repartidor_id']) ? (int) $input['repartidor_id'] : null;
-$usuario_id    = isset($input['usuario_id']) ? (int) $input['usuario_id'] : null;
-$corte_id = isset($input['corte_id']) && $input['corte_id'] !== null && $input['corte_id'] !== ''
-    ? (int)$input['corte_id']
-    : (isset($_SESSION['corte_id']) ? (int)$_SESSION['corte_id'] : null);
-
-// Asegurar que haya un corte abierto asociado al usuario (evita FK corte_id)
-if (!$corte_id) {
-    $stmtCorte = $conn->prepare('SELECT id FROM corte_caja WHERE usuario_id = ? AND fecha_fin IS NULL ORDER BY fecha_inicio DESC LIMIT 1');
-    if ($stmtCorte) {
-        $stmtCorte->bind_param('i', $cajero_id);
-        $stmtCorte->execute();
-        $rowCorte = $stmtCorte->get_result()->fetch_assoc();
-        $stmtCorte->close();
-        if ($rowCorte) {
-            $corte_id = (int)$rowCorte['id'];
-            $_SESSION['corte_id'] = $corte_id;
-        }
+$usuario_id    = $cajero_id; // quien genera la venta
+$corte_id = null;
+$stmtCorte = $conn->prepare('SELECT c.id FROM corte_caja c JOIN usuarios u ON u.id = c.usuario_id WHERE u.sede_id = ? AND c.fecha_fin IS NULL ORDER BY c.fecha_inicio DESC LIMIT 1');
+if ($stmtCorte) {
+    $stmtCorte->bind_param('i', $sede_id);
+    $stmtCorte->execute();
+    $rowCorte = $stmtCorte->get_result()->fetch_assoc();
+    $stmtCorte->close();
+    if ($rowCorte) {
+        $corte_id = (int)$rowCorte['id'];
+        $_SESSION['corte_id'] = $corte_id;
     }
 }
 if (!$corte_id) {
-    error('No hay corte abierto para registrar la venta.');
+    error('No hay corte abierto en la sede para registrar la venta.');
 }
 
 $productos     = isset($input['productos']) && is_array($input['productos']) ? $input['productos'] : null;
 $observacion   = isset($input['observacion']) ? $input['observacion'] : null;
-$sede_id       = isset($input['sede_id']) && !empty($input['sede_id']) ? (int)$input['sede_id'] : 1;
+$sede_id       = $sede_id;
 // Promoci&oacute;n seleccionada (opcional)
 $promocion_id  = isset($input['promocion_id']) ? (int)$input['promocion_id'] : null;
 if ($promocion_id !== null && $promocion_id <= 0) {
@@ -262,7 +267,7 @@ if ($tipo === 'mesa') {
     $check->close();
     if ($existing) {
         $venta_id = (int)$existing['id'];
-        // Si se especificó un usuario distinto, actualizarlo
+        // Forzar usuario/cajero de la sesión en la venta existente
         if ($usuario_id && $usuario_id !== (int)$existing['usuario_id']) {
             $upUser = $conn->prepare('UPDATE ventas SET usuario_id = ? WHERE id = ?');
             if ($upUser) {

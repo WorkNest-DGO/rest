@@ -14,7 +14,7 @@ if (!isset($_SESSION['usuario_id'])) {
 
 $input      = json_decode(file_get_contents('php://input'), true);
 $observa    = $input['observaciones'] ?? '';
-$corte_id   = $_SESSION['corte_id'] ?? null;
+$corte_id   = $input['corte_id'] ?? ($_SESSION['corte_id'] ?? null);
 $usuario_id = $_SESSION['usuario_id'];
 
 if (!$corte_id) {
@@ -25,11 +25,11 @@ if (!$corte_id) {
     exit;
 }
 
-$stmt = $conn->prepare('SELECT fecha_inicio, fondo_inicial FROM corte_caja WHERE id = ? AND usuario_id = ? AND fecha_fin IS NULL');
+$stmt = $conn->prepare('SELECT c.fecha_inicio, c.fondo_inicial, u.sede_id FROM corte_caja c JOIN usuarios u ON u.id = c.usuario_id WHERE c.id = ? AND c.fecha_fin IS NULL');
 if (!$stmt) {
     error('Error al preparar consulta: ' . $conn->error);
 }
-$stmt->bind_param('ii', $corte_id, $usuario_id);
+$stmt->bind_param('i', $corte_id);
 $stmt->execute();
 $res = $stmt->get_result();
 if ($res->num_rows === 0) {
@@ -40,27 +40,40 @@ if ($res->num_rows === 0) {
 $row = $res->fetch_assoc();
 $fecha_inicio   = $row['fecha_inicio'];
 $fondo_inicial  = (float)($row['fondo_inicial'] ?? 0);
+$sede_corte     = (int)($row['sede_id'] ?? 0);
 $stmt->close();
+
+$sede_usuario = 0;
+$sStmt = $conn->prepare('SELECT sede_id FROM usuarios WHERE id = ?');
+if ($sStmt) {
+    $sStmt->bind_param('i', $usuario_id);
+    $sStmt->execute();
+    $sede_usuario = (int)($sStmt->get_result()->fetch_assoc()['sede_id'] ?? 0);
+    $sStmt->close();
+}
+if (!$sede_usuario || ($sede_corte && $sede_usuario !== $sede_corte)) {
+    error('No tienes permiso para cerrar cortes de otra sede');
+}
 
 // Calcular total de ventas del periodo
 $fecha_fin = date('Y-m-d H:i:s');
-// Total de ventas (sin propinas)
-$tot = $conn->prepare("SELECT SUM(total) AS total FROM ventas WHERE usuario_id = ? AND fecha >= ? AND fecha <= ? AND estatus = 'cerrada' AND corte_id IS NULL");
+// Total de ventas (sin propinas) asociadas al corte
+$tot = $conn->prepare("SELECT SUM(total) AS total FROM ventas WHERE corte_id = ?");
 if (!$tot) {
     error('Error al calcular total: ' . $conn->error);
 }
-$tot->bind_param('iss', $usuario_id, $fecha_inicio, $fecha_fin);
+$tot->bind_param('i', $corte_id);
 $tot->execute();
 $resTot = $tot->get_result()->fetch_assoc();
 $totalVentas = (float)($resTot['total'] ?? 0);
 $tot->close();
 
-// Total de propinas
-$prop = $conn->prepare("SELECT SUM((v.propina_efectivo + v.propina_cheque + v.propina_tarjeta)) AS propina FROM ventas v JOIN tickets t ON t.venta_id = v.id WHERE v.usuario_id = ? AND v.fecha >= ? AND v.fecha <= ? AND v.estatus = 'cerrada' AND v.corte_id IS NULL");
+// Total de propinas asociadas al corte
+$prop = $conn->prepare("SELECT SUM((v.propina_efectivo + v.propina_cheque + v.propina_tarjeta)) AS propina FROM ventas v JOIN tickets t ON t.venta_id = v.id WHERE v.corte_id = ?");
 if (!$prop) {
     error('Error al calcular propinas: ' . $conn->error);
 }
-$prop->bind_param('iss', $usuario_id, $fecha_inicio, $fecha_fin);
+$prop->bind_param('i', $corte_id);
 $prop->execute();
 $resProp = $prop->get_result()->fetch_assoc();
 $totalPropinas = (float)($resProp['propina'] ?? 0);
@@ -68,9 +81,19 @@ $prop->close();
 
 $totalFinal = $totalVentas + $totalPropinas + $fondo_inicial;
 
-// 1) Obtener serie activa y folio final desde catalogo_folios
-$serie_id = getSerieActiva($conn);
-$folio_fin_calc = getFolioActualSerie($conn, $serie_id);
+// 1) Obtener serie de la sede del corte y folio final desde catalogo_folios
+$serieSede = null;
+$serieStmt = $conn->prepare('SELECT serie_id FROM sedes WHERE id = ?');
+if ($serieStmt) {
+    $serieStmt->bind_param('i', $sede_corte);
+    $serieStmt->execute();
+    $serieSede = (int)($serieStmt->get_result()->fetch_assoc()['serie_id'] ?? 0);
+    $serieStmt->close();
+}
+if (!$serieSede) {
+    $serieSede = getSerieActiva($conn);
+}
+$folio_fin_calc = getFolioActualSerie($conn, $serieSede);
 
 // 2) Leer folio_inicio del corte
 $folio_inicio = 0;
@@ -124,12 +147,12 @@ if (!$upd->execute()) {
 }
 $upd->close();
 
-$updVentas = $conn->prepare("UPDATE ventas SET corte_id = ? WHERE usuario_id = ? AND fecha >= ? AND fecha <= ? AND estatus = 'cerrada' AND (corte_id IS NULL)");
+$updVentas = $conn->prepare("UPDATE ventas SET corte_id = ? WHERE estatus = 'cerrada' AND (corte_id IS NULL) AND sede_id = ?");
 if (!$updVentas) {
     $conn->rollback();
     error('Error al preparar actualización de ventas: ' . $conn->error);
 }
-$updVentas->bind_param('iiss', $corte_id, $usuario_id, $fecha_inicio, $fecha_fin);
+$updVentas->bind_param('ii', $corte_id, $sede_usuario);
 if (!$updVentas->execute()) {
     $updVentas->close();
     $conn->rollback();
@@ -139,9 +162,9 @@ $updVentas->close();
 
 $conn->commit();
 
-$stmt = $conn->prepare("SELECT COUNT(*) AS num FROM ventas WHERE usuario_id = ? AND fecha >= ? AND fecha <= ? AND estatus = 'cerrada'");
+$stmt = $conn->prepare("SELECT COUNT(*) AS num FROM ventas WHERE corte_id = ?");
 if ($stmt) {
-    $stmt->bind_param('iss', $usuario_id, $fecha_inicio, $fecha_fin);
+    $stmt->bind_param('i', $corte_id);
     $stmt->execute();
     $c = $stmt->get_result()->fetch_assoc();
     $numVentas = (int)($c['num'] ?? 0);

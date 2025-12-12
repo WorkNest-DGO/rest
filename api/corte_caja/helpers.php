@@ -14,41 +14,20 @@
 
 function getSerieActiva(mysqli $conn): int
 {
-    // Usa tu zona horaria real
-    date_default_timezone_set('America/Monterrey');
-
-    // Día en minúsculas, sin acentos (como están en tu tabla)
-    $dias = ['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
-    $dia  = $dias[(int)date('N') - 1];
-    $hora = date('H:i:s');
-
-    // Si no encuentra nada, por defecto la serie 2 (Domicilio)
-    $serie_id = 2;
-
-    // Nada de "\" y sin COLLATE sobre el parámetro
-    $sql = "SELECT serie_id
-            FROM horarios
-            WHERE hora_inicio <= ? AND ? <= hora_fin
-              AND LOWER(dia_semana) = LOWER(?)
-            ORDER BY id DESC
-            LIMIT 1";
-
-    if ($stmt = $conn->prepare($sql)) {
-        // Misma hora para ambos placeholders
-        $stmt->bind_param('sss', $hora, $hora, $dia);
+    // La columna serie_id ya no existe en horarios; devolvemos una serie válida existente.
+    $serie_id = 0;
+    if ($stmt = $conn->prepare("SELECT id FROM catalogo_folios ORDER BY id ASC LIMIT 1")) {
         $stmt->execute();
         if ($res = $stmt->get_result()) {
             if ($row = $res->fetch_assoc()) {
-                $serie_id = (int)$row['serie_id'];
+                $serie_id = (int)$row['id'];
             }
         }
         $stmt->close();
-    } else {
-        // Debug opcional si vuelve a fallar el prepare:
-        // error_log("getSerieActiva prepare error: " . $conn->error);
-        // error_log("SQL: " . $sql);
     }
-
+    if ($serie_id <= 0) {
+        $serie_id = 1;
+    }
     return $serie_id;
 }
 

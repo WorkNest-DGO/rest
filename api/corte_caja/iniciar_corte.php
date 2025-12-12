@@ -13,6 +13,18 @@ $fondo_inicial = isset($input['fondo_inicial']) ? (float)$input['fondo_inicial']
 if (!$usuario_id) {
     error('usuario_id requerido');
 }
+
+$sede_id = null;
+$sedeStmt = $conn->prepare('SELECT sede_id FROM usuarios WHERE id = ?');
+if ($sedeStmt) {
+    $sedeStmt->bind_param('i', $usuario_id);
+    $sedeStmt->execute();
+    $sede_id = (int)($sedeStmt->get_result()->fetch_assoc()['sede_id'] ?? 0);
+    $sedeStmt->close();
+}
+if (!$sede_id) {
+    error('El usuario no tiene sede asignada');
+}
 // Si no se envía fondo_inicial, obtenerlo de la tabla fondo
 if ($fondo_inicial === null) {
     $stmt = $conn->prepare('SELECT monto FROM fondo WHERE usuario_id = ?');
@@ -38,16 +50,16 @@ if ($fondo_inicial === null) {
     }
 }
 
-$stmt = $conn->prepare('SELECT id FROM corte_caja WHERE usuario_id = ? AND fecha_fin IS NULL');
+$stmt = $conn->prepare('SELECT c.id FROM corte_caja c JOIN usuarios u ON u.id = c.usuario_id WHERE u.sede_id = ? AND c.fecha_fin IS NULL');
 if (!$stmt) {
     error('Error al preparar consulta: ' . $conn->error);
 }
-$stmt->bind_param('i', $usuario_id);
+$stmt->bind_param('i', $sede_id);
 $stmt->execute();
 $stmt->store_result();
 if ($stmt->num_rows > 0) {
     $stmt->close();
-    error('Ya existe un corte abierto para este usuario');
+    error('Ya existe un corte abierto para esta sede');
 }
 $stmt->close();
 
@@ -65,8 +77,18 @@ $corte_id = $stmt->insert_id;
 $stmt->close();
 
 // Determinar serie activa y folio inicial desde catalogo_folios
-$serie_id = getSerieActiva($conn);
-$folio_inicio = getFolioActualSerie($conn, $serie_id);
+$serieSede = null;
+$serieStmt = $conn->prepare('SELECT serie_id FROM sedes WHERE id = ?');
+if ($serieStmt) {
+    $serieStmt->bind_param('i', $sede_id);
+    $serieStmt->execute();
+    $serieSede = (int)($serieStmt->get_result()->fetch_assoc()['serie_id'] ?? 0);
+    $serieStmt->close();
+}
+if (!$serieSede) {
+    $serieSede = getSerieActiva($conn);
+}
+$folio_inicio = getFolioActualSerie($conn, $serieSede);
 
 $u = $conn->prepare('UPDATE corte_caja SET folio_inicio = ? WHERE id = ?');
 if ($u) {
