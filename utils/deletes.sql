@@ -24,6 +24,10 @@ DELETE FROM venta_detalles;
 DELETE FROM ventas;
 DELETE FROM corte_caja;
 DELETE FROM cliente_venta;
+DELETE FROM conekta_payments;
+DELETE FROM logs_accion;
+DELETE FROM fondo;
+DELETE FROM clientes_facturacion;
 
 SET FOREIGN_KEY_CHECKS = 1;
 SET @ARCHIVE_MODE = NULL;

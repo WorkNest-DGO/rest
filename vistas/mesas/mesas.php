@@ -223,6 +223,7 @@ window.usuarioActual = {
     id: <?= (int)($_SESSION['usuario_id'] ?? 0); ?>,
     rol: <?= json_encode($_SESSION['rol'] ?? ''); ?>
 };
+window.API_LISTAR_MESAS = '../../api/mesas/listar_mesas.php?user_id=' + encodeURIComponent(window.usuarioActual.id || '') + '&usuario_id=' + encodeURIComponent(window.usuarioActual.id || '');
 </script>
 <script src="../../utils/js/buscador.js"></script>
 <script src="kanbanMesas.js"></script>

@@ -164,7 +164,7 @@ function renderPagination(total, page) {
 }
 
 const usuarioId = window.usuarioId || 1; // ID del cajero proveniente de la sesión
-const sedeId = window.sedeId || 1;
+const sedeId = (window.sedeId !== undefined && window.sedeId !== null) ? Number(window.sedeId) || null : null;
 let corteIdActual = window.corteId || null;
 // Catálogo global utilizado por utils/js/buscador.js
 let catalogo = window.catalogo || [];
@@ -197,19 +197,71 @@ const normalizarClienteTexto = (txt) => {
 // ==== [INICIO BLOQUE valida: validación para cierre de corte] ====
 const VENTAS_URL = typeof API_LISTAR_VENTAS !== 'undefined' ? API_LISTAR_VENTAS : '../../api/ventas/listar_ventas.php';
 const MESAS_URL = typeof API_LISTAR_MESAS !== 'undefined' ? API_LISTAR_MESAS : '../../api/mesas/listar_mesas.php';
+function buildMesasUrl() {
+    const base = MESAS_URL;
+    const u = base.startsWith('http') ? new URL(base) : new URL(base, window.location.href);
+    if (usuarioId) {
+        u.searchParams.set('user_id', usuarioId);
+        u.searchParams.set('usuario_id', usuarioId);
+    }
+    if (window.sedeId) u.searchParams.set('sede_id', window.sedeId);
+    return u.toString();
+}
+function buildMesasSimpleUrl() {
+    const base = '../../api/mesas/mesas.php';
+    const u = new URL(base, window.location.href);
+    if (usuarioId) {
+        u.searchParams.set('user_id', usuarioId);
+        u.searchParams.set('usuario_id', usuarioId);
+    }
+    if (window.sedeId) u.searchParams.set('sede_id', window.sedeId);
+    return u.toString();
+}
 
 // Devuelve { hayVentasActivas, hayMesasOcupadas, bloqueado }
 async function hayBloqueosParaCerrarCorte() {
-    const [ventasResp, mesasResp] = await Promise.all([
-        fetch(VENTAS_URL, { cache: 'no-store' }).then(r => r.json()),
-        fetch(MESAS_URL, { cache: 'no-store' }).then(r => r.json())
-    ]);
+    const sedeActual = (typeof sedeId === 'number' && !Number.isNaN(sedeId) && sedeId > 0) ? sedeId : null;
+    const ventasUrl = VENTAS_URL.startsWith('http') ? VENTAS_URL : new URL(VENTAS_URL, window.location.href);
+    const mesasUrlObj = MESAS_URL.startsWith('http') ? new URL(MESAS_URL) : new URL(MESAS_URL, window.location.href);
+    if (sedeActual) {
+        ventasUrl.searchParams.set('sede_id', sedeActual);
+        mesasUrlObj.searchParams.set('sede_id', sedeActual);
+    }
+    if (usuarioId) {
+        ventasUrl.searchParams.set('user_id', usuarioId);
+        mesasUrlObj.searchParams.set('user_id', usuarioId);
+    }
+    let ventasResp = null;
+    let mesasResp = null;
+    try {
+        const [vRaw, mRaw] = await Promise.all([
+            fetch(ventasUrl.toString(), { cache: 'no-store' }),
+            fetch(mesasUrlObj.toString(), { cache: 'no-store' })
+        ]);
+        ventasResp = await vRaw.json();
+        mesasResp = await mRaw.json();
+    } catch (err) {
+        console.error('Validación de corte falló:', err);
+        return { hayVentasActivas: false, hayMesasOcupadas: false, bloqueado: true };
+    }
 
     const ventas = (ventasResp && ventasResp.resultado && ventasResp.resultado.ventas) || [];
-    const hayVentasActivas = ventas.some(v => String(v.estatus || '').toLowerCase() === 'activa');
+    const ventasFiltradas = sedeActual
+        ? ventas.filter(v => {
+            const sid = Number(v.sede_id ?? v.sede ?? v.sedeId ?? v.sedeid ?? v.sucursal_id);
+            return !Number.isNaN(sid) && sid === sedeActual;
+        })
+        : ventas;
+    const hayVentasActivas = ventasFiltradas.some(v => String(v.estatus || '').toLowerCase() === 'activa');
 
     const mesas = (mesasResp && mesasResp.resultado) || [];
-    const hayMesasOcupadas = mesas.some(m => String(m.estado || '').toLowerCase() === 'ocupada');
+    const mesasFiltradas = sedeActual
+        ? mesas.filter(m => {
+            const sid = Number(m.sede_id ?? m.sede ?? m.sedeId ?? m.sedeid ?? m.sucursal_id);
+            return !Number.isNaN(sid) && sid === sedeActual;
+        })
+        : mesas;
+    const hayMesasOcupadas = mesasFiltradas.some(m => String(m.estado || '').toLowerCase() === 'ocupada');
 
     return { hayVentasActivas, hayMesasOcupadas, bloqueado: (hayVentasActivas || hayMesasOcupadas) };
 }
@@ -1514,16 +1566,17 @@ function formatearEtiquetaColonia(col) {
     return `${col.colonia || ''}${dist}${costoFore}${costoMadero}`;
 }
 
+function filtrarColoniasPorTexto(termino = '', lista = coloniasData) {
+    const needle = normalizarClienteTexto((termino || '').trim());
+    if (!needle) return [];
+    return (lista || []).filter(col => normalizarClienteTexto(col.colonia || '').includes(needle)).slice(0, 50);
+}
+
 function mostrarSugerenciasColonias(termino = '', lista = coloniasData) {
     const ul = document.getElementById('listaColoniasCliente');
     if (!ul) return;
     ul.innerHTML = '';
-    const needle = normalizarClienteTexto(termino.trim());
-    if (!needle) {
-        ul.style.display = 'none';
-        return;
-    }
-    const coincidencias = (lista || []).filter(col => normalizarClienteTexto(col.colonia || '').includes(needle)).slice(0, 50);
+    const coincidencias = filtrarColoniasPorTexto(termino, lista);
     coincidencias.forEach(col => {
         const li = document.createElement('li');
         li.className = 'list-group-item list-group-item-action';
@@ -1552,6 +1605,39 @@ function seleccionarColoniaDesdeLista(col) {
         }
         select.value = col.id;
         onSeleccionColoniaManual();
+    }
+    if (busc) busc.value = col ? (col.colonia || '') : '';
+    if (ul) ul.style.display = 'none';
+}
+
+function mostrarSugerenciasColoniasNuevoCliente(termino = '') {
+    const ul = document.getElementById('listaColoniasNuevoCliente');
+    if (!ul) return;
+    ul.innerHTML = '';
+    const coincidencias = filtrarColoniasPorTexto(termino, coloniasData);
+    coincidencias.forEach(col => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item list-group-item-action';
+        li.textContent = formatearEtiquetaColonia(col);
+        li.addEventListener('click', () => seleccionarColoniaNuevoCliente(col));
+        ul.appendChild(li);
+    });
+    ul.style.display = coincidencias.length ? 'block' : 'none';
+}
+
+function seleccionarColoniaNuevoCliente(col) {
+    const select = document.getElementById('nuevoClienteColonia');
+    const busc = document.getElementById('nuevoClienteBuscarColonia');
+    const ul = document.getElementById('listaColoniasNuevoCliente');
+    if (select && col) {
+        let opt = select.querySelector(`option[value="${col.id}"]`);
+        if (!opt) {
+            opt = document.createElement('option');
+            opt.value = col.id;
+            opt.textContent = col.colonia || '';
+            select.appendChild(opt);
+        }
+        select.value = col.id;
     }
     if (busc) busc.value = col ? (col.colonia || '') : '';
     if (ul) ul.style.display = 'none';
@@ -1852,7 +1938,7 @@ async function cargarMeseros() {
 
 async function cargarMesas(preserveMesaId) {
     try {
-        const resp = await fetch('../../api/mesas/mesas.php');
+        const resp = await fetch(buildMesasSimpleUrl());
         const data = await resp.json();
         if (data.success) {
             // Solo mesas disponibles (estado = 'libre')
@@ -2547,7 +2633,7 @@ function agregarFilaProducto() {
 
 async function validarMesaLibre(id) {
     try {
-        const resp = await fetch('../../api/mesas/listar_mesas.php');
+        const resp = await fetch(buildMesasUrl());
         const data = await resp.json();
         if (!data.success) {
             alert(data.mensaje);
@@ -2844,6 +2930,10 @@ function onClienteSeleccionadoChange() {
 function abrirModalNuevoCliente() {
     cargarColoniasCatalogo().then(() => {
         pintarColoniasSelect(document.getElementById('nuevoClienteColonia'));
+        const busc = document.getElementById('nuevoClienteBuscarColonia');
+        const ul = document.getElementById('listaColoniasNuevoCliente');
+        if (busc) busc.value = '';
+        if (ul) { ul.innerHTML = ''; ul.style.display = 'none'; }
         if (typeof showModal === 'function') {
             showModal('#modalNuevoCliente');
         } else if (window.$) {
@@ -3155,7 +3245,7 @@ async function agregarDetalle(ventaId) {
 function cargarSolicitudes() {
     const tbody = document.querySelector('#solicitudes tbody');
     if (!tbody) return;
-    fetch('../../api/mesas/listar_mesas.php')
+    fetch(buildMesasUrl())
         .then(r => r.json())
         .then(d => {
             if (!d.success) { alert(d.mensaje); return; }
@@ -3991,6 +4081,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (buscadorColonia.value.trim()) mostrarSugerenciasColonias(buscadorColonia.value);
         });
     }
+    const buscadorColoniaNuevo = document.getElementById('nuevoClienteBuscarColonia');
+    if (buscadorColoniaNuevo) {
+        buscadorColoniaNuevo.addEventListener('input', () => mostrarSugerenciasColoniasNuevoCliente(buscadorColoniaNuevo.value));
+        buscadorColoniaNuevo.addEventListener('focus', () => {
+            if (buscadorColoniaNuevo.value.trim()) mostrarSugerenciasColoniasNuevoCliente(buscadorColoniaNuevo.value);
+        });
+    }
     document.addEventListener('click', e => {
         const listaEl = document.getElementById('listaClientesDomicilio');
         const seccion = document.getElementById('seccionClienteDomicilio');
@@ -4002,6 +4099,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const wrap = document.getElementById('clienteColoniaSelectWrap');
         const ul = document.getElementById('listaColoniasCliente');
         if (wrap && ul && !wrap.contains(e.target)) {
+            ul.style.display = 'none';
+        }
+    });
+    document.addEventListener('click', e => {
+        const wrap = document.getElementById('nuevoClienteBuscarColonia')?.closest('.form-group');
+        const ul = document.getElementById('listaColoniasNuevoCliente');
+        if (ul && wrap && !wrap.contains(e.target)) {
             ul.style.display = 'none';
         }
     });

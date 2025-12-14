@@ -8,7 +8,14 @@ function showAppMsg(msg) {
 
 async function cargarMesasCrud() {
   try {
-    const resp = await fetch('../../api/mesas/listar_mesas.php');
+    const base = window.API_LISTAR_MESAS || '../../api/mesas/listar_mesas.php';
+    // Resolver relativo desde la ubicación actual para conservar prefijo (/rest)
+    const u = base.includes('http') ? new URL(base) : new URL(base, window.location.href);
+    if (window.usuarioActual && window.usuarioActual.id) {
+      u.searchParams.set('user_id', window.usuarioActual.id);
+      u.searchParams.set('usuario_id', window.usuarioActual.id);
+    }
+    const resp = await fetch(u.toString());
     const data = await resp.json();
     if (!data.success) { showAppMsg(data.mensaje || 'Error al listar'); return; }
     const tbody = document.querySelector('#tablaMesas tbody');

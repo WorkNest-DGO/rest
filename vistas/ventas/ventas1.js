@@ -203,6 +203,16 @@ const normalizarClienteTexto = (txt) => {
 // ==== [INICIO BLOQUE valida: validación para cierre de corte] ====
 const VENTAS_URL = typeof API_LISTAR_VENTAS !== 'undefined' ? API_LISTAR_VENTAS : '../../api/ventas/listar_ventas.php';
 const MESAS_URL = typeof API_LISTAR_MESAS !== 'undefined' ? API_LISTAR_MESAS : '../../api/mesas/listar_mesas.php';
+function buildMesasSimpleUrl() {
+    const base = '../../api/mesas/mesas.php';
+    const u = new URL(base, window.location.href);
+    if (window.usuarioId) {
+        u.searchParams.set('user_id', window.usuarioId);
+        u.searchParams.set('usuario_id', window.usuarioId);
+    }
+    if (window.sedeId) u.searchParams.set('sede_id', window.sedeId);
+    return u.toString();
+}
 
 // Devuelve { hayVentasActivas, hayMesasOcupadas, bloqueado }
 async function hayBloqueosParaCerrarCorte() {
@@ -1894,7 +1904,7 @@ async function cargarMeseros() {
 
 async function cargarMesas(preserveMesaId) {
     try {
-        const resp = await fetch('../../api/mesas/mesas.php');
+        const resp = await fetch(buildMesasSimpleUrl());
         const data = await resp.json();
         if (data.success) {
             // Solo mesas disponibles (estado = 'libre')

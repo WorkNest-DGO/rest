@@ -311,8 +311,13 @@ ob_start();
             <input type="text" class="form-control" id="nuevoClienteTelefono">
           </div>
           <div class="form-group">
-            <label for="nuevoClienteColonia">Colonia</label>
-            <select id="nuevoClienteColonia" class="form-control" required></select>
+            <label for="nuevoClienteBuscarColonia">Colonia</label>
+            <div class="position-relative">
+              <input type="text" class="form-control" id="nuevoClienteBuscarColonia" placeholder="Buscar colonia...">
+              <ul class="list-group list-group-flush position-absolute w-100" id="listaColoniasNuevoCliente" style="z-index: 11;"></ul>
+            </div>
+            <select id="nuevoClienteColonia" class="form-control d-none" required></select>
+            <small class="text-muted">Escribe para buscar por coincidencia de texto y selecciona la colonia.</small>
           </div>
           <div class="form-group">
             <label for="nuevoClienteCalle">Calle</label>
@@ -686,6 +691,10 @@ ob_start();
 <script>
     // ID de usuario proveniente de la sesión para operaciones en JS
     window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;
+    // URL de mesas filtrada por usuario para evitar mostrar todas las sedes
+    window.API_LISTAR_MESAS = '../../api/mesas/listar_mesas.php?user_id=' + encodeURIComponent(window.usuarioId || '') + '&usuario_id=' + encodeURIComponent(window.usuarioId || '');
+    // ID de sede actual de la sesión (para validar corte por sede)
+    window.sedeId = <?php echo json_encode($_SESSION['sede_id'] ?? null); ?>;
     // ID de la venta actualmente consultada en detalle
     window.ventaIdActual = null;
     // ID de corte actual si existe en la sesión

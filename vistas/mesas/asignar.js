@@ -13,7 +13,13 @@ const itemsPorPaginaAsig = 20;
 const usuarioId = window.usuarioId || 0;
 
 async function cargarDatos() {
-    const m = await fetch('../../api/mesas/mesas.php').then(r => r.json());
+    const base = '../../api/mesas/mesas.php';
+    const u = new URL(base, window.location.href);
+    if (usuarioId) {
+        u.searchParams.set('user_id', usuarioId);
+        u.searchParams.set('usuario_id', usuarioId);
+    }
+    const m = await fetch(u.toString()).then(r => r.json());
     const u = await fetch('../../api/mesas/meseros.php').then(r => r.json());
     if (!m.success || !u.success) {
         alert('Error al cargar datos');

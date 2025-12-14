@@ -27,16 +27,95 @@ if (!$corte_id) {
     ]);
     exit;
 }
+// Helpers de schema
+function columna_existe($db, $tabla, $columna) {
+    $tablaSafe = $db->real_escape_string($tabla);
+    $colSafe = $db->real_escape_string($columna);
+    $sql = "SHOW COLUMNS FROM `{$tablaSafe}` LIKE '{$colSafe}'";
+    $res = $db->query($sql);
+    if (!$res) return false;
+    $exists = $res->num_rows > 0;
+    $res->close();
+    return $exists;
+}
+
+// Obtener sede asociada al corte (o del usuario del corte) para filtrar pendientes por sede
+$sede_corte_id = null;
+$sede_usuario_corte = null;
+$corteTieneSede = columna_existe($conn, 'corte_caja', 'sede_id');
+$usuariosTienenSede = columna_existe($conn, 'usuarios', 'sede_id');
+// Intentar obtener sede_id y usuario_id del corte (si la columna existe)
+$corteInfoSql = $corteTieneSede ? "SELECT sede_id, usuario_id FROM corte_caja WHERE id = ? LIMIT 1" : "SELECT usuario_id FROM corte_caja WHERE id = ? LIMIT 1";
+$stmtCorteInfo = $conn->prepare($corteInfoSql);
+if ($stmtCorteInfo) {
+    $stmtCorteInfo->bind_param('i', $corte_id);
+    if ($stmtCorteInfo->execute()) {
+        $rsCorteInfo = $stmtCorteInfo->get_result();
+        if ($row = $rsCorteInfo->fetch_assoc()) {
+            if ($corteTieneSede && isset($row['sede_id'])) {
+                $sede_corte_id = (int)$row['sede_id'];
+            }
+            if (isset($row['usuario_id'])) {
+                $usuario_corte_id = (int)$row['usuario_id'];
+                if ($usuariosTienenSede && $usuario_corte_id) {
+                    $stmtUsu = $conn->prepare("SELECT sede_id FROM usuarios WHERE id = ? LIMIT 1");
+                    if ($stmtUsu) {
+                        $stmtUsu->bind_param('i', $usuario_corte_id);
+                        if ($stmtUsu->execute()) {
+                            $rsUsu = $stmtUsu->get_result();
+                            if ($urow = $rsUsu->fetch_assoc()) {
+                                $sede_usuario_corte = isset($urow['sede_id']) ? (int)$urow['sede_id'] : null;
+                            }
+                        }
+                        $stmtUsu->close();
+                    }
+                }
+            }
+        }
+    }
+    $stmtCorteInfo->close();
+}
+$sedeFiltro = $sede_corte_id ?: $sede_usuario_corte;
 // ==== [INICIO BLOQUE valida: guardia de pendientes] ====
-function contar($db, $sql) {
-  $res = $db->query($sql);
-  if (!$res) return 0;
-  $row = $res->fetch_assoc();
+function contar($db, $sql, $params = [], $types = '') {
+  $stmt = $db->prepare($sql);
+  if (!$stmt) return 0;
+  if ($params && $types) $stmt->bind_param($types, ...$params);
+  $stmt->execute();
+  $res = $stmt->get_result();
+  $row = $res ? $res->fetch_assoc() : null;
+  $stmt->close();
   return (int)($row['c'] ?? 0);
 }
 
-$ventasActivas = contar($conn, "SELECT COUNT(*) AS c FROM ventas WHERE estatus='activa'");
-$mesasOcupadas = contar($conn, "SELECT COUNT(*) AS c FROM mesas  WHERE estado='ocupada'");
+// Construir filtros seguros según columnas disponibles
+$ventasTieneSede = columna_existe($conn, 'ventas', 'sede_id');
+$mesasTieneSede  = columna_existe($conn, 'mesas', 'sede_id');
+$ventasTieneCorte = columna_existe($conn, 'ventas', 'corte_id');
+
+$ventasWhere = "estatus='activa'";
+$ventasParams = [];
+$ventasTypes = '';
+if ($ventasTieneCorte) { // priorizar filtrar por corte
+    $ventasWhere .= " AND corte_id = ?";
+    $ventasParams[] = $corte_id;
+    $ventasTypes   .= 'i';
+} elseif ($sedeFiltro && $ventasTieneSede) { // fallback a sede si existe
+    $ventasWhere .= " AND sede_id = ?";
+    $ventasParams[] = $sedeFiltro;
+    $ventasTypes   .= 'i';
+}
+$ventasActivas = contar($conn, "SELECT COUNT(*) AS c FROM ventas WHERE $ventasWhere", $ventasParams, $ventasTypes);
+
+$mesasWhere = "estado='ocupada'";
+$mesasParams = [];
+$mesasTypes = '';
+if ($sedeFiltro && $mesasTieneSede) {
+    $mesasWhere .= " AND sede_id = ?";
+    $mesasParams[] = $sedeFiltro;
+    $mesasTypes   .= 'i';
+}
+$mesasOcupadas = contar($conn, "SELECT COUNT(*) AS c FROM mesas WHERE $mesasWhere", $mesasParams, $mesasTypes);
 
 if ($ventasActivas > 0 || $mesasOcupadas > 0) {
   http_response_code(400);

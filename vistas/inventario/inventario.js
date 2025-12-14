@@ -9,6 +9,8 @@ let productos = [];
 const itemsPorPaginaInv = 20;
 let paginaActualInv = 1;
 let categoriasInv = [];
+let productoEditandoId = null;
+let filtroInventario = '';
 
 async function cargarCategoriasInventario() {
     try {
@@ -58,11 +60,22 @@ function renderTablaInventario(pagina = 1) {
     const tbody = document.querySelector('#tablaProductos tbody');
     if (!tbody) return;
 
-    const totalPaginas = Math.max(1, Math.ceil(productos.length / itemsPorPaginaInv));
+    const normalizar = (txt) => (txt || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const term = normalizar(filtroInventario);
+    const listado = term
+        ? productos.filter(p => {
+            const nombre = normalizar(p.nombre);
+            const desc = normalizar(p.descripcion);
+            const cat = normalizar(p.categoria_nombre || p.categoria || '');
+            return nombre.includes(term) || desc.includes(term) || cat.includes(term);
+        })
+        : productos;
+
+    const totalPaginas = Math.max(1, Math.ceil(listado.length / itemsPorPaginaInv));
     paginaActualInv = Math.min(Math.max(1, pagina), totalPaginas);
     const inicio = (paginaActualInv - 1) * itemsPorPaginaInv;
     const fin = inicio + itemsPorPaginaInv;
-    const visibles = productos.slice(inicio, fin);
+    const visibles = listado.slice(inicio, fin);
 
     tbody.innerHTML = '';
     visibles.forEach(p => {
@@ -78,7 +91,7 @@ function renderTablaInventario(pagina = 1) {
             <td>${p.descripcion || ''}</td>
             <td>${p.activo == 1 ? '<span class="badge bg-success">Sí</span>' : '<span class="badge bg-danger">No</span>'}</td>
             <td>
-                <button class="actualizar btn custom-btn btn-sm" data-id="${p.id}">Editar existencia</button>
+                <button class="actualizar btn custom-btn btn-sm" data-id="${p.id}">Editar</button>
                 <button class="eliminar btn custom-btn btn-sm ms-2" data-id="${p.id}">Eliminar</button>
             </td>
         `;
@@ -88,8 +101,7 @@ function renderTablaInventario(pagina = 1) {
     // Eventos visibles
     tbody.querySelectorAll('button.actualizar').forEach(btn => {
         btn.addEventListener('click', () => {
-            const input = btn.closest('tr').querySelector('.existencia');
-            actualizarExistencia(btn.dataset.id, input.value);
+            abrirModalEditar(btn.dataset.id);
         });
     });
     tbody.querySelectorAll('button.eliminar').forEach(btn => {
@@ -194,12 +206,30 @@ async function eliminarProducto(id) {
 }
 
 function abrirModalAgregar() {
+    productoEditandoId = null;
+    document.getElementById('modalAgregarTitulo').textContent = 'Agregar Producto';
+    document.getElementById('formAgregar').reset();
     showModal('#modalAgregar');
 }
 
 function cerrarModalAgregar() {
     hideModal('#modalAgregar');
     document.getElementById('formAgregar').reset();
+    productoEditandoId = null;
+}
+
+function abrirModalEditar(id) {
+    const prod = productos.find(p => String(p.id) === String(id));
+    if (!prod) return;
+    productoEditandoId = prod.id;
+    document.getElementById('modalAgregarTitulo').textContent = 'Editar Producto';
+    document.getElementById('nombreProducto').value = prod.nombre || '';
+    document.getElementById('precioProducto').value = prod.precio || '';
+    document.getElementById('descripcionProducto').value = prod.descripcion || '';
+    document.getElementById('existenciaProducto').value = prod.existencia || 0;
+    const catSel = document.getElementById('categoriaProducto');
+    if (catSel) catSel.value = prod.categoria_id || '';
+    showModal('#modalAgregar');
 }
 
 document.getElementById('formAgregar').addEventListener('submit', async (e) => {
@@ -216,15 +246,20 @@ document.getElementById('formAgregar').addEventListener('submit', async (e) => {
     }
 
     const payload = { nombre, precio, descripcion, existencia, categoria_id: categoriaId };
+    let url = '../../api/inventario/agregar_producto.php';
+    if (productoEditandoId) {
+        payload.id = productoEditandoId;
+        url = '../../api/inventario/actualizar_producto.php';
+    }
     try {
-        const resp = await fetch('../../api/inventario/agregar_producto.php', {
+        const resp = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
         const data = await resp.json();
         if (data.success) {
-            alert(data.resultado?.mensaje || 'Producto agregado');
+            alert(data.resultado?.mensaje || (productoEditandoId ? 'Producto actualizado' : 'Producto agregado'));
             cerrarModalAgregar();
             cargarProductos();
         } else {
@@ -232,7 +267,7 @@ document.getElementById('formAgregar').addEventListener('submit', async (e) => {
         }
     } catch (err) {
         console.error(err);
-        alert('Error al agregar producto');
+        alert('Error al guardar producto');
     }
 });
 
@@ -258,5 +293,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         await cargarProductos();
     }
     document.getElementById('agregarProducto').addEventListener('click', abrirModalAgregar);
+    const busc = document.getElementById('buscarInventario');
+    if (busc) {
+        busc.addEventListener('input', () => {
+            filtroInventario = busc.value || '';
+            renderTablaInventario(1);
+        });
+    }
 });
-

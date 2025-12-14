@@ -40,6 +40,11 @@ ob_start();
       <ul id="paginadorInv" class="pagination justify-content-center"></ul>
     </div>
   </div>
+  <div class="row mt-2 mb-3">
+    <div class="col-md-6 offset-md-3">
+      <input type="search" id="buscarInventario" class="form-control" placeholder="Buscar producto por nombre, descripción o categoría">
+    </div>
+  </div>
   <div class="table-responsive">
     <table id="tablaProductos" class="styled-table">
       <thead>
@@ -65,7 +70,7 @@ ob_start();
     <div class="modal-content">
       <form id="formAgregar">
         <div class="modal-header">
-          <h5 class="modal-title">Agregar Producto</h5>
+          <h5 class="modal-title" id="modalAgregarTitulo">Agregar Producto</h5>
           <button type="button" class="close" onclick="cerrarModalAgregar()" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>

@@ -2,8 +2,62 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
+function column_exists(mysqli $db, string $table, string $column): bool {
+    $tableSafe = $db->real_escape_string($table);
+    $colSafe = $db->real_escape_string($column);
+    $sql = "SHOW COLUMNS FROM `{$tableSafe}` LIKE '{$colSafe}'";
+    $res = $db->query($sql);
+    if (!$res) return false;
+    $ok = $res->num_rows > 0;
+    $res->close();
+    return $ok;
+}
+
+// Determinar sede (prioridad: user_id/usuario_id en query -> usuario en sesión -> sede en sesión)
+$sedeFiltro = null;
+$userIdFromQuery = isset($_GET['user_id']) ? (int)$_GET['user_id'] : (isset($_GET['usuario_id']) ? (int)$_GET['usuario_id'] : null);
+$uid = $userIdFromQuery && $userIdFromQuery > 0
+    ? $userIdFromQuery
+    : (isset($_SESSION['usuario_id']) ? (int)$_SESSION['usuario_id'] : null);
+
+$colUsuarioSede = null;
+if (column_exists($conn, 'usuarios', 'sede_id')) {
+    $colUsuarioSede = 'sede_id';
+} elseif (column_exists($conn, 'usuarios', 'sede')) {
+    $colUsuarioSede = 'sede';
+}
+if ($uid && $colUsuarioSede) {
+    $stmtSede = $conn->prepare("SELECT {$colUsuarioSede} AS sede_val FROM usuarios WHERE id = ? LIMIT 1");
+    if ($stmtSede) {
+        $stmtSede->bind_param('i', $uid);
+        if ($stmtSede->execute()) {
+            $rs = $stmtSede->get_result();
+            if ($row = $rs->fetch_assoc()) {
+                if (isset($row['sede_val'])) $sedeFiltro = (int)$row['sede_val'];
+            }
+        }
+        $stmtSede->close();
+    }
+}
+if ($sedeFiltro === null) {
+    if (isset($_SESSION['sede_id'])) {
+        $sedeFiltro = (int)$_SESSION['sede_id'];
+    } elseif (isset($_SESSION['sede'])) {
+        $sedeFiltro = (int)$_SESSION['sede'];
+    }
+}
+
+// Si se solicitó user_id y no se pudo determinar sede, abortar para no exponer todas las mesas
+if ($userIdFromQuery && $sedeFiltro === null) {
+    error('No se pudo determinar la sede del usuario');
+}
+// Si no hay usuario en sesión ni en query, no listar para evitar exponer todas las mesas
+if ($uid === null && $sedeFiltro === null) {
+    error('Debe indicar un usuario o sede para listar mesas');
+}
+
 // Obtener mesas y, en su caso, la venta activa asociada
-$query = "SELECT m.id, m.nombre, m.estado, m.capacidad, m.mesa_principal_id,
+$sql = "SELECT m.id, m.nombre, m.estado, m.capacidad, m.mesa_principal_id,
                 m.area_id, m.ticket_enviado, COALESCE(ca.nombre, m.area) AS area_nombre,
                 m.estado_reserva, m.nombre_reserva, m.fecha_reserva,
                 m.tiempo_ocupacion_inicio, m.usuario_id, m.alineacion_id,
@@ -16,9 +70,23 @@ $query = "SELECT m.id, m.nombre, m.estado, m.capacidad, m.mesa_principal_id,
           LEFT JOIN usuarios u ON m.usuario_id = u.id
           LEFT JOIN alineacion al ON m.alineacion_id = al.id
           LEFT JOIN mesas mp ON m.mesa_principal_id = mp.id
-          LEFT JOIN ventas v ON v.mesa_id = m.id AND v.estatus = 'activa'
-          ORDER BY m.id";
-$result = $conn->query($query);
+          LEFT JOIN ventas v ON v.mesa_id = m.id AND v.estatus = 'activa'";
+if ($sedeFiltro !== null) {
+    $sql .= " WHERE m.sede = ?";
+}
+$sql .= " ORDER BY m.id";
+
+if ($sedeFiltro !== null) {
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        error('Error al preparar consulta de mesas: ' . $conn->error);
+    }
+    $stmt->bind_param('i', $sedeFiltro);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} else {
+    $result = $conn->query($sql);
+}
 
 if (!$result) {
     error('Error al obtener mesas: ' . $conn->error);
