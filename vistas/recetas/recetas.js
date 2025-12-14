@@ -6,6 +6,7 @@ function showAppMsg(msg) {
 let catalogoInsumos = [];
 let catalogoProductos = [];
 const imagenDefault = '../../utils/img/default.jpg';
+const normalizarRecetaTexto = (txt) => (txt || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 function mostrarImagenProducto(id) {
     const img = document.getElementById('imgProducto');
@@ -30,20 +31,83 @@ function mostrarImagenProducto(id) {
     frm.style.display = 'block';
 }
 
+function filtrarProductosPorTexto(termino = '', lista = catalogoProductos) {
+    const needle = normalizarRecetaTexto((termino || '').trim());
+    if (!needle) return [];
+    return (lista || []).filter(p => normalizarRecetaTexto(p.nombre || '').includes(needle)).slice(0, 50);
+}
+
+function mostrarSugerenciasProductos(termino = '', lista = catalogoProductos) {
+    const ul = document.getElementById('listaProductosReceta');
+    if (!ul) return;
+    ul.innerHTML = '';
+    const coincidencias = filtrarProductosPorTexto(termino, lista);
+    coincidencias.forEach(p => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item list-group-item-action';
+        li.textContent = p.nombre || '';
+        li.addEventListener('click', () => seleccionarProductoReceta(p));
+        ul.appendChild(li);
+    });
+    ul.style.display = coincidencias.length ? 'block' : 'none';
+}
+
+function seleccionarProductoReceta(prod) {
+    const select = document.getElementById('producto_id');
+    const busc = document.getElementById('buscarProductoReceta');
+    const ul = document.getElementById('listaProductosReceta');
+    if (select && prod) {
+        let opt = select.querySelector(`option[value="${prod.id}"]`);
+        if (!opt) {
+            opt = document.createElement('option');
+            opt.value = prod.id;
+            opt.textContent = prod.nombre || '';
+            select.appendChild(opt);
+        }
+        select.value = prod.id;
+        onProductoSeleccionado(prod.id);
+    }
+    if (busc) busc.value = prod ? (prod.nombre || '') : '';
+    if (ul) ul.style.display = 'none';
+}
+
+function onProductoSeleccionado(id) {
+    const prod = catalogoProductos.find(p => String(p.id) === String(id));
+    const busc = document.getElementById('buscarProductoReceta');
+    if (busc) busc.value = prod ? (prod.nombre || '') : '';
+    const val = parseInt(id);
+    if (!isNaN(val)) {
+        mostrarImagenProducto(val);
+        cargarReceta(val);
+    } else {
+        mostrarImagenProducto(null);
+        cargarReceta(null);
+    }
+}
+
 async function cargarProductos() {
     try {
         const resp = await fetch('../../api/inventario/listar_productos.php');
         const data = await resp.json();
         if (data.success) {
-            catalogoProductos = data.resultado;
+            const lista = Array.isArray(data.resultado) ? data.resultado : ((data.resultado && data.resultado.productos) || []);
+            catalogoProductos = lista;
             const select = document.getElementById('producto_id');
-            select.innerHTML = '<option value="">--Selecciona--</option>';
-            data.resultado.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.id;
-                opt.textContent = p.nombre;
-                select.appendChild(opt);
-            });
+            if (select) {
+                const valorPrevio = select.value;
+                select.innerHTML = '<option value="">--Selecciona--</option>';
+                lista.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.nombre;
+                    select.appendChild(opt);
+                });
+                if (valorPrevio) select.value = valorPrevio;
+            }
+            const busc = document.getElementById('buscarProductoReceta');
+            if (busc && busc.value.trim()) {
+                mostrarSugerenciasProductos(busc.value, lista);
+            }
         } else {
             alert(data.mensaje);
         }
@@ -319,17 +383,33 @@ function abrirModalCopiar() {
 document.addEventListener('DOMContentLoaded', () => {
     cargarProductos();
     cargarInsumos();
+    const listaProd = document.getElementById('listaProductosReceta');
+    if (listaProd) listaProd.style.display = 'none';
     document.getElementById('agregarFila').addEventListener('click', agregarFila);
     document.getElementById('guardarReceta').addEventListener('click', guardarReceta);
     document.getElementById('subirImagen').addEventListener('click', subirImagenProducto);
-    document.getElementById('producto_id').addEventListener('change', (e) => {
-        const id = parseInt(e.target.value);
-        if (!isNaN(id)) {
-            mostrarImagenProducto(id);
-            cargarReceta(id);
-        } else {
-            mostrarImagenProducto(null);
-            cargarReceta(null);
+    document.getElementById('producto_id').addEventListener('change', (e) => onProductoSeleccionado(e.target.value));
+    const buscadorProd = document.getElementById('buscarProductoReceta');
+    if (buscadorProd) {
+        buscadorProd.addEventListener('input', () => mostrarSugerenciasProductos(buscadorProd.value));
+        buscadorProd.addEventListener('focus', () => {
+            if (buscadorProd.value.trim()) mostrarSugerenciasProductos(buscadorProd.value);
+        });
+        buscadorProd.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') {
+                const coincidencias = filtrarProductosPorTexto(buscadorProd.value, catalogoProductos);
+                if (coincidencias.length) {
+                    seleccionarProductoReceta(coincidencias[0]);
+                    ev.preventDefault();
+                }
+            }
+        });
+    }
+    document.addEventListener('click', (e) => {
+        const wrap = document.querySelector('.selector-producto-receta');
+        const ul = document.getElementById('listaProductosReceta');
+        if (wrap && ul && !wrap.contains(e.target)) {
+            ul.style.display = 'none';
         }
     });
     document.getElementById('copiarReceta').addEventListener('click', abrirModalCopiar);

@@ -16,8 +16,11 @@ async function cargarCategoriasInventario() {
     try {
         const resp = await fetch('../../api/inventario/listar_categorias.php');
         const data = await resp.json();
-        if (data && data.success && Array.isArray(data.categorias)) {
-            categoriasInv = data.categorias;
+        const lista = (data && data.resultado && data.resultado.categorias)
+            ? data.resultado.categorias
+            : data && data.categorias;
+        if (data && data.success && Array.isArray(lista)) {
+            categoriasInv = lista;
             pintarSelectCategorias();
         } else {
             categoriasInv = [];
@@ -228,7 +231,7 @@ function abrirModalEditar(id) {
     document.getElementById('descripcionProducto').value = prod.descripcion || '';
     document.getElementById('existenciaProducto').value = prod.existencia || 0;
     const catSel = document.getElementById('categoriaProducto');
-    if (catSel) catSel.value = prod.categoria_id || '';
+    if (catSel) catSel.value = prod.categoria_id != null ? String(prod.categoria_id) : '';
     showModal('#modalAgregar');
 }
 

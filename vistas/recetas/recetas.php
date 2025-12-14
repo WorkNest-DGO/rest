@@ -32,9 +32,11 @@ ob_start();
 <div class="container mt-5 mb-5">
     <h1 class="section-header">Recetas de Platillos</h1>
 
-    <div class="form-group">
-        <label for="producto_id">Platillo:</label>
-        <select id="producto_id" class="form-control"></select>
+    <div class="form-group position-relative selector-producto-receta">
+        <label for="buscarProductoReceta">Platillo:</label>
+        <input type="text" id="buscarProductoReceta" class="form-control" placeholder="Buscar platillo...">
+        <ul class="list-group list-group-flush position-absolute w-100" id="listaProductosReceta" style="z-index: 10;"></ul>
+        <select id="producto_id" class="form-control d-none"></select>
     </div>
 
     <div id="vistaProducto" class="product-view">
