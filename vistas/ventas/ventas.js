@@ -108,6 +108,7 @@ async function cargarHistorial(page = currentPage) {
                     ? (parseInt(v.entregado) === 1 ? 'Entregado' : 'No entregado')
                     : 'N/A';
                 row.innerHTML = `
+                    <td>${id ?? 'N/A'}</td>
                     <td>${v.folio ? v.folio : 'N/A'}</td>
                     <td>${fechaMostrar}</td>
                     <td>${totalMostrar}</td>

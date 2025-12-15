@@ -268,6 +268,7 @@ ob_start();
     <table id="historial" class="table">
       <thead>
         <tr>
+          <th>ID</th>
           <th>Folio</th>
           <th>Fecha</th>
           <th>Total</th>
