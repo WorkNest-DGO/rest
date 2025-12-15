@@ -696,7 +696,7 @@ async function verificarCorte() {
             cont.innerHTML = '';
 
             if (data.success && data.resultado.abierto) {
-                cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCorte">Cerrar corte</button> <button id="btnCorteTemporal" class="btn btn-warning">Corte Temporal</button> <button id="btnPropinasUsuarios" class="btn custom-btn">Propinas por usuario</button> <button id="btnEnviosRepartidor" class="btn custom-btn">Total envios</button>`;
+                cont.innerHTML = `<button class="btn custom-btn" id="btnCerrarCorte">Cerrar corte</button> <button id="btnCorteTemporal" class="btn btn-warning">Corte Temporal</button> <button id="btnPropinasUsuarios" class="btn custom-btn">Propinas por usuario</button> <button id="btnEnviosRepartidor" class="btn custom-btn">Total envios</button> <button id="btnVentasOnline" class="btn custom-btn">Venta online:</button>`;
                 const btnCerrar = document.getElementById('btnCerrarCorte');
                 if (btnCerrar) {
                     btnCerrar.addEventListener('click', (ev) => {
@@ -709,6 +709,8 @@ async function verificarCorte() {
                 if (btnProp) btnProp.addEventListener('click', abrirPropinasPorUsuario);
                 const btnEnvios = document.getElementById('btnEnviosRepartidor');
                 if (btnEnvios) btnEnvios.addEventListener('click', abrirEnviosRepartidor);
+                const btnVentasOnline = document.getElementById('btnVentasOnline');
+                if (btnVentasOnline) btnVentasOnline.addEventListener('click', abrirVentasOnline);
                 habilitarCobro();
             } else {
                 cont.innerHTML = `<button class="btn custom-btn" id="btnAbrirCaja">Abrir caja</button>`;
@@ -1084,6 +1086,51 @@ async function abrirEnviosRepartidor() {
     } catch (e) {
         console.error(e);
         alert('Error de red al consultar envios');
+    }
+}
+
+// Consulta y muestra el conteo de ventas online/plataformas
+async function abrirVentasOnline() {
+    try {
+        const resp = await fetch('../../api/ventas/ventas_online.php', { cache: 'no-store' });
+        const data = await resp.json();
+        if (!data || !data.success) {
+            alert((data && data.mensaje) || 'No se pudo consultar las ventas online');
+            return;
+        }
+        const payload = data.resultado || {};
+        const grupos = Array.isArray(payload.grupos) ? payload.grupos : [];
+        const cont = document.getElementById('ventaOnlineContenido');
+        if (!cont) return;
+
+        if (!grupos.length) {
+            cont.innerHTML = '<div class="text-center text-muted">Sin ventas registradas.</div>';
+            showModal('#modalVentaOnline');
+            return;
+        }
+
+        let html = '<div class="table-responsive"><table class="styled-table">';
+        html += '<thead><tr><th>Concepto</th><th>Ventas</th></tr></thead><tbody>';
+        grupos.forEach(g => {
+            const nombre = g.nombre || `ID ${g.id ?? ''}`;
+            const total = Number(g.ventas || 0);
+            html += `<tr><td>${nombre}</td><td>${total}</td></tr>`;
+        });
+        html += '</tbody></table></div>';
+
+        const meta = [];
+        if (payload.sede_id) meta.push(`Sede ${payload.sede_id}`);
+        if (payload.corte_id) meta.push(`Corte ${payload.corte_id}`);
+        else if (payload.fecha) meta.push(`Fecha ${payload.fecha}`);
+        if (meta.length) {
+            html += `<p class="text-end mb-0 mt-2"><small>${meta.join(' | ')}</small></p>`;
+        }
+
+        cont.innerHTML = html;
+        showModal('#modalVentaOnline');
+    } catch (e) {
+        console.error(e);
+        alert('Error al consultar ventas online');
     }
 }
 
