@@ -45,7 +45,7 @@ try {
                     FROM corte_caja cc
                     JOIN desglose_corte dc ON dc.corte_id = cc.id
                     LEFT JOIN catalogo_denominaciones cd ON cd.id = dc.denominacion_id
-                    WHERE cc.id = ?";
+                    WHERE cc.id = ? AND (dc.orden = 'cierre' OR dc.orden IS NULL)";
     $stmt = $conn->prepare($sqlDesglose);
     $stmt->bind_param('i', $id);
     $stmt->execute();

@@ -1902,11 +1902,26 @@ a:focus {
     display: none;
     z-index: 1000;
   }
-
+  .modal-body1 {
+    position: relative;
+    -ms-flex: 1 1 auto;
+    flex: 1 1 auto;
+    padding: 1rem
+  }
+  /* Modal apertura de caja: centrada y con scroll interno */
+  #modalAbrirCaja .modal-content {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  #modalAbrirCaja .modal-body1 {
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+  }
   /* Fix Mesas modal: product dropdown should overlay footer */
   #modalVenta .modal-content { overflow: visible; }
   /* El body del modal no debe crecer más que la ventana: hace scroll interno */
-  #modalVenta .modal-body {
+  #modalVenta .modal-body1 {
     max-height: calc(100vh - 220px); /* header + footer aprox */
     overflow-y: auto;
     /* espacio extra para desplegar la lista sin chocar con el footer */

@@ -59,7 +59,7 @@ $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
 $countQuery = "SELECT COUNT(DISTINCT v.corte_id) AS total
                FROM vw_corte_resumen v
                JOIN corte_caja cc ON cc.id = v.corte_id
-               LEFT JOIN desglose_corte dc ON dc.corte_id = v.corte_id
+               LEFT JOIN desglose_corte dc ON dc.corte_id = v.corte_id AND (dc.orden = 'cierre' OR dc.orden IS NULL)
                $where";
 $stmt = $conn->prepare($countQuery);
 if (!$stmt) {
@@ -85,7 +85,7 @@ $query = "SELECT v.corte_id AS id, v.fecha_inicio, v.fecha_fin, v.total, v.cajer
                  SUM(CASE WHEN dc.tipo_pago='cheque' THEN cd.valor*dc.cantidad ELSE 0 END) AS cheque
           FROM vw_corte_resumen v
           JOIN corte_caja cc ON cc.id = v.corte_id
-          LEFT JOIN desglose_corte dc ON dc.corte_id = v.corte_id
+          LEFT JOIN desglose_corte dc ON dc.corte_id = v.corte_id AND (dc.orden = 'cierre' OR dc.orden IS NULL)
           LEFT JOIN catalogo_denominaciones cd ON cd.id = dc.denominacion_id
           $where
           GROUP BY v.corte_id

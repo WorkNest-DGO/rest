@@ -734,13 +734,13 @@ async function abrirCaja() {
         modal.setAttribute('tabindex', '-1');
 
         const dialog = document.createElement('div');
-        dialog.className = 'modal-dialog';
+        dialog.className = 'modal-dialog modal-dialog-centered modal-dialog-scrollable';
 
         const content = document.createElement('div');
         content.className = 'modal-content';
 
         const body = document.createElement('div');
-        body.className = 'modal-body bg-dark text-white';
+        body.className = 'modal-body1 bg-dark text-white';
 
         const labelIntro = document.createElement('p');
         labelIntro.textContent = 'Captura el desglose de denominaciones para abrir la caja. El total calculado se usará como fondo de apertura.';
@@ -909,11 +909,27 @@ async function abrirCaja() {
                         await fetch('../../api/corte_caja/guardar_desglose.php', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ corte_id: corteIdActual, detalle })
+                            body: JSON.stringify({ corte_id: corteIdActual, detalle, orden: 'apertura' })
                         });
                     } catch (e) {
                         console.warn('No se pudo guardar el desglose de apertura', e);
                     }
+                }
+                try {
+                    await fetch('../../api/corte_caja/guardar_fondo.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            usuario_id: usuarioId,
+                            monto: montoApertura,
+                            corte_id: corteIdActual,
+                            orden: 'apertura',
+                            registrar_desglose: true,
+                            solo_desglose: true
+                        })
+                    });
+                } catch (e) {
+                    console.warn('No se pudo registrar orden de apertura en desglose', e);
                 }
 
                 hideModal(modal);
@@ -1475,7 +1491,7 @@ function mostrarModalDesglose(dataApi) {
             const resp = await fetch('../../api/corte_caja/guardar_desglose.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ corte_id: corteIdActual, detalle })
+                body: JSON.stringify({ corte_id: corteIdActual, detalle, orden: 'cierre' })
             });
             const data = await resp.json();
             if (data.success) {

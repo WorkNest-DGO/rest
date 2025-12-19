@@ -9,6 +9,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = json_decode(file_get_contents('php://input'), true);
 $corte_id = $input['corte_id'] ?? ($_SESSION['corte_id'] ?? null);
 $detalle   = $input['detalle'] ?? null;
+$orden = $input['orden'] ?? 'cierre';
+$orden = strtolower(trim((string)$orden));
+if ($orden !== 'apertura' && $orden !== 'cierre') {
+    $orden = 'cierre';
+}
 
 if (!$corte_id || !is_array($detalle)) {
     error('Datos incompletos');
@@ -78,7 +83,7 @@ if (!$filasValidas) {
 }
 
 $conn->begin_transaction();
-$ins = $conn->prepare('INSERT INTO desglose_corte (corte_id, denominacion, cantidad, tipo_pago, denominacion_id) VALUES (?, ?, ?, ?, ?)');
+$ins = $conn->prepare('INSERT INTO desglose_corte (corte_id, denominacion, cantidad, tipo_pago, denominacion_id, orden) VALUES (?, ?, ?, ?, ?, ?)');
 if (!$ins) {
     $conn->rollback();
     error('Error al preparar inserción: ' . $conn->error);
@@ -87,7 +92,7 @@ if (!$ins) {
 foreach ($filasValidas as $f) {
     [$denom, $cant, $tipo, $denomId] = $f;
     // cantidad puede contener decimales
-    $ins->bind_param('iddsi', $corte_id, $denom, $cant, $tipo, $denomId);
+    $ins->bind_param('iddsis', $corte_id, $denom, $cant, $tipo, $denomId, $orden);
     if (!$ins->execute()) {
         $conn->rollback();
         error('Error al guardar desglose: ' . $ins->error);

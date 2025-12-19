@@ -573,14 +573,15 @@ foreach ($subProcesadas as $sub) {
 
     if ($tipo_pago === 'boucher' || $tipo_pago === 'cheque') {
         $denom_id = $tipo_pago === 'boucher' ? 12 : 13;
-        $insDesglose = $conn->prepare('INSERT INTO desglose_corte (corte_id, denominacion, cantidad, tipo_pago, denominacion_id) VALUES (?, ?, ?, ?, ?)');
+        $insDesglose = $conn->prepare('INSERT INTO desglose_corte (corte_id, denominacion, cantidad, tipo_pago, denominacion_id, orden) VALUES (?, ?, ?, ?, ?, ?)');
         if (!$insDesglose) {
             $conn->rollback();
             error('Error al preparar desglose: ' . $conn->error);
         }
         $denom = 1.00;
         $cant = $total_esperado_sub;
-        $insDesglose->bind_param('iddsi', $corte_id, $denom, $cant, $tipo_pago, $denom_id);
+        $ordenDesglose = 'cierre';
+        $insDesglose->bind_param('iddsis', $corte_id, $denom, $cant, $tipo_pago, $denom_id, $ordenDesglose);
         if (!$insDesglose->execute()) {
             $conn->rollback();
             error('Error al guardar desglose: ' . $insDesglose->error);
