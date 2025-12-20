@@ -224,6 +224,8 @@ window.usuarioActual = {
     rol: <?= json_encode($_SESSION['rol'] ?? ''); ?>
 };
 window.API_LISTAR_MESAS = '../../api/mesas/listar_mesas.php?user_id=' + encodeURIComponent(window.usuarioActual.id || '') + '&usuario_id=' + encodeURIComponent(window.usuarioActual.id || '');
+window.API_MESEROS = '../../api/mesas/meseros.php?user_id=' + encodeURIComponent(window.usuarioActual.id || '') + '&usuario_id=' + encodeURIComponent(window.usuarioActual.id || '');
+window.API_LISTAR_MESEROS_USUARIOS = '../../api/usuarios/listar_meseros.php?user_id=' + encodeURIComponent(window.usuarioActual.id || '') + '&usuario_id=' + encodeURIComponent(window.usuarioActual.id || '');
 </script>
 <script src="../../utils/js/buscador.js"></script>
 <script src="kanbanMesas.js"></script>

@@ -175,13 +175,28 @@ function descripcion_cfdi_from_categoria(?int $catId, string $nombreOriginal): s
   return $nombreOriginal;
 }
 
+function set_ticket_override(int $ticketId, array $items): void {
+  if (!isset($GLOBALS['ticket_overrides']) || !is_array($GLOBALS['ticket_overrides'])) {
+    $GLOBALS['ticket_overrides'] = [];
+  }
+  $GLOBALS['ticket_overrides'][$ticketId] = $items;
+}
+
+function get_ticket_override(int $ticketId): ?array {
+  if (!isset($GLOBALS['ticket_overrides']) || !is_array($GLOBALS['ticket_overrides'])) return null;
+  return $GLOBALS['ticket_overrides'][$ticketId] ?? null;
+}
+
 /**
  * Construye items CFDI, prorrateando el descuento del ticket sobre los productos
  * para que el total facturado cuadre con el monto_recibido (o total - descuento).
  */
 function cfdi_ticket_data(mysqli $db, int $ticketId): array {
   static $cache = [];
-  if (isset($cache[$ticketId])) return $cache[$ticketId];
+  $overrideRows = get_ticket_override($ticketId);
+  $hasOverride = is_array($overrideRows) && count($overrideRows) > 0;
+  $cacheKey = $hasOverride ? 'override:' . $ticketId : (string)$ticketId;
+  if (isset($cache[$cacheKey])) return $cache[$cacheKey];
 
   // Header del ticket (monto cobrado y descuento)
   $ticketRow = ['total'=>0.0,'descuento'=>0.0,'monto_recibido'=>null];
@@ -195,25 +210,37 @@ function cfdi_ticket_data(mysqli $db, int $ticketId): array {
   }
   $descuentoTicket = max(0.0, (float)($ticketRow['descuento'] ?? 0.0));
   $montoRecibido   = isset($ticketRow['monto_recibido']) ? (float)$ticketRow['monto_recibido'] : null;
+  $totalTicket     = isset($ticketRow['total']) ? (float)$ticketRow['total'] : 0.0;
 
   // Detalles del ticket
-  $sql = "SELECT td.id AS ticket_detalle_id, td.producto_id, COALESCE(p.nombre, CONCAT('Producto ', td.producto_id)) AS descripcion,
-                 td.cantidad, td.precio_unitario, p.categoria_id
-          FROM ticket_detalles td LEFT JOIN productos p ON p.id = td.producto_id WHERE td.ticket_id = ?";
-  $st = $db->prepare($sql); $st->bind_param('i',$ticketId); $st->execute();
-  $rs = $st->get_result(); $rows = [];
-  while ($r = $rs->fetch_assoc()) { $rows[] = $r; }
-  $st->close();
+  $rows = [];
+  if ($hasOverride) {
+    $rows = $overrideRows;
+  } else {
+    $sql = "SELECT td.id AS ticket_detalle_id, td.producto_id, COALESCE(p.nombre, CONCAT('Producto ', td.producto_id)) AS descripcion,
+                   td.cantidad, td.precio_unitario, p.categoria_id
+            FROM ticket_detalles td LEFT JOIN productos p ON p.id = td.producto_id WHERE td.ticket_id = ?";
+    $st = $db->prepare($sql); $st->bind_param('i',$ticketId); $st->execute();
+    $rs = $st->get_result();
+    while ($r = $rs->fetch_assoc()) { $rows[] = $r; }
+    $st->close();
+  }
   if (!$rows) {
-    $cache[$ticketId] = ['items'=>[], 'detalles'=>[], 'subtotal'=>0.0, 'impuestos'=>0.0, 'total'=>0.0, 'target_total'=>0.0];
-    return $cache[$ticketId];
+    $cache[$cacheKey] = ['items'=>[], 'detalles'=>[], 'subtotal'=>0.0, 'impuestos'=>0.0, 'total'=>0.0, 'target_total'=>0.0];
+    return $cache[$cacheKey];
   }
 
   $totalBruto = 0.0;
   foreach ($rows as $r) { $totalBruto += (float)$r['precio_unitario'] * (float)$r['cantidad']; }
 
-  // Objetivo: monto_recibido; si no hay, intentar total - descuento
-  $targetBruto = $montoRecibido !== null ? (float)$montoRecibido : ($totalBruto - $descuentoTicket);
+  // Objetivo: si hay override usar el total editado (sin prorrateo).
+  if ($hasOverride) {
+    $targetBruto = $totalBruto;
+  } elseif ($montoRecibido !== null) {
+    $targetBruto = (float)$montoRecibido;
+  } else {
+    $targetBruto = $totalBruto - $descuentoTicket;
+  }
   if ($targetBruto < 0) $targetBruto = 0.0;
 
   // Factor de prorrateo
@@ -250,7 +277,9 @@ function cfdi_ticket_data(mysqli $db, int $ticketId): array {
 
     $productoId = isset($r['producto_id']) ? (int)$r['producto_id'] : 0;
     $catId = isset($r['categoria_id']) ? (int)$r['categoria_id'] : null;
-    $descCfdi = descripcion_cfdi_from_categoria($catId, (string)$r['descripcion']);
+    $descRaw = (string)($r['descripcion'] ?? '');
+    $descCfdi = $hasOverride ? $descRaw : descripcion_cfdi_from_categoria($catId, $descRaw);
+    if ($descCfdi === '') { $descCfdi = descripcion_cfdi_from_categoria($catId, $descRaw); }
     $esEnvioCasa = ($productoId === (int)ENVIO_CASA_PRODUCT_ID);
     $taxRate = $esEnvioCasa ? 0.0 : 0.16;
     $taxObject = $esEnvioCasa ? '01' : '02';
@@ -360,7 +389,7 @@ function cfdi_ticket_data(mysqli $db, int $ticketId): array {
     }
   }
 
-  $cache[$ticketId] = [
+  $cache[$cacheKey] = [
     'items' => $items,
     'detalles' => $detalles,
     'subtotal' => money2($sumSub),
@@ -371,7 +400,7 @@ function cfdi_ticket_data(mysqli $db, int $ticketId): array {
   // Asegurar coherencia TaxObject/Taxes para Facturama:
   // - Si hay impuestos, TaxObject debe ser 02.
   // - Si no hay impuestos, TaxObject debe ser 01 y el nodo Taxes debe omitirse.
-  foreach ($cache[$ticketId]['items'] as &$it) {
+  foreach ($cache[$cacheKey]['items'] as &$it) {
     $tieneImp = !empty($it['Taxes']) && is_array($it['Taxes']);
     if ($tieneImp) {
       $it['TaxObject'] = '02';
@@ -381,7 +410,7 @@ function cfdi_ticket_data(mysqli $db, int $ticketId): array {
     }
   }
   unset($it);
-  return $cache[$ticketId];
+  return $cache[$cacheKey];
 }
 
 // Construir Items CFDI a partir de ticket_detalles (mysqli)
@@ -499,10 +528,83 @@ try {
   $periodo = isset($body['periodo']) && is_array($body['periodo']) ? $body['periodo'] : null;
   $formaPagoBody = sanitize_forma_pago($body['forma_pago'] ?? null);
   $formaPagoTarjeta = sanitize_forma_pago($body['forma_pago_tarjeta'] ?? null);
+  $ticketEditRaw = $body['ticket_edit'] ?? null;
 
   if (!in_array($modo,['uno_a_uno','global'],true)) json_response(false, 'modo debe ser uno_a_uno o global');
   if (empty($tickets)) json_response(false, 'Proporciona tickets[]');
   if ($clienteId <= 0 && column_exists($db,'facturas','cliente_id')) json_response(false, 'cliente_id requerido');
+
+  if ($ticketEditRaw !== null) {
+    if (!is_array($ticketEditRaw)) json_response(false, 'ticket_edit invalido');
+    $ticketEditId = (int)($ticketEditRaw['ticket_id'] ?? 0);
+    $itemsRaw = $ticketEditRaw['items'] ?? null;
+    if ($ticketEditId <= 0 || !is_array($itemsRaw) || count($itemsRaw) === 0) {
+      json_response(false, 'ticket_edit invalido');
+    }
+    if (count($tickets) !== 1 || (int)$tickets[0] !== $ticketEditId) {
+      json_response(false, 'ticket_edit solo aplica para un ticket y debe coincidir con la seleccion');
+    }
+    $repId = null;
+    if ($stRep = $db->prepare("SELECT v.repartidor_id FROM tickets t LEFT JOIN ventas v ON v.id = t.venta_id WHERE t.id = ? LIMIT 1")) {
+      $stRep->bind_param('i', $ticketEditId);
+      if ($stRep->execute()) {
+        $resRep = $stRep->get_result();
+        if ($r = $resRep->fetch_assoc()) { $repId = isset($r['repartidor_id']) ? (int)$r['repartidor_id'] : null; }
+      }
+      $stRep->close();
+    }
+    if (!in_array($repId, [1, 2, 3], true)) {
+      json_response(false, 'ticket_edit solo disponible para repartidor id 1,2,3');
+    }
+    $base = [];
+    $sqlBase = "SELECT td.id AS ticket_detalle_id, td.producto_id, p.categoria_id
+                FROM ticket_detalles td LEFT JOIN productos p ON p.id = td.producto_id
+                WHERE td.ticket_id = ?";
+    $stBase = $db->prepare($sqlBase);
+    $stBase->bind_param('i', $ticketEditId);
+    $stBase->execute();
+    $rsBase = $stBase->get_result();
+    while ($row = $rsBase->fetch_assoc()) {
+      $base[(int)$row['ticket_detalle_id']] = [
+        'producto_id' => (int)$row['producto_id'],
+        'categoria_id' => isset($row['categoria_id']) ? (int)$row['categoria_id'] : null,
+      ];
+    }
+    $stBase->close();
+    if (!$base) json_response(false, 'ticket_edit sin detalles');
+    $sanitized = [];
+    $seen = [];
+    foreach ($itemsRaw as $item) {
+      if (!is_array($item)) json_response(false, 'ticket_edit invalido');
+      $detId = (int)($item['ticket_detalle_id'] ?? 0);
+      if ($detId <= 0 || !isset($base[$detId]) || isset($seen[$detId])) {
+        json_response(false, 'ticket_edit invalido');
+      }
+      $seen[$detId] = true;
+      $desc = trim((string)($item['descripcion'] ?? ''));
+      $cantidad = (float)($item['cantidad'] ?? 0);
+      $precio = (float)($item['precio_unitario'] ?? -1);
+      if ($desc === '' || $cantidad <= 0 || $precio < 0) {
+        json_response(false, 'ticket_edit invalido');
+      }
+      $productoId = $base[$detId]['producto_id'];
+      if (isset($item['producto_id']) && (int)$item['producto_id'] !== $productoId) {
+        json_response(false, 'ticket_edit invalido');
+      }
+      $sanitized[] = [
+        'ticket_detalle_id' => $detId,
+        'producto_id' => $productoId,
+        'descripcion' => $desc,
+        'cantidad' => $cantidad,
+        'precio_unitario' => $precio,
+        'categoria_id' => $base[$detId]['categoria_id'],
+      ];
+    }
+    if (count($sanitized) !== count($base)) {
+      json_response(false, 'ticket_edit debe incluir todos los conceptos');
+    }
+    set_ticket_override($ticketEditId, $sanitized);
+  }
 
   $f_fecha  = column_exists($db,'facturas','fecha') ? 'fecha'
             : (column_exists($db,'facturas','fecha_emision') ? 'fecha_emision' : null);

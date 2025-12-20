@@ -6,6 +6,7 @@
     cancelar: '../../api/facturas/cancelar.php',
     enviar: '../../api/facturas/enviar.php',
     cliente_guardar: '../../api/facturas/cliente_guardar.php',
+    ticket_detalle: '../../api/facturas/ticket_detalle.php',
   };
   const SAT_JSON_URL = '../../config/sat_catalogos_4_0.json';
 
@@ -20,6 +21,8 @@
   let pendientesIndex = new Map(); // ticket_id -> row
   let facturadasData = [];
   let formaPagoState = { codigo: null, tipo: null, tarjeta: null, mixto: false, hayTarjeta: false };
+  let ticketEdicion = null;
+  let ticketEditCache = { ticketId: null, allowed: false, data: null };
   let clientesCache = [];
   let facturaActualId = null;
   let facturaActualCorreo = '';
@@ -188,8 +191,9 @@
 
   async function enviarFacturasPorCorreo(ids) {
     const lista = Array.isArray(ids) ? ids : [];
-    if (!lista.length) return;
+    if (!lista.length) return { enviados: [], errores: [] };
     const errores = [];
+    const enviados = [];
     for (const id of lista) {
       try {
         const res = await fetch(API.enviar, {
@@ -199,14 +203,13 @@
         });
         const j = await res.json();
         if (!j.success) throw new Error(j.mensaje || 'No se pudo enviar');
+        enviados.push(id);
       } catch (e) {
         console.error('Error enviando factura', id, e);
         errores.push({ id, error: e.message });
       }
     }
-    if (errores.length) {
-      alert('Algunas facturas no se pudieron enviar: ' + errores.map(x => `#${x.id}: ${x.error}`).join('; '));
-    }
+    return { enviados, errores };
   }
   // Paginación de pendientes
   let pendPage = 1;
@@ -293,6 +296,245 @@
     el('#btn-uno-a-uno').disabled = !(hasSel && cliente > 0);
     el('#btn-global').disabled = !(hasSel && cliente > 0) || bloquearGlobal;
     toggleEditarCliente();
+    actualizarBotonEditarTicketState();
+  }
+
+  let processingLocked = false;
+  function setProcessingModalState(opts) {
+    const modal = el('#modal-procesando');
+    if (!modal) return;
+    const spinner = el('#procesando-spinner');
+    const titulo = el('#procesando-titulo');
+    const mensaje = el('#procesando-mensaje');
+    const detalle = el('#procesando-detalle');
+    const cerrar = el('#btn-cerrar-procesando');
+    const show = opts && Object.prototype.hasOwnProperty.call(opts, 'show') ? !!opts.show : true;
+    const loading = !!(opts && opts.loading);
+    processingLocked = loading;
+    modal.style.display = show ? 'flex' : 'none';
+    if (spinner) spinner.style.display = loading ? 'block' : 'none';
+    if (titulo && opts?.title) titulo.textContent = opts.title;
+    if (mensaje && Object.prototype.hasOwnProperty.call(opts || {}, 'message')) {
+      mensaje.textContent = opts.message || '';
+    }
+    if (detalle && Object.prototype.hasOwnProperty.call(opts || {}, 'detail')) {
+      detalle.textContent = opts.detail || '';
+    }
+    if (cerrar) cerrar.style.display = opts?.closable ? 'inline-flex' : 'none';
+  }
+
+  const REPARTIDORES_EDITABLES = new Set([1, 2, 3]);
+
+  async function cargarTicketDetalle(ticketId) {
+    const url = new URL(API.ticket_detalle, window.location.href);
+    url.searchParams.set('ticket_id', String(ticketId));
+    const res = await fetch(url.toString(), { cache: 'no-store' });
+    const j = await res.json();
+    if (!j.success) throw new Error(j.mensaje || 'No se pudo obtener ticket');
+    return j.resultado;
+  }
+
+  function limpiarEdicionTicketSiNoAplica() {
+    if (!ticketEdicion) return;
+    if (seleccion.length !== 1 || Number(seleccion[0]) !== Number(ticketEdicion.ticket_id)) {
+      ticketEdicion = null;
+    }
+  }
+
+  function actualizarBotonEditarTicketState() {
+    const btn = el('#btn-editar-ticket');
+    if (!btn) return;
+    limpiarEdicionTicketSiNoAplica();
+    if (seleccion.length !== 1) {
+      btn.disabled = true;
+      btn.title = 'Selecciona un solo ticket';
+      return;
+    }
+    const ticketId = Number(seleccion[0]);
+    if (ticketEditCache.ticketId === ticketId && ticketEditCache.data) {
+      btn.disabled = !ticketEditCache.allowed;
+      btn.title = ticketEditCache.allowed ? '' : 'Solo aplica para repartidor id 1,2,3';
+      return;
+    }
+    ticketEditCache = { ticketId, allowed: false, data: null, loading: true };
+    btn.disabled = true;
+    btn.title = 'Validando ticket...';
+    cargarTicketDetalle(ticketId).then((data) => {
+      if (ticketEditCache.ticketId !== ticketId) return;
+      const repId = Number(data?.ticket?.repartidor_id || 0);
+      const allowed = REPARTIDORES_EDITABLES.has(repId);
+      ticketEditCache = { ticketId, allowed, data, loading: false };
+      btn.disabled = !allowed;
+      btn.title = allowed ? '' : 'Solo aplica para repartidor id 1,2,3';
+    }).catch((e) => {
+      if (ticketEditCache.ticketId !== ticketId) return;
+      ticketEditCache = { ticketId, allowed: false, data: null, loading: false };
+      btn.disabled = true;
+      btn.title = 'No se pudo validar ticket';
+      console.error(e);
+    });
+  }
+
+  function calcularTotalesEdicion() {
+    const tb = el('#tabla-editar-ticket tbody');
+    if (!tb) return;
+    let subtotal = 0;
+    tb.querySelectorAll('tr').forEach((tr) => {
+      const qty = Number(tr.querySelector('[data-field="cantidad"]')?.value || 0);
+      const price = Number(tr.querySelector('[data-field="precio_unitario"]')?.value || 0);
+      const imp = qty * price;
+      subtotal += imp;
+      const cellImp = tr.querySelector('[data-field="importe"]');
+      if (cellImp) cellImp.textContent = fmt(imp);
+    });
+    const subEl = el('#editar-ticket-subtotal');
+    if (subEl) subEl.textContent = fmt(subtotal);
+    const totalEl = el('#editar-ticket-total');
+    if (totalEl) totalEl.textContent = fmt(subtotal);
+  }
+
+  function renderModalEditarTicket(data) {
+    const ticket = data?.ticket || {};
+    const dets = Array.isArray(data?.detalles) ? data.detalles : [];
+    const info = el('#editar-ticket-info');
+    if (info) {
+      const folio = ticket.folio || ticket.id || '';
+      info.textContent = `Ticket ${folio} (ID ${ticket.id})`;
+    }
+    const tb = el('#tabla-editar-ticket tbody');
+    if (!tb) return;
+    tb.innerHTML = '';
+    dets.forEach((d) => {
+      const tr = document.createElement('tr');
+      tr.dataset.ticketDetalleId = d.ticket_detalle_id;
+      tr.dataset.productoId = d.producto_id;
+      tr.dataset.categoriaId = d.categoria_id ?? '';
+      tr.innerHTML = `
+        <td>${d.producto_id ?? ''}</td>
+        <td><input type="text" data-field="descripcion" value="${String(d.descripcion || '').replace(/"/g, '&quot;')}"></td>
+        <td class="right"><input type="number" step="1" min="0" data-field="cantidad" value="${Number(d.cantidad || 0)}" style="width:90px;"></td>
+        <td class="right"><input type="number" step="0.01" min="0" data-field="precio_unitario" value="${Number(d.precio_unitario || 0)}" style="width:120px;"></td>
+        <td class="right" data-field="importe">${fmt(Number(d.cantidad || 0) * Number(d.precio_unitario || 0))}</td>
+      `;
+      tr.querySelectorAll('input').forEach((inp) => {
+        inp.addEventListener('input', calcularTotalesEdicion);
+      });
+      tb.appendChild(tr);
+    });
+    calcularTotalesEdicion();
+    const modal = el('#modal-editar-ticket');
+    if (modal) modal.style.display = 'flex';
+  }
+
+  async function aplicarEdicionTicket() {
+    if (seleccion.length !== 1) {
+      alert('Selecciona un solo ticket para editar.');
+      return;
+    }
+    const ticketId = Number(seleccion[0]);
+    const tb = el('#tabla-editar-ticket tbody');
+    if (!tb) return;
+    const items = [];
+    let valido = true;
+    tb.querySelectorAll('tr').forEach((tr) => {
+      const descripcion = String(tr.querySelector('[data-field="descripcion"]')?.value || '').trim();
+      const cantidad = Number(tr.querySelector('[data-field="cantidad"]')?.value || 0);
+      const precio = Number(tr.querySelector('[data-field="precio_unitario"]')?.value || 0);
+      if (!descripcion || cantidad <= 0 || precio < 0) {
+        valido = false;
+        return;
+      }
+      items.push({
+        ticket_detalle_id: Number(tr.dataset.ticketDetalleId || 0),
+        producto_id: Number(tr.dataset.productoId || 0),
+        categoria_id: tr.dataset.categoriaId !== '' ? Number(tr.dataset.categoriaId) : null,
+        descripcion,
+        cantidad,
+        precio_unitario: precio
+      });
+    });
+    if (!valido || !items.length) {
+      alert('Revisa cantidades y descripciones antes de aplicar.');
+      return;
+    }
+    ticketEdicion = { ticket_id: ticketId, items };
+    renderSeleccion();
+    const modal = el('#modal-editar-ticket');
+    if (modal) modal.style.display = 'none';
+    const clienteId = Number(el('#select-cliente').value || 0);
+    if (!clienteId) {
+      alert('Selecciona un cliente para facturar.');
+      return;
+    }
+    await facturarUnoAUno();
+  }
+
+  async function abrirModalEditarTicket() {
+    if (seleccion.length !== 1) {
+      alert('Selecciona un solo ticket para editar.');
+      return;
+    }
+    const ticketId = Number(seleccion[0]);
+    let data = null;
+    try {
+      if (ticketEditCache.ticketId === ticketId && ticketEditCache.data) {
+        data = ticketEditCache.data;
+      } else {
+        data = await cargarTicketDetalle(ticketId);
+        ticketEditCache = { ticketId, allowed: true, data, loading: false };
+      }
+    } catch (e) {
+      console.error(e);
+      alert('No se pudo cargar el ticket para editar.');
+      return;
+    }
+    const repId = Number(data?.ticket?.repartidor_id || 0);
+    if (!REPARTIDORES_EDITABLES.has(repId)) {
+      alert('Solo aplica para repartidor id 1,2,3.');
+      return;
+    }
+    let payload = data;
+    if (ticketEdicion && Number(ticketEdicion.ticket_id) === ticketId) {
+      const edits = new Map(ticketEdicion.items.map((it) => [Number(it.ticket_detalle_id), it]));
+      payload = {
+        ...data,
+        detalles: Array.isArray(data.detalles)
+          ? data.detalles.map((d) => {
+            const edit = edits.get(Number(d.ticket_detalle_id));
+            if (!edit) return d;
+            return {
+              ...d,
+              descripcion: edit.descripcion ?? d.descripcion,
+              cantidad: edit.cantidad ?? d.cantidad,
+              precio_unitario: edit.precio_unitario ?? d.precio_unitario
+            };
+          })
+          : []
+      };
+    }
+    renderModalEditarTicket(payload);
+  }
+
+  function buildTicketEditPayload() {
+    if (!ticketEdicion || seleccion.length !== 1) return null;
+    const ticketId = Number(seleccion[0]);
+    if (Number(ticketEdicion.ticket_id) !== ticketId) return null;
+    return { ticket_id: ticketId, items: ticketEdicion.items };
+  }
+
+  function sumTicketEditItems(items) {
+    const rows = Array.isArray(items) ? items : [];
+    return rows.reduce((acc, item) => {
+      const qty = Number(item?.cantidad || 0);
+      const price = Number(item?.precio_unitario || 0);
+      return acc + (qty * price);
+    }, 0);
+  }
+
+  function getTicketEdicionTotal(ticketId) {
+    if (!ticketEdicion) return null;
+    if (Number(ticketEdicion.ticket_id) !== Number(ticketId)) return null;
+    return sumTicketEditItems(ticketEdicion.items);
   }
 
   function renderPendientes(rows) {
@@ -383,12 +625,14 @@
       const item = document.createElement('div');
       item.className = 'item';
       const tipoTxt = r?.tipo_pago ? ` (${mostrarTipoPago(r.tipo_pago)})` : '';
-      item.textContent = `Ticket ${id} - ${fmt(r?.total || 0)}${tipoTxt}`;
+      const editTotal = getTicketEdicionTotal(id);
+      const t = editTotal !== null ? editTotal : Number(r?.total || 0);
+      const editTag = editTotal !== null ? ' (editado)' : '';
+      item.textContent = `Ticket ${id} - ${fmt(t)}${tipoTxt}${editTag}`;
       item.title = 'Click para quitar';
       item.style.cursor = 'pointer';
       item.addEventListener('click', () => toggleSeleccion(id));
       cont.appendChild(item);
-      const t = Number(r?.total || 0);
       subtotal += t; total += t;
     }
     el('#totales-subtotal').textContent = fmt(subtotal);
@@ -479,24 +723,69 @@ function renderFacturadas(rows) {
   async function facturarUnoAUno() {
     const clienteId = Number(el('#select-cliente').value || 0);
     if (!clienteId || seleccion.length === 0) return;
+    const fpPayload = obtenerFormaPagoParaEnvio();
+    const body = { modo: 'uno_a_uno', tickets: seleccion.slice(), cliente_id: clienteId };
+    const editPayload = buildTicketEditPayload();
+    if (editPayload) body.ticket_edit = editPayload;
+    if (fpPayload.forma_pago) body.forma_pago = fpPayload.forma_pago;
+    if (fpPayload.forma_pago_tarjeta) body.forma_pago_tarjeta = fpPayload.forma_pago_tarjeta;
+    let j = null;
     try {
-      const fpPayload = obtenerFormaPagoParaEnvio();
-      const body = { modo: 'uno_a_uno', tickets: seleccion.slice(), cliente_id: clienteId };
-      if (fpPayload.forma_pago) body.forma_pago = fpPayload.forma_pago;
-      if (fpPayload.forma_pago_tarjeta) body.forma_pago_tarjeta = fpPayload.forma_pago_tarjeta;
+      setProcessingModalState({
+        show: true,
+        loading: true,
+        title: 'Procesando factura',
+        message: 'Procesando factura, espere por favor.',
+        detail: '',
+        closable: false
+      });
       const res = await fetch(API.crear, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-      const j = await res.json();
-      if (!j.success) throw new Error(j.mensaje || 'No se pudo crear');
+      j = await res.json();
+    } catch (e) {
+      setProcessingModalState({ show: false });
+      console.error(e);
+      alert('Error al facturar 1:1: ' + e.message);
+      return;
+    }
+    if (!j?.success) {
+      setProcessingModalState({ show: false });
+      alert('Error al facturar 1:1: ' + (j?.mensaje || 'No se pudo crear'));
+      return;
+    }
+    try {
       const ids = extraerIdsFacturas(j.resultado);
-      alert('Facturas creadas: ' + (ids.length || j.resultado?.facturas?.length || 0));
-      await enviarFacturasPorCorreo(ids);
+      const facturasCount = ids.length || j.resultado?.facturas?.length || 0;
+      setProcessingModalState({
+        show: true,
+        loading: true,
+        title: 'Factura creada',
+        message: `Facturas creadas: ${facturasCount}`,
+        detail: 'Enviando correos...',
+        closable: false
+      });
+      const correoRes = await enviarFacturasPorCorreo(ids);
+      const enviados = correoRes?.enviados?.length || 0;
+      const errores = correoRes?.errores || [];
+      const detalleCorreo = errores.length
+        ? `Correos enviados: ${enviados}. Errores: ${errores.map(x => `#${x.id}: ${x.error}`).join('; ')}`
+        : `Correos enviados: ${enviados}`;
+      setProcessingModalState({
+        show: true,
+        loading: false,
+        title: 'Factura creada',
+        message: `Facturas creadas: ${facturasCount}`,
+        detail: detalleCorreo,
+        closable: true
+      });
       seleccion = [];
+      ticketEdicion = null;
       await listar();
     } catch (e) {
+      setProcessingModalState({ show: false });
       console.error(e);
       alert('Error al facturar 1:1: ' + e.message);
     }
@@ -510,28 +799,73 @@ function renderFacturadas(rows) {
       return;
     }
     const { desde, hasta } = getFiltros();
+    const fpPayload = obtenerFormaPagoParaEnvio();
+    if (!fpPayload.forma_pago && formaPagoState?.codigo) fpPayload.forma_pago = formaPagoState.codigo;
+    if (!fpPayload.forma_pago) {
+      alert('No se pudo determinar la forma de pago desde los tickets seleccionados.');
+      return;
+    }
+    const body = { modo: 'global', tickets: seleccion.slice(), cliente_id: clienteId, periodo: { desde, hasta }, forma_pago: fpPayload.forma_pago };
+    const editPayload = buildTicketEditPayload();
+    if (editPayload) body.ticket_edit = editPayload;
+    if (fpPayload.forma_pago_tarjeta) body.forma_pago_tarjeta = fpPayload.forma_pago_tarjeta;
+    let j = null;
     try {
-      const fpPayload = obtenerFormaPagoParaEnvio();
-      if (!fpPayload.forma_pago && formaPagoState?.codigo) fpPayload.forma_pago = formaPagoState.codigo;
-      if (!fpPayload.forma_pago) {
-        alert('No se pudo determinar la forma de pago desde los tickets seleccionados.');
-        return;
-      }
-      const body = { modo: 'global', tickets: seleccion.slice(), cliente_id: clienteId, periodo: { desde, hasta }, forma_pago: fpPayload.forma_pago };
-      if (fpPayload.forma_pago_tarjeta) body.forma_pago_tarjeta = fpPayload.forma_pago_tarjeta;
+      setProcessingModalState({
+        show: true,
+        loading: true,
+        title: 'Procesando factura',
+        message: 'Procesando factura, espere por favor.',
+        detail: '',
+        closable: false
+      });
       const res = await fetch(API.crear, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-      const j = await res.json();
-      if (!j.success) throw new Error(j.mensaje || 'No se pudo crear');
+      j = await res.json();
+    } catch (e) {
+      setProcessingModalState({ show: false });
+      console.error(e);
+      alert('Error al facturar global: ' + e.message);
+      return;
+    }
+    if (!j?.success) {
+      setProcessingModalState({ show: false });
+      alert('Error al facturar global: ' + (j?.mensaje || 'No se pudo crear'));
+      return;
+    }
+    try {
       const ids = extraerIdsFacturas(j.resultado);
-      alert('Factura global creada: ID ' + (ids[0] || j.resultado?.factura_id || ''));
-      await enviarFacturasPorCorreo(ids);
+      const facturaId = ids[0] || j.resultado?.factura_id || '';
+      setProcessingModalState({
+        show: true,
+        loading: true,
+        title: 'Factura creada',
+        message: `Factura global creada: ${facturaId}`,
+        detail: 'Enviando correos...',
+        closable: false
+      });
+      const correoRes = await enviarFacturasPorCorreo(ids);
+      const enviados = correoRes?.enviados?.length || 0;
+      const errores = correoRes?.errores || [];
+      const detalleCorreo = errores.length
+        ? `Correos enviados: ${enviados}. Errores: ${errores.map(x => `#${x.id}: ${x.error}`).join('; ')}`
+        : `Correos enviados: ${enviados}`;
+      setProcessingModalState({
+        show: true,
+        loading: false,
+        title: 'Factura creada',
+        message: `Factura global creada: ${facturaId}`,
+        detail: detalleCorreo,
+        closable: true
+      });
       seleccion = [];
+      ticketEdicion = null;
       await listar();
     } catch (e) {
+      setProcessingModalState({ show: false });
       console.error(e);
       alert('Error al facturar global: ' + e.message);
     }
@@ -798,6 +1132,13 @@ function renderFacturadas(rows) {
     if (fpSelect) fpSelect.addEventListener('change', () => { actualizarFormaPagoUI(); updateAccionesState(); });
     el('#btn-uno-a-uno').addEventListener('click', facturarUnoAUno);
     el('#btn-global').addEventListener('click', facturarGlobal);
+    const btnEditarTicket = el('#btn-editar-ticket');
+    if (btnEditarTicket) btnEditarTicket.addEventListener('click', abrirModalEditarTicket);
+    const btnCerrarEditar = el('#btn-cerrar-modal-editar-ticket');
+    if (btnCerrarEditar) btnCerrarEditar.addEventListener('click', () => { const m = el('#modal-editar-ticket'); if (m) m.style.display = 'none'; });
+    const btnAplicarEditar = el('#btn-aplicar-edicion-ticket');
+    if (btnAplicarEditar) btnAplicarEditar.addEventListener('click', aplicarEdicionTicket);
+    el('#modal-editar-ticket')?.addEventListener('click', (ev) => { if (ev.target.id === 'modal-editar-ticket') ev.currentTarget.style.display = 'none'; });
     el('#btn-cerrar-modal').addEventListener('click', () => el('#modal-detalle').style.display = 'none');
     // Cerrar modal al hacer click fuera
     el('#modal-detalle').addEventListener('click', (ev) => { if (ev.target.id === 'modal-detalle') ev.currentTarget.style.display = 'none'; });
@@ -805,6 +1146,11 @@ function renderFacturadas(rows) {
     el('#btn-reenviar-confirmar')?.addEventListener('click', reenviarFacturaConfirmar);
     el('#btn-cerrar-modal-reenviar')?.addEventListener('click', cerrarModalReenviar);
     el('#modal-reenviar')?.addEventListener('click', (ev) => { if (ev.target.id === 'modal-reenviar') ev.currentTarget.style.display = 'none'; });
+    el('#btn-cerrar-procesando')?.addEventListener('click', () => setProcessingModalState({ show: false }));
+    el('#modal-procesando')?.addEventListener('click', (ev) => {
+      if (processingLocked) return;
+      if (ev.target.id === 'modal-procesando') setProcessingModalState({ show: false });
+    });
   });
 
   // Exponer helpers si se requiere en consola

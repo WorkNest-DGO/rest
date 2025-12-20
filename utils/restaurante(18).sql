@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 15-12-2025 a las 23:20:25
+-- Tiempo de generación: 20-12-2025 a las 20:31:17
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -398,28 +398,29 @@ INSERT INTO `catalogo_bancos` (`id`, `nombre`) VALUES
 
 CREATE TABLE `catalogo_categorias` (
   `id` int(11) NOT NULL,
-  `nombre` varchar(50) NOT NULL
+  `nombre` varchar(50) NOT NULL,
+  `impresoras_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `catalogo_categorias`
 --
 
-INSERT INTO `catalogo_categorias` (`id`, `nombre`) VALUES
-(1, 'Bebida'),
-(2, 'Postre'),
-(3, 'Platillo'),
-(4, 'Sopa'),
-(5, 'Arroz'),
-(6, 'Extra'),
-(7, 'Topping'),
-(8, 'Rollo natural'),
-(9, 'Rollo empanizado'),
-(10, 'Entrada'),
-(11, 'Rollo Premium'),
-(12, 'Rollo Nano'),
-(13, 'rollo horneado'),
-(14, 'Alcohol');
+INSERT INTO `catalogo_categorias` (`id`, `nombre`, `impresoras_id`) VALUES
+(1, 'Bebida', 1),
+(2, 'Postre', 1),
+(3, 'Platillo', 3),
+(4, 'Sopa', 3),
+(5, 'Arroz', 2),
+(6, 'Extra', 1),
+(7, 'Topping', 1),
+(8, 'Rollo natural', 2),
+(9, 'Rollo empanizado', 2),
+(10, 'Entrada', 1),
+(11, 'Rollo Premium', 2),
+(12, 'Rollo Nano', 2),
+(13, 'rollo horneado', 2),
+(14, 'Alcohol', 1);
 
 -- --------------------------------------------------------
 
@@ -470,7 +471,7 @@ CREATE TABLE `catalogo_folios` (
 
 INSERT INTO `catalogo_folios` (`id`, `descripcion`, `folio_actual`) VALUES
 (1, 'Serie Madero', 1003),
-(2, 'Serie Forestal', 2056);
+(2, 'Serie Forestal', 2062);
 
 -- --------------------------------------------------------
 
@@ -14151,8 +14152,13 @@ INSERT INTO `clientes_facturacion` (`id`, `rfc`, `razon_social`, `correo`, `tele
 (247, 'LSA840101TC6', 'LABORATORIOS SANFER', 'cynvelazquezm@gmail.com', '8713855798', 'adolfo lopez mateo', '314', '1 er piso', 'tlacopac', 'alvaro obregon', 'ciudad de mexico', 'mexico', '01049', '601', 'G03', '2025-12-09 19:56:33', '2025-12-09 19:56:33'),
 (248, 'FAMV8908279L1', 'VERONICA FRAGOSO MIRANDA', 'gerencia.dy@gmail.com', '6182290878', 'pereyra', '601', '', 'victoria de durango centro', 'durango', 'durango', 'mexico', '34000', '612', 'G03', '2025-12-09 21:17:46', '2025-12-09 21:17:46'),
 (249, 'EMA110224U48', 'EMA MEDINA Y ASESORES', 'durango_ventas4@qualitas.com.mx', '6183367048', 'primo de verdad', '101', 'B', 'HERNANDEZ', 'DURANGO', 'DURANGO', 'mexico', '34138', '602', '', '2025-12-09 22:04:55', '2025-12-09 22:04:55'),
-(251, 'DEM8801152E9', 'DHL EXPRESS MEXICO S.A DE C.V', 'alfredo.guerrero2@dhl.com', '5578883811', 'AVENIDA FUERZA AEREA MEXICANA', '5400', '', 'FEDERAL', 'DURANGO', 'DURANGO', 'MEXICO', '15700', '601', 'G03', '2025-12-12 18:04:41', '2025-12-12 18:04:41'),
-(252, 'MVD031001PD9', 'MUEBLES VIZCAYA DE DURANGO', 'aida.andrade@gmail.com.mx', '', 'AV. LAZARO CARDENAS', '218', '', 'REAL DEL PRADO', 'DURANGO', 'DURANGO', 'MÉXICO', '34080', '601', 'G03', '2025-12-12 20:40:04', '2025-12-12 20:40:04');
+(251, 'DEM8801152E9', 'DHL EXPRESS MEXICO', 'alfredo.guerrero2@dhl.com', '5578883811', 'AVENIDA FUERZA AEREA MEXICANA', '5400', '', 'FEDERAL', 'DURANGO', 'DURANGO', 'MEXICO', '15700', '601', 'G03', '2025-12-12 18:04:41', '2025-12-15 17:29:35'),
+(252, 'MVD031001PD9', 'MUEBLES VIZCAYA DE DURANGO', 'aida.andrade@gmail.com.mx', '', 'AV. LAZARO CARDENAS', '218', '', 'REAL DEL PRADO', 'DURANGO', 'DURANGO', 'MÉXICO', '34080', '601', 'G03', '2025-12-12 20:40:04', '2025-12-12 20:40:04'),
+(253, 'CNO93113K12', 'SIGMA FOODSERVICE COMERCIAL', 'nriverap@sigma-alimentos.com', '6671637238', 'ACUEDUCTO', '610', '', 'EL LECHUGAL', 'SANTA CATARINA', 'DURANGO', 'MEXICO', '66376', '601', 'G03', '2025-12-14 17:33:20', '2025-12-14 17:33:20'),
+(254, 'CNO930113K12', 'SIGMA FOODSERVICE COMERCIAL', 'nriverap@sigma-alimentos.com', '6671637238', 'ACUEDUCTO', '610', '', 'EL LECHUGAL', 'SANTA CATARINA', 'DURANGO', 'MEXICO', '66376', '601', 'G03', '2025-12-14 17:34:16', '2025-12-14 17:34:16'),
+(255, 'AELS880412CV8', 'SERGIO ARTURO ARELLANO LOPEZ', 'habitable_construcciones@hotmail.com', '433', 'CRISTO REY', '13', '', 'SOMBRERETE CENTRO', 'SOMBRERETE', 'DURANGO', 'MEXICO', '99100', '621', 'G03', '2025-12-15 17:42:48', '2025-12-15 17:42:48'),
+(256, 'CYI150616QL3', 'COMERCIALIZADORA YIWOO', 'diana85cms@gmail.com', '6181538363', 'benito juarez', '2509', 'sin numero', 'centro', 'mazatlan', 'sinaloa', 'mexico', '82000', '601', 'G03', '2025-12-17 13:19:08', '2025-12-17 13:19:08'),
+(261, 'PAB000405BF4', 'PITS ABASTECIMIENTOS', 'm.barrera@pits.mx', '', 'VIADUCTO MIGUEL ALEMAN', '22', '4 PISO', 'NAPOLES', 'BENITO JUAREZ', 'CIUDAD DE MEXICO', 'MEXICO', '03810', '601', 'G03', '2025-12-19 11:22:56', '2025-12-19 11:22:56');
 
 -- --------------------------------------------------------
 
@@ -14165,35 +14171,6 @@ CREATE TABLE `cliente_venta` (
   `idcliente` int(11) NOT NULL,
   `idventa` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf16le COLLATE=utf16le_bin;
-
---
--- Volcado de datos para la tabla `cliente_venta`
---
-
-INSERT INTO `cliente_venta` (`id`, `idcliente`, `idventa`) VALUES
-(4, 13480, 748),
-(5, 10831, 749),
-(6, 11076, 750),
-(7, 792, 751),
-(8, 1848, 754),
-(9, 9491, 756),
-(10, 6707, 757),
-(11, 13481, 758),
-(12, 13482, 762),
-(13, 3835, 765),
-(14, 449, 766),
-(15, 13483, 767),
-(16, 13484, 768),
-(17, 223, 770),
-(18, 4327, 771),
-(19, 5200, 773),
-(20, 13485, 774),
-(21, 9305, 779),
-(22, 8884, 799),
-(23, 9689, 805),
-(24, 8518, 812),
-(25, 9688, 816),
-(26, 9688, 817);
 
 -- --------------------------------------------------------
 
@@ -14886,6 +14863,27 @@ CREATE TABLE `conekta_events` (
   `received_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `conekta_events`
+--
+
+INSERT INTO `conekta_events` (`id`, `reference`, `event_type`, `conekta_event_id`, `payload`, `received_at`) VALUES
+(57, NULL, 'webhook_ping', '69409f527a38bf00184fb9e2', '{\"data\":{\"livemode\":false,\"action\":\"webhook_ping\"},\"livemode\":false,\"webhook_status\":\"pending\",\"webhook_logs\":[{\"id\":\"webhl_2zCbEswVgYH6jwdr8\",\"url\":\"https://0e79a87bb1ef.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":0,\"last_http_response_status\":-1,\"response_data\":null,\"object\":\"webhook_log\",\"last_attempted_at\":0}],\"id\":\"69409f527a38bf00184fb9e2\",\"object\":\"event\",\"type\":\"webhook_ping\",\"created_at\":1765842770}', '2025-12-15 17:52:51'),
+(58, NULL, 'webhook.updated', '69409f537a38bf00184fb9e3', '{\"data\":{\"object\":{\"url\":\"https://0e79a87bb1ef.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"status\":\"listening\",\"subscribed_events\":[\"charge.created\",\"charge.paid\",\"charge.under_fraud_review\",\"charge.fraudulent\",\"charge.refunded\",\"charge.preauthorized\",\"charge.declined\",\"charge.canceled\",\"charge.reversed\",\"charge.pending_confirmation\",\"charge.expired\",\"charge.chargeback.created\",\"charge.chargeback.updated\",\"charge.chargeback.under_review\",\"charge.chargeback.lost\",\"charge.chargeback.won\",\"charge.score_updated\",\"customer.created\",\"customer.updated\",\"customer.deleted\",\"customer.payment_source.card.blocked\",\"webhook.created\",\"webhook.updated\",\"webhook.deleted\",\"webhook_ping\",\"payout.created\",\"payout.retrying\",\"payout.paid_out\",\"payout.failed\",\"payout.in_transit\",\"plan.created\",\"plan.updated\",\"plan.deleted\",\"subscription.created\",\"subscription.paused\",\"subscription.resumed\",\"subscription.canceled\",\"subscription.expired\",\"subscription.updated\",\"subscription.paid\",\"subscription.payment_failed\",\"subscription.scheduled_payment_failed\",\"payee.created\",\"payee.updated\",\"payee.deleted\",\"payee.payout_method.created\",\"payee.payout_method.updated\",\"payee.payout_method.deleted\",\"receipt.created\",\"order.canceled\",\"order.charged_back\",\"order.created\",\"order.expired\",\"order.fraudulent\",\"order.under_fraud_review\",\"order.paid\",\"order.partially_refunded\",\"order.pending_payment\",\"order.pre_authorized\",\"order.refunded\",\"order.updated\",\"order.voided\",\"order.declined\",\"cashout.canceled\",\"cashout.confirmed\",\"cashout.expired\",\"cash_refund.created\",\"cash_refund.canceled\",\"cash_refund.refunded\",\"cash_refund.expired\",\"company.onboarding.success\",\"company.onboarding.failed\",\"inbound_payment.lookup\",\"inbound_payment.payment_attempt\",\"inbound_payment.reverse\"],\"description\":\"tokyo\",\"livemode\":false,\"active\":true,\"id\":\"68c61ccbe942880017963f78\",\"object\":\"webhook\"},\"previous_attributes\":{}},\"livemode\":false,\"webhook_status\":\"pending\",\"webhook_logs\":[{\"id\":\"webhl_2zCbEtgKCjqkNDJLb\",\"url\":\"https://0e79a87bb1ef.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":0,\"last_http_response_status\":-1,\"response_data\":null,\"object\":\"webhook_log\",\"last_attempted_at\":0}],\"id\":\"69409f537a38bf00184fb9e3\",\"object\":\"event\",\"type\":\"webhook.updated\",\"created_at\":1765842771}', '2025-12-15 17:53:03'),
+(59, NULL, 'webhook_ping', '69409de847679a0019dbfb46', '{\"data\":{\"livemode\":false,\"action\":\"webhook_ping\"},\"livemode\":false,\"webhook_status\":\"failing\",\"webhook_logs\":[{\"id\":\"webhl_2zCbAGYQD3xMmHNDS\",\"url\":\"https://269a764cfda7.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":3,\"last_http_response_status\":404,\"response_data\":{},\"object\":\"webhook_log\",\"last_attempted_at\":1765842584}],\"id\":\"69409de847679a0019dbfb46\",\"object\":\"event\",\"type\":\"webhook_ping\",\"created_at\":1765842408}', '2025-12-15 17:53:08'),
+(60, 'tokyo_e440d1fa8f2281b1', 'order.updated', '69409c97a6d9e60019aa0233', '{\"data\":{\"object\":{\"livemode\":false,\"amount\":5326,\"currency\":\"MXN\",\"payment_status\":null,\"amount_refunded\":0,\"split_payment\":null,\"customer_info\":{\"email\":\"fued2@live.com.mx\",\"phone\":\"6183021446\",\"name\":\"fued\",\"corporate\":false,\"customer_id\":\"cus_2yg6xUa6VP1VJJj5V\",\"date_of_birth\":null,\"national_id\":null,\"object\":\"customer_info\",\"customer_custom_reference\":null},\"shipping_contact\":null,\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"7bacffde-9cc2-4dcc-aa7b-38a86e399e64\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCb52ADojn97sEJZ\"},\"fiscal_entity\":null,\"checkout\":{\"id\":\"7bacffde-9cc2-4dcc-aa7b-38a86e399e64\",\"name\":\"ord-2zCb52ADojn97sEJY\",\"livemode\":false,\"emails_sent\":0,\"success_url\":\"http://localhost/rest2/tokyo/vistas/pago_exitoso.php?ref=tokyo_e440d1fa8f2281b1\",\"failure_url\":\"http://localhost/rest2/tokyo/vistas/pago_fallido.php?ref=tokyo_e440d1fa8f2281b1\",\"payments_limit_count\":null,\"paid_payments_count\":0,\"sms_sent\":0,\"status\":\"Issued\",\"type\":\"HostedPayment\",\"recurrent\":false,\"starts_at\":1765778400,\"expires_at\":1766037599,\"allowed_payment_methods\":[\"card\"],\"exclude_card_networks\":[],\"needs_shipping_contact\":false,\"monthly_installments_options\":[],\"monthly_installments_enabled\":false,\"redirection_time\":null,\"force_3ds_flow\":false,\"plan_id\":null,\"metadata\":{},\"can_not_expire\":false,\"three_ds_mode\":null,\"max_failed_retries\":null,\"object\":\"checkout\",\"is_redirect_on_failure\":true,\"slug\":\"7bacffde9cc24dccaa7b38a86e399e64\",\"url\":\"https://pay.conekta.com/checkout/7bacffde9cc24dccaa7b38a86e399e64\"},\"object\":\"order\",\"id\":\"ord_2zCb52ADojn97sEJY\",\"metadata\":{\"ref\":\"tokyo_e440d1fa8f2281b1\",\"context\":{\"tipo\":\"rapido\",\"sede_id\":1,\"corte_id\":128,\"cajero_id\":8,\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"cents\":626,\"method\":\"card\"}},\"is_refundable\":false,\"processing_mode\":null,\"created_at\":1765841995,\"updated_at\":1765842071,\"line_items\":{\"object\":\"list\",\"has_more\":false,\"total\":3,\"data\":[{\"name\":\"Comisión por método de pago (card)\",\"description\":null,\"unit_price\":626,\"quantity\":1,\"sku\":\"FEE-CARD\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCb52ADojn97sEJW\",\"parent_id\":\"ord_2zCb52ADojn97sEJY\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"Agua de Tamarindo\",\"description\":null,\"unit_price\":3700,\"quantity\":1,\"sku\":\"72\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCb52ADojn97sEJV\",\"parent_id\":\"ord_2zCb52ADojn97sEJY\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"Aderezo de Chipotle\",\"description\":null,\"unit_price\":1000,\"quantity\":1,\"sku\":\"77\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCb52ADojn97sEJU\",\"parent_id\":\"ord_2zCb52ADojn97sEJY\",\"metadata\":{},\"antifraud_info\":{}}]},\"shipping_lines\":null,\"tax_lines\":null,\"discount_lines\":null,\"charges\":null},\"previous_attributes\":{}},\"livemode\":false,\"webhook_status\":\"failing\",\"webhook_logs\":[{\"id\":\"webhl_2zCb5z6xjJLNtse1U\",\"url\":\"https://269a764cfda7.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":4,\"last_http_response_status\":404,\"response_data\":{},\"object\":\"webhook_log\",\"last_attempted_at\":1765842424}],\"id\":\"69409c97a6d9e60019aa0233\",\"object\":\"event\",\"type\":\"order.updated\",\"created_at\":1765842071}', '2025-12-15 17:53:08'),
+(61, 'tokyo_06242860a4bb403d', 'order.updated', '69409e6bed25af0013a12003', '{\"data\":{\"object\":{\"livemode\":false,\"amount\":1626,\"currency\":\"MXN\",\"payment_status\":null,\"amount_refunded\":0,\"split_payment\":false,\"customer_info\":{\"email\":\"fued2@live.com.mx\",\"phone\":\"6183021446\",\"name\":\"fued\",\"corporate\":false,\"customer_id\":\"cus_2yg6xUa6VP1VJJj5V\",\"date_of_birth\":null,\"national_id\":null,\"object\":\"customer_info\",\"customer_custom_reference\":null},\"shipping_contact\":null,\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"0bd03f1b-d2bf-48e2-9ac6-174db10bbdd6\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCbBcs511tm9heMx\"},\"fiscal_entity\":null,\"checkout\":{\"id\":\"0bd03f1b-d2bf-48e2-9ac6-174db10bbdd6\",\"name\":\"ord-2zCbBcs511tm9heMw\",\"livemode\":false,\"emails_sent\":0,\"success_url\":\"http://localhost/rest2/tokyo/vistas/pago_exitoso.php?ref=tokyo_06242860a4bb403d\",\"failure_url\":\"http://localhost/rest2/tokyo/vistas/pago_fallido.php?ref=tokyo_06242860a4bb403d\",\"payments_limit_count\":null,\"paid_payments_count\":0,\"sms_sent\":0,\"status\":\"Issued\",\"type\":\"HostedPayment\",\"recurrent\":false,\"starts_at\":1765778400,\"expires_at\":1766037599,\"allowed_payment_methods\":[\"card\"],\"exclude_card_networks\":[],\"needs_shipping_contact\":false,\"monthly_installments_options\":[],\"monthly_installments_enabled\":false,\"redirection_time\":null,\"force_3ds_flow\":false,\"plan_id\":null,\"metadata\":{},\"can_not_expire\":false,\"three_ds_mode\":null,\"max_failed_retries\":null,\"object\":\"checkout\",\"is_redirect_on_failure\":true,\"slug\":\"0bd03f1bd2bf48e29ac6174db10bbdd6\",\"url\":\"https://pay.conekta.com/checkout/0bd03f1bd2bf48e29ac6174db10bbdd6\"},\"object\":\"order\",\"id\":\"ord_2zCbBcs511tm9heMw\",\"metadata\":{\"ref\":\"tokyo_06242860a4bb403d\",\"context\":{\"tipo\":\"rapido\",\"sede_id\":1,\"corte_id\":128,\"cajero_id\":8,\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"cents\":626,\"method\":\"card\"}},\"is_refundable\":false,\"processing_mode\":null,\"created_at\":1765842514,\"updated_at\":1765842539,\"line_items\":{\"object\":\"list\",\"has_more\":false,\"total\":2,\"data\":[{\"name\":\"Comisión por método de pago (card)\",\"description\":null,\"unit_price\":626,\"quantity\":1,\"sku\":\"FEE-CARD\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbBcs511tm9heMu\",\"parent_id\":\"ord_2zCbBcs511tm9heMw\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"Aderezo de Chipotle\",\"description\":null,\"unit_price\":1000,\"quantity\":1,\"sku\":\"77\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbBcs511tm9heMt\",\"parent_id\":\"ord_2zCbBcs511tm9heMw\",\"metadata\":{},\"antifraud_info\":{}}]},\"shipping_lines\":null,\"tax_lines\":null,\"discount_lines\":null,\"charges\":null},\"previous_attributes\":{}},\"livemode\":false,\"webhook_status\":\"failing\",\"webhook_logs\":[{\"id\":\"webhl_2zCbBwmuHdjtKm2mD\",\"url\":\"https://269a764cfda7.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":3,\"last_http_response_status\":404,\"response_data\":{},\"object\":\"webhook_log\",\"last_attempted_at\":1765842691}],\"id\":\"69409e6bed25af0013a12003\",\"object\":\"event\",\"type\":\"order.updated\",\"created_at\":1765842539}', '2025-12-15 17:53:16'),
+(62, 'tokyo_06242860a4bb403d', 'order.updated', '69409e6b7a38bf001b54dad1', '{\"data\":{\"object\":{\"livemode\":false,\"amount\":1626,\"currency\":\"MXN\",\"payment_status\":null,\"amount_refunded\":0,\"split_payment\":null,\"customer_info\":{\"email\":\"fued2@live.com.mx\",\"phone\":\"6183021446\",\"name\":\"fued\",\"corporate\":false,\"customer_id\":\"cus_2yg6xUa6VP1VJJj5V\",\"date_of_birth\":null,\"national_id\":null,\"object\":\"customer_info\",\"customer_custom_reference\":null},\"shipping_contact\":null,\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"0bd03f1b-d2bf-48e2-9ac6-174db10bbdd6\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCbBcs511tm9heMx\"},\"fiscal_entity\":null,\"checkout\":{\"id\":\"0bd03f1b-d2bf-48e2-9ac6-174db10bbdd6\",\"name\":\"ord-2zCbBcs511tm9heMw\",\"livemode\":false,\"emails_sent\":0,\"success_url\":\"http://localhost/rest2/tokyo/vistas/pago_exitoso.php?ref=tokyo_06242860a4bb403d\",\"failure_url\":\"http://localhost/rest2/tokyo/vistas/pago_fallido.php?ref=tokyo_06242860a4bb403d\",\"payments_limit_count\":null,\"paid_payments_count\":0,\"sms_sent\":0,\"status\":\"Issued\",\"type\":\"HostedPayment\",\"recurrent\":false,\"starts_at\":1765778400,\"expires_at\":1766037599,\"allowed_payment_methods\":[\"card\"],\"exclude_card_networks\":[],\"needs_shipping_contact\":false,\"monthly_installments_options\":[],\"monthly_installments_enabled\":false,\"redirection_time\":null,\"force_3ds_flow\":false,\"plan_id\":null,\"metadata\":{},\"can_not_expire\":false,\"three_ds_mode\":null,\"max_failed_retries\":null,\"object\":\"checkout\",\"is_redirect_on_failure\":true,\"slug\":\"0bd03f1bd2bf48e29ac6174db10bbdd6\",\"url\":\"https://pay.conekta.com/checkout/0bd03f1bd2bf48e29ac6174db10bbdd6\"},\"object\":\"order\",\"id\":\"ord_2zCbBcs511tm9heMw\",\"metadata\":{\"ref\":\"tokyo_06242860a4bb403d\",\"context\":{\"tipo\":\"rapido\",\"sede_id\":1,\"corte_id\":128,\"cajero_id\":8,\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"cents\":626,\"method\":\"card\"}},\"is_refundable\":false,\"processing_mode\":null,\"created_at\":1765842514,\"updated_at\":1765842539,\"line_items\":{\"object\":\"list\",\"has_more\":false,\"total\":2,\"data\":[{\"name\":\"Comisión por método de pago (card)\",\"description\":null,\"unit_price\":626,\"quantity\":1,\"sku\":\"FEE-CARD\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbBcs511tm9heMu\",\"parent_id\":\"ord_2zCbBcs511tm9heMw\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"Aderezo de Chipotle\",\"description\":null,\"unit_price\":1000,\"quantity\":1,\"sku\":\"77\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbBcs511tm9heMt\",\"parent_id\":\"ord_2zCbBcs511tm9heMw\",\"metadata\":{},\"antifraud_info\":{}}]},\"shipping_lines\":null,\"tax_lines\":null,\"discount_lines\":null,\"charges\":null},\"previous_attributes\":{}},\"livemode\":false,\"webhook_status\":\"failing\",\"webhook_logs\":[{\"id\":\"webhl_2zCbBwdR4QGctw9VU\",\"url\":\"https://269a764cfda7.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":3,\"last_http_response_status\":404,\"response_data\":{},\"object\":\"webhook_log\",\"last_attempted_at\":1765842669}],\"id\":\"69409e6b7a38bf001b54dad1\",\"object\":\"event\",\"type\":\"order.updated\",\"created_at\":1765842539}', '2025-12-15 17:53:48'),
+(63, NULL, 'charge.created', '69409e6c5e3f4600179164cc', '{\"data\":{\"object\":{\"id\":\"69409e6b5e3f4600179164bf\",\"livemode\":false,\"created_at\":1765842539,\"currency\":\"MXN\",\"device_fingerprint\":\"7db874e3ab6c4b539e1e3dbf164bf0ce\",\"session_id\":\"7db874e3ab6c4b539e1e3dbf164bf0ce\",\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"0bd03f1b-d2bf-48e2-9ac6-174db10bbdd6\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCbBwKZ1zxyg4HQh\"},\"payment_method\":{\"name\":\"pedro\",\"exp_month\":\"10\",\"exp_year\":\"27\",\"object\":\"card_payment\",\"type\":\"credit\",\"last4\":\"4242\",\"brand\":\"visa\",\"issuer\":\"banamex\",\"account_type\":\"BANAMEX\",\"country\":\"MX\",\"fraud_indicators\":[],\"antifraud_flag\":\"\",\"three_ds_flow_required\":false},\"object\":\"charge\",\"description\":\"Payment from order\",\"status\":\"pending_payment\",\"amount\":1626,\"fee\":412,\"customer_id\":\"cus_2yg6xUa6VP1VJJj5V\",\"order_id\":\"ord_2zCbBcs511tm9heMw\"},\"previous_attributes\":{}},\"livemode\":false,\"webhook_status\":\"failing\",\"webhook_logs\":[{\"id\":\"webhl_2zCbBxDaSseG1QrLz\",\"url\":\"https://269a764cfda7.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":3,\"last_http_response_status\":404,\"response_data\":{},\"object\":\"webhook_log\",\"last_attempted_at\":1765842705}],\"id\":\"69409e6c5e3f4600179164cc\",\"object\":\"event\",\"type\":\"charge.created\",\"created_at\":1765842540}', '2025-12-15 17:54:16'),
+(64, 'tokyo_50c6b301dbf604cb', 'order.created', '69409fb713e37d001a836a83', '{\"data\":{\"object\":{\"livemode\":false,\"amount\":34405,\"currency\":\"MXN\",\"payment_status\":null,\"amount_refunded\":0,\"split_payment\":null,\"customer_info\":{\"email\":\"fued2@live.com.mx\",\"phone\":\"+526181234567\",\"name\":\"pedro\",\"corporate\":null,\"customer_id\":null,\"date_of_birth\":null,\"national_id\":null,\"object\":\"customer_info\"},\"shipping_contact\":null,\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"3c019efc-5736-4e41-998e-df43a104ad72\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCbGAD8Wg15Bqcim\"},\"fiscal_entity\":null,\"checkout\":{\"id\":\"3c019efc-5736-4e41-998e-df43a104ad72\",\"name\":\"ord-2zCbGAD8Wg15Bqcik\",\"livemode\":false,\"emails_sent\":0,\"success_url\":\"http://localhost/rest2/tokyo/vistas/pago_exitoso.php?ref=tokyo_50c6b301dbf604cb\",\"failure_url\":\"http://localhost/rest2/tokyo/vistas/pago_fallido.php?ref=tokyo_50c6b301dbf604cb\",\"payments_limit_count\":null,\"paid_payments_count\":0,\"sms_sent\":0,\"status\":\"Issued\",\"type\":\"HostedPayment\",\"recurrent\":false,\"starts_at\":1765778400,\"expires_at\":1766037599,\"allowed_payment_methods\":[\"card\"],\"exclude_card_networks\":[],\"needs_shipping_contact\":false,\"monthly_installments_options\":[],\"monthly_installments_enabled\":false,\"redirection_time\":null,\"force_3ds_flow\":false,\"plan_id\":null,\"metadata\":{},\"can_not_expire\":false,\"three_ds_mode\":null,\"max_failed_retries\":null,\"object\":\"checkout\",\"is_redirect_on_failure\":true,\"slug\":\"3c019efc57364e41998edf43a104ad72\",\"url\":\"https://pay.conekta.com/checkout/3c019efc57364e41998edf43a104ad72\"},\"object\":\"order\",\"id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{\"ref\":\"tokyo_50c6b301dbf604cb\",\"context\":{\"tipo\":\"rapido\",\"sede_id\":1,\"corte_id\":128,\"cajero_id\":8,\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"cents\":1705,\"method\":\"card\"}},\"is_refundable\":false,\"processing_mode\":null,\"created_at\":1765842871,\"updated_at\":1765842871,\"line_items\":{\"object\":\"list\",\"has_more\":false,\"total\":4,\"data\":[{\"name\":\"Comisión por método de pago (card)\",\"description\":null,\"unit_price\":1705,\"quantity\":1,\"sku\":\"FEE-CARD\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcii\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"Aguachile Especial Roll\",\"description\":null,\"unit_price\":16500,\"quantity\":1,\"sku\":\"99\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcih\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"Agua Mineral (355ml)\",\"description\":null,\"unit_price\":3700,\"quantity\":1,\"sku\":\"73\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcig\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"3 Quesos\",\"description\":null,\"unit_price\":12500,\"quantity\":1,\"sku\":\"14\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcif\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}}]},\"shipping_lines\":null,\"tax_lines\":null,\"discount_lines\":null,\"charges\":null},\"previous_attributes\":{}},\"livemode\":false,\"webhook_status\":\"pending\",\"webhook_logs\":[{\"id\":\"webhl_2zCbGAsv9pdFwRMe6\",\"url\":\"https://0e79a87bb1ef.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":0,\"last_http_response_status\":-1,\"response_data\":null,\"object\":\"webhook_log\",\"last_attempted_at\":0}],\"id\":\"69409fb713e37d001a836a83\",\"object\":\"event\",\"type\":\"order.created\",\"created_at\":1765842871}', '2025-12-15 17:54:42'),
+(65, 'tokyo_50c6b301dbf604cb', 'order.updated', '69409fd25e3f460019fc2d62', '{\"data\":{\"object\":{\"livemode\":false,\"amount\":34405,\"currency\":\"MXN\",\"payment_status\":null,\"amount_refunded\":0,\"split_payment\":null,\"customer_info\":{\"email\":\"fued2@live.com.mx\",\"phone\":\"6183021446\",\"name\":\"fued\",\"corporate\":false,\"customer_id\":\"cus_2yg6xUa6VP1VJJj5V\",\"date_of_birth\":null,\"national_id\":null,\"object\":\"customer_info\",\"customer_custom_reference\":null},\"shipping_contact\":null,\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"3c019efc-5736-4e41-998e-df43a104ad72\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCbGAD8Wg15Bqcim\"},\"fiscal_entity\":null,\"checkout\":{\"id\":\"3c019efc-5736-4e41-998e-df43a104ad72\",\"name\":\"ord-2zCbGAD8Wg15Bqcik\",\"livemode\":false,\"emails_sent\":0,\"success_url\":\"http://localhost/rest2/tokyo/vistas/pago_exitoso.php?ref=tokyo_50c6b301dbf604cb\",\"failure_url\":\"http://localhost/rest2/tokyo/vistas/pago_fallido.php?ref=tokyo_50c6b301dbf604cb\",\"payments_limit_count\":null,\"paid_payments_count\":0,\"sms_sent\":0,\"status\":\"Issued\",\"type\":\"HostedPayment\",\"recurrent\":false,\"starts_at\":1765778400,\"expires_at\":1766037599,\"allowed_payment_methods\":[\"card\"],\"exclude_card_networks\":[],\"needs_shipping_contact\":false,\"monthly_installments_options\":[],\"monthly_installments_enabled\":false,\"redirection_time\":null,\"force_3ds_flow\":false,\"plan_id\":null,\"metadata\":{},\"can_not_expire\":false,\"three_ds_mode\":null,\"max_failed_retries\":null,\"object\":\"checkout\",\"is_redirect_on_failure\":true,\"slug\":\"3c019efc57364e41998edf43a104ad72\",\"url\":\"https://pay.conekta.com/checkout/3c019efc57364e41998edf43a104ad72\"},\"object\":\"order\",\"id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{\"ref\":\"tokyo_50c6b301dbf604cb\",\"context\":{\"tipo\":\"rapido\",\"sede_id\":1,\"corte_id\":128,\"cajero_id\":8,\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"cents\":1705,\"method\":\"card\"}},\"is_refundable\":false,\"processing_mode\":null,\"created_at\":1765842871,\"updated_at\":1765842898,\"line_items\":{\"object\":\"list\",\"has_more\":false,\"total\":4,\"data\":[{\"name\":\"Comisión por método de pago (card)\",\"description\":null,\"unit_price\":1705,\"quantity\":1,\"sku\":\"FEE-CARD\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcii\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"Aguachile Especial Roll\",\"description\":null,\"unit_price\":16500,\"quantity\":1,\"sku\":\"99\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcih\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"Agua Mineral (355ml)\",\"description\":null,\"unit_price\":3700,\"quantity\":1,\"sku\":\"73\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcig\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"3 Quesos\",\"description\":null,\"unit_price\":12500,\"quantity\":1,\"sku\":\"14\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcif\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}}]},\"shipping_lines\":null,\"tax_lines\":null,\"discount_lines\":null,\"charges\":null},\"previous_attributes\":{}},\"livemode\":false,\"webhook_status\":\"pending\",\"webhook_logs\":[{\"id\":\"webhl_2zCbGWY1TrvfUHWg9\",\"url\":\"https://0e79a87bb1ef.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":0,\"last_http_response_status\":-1,\"response_data\":null,\"object\":\"webhook_log\",\"last_attempted_at\":0}],\"id\":\"69409fd25e3f460019fc2d62\",\"object\":\"event\",\"type\":\"order.updated\",\"created_at\":1765842898}', '2025-12-15 17:55:11'),
+(66, NULL, 'charge.created', '69409fd248339d001d4ff898', '{\"data\":{\"object\":{\"id\":\"69409fd248339d001d4ff891\",\"livemode\":false,\"created_at\":1765842898,\"currency\":\"MXN\",\"device_fingerprint\":\"7db874e3ab6c4b539e1e3dbf164bf0ce\",\"session_id\":\"7db874e3ab6c4b539e1e3dbf164bf0ce\",\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"3c019efc-5736-4e41-998e-df43a104ad72\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCbGWJ159JRfVte9\"},\"payment_method\":{\"name\":\"perd\",\"exp_month\":\"10\",\"exp_year\":\"27\",\"object\":\"card_payment\",\"type\":\"credit\",\"last4\":\"4242\",\"brand\":\"visa\",\"issuer\":\"banamex\",\"account_type\":\"BANAMEX\",\"country\":\"MX\",\"fraud_indicators\":[],\"antifraud_flag\":\"\",\"three_ds_flow_required\":false},\"object\":\"charge\",\"description\":\"Payment from order\",\"status\":\"pending_payment\",\"amount\":34405,\"fee\":1705,\"customer_id\":\"cus_2yg6xUa6VP1VJJj5V\",\"order_id\":\"ord_2zCbGAD8Wg15Bqcik\"},\"previous_attributes\":{}},\"livemode\":false,\"webhook_status\":\"pending\",\"webhook_logs\":[{\"id\":\"webhl_2zCbGWGV6jF1GPh6k\",\"url\":\"https://0e79a87bb1ef.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":0,\"last_http_response_status\":-1,\"response_data\":null,\"object\":\"webhook_log\",\"last_attempted_at\":0}],\"id\":\"69409fd248339d001d4ff898\",\"object\":\"event\",\"type\":\"charge.created\",\"created_at\":1765842898}', '2025-12-15 17:55:11'),
+(67, 'tokyo_50c6b301dbf604cb', 'order.paid', '69409fd248339d001d4ff8a0', '{\"data\":{\"object\":{\"livemode\":false,\"amount\":34405,\"currency\":\"MXN\",\"payment_status\":\"paid\",\"amount_refunded\":0,\"customer_info\":{\"email\":\"fued2@live.com.mx\",\"phone\":\"6183021446\",\"name\":\"fued\",\"corporate\":false,\"customer_id\":\"cus_2yg6xUa6VP1VJJj5V\",\"object\":\"customer_info\"},\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"3c019efc-5736-4e41-998e-df43a104ad72\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCbGAD8Wg15Bqcim\"},\"checkout\":{\"id\":\"3c019efc-5736-4e41-998e-df43a104ad72\",\"name\":\"ord-2zCbGAD8Wg15Bqcik\",\"livemode\":false,\"emails_sent\":0,\"success_url\":\"http://localhost/rest2/tokyo/vistas/pago_exitoso.php?ref=tokyo_50c6b301dbf604cb\",\"failure_url\":\"http://localhost/rest2/tokyo/vistas/pago_fallido.php?ref=tokyo_50c6b301dbf604cb\",\"paid_payments_count\":0,\"sms_sent\":0,\"status\":\"Issued\",\"type\":\"HostedPayment\",\"recurrent\":false,\"starts_at\":1765778400,\"expires_at\":1766037599,\"allowed_payment_methods\":[\"card\"],\"exclude_card_networks\":[],\"needs_shipping_contact\":false,\"monthly_installments_options\":[],\"monthly_installments_enabled\":false,\"force_3ds_flow\":false,\"metadata\":{},\"can_not_expire\":false,\"object\":\"checkout\",\"is_redirect_on_failure\":true,\"slug\":\"3c019efc57364e41998edf43a104ad72\",\"url\":\"https://pay.conekta.com/checkout/3c019efc57364e41998edf43a104ad72\"},\"object\":\"order\",\"id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{\"ref\":\"tokyo_50c6b301dbf604cb\",\"context\":{\"tipo\":\"rapido\",\"sede_id\":1,\"corte_id\":128,\"cajero_id\":8,\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"cents\":1705,\"method\":\"card\"}},\"is_refundable\":true,\"created_at\":1765842871,\"updated_at\":1765842898,\"line_items\":{\"object\":\"list\",\"has_more\":false,\"total\":4,\"data\":[{\"name\":\"Comisión por método de pago (card)\",\"unit_price\":1705,\"quantity\":1,\"sku\":\"FEE-CARD\",\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcii\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"Aguachile Especial Roll\",\"unit_price\":16500,\"quantity\":1,\"sku\":\"99\",\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcih\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"Agua Mineral (355ml)\",\"unit_price\":3700,\"quantity\":1,\"sku\":\"73\",\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcig\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"3 Quesos\",\"unit_price\":12500,\"quantity\":1,\"sku\":\"14\",\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcif\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}}]},\"charges\":{\"object\":\"list\",\"has_more\":false,\"total\":1,\"data\":[{\"id\":\"69409fd248339d001d4ff891\",\"livemode\":false,\"created_at\":1765842898,\"currency\":\"MXN\",\"device_fingerprint\":\"7db874e3ab6c4b539e1e3dbf164bf0ce\",\"session_id\":\"7db874e3ab6c4b539e1e3dbf164bf0ce\",\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"3c019efc-5736-4e41-998e-df43a104ad72\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCbGWJ159JRfVte9\"},\"payment_method\":{\"name\":\"perd\",\"exp_month\":\"10\",\"exp_year\":\"27\",\"auth_code\":\"954620\",\"object\":\"card_payment\",\"type\":\"credit\",\"last4\":\"4242\",\"brand\":\"visa\",\"issuer\":\"banamex\",\"account_type\":\"BANAMEX\",\"country\":\"MX\",\"fraud_indicators\":[],\"antifraud_flag\":\"\",\"three_ds_flow_required\":false},\"object\":\"charge\",\"description\":\"Payment from order\",\"status\":\"paid\",\"amount\":34405,\"paid_at\":1765842898,\"fee\":1705,\"customer_id\":\"cus_2yg6xUa6VP1VJJj5V\",\"order_id\":\"ord_2zCbGAD8Wg15Bqcik\"}]}},\"previous_attributes\":{}},\"livemode\":false,\"webhook_status\":\"pending\",\"webhook_logs\":[{\"id\":\"webhl_2zCbGX1JcvoetfMbK\",\"url\":\"https://0e79a87bb1ef.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":0,\"last_http_response_status\":-1,\"response_data\":null,\"object\":\"webhook_log\",\"last_attempted_at\":0}],\"id\":\"69409fd248339d001d4ff8a0\",\"object\":\"event\",\"type\":\"order.paid\",\"created_at\":1765842899}', '2025-12-15 17:55:11'),
+(68, NULL, 'charge.paid', '69409fd248339d001d4ff89a', '{\"data\":{\"object\":{\"id\":\"69409fd248339d001d4ff891\",\"livemode\":false,\"created_at\":1765842898,\"currency\":\"MXN\",\"device_fingerprint\":\"7db874e3ab6c4b539e1e3dbf164bf0ce\",\"session_id\":\"7db874e3ab6c4b539e1e3dbf164bf0ce\",\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"3c019efc-5736-4e41-998e-df43a104ad72\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCbGWJ159JRfVte9\"},\"payment_method\":{\"name\":\"perd\",\"exp_month\":\"10\",\"exp_year\":\"27\",\"auth_code\":\"954620\",\"object\":\"card_payment\",\"type\":\"credit\",\"last4\":\"4242\",\"brand\":\"visa\",\"issuer\":\"banamex\",\"account_type\":\"BANAMEX\",\"country\":\"MX\",\"fraud_indicators\":[],\"antifraud_flag\":\"\",\"three_ds_flow_required\":false},\"object\":\"charge\",\"description\":\"Payment from order\",\"status\":\"paid\",\"amount\":34405,\"paid_at\":1765842898,\"fee\":1705,\"customer_id\":\"cus_2yg6xUa6VP1VJJj5V\",\"order_id\":\"ord_2zCbGAD8Wg15Bqcik\"},\"previous_attributes\":{\"payment_method\":{}}},\"livemode\":false,\"webhook_status\":\"pending\",\"webhook_logs\":[{\"id\":\"webhl_2zCbGWc7kFWtzzsgB\",\"url\":\"https://0e79a87bb1ef.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":0,\"last_http_response_status\":-1,\"response_data\":null,\"object\":\"webhook_log\",\"last_attempted_at\":0}],\"id\":\"69409fd248339d001d4ff89a\",\"object\":\"event\",\"type\":\"charge.paid\",\"created_at\":1765842898}', '2025-12-15 17:55:11'),
+(69, 'tokyo_50c6b301dbf604cb', 'order.updated', '69409fd213e37d001a836af8', '{\"data\":{\"object\":{\"livemode\":false,\"amount\":34405,\"currency\":\"MXN\",\"payment_status\":null,\"amount_refunded\":0,\"split_payment\":false,\"customer_info\":{\"email\":\"fued2@live.com.mx\",\"phone\":\"6183021446\",\"name\":\"fued\",\"corporate\":false,\"customer_id\":\"cus_2yg6xUa6VP1VJJj5V\",\"date_of_birth\":null,\"national_id\":null,\"object\":\"customer_info\",\"customer_custom_reference\":null},\"shipping_contact\":null,\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"3c019efc-5736-4e41-998e-df43a104ad72\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCbGAD8Wg15Bqcim\"},\"fiscal_entity\":null,\"checkout\":{\"id\":\"3c019efc-5736-4e41-998e-df43a104ad72\",\"name\":\"ord-2zCbGAD8Wg15Bqcik\",\"livemode\":false,\"emails_sent\":0,\"success_url\":\"http://localhost/rest2/tokyo/vistas/pago_exitoso.php?ref=tokyo_50c6b301dbf604cb\",\"failure_url\":\"http://localhost/rest2/tokyo/vistas/pago_fallido.php?ref=tokyo_50c6b301dbf604cb\",\"payments_limit_count\":null,\"paid_payments_count\":0,\"sms_sent\":0,\"status\":\"Issued\",\"type\":\"HostedPayment\",\"recurrent\":false,\"starts_at\":1765778400,\"expires_at\":1766037599,\"allowed_payment_methods\":[\"card\"],\"exclude_card_networks\":[],\"needs_shipping_contact\":false,\"monthly_installments_options\":[],\"monthly_installments_enabled\":false,\"redirection_time\":null,\"force_3ds_flow\":false,\"plan_id\":null,\"metadata\":{},\"can_not_expire\":false,\"three_ds_mode\":null,\"max_failed_retries\":null,\"object\":\"checkout\",\"is_redirect_on_failure\":true,\"slug\":\"3c019efc57364e41998edf43a104ad72\",\"url\":\"https://pay.conekta.com/checkout/3c019efc57364e41998edf43a104ad72\"},\"object\":\"order\",\"id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{\"ref\":\"tokyo_50c6b301dbf604cb\",\"context\":{\"tipo\":\"rapido\",\"sede_id\":1,\"corte_id\":128,\"cajero_id\":8,\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"cents\":1705,\"method\":\"card\"}},\"is_refundable\":false,\"processing_mode\":null,\"created_at\":1765842871,\"updated_at\":1765842898,\"line_items\":{\"object\":\"list\",\"has_more\":false,\"total\":4,\"data\":[{\"name\":\"Comisión por método de pago (card)\",\"description\":null,\"unit_price\":1705,\"quantity\":1,\"sku\":\"FEE-CARD\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcii\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"Aguachile Especial Roll\",\"description\":null,\"unit_price\":16500,\"quantity\":1,\"sku\":\"99\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcih\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"Agua Mineral (355ml)\",\"description\":null,\"unit_price\":3700,\"quantity\":1,\"sku\":\"73\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcig\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}},{\"name\":\"3 Quesos\",\"description\":null,\"unit_price\":12500,\"quantity\":1,\"sku\":\"14\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCbGAD8Wg15Bqcif\",\"parent_id\":\"ord_2zCbGAD8Wg15Bqcik\",\"metadata\":{},\"antifraud_info\":{}}]},\"shipping_lines\":null,\"tax_lines\":null,\"discount_lines\":null,\"charges\":null},\"previous_attributes\":{}},\"livemode\":false,\"webhook_status\":\"pending\",\"webhook_logs\":[{\"id\":\"webhl_2zCbGWc7kFWtzzsg8\",\"url\":\"https://0e79a87bb1ef.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":0,\"last_http_response_status\":-1,\"response_data\":null,\"object\":\"webhook_log\",\"last_attempted_at\":0}],\"id\":\"69409fd213e37d001a836af8\",\"object\":\"event\",\"type\":\"order.updated\",\"created_at\":1765842898}', '2025-12-15 17:55:11'),
+(70, NULL, 'charge.paid', '69409e6c5e3f4600179164d8', '{\"data\":{\"object\":{\"id\":\"69409e6b5e3f4600179164bf\",\"livemode\":false,\"created_at\":1765842539,\"currency\":\"MXN\",\"device_fingerprint\":\"7db874e3ab6c4b539e1e3dbf164bf0ce\",\"session_id\":\"7db874e3ab6c4b539e1e3dbf164bf0ce\",\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"0bd03f1b-d2bf-48e2-9ac6-174db10bbdd6\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCbBwKZ1zxyg4HQh\"},\"payment_method\":{\"name\":\"pedro\",\"exp_month\":\"10\",\"exp_year\":\"27\",\"auth_code\":\"196734\",\"object\":\"card_payment\",\"type\":\"credit\",\"last4\":\"4242\",\"brand\":\"visa\",\"issuer\":\"banamex\",\"account_type\":\"BANAMEX\",\"country\":\"MX\",\"fraud_indicators\":[],\"antifraud_flag\":\"\",\"three_ds_flow_required\":false},\"object\":\"charge\",\"description\":\"Payment from order\",\"status\":\"paid\",\"amount\":1626,\"paid_at\":1765842540,\"fee\":412,\"customer_id\":\"cus_2yg6xUa6VP1VJJj5V\",\"order_id\":\"ord_2zCbBcs511tm9heMw\"},\"previous_attributes\":{\"payment_method\":{}}},\"livemode\":false,\"webhook_status\":\"failing\",\"webhook_logs\":[{\"id\":\"webhl_2zCbBwxd7qbUuWEeH\",\"url\":\"https://269a764cfda7.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":3,\"last_http_response_status\":404,\"response_data\":{},\"object\":\"webhook_log\",\"last_attempted_at\":1765842737}],\"id\":\"69409e6c5e3f4600179164d8\",\"object\":\"event\",\"type\":\"charge.paid\",\"created_at\":1765842540}', '2025-12-15 17:55:29'),
+(71, NULL, 'webhook.updated', '69409de947679a0019dbfb49', '{\"data\":{\"object\":{\"url\":\"https://269a764cfda7.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"status\":\"error\",\"subscribed_events\":[\"charge.created\",\"charge.paid\",\"charge.under_fraud_review\",\"charge.fraudulent\",\"charge.refunded\",\"charge.preauthorized\",\"charge.declined\",\"charge.canceled\",\"charge.reversed\",\"charge.pending_confirmation\",\"charge.expired\",\"charge.chargeback.created\",\"charge.chargeback.updated\",\"charge.chargeback.under_review\",\"charge.chargeback.lost\",\"charge.chargeback.won\",\"charge.score_updated\",\"customer.created\",\"customer.updated\",\"customer.deleted\",\"customer.payment_source.card.blocked\",\"webhook.created\",\"webhook.updated\",\"webhook.deleted\",\"webhook_ping\",\"payout.created\",\"payout.retrying\",\"payout.paid_out\",\"payout.failed\",\"payout.in_transit\",\"plan.created\",\"plan.updated\",\"plan.deleted\",\"subscription.created\",\"subscription.paused\",\"subscription.resumed\",\"subscription.canceled\",\"subscription.expired\",\"subscription.updated\",\"subscription.paid\",\"subscription.payment_failed\",\"subscription.scheduled_payment_failed\",\"payee.created\",\"payee.updated\",\"payee.deleted\",\"payee.payout_method.created\",\"payee.payout_method.updated\",\"payee.payout_method.deleted\",\"receipt.created\",\"order.canceled\",\"order.charged_back\",\"order.created\",\"order.expired\",\"order.fraudulent\",\"order.under_fraud_review\",\"order.paid\",\"order.partially_refunded\",\"order.pending_payment\",\"order.pre_authorized\",\"order.refunded\",\"order.updated\",\"order.voided\",\"order.declined\",\"cashout.canceled\",\"cashout.confirmed\",\"cashout.expired\",\"cash_refund.created\",\"cash_refund.canceled\",\"cash_refund.refunded\",\"cash_refund.expired\",\"company.onboarding.success\",\"company.onboarding.failed\",\"inbound_payment.lookup\",\"inbound_payment.payment_attempt\",\"inbound_payment.reverse\"],\"description\":\"tokyo\",\"livemode\":false,\"active\":true,\"id\":\"68c61ccbe942880017963f78\",\"object\":\"webhook\"},\"previous_attributes\":{}},\"livemode\":false,\"webhook_status\":\"failing\",\"webhook_logs\":[{\"id\":\"webhl_2zCbAHHDjFX1PZ2hw\",\"url\":\"https://269a764cfda7.ngrok-free.app/rest2/tokyo/api/checkout/conekta_webhook.php\",\"failed_attempts\":4,\"last_http_response_status\":404,\"response_data\":{},\"object\":\"webhook_log\",\"last_attempted_at\":1765842643}],\"id\":\"69409de947679a0019dbfb49\",\"object\":\"event\",\"type\":\"webhook.updated\",\"created_at\":1765842409}', '2025-12-15 17:56:30');
+
 -- --------------------------------------------------------
 
 --
@@ -14917,18 +14915,6 @@ CREATE TABLE `conekta_payments` (
   `locked_at` datetime DEFAULT NULL,
   `locked_by` varchar(64) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `conekta_payments`
---
-
-INSERT INTO `conekta_payments` (`id`, `reference`, `venta_id`, `customer_name`, `customer_email`, `customer_phone`, `amount`, `currency`, `status`, `payment_method`, `conekta_order_id`, `conekta_checkout_id`, `checkout_url`, `cart_snapshot`, `metadata`, `raw_order`, `created_at`, `updated_at`, `next_check_at`, `last_check_at`, `check_attempts`, `locked_at`, `locked_by`) VALUES
-(30, 'tokyo_3951300fef75c19c', 866, 'fued', 'fued2@live.com.mx', '+526181230900', 16499, 'MXN', 'paid', NULL, 'ord_2zCWDPUiMUNRMXY7h', 'e8b838b3-0b8a-45f3-93e0-b0b3b62c9c5d', 'https://pay.conekta.com/checkout/e8b838b30b8a45f393e0b0b3b62c9c5d', '{\"items\":{\"14\":1,\"77\":1,\"9010\":1},\"envio_monto\":0,\"fee\":{\"method\":\"card\",\"surcharge_mx\":9.987090863662871,\"surcharge_cents\":999}}', '{\"ref\":\"tokyo_3951300fef75c19c\",\"context\":{\"tipo\":\"rapido\",\"mesa_id\":null,\"repartidor_id\":null,\"usuario_id\":1,\"sede_id\":2,\"corte_id\":127,\"cajero_id\":8,\"observacion\":\"\",\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"mx\":9.987090863662871,\"cents\":999,\"method\":\"card\",\"meta\":{\"method\":\"card\",\"rate\":0.034,\"fixed\":3,\"iva\":0.16,\"min_fee\":5.4,\"grossed_up\":true}}}', '{\"livemode\":false,\"amount\":16499,\"currency\":\"MXN\",\"payment_status\":null,\"amount_refunded\":0,\"split_payment\":null,\"customer_info\":{\"email\":\"fued2@live.com.mx\",\"phone\":\"+526181230900\",\"name\":\"fued\",\"corporate\":null,\"customer_id\":null,\"date_of_birth\":null,\"national_id\":null,\"object\":\"customer_info\"},\"shipping_contact\":null,\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"e8b838b3-0b8a-45f3-93e0-b0b3b62c9c5d\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCWDPUiMUNRMXY7i\"},\"fiscal_entity\":null,\"checkout\":{\"id\":\"e8b838b3-0b8a-45f3-93e0-b0b3b62c9c5d\",\"name\":\"ord-2zCWDPUiMUNRMXY7h\",\"livemode\":false,\"emails_sent\":0,\"success_url\":\"http:\\/\\/localhost\\/rest2\\/tokyo\\/vistas\\/pago_exitoso.php?ref=tokyo_3951300fef75c19c\",\"failure_url\":\"http:\\/\\/localhost\\/rest2\\/tokyo\\/vistas\\/pago_fallido.php?ref=tokyo_3951300fef75c19c\",\"payments_limit_count\":null,\"paid_payments_count\":0,\"sms_sent\":0,\"status\":\"Issued\",\"type\":\"HostedPayment\",\"recurrent\":false,\"starts_at\":1765778400,\"expires_at\":1766037599,\"allowed_payment_methods\":[\"card\"],\"exclude_card_networks\":[],\"needs_shipping_contact\":false,\"monthly_installments_options\":[],\"monthly_installments_enabled\":false,\"redirection_time\":null,\"force_3ds_flow\":false,\"plan_id\":null,\"metadata\":[],\"can_not_expire\":false,\"three_ds_mode\":null,\"max_failed_retries\":null,\"object\":\"checkout\",\"is_redirect_on_failure\":true,\"slug\":\"e8b838b30b8a45f393e0b0b3b62c9c5d\",\"url\":\"https:\\/\\/pay.conekta.com\\/checkout\\/e8b838b30b8a45f393e0b0b3b62c9c5d\"},\"object\":\"order\",\"id\":\"ord_2zCWDPUiMUNRMXY7h\",\"metadata\":{\"ref\":\"tokyo_3951300fef75c19c\",\"payment_id\":30,\"context\":{\"tipo\":\"rapido\",\"sede_id\":2,\"corte_id\":127,\"cajero_id\":8,\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"cents\":999,\"method\":\"card\"}},\"is_refundable\":false,\"processing_mode\":null,\"created_at\":1765819870,\"updated_at\":1765819870,\"line_items\":{\"object\":\"list\",\"has_more\":false,\"total\":4,\"data\":[{\"name\":\"Comisión por método de pago (card)\",\"description\":null,\"unit_price\":999,\"quantity\":1,\"sku\":\"FEE-CARD\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCWDPUiMUNRMXY7f\",\"parent_id\":\"ord_2zCWDPUiMUNRMXY7h\",\"metadata\":[],\"antifraud_info\":[]},{\"name\":\"agua natural\",\"description\":null,\"unit_price\":2000,\"quantity\":1,\"sku\":\"9010\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCWDPUiMUNRMXY7e\",\"parent_id\":\"ord_2zCWDPUiMUNRMXY7h\",\"metadata\":[],\"antifraud_info\":[]},{\"name\":\"Aderezo de Chipotle\",\"description\":null,\"unit_price\":1000,\"quantity\":1,\"sku\":\"77\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCWDPUiMUNRMXY7d\",\"parent_id\":\"ord_2zCWDPUiMUNRMXY7h\",\"metadata\":[],\"antifraud_info\":[]},{\"name\":\"3 Quesos\",\"description\":null,\"unit_price\":12500,\"quantity\":1,\"sku\":\"14\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCWDPUiMUNRMXY7c\",\"parent_id\":\"ord_2zCWDPUiMUNRMXY7h\",\"metadata\":[],\"antifraud_info\":[]}]},\"shipping_lines\":null,\"tax_lines\":null,\"discount_lines\":null,\"charges\":null}', '2025-12-15 11:31:10', '2025-12-15 11:32:41', NULL, NULL, 0, NULL, NULL),
-(31, 'tokyo_6bb67f0919fc0fce', NULL, 'fued2', 'fued2@live.com.mx', '+526183021446', 32010, 'MXN', 'pending', NULL, NULL, NULL, NULL, '{\"items\":{\"105\":1,\"99\":1},\"envio_monto\":0,\"fee\":{\"method\":\"card\",\"surcharge_mx\":16.104938785708384,\"surcharge_cents\":1610}}', '{\"ref\":\"tokyo_6bb67f0919fc0fce\",\"context\":{\"tipo\":\"rapido\",\"mesa_id\":null,\"repartidor_id\":null,\"usuario_id\":1,\"sede_id\":2,\"corte_id\":127,\"cajero_id\":8,\"observacion\":\"\",\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"mx\":16.104938785708384,\"cents\":1610,\"method\":\"card\",\"meta\":{\"method\":\"card\",\"rate\":0.034,\"fixed\":3,\"iva\":0.16,\"min_fee\":5.4,\"grossed_up\":true}}}', NULL, '2025-12-15 11:47:55', '2025-12-15 16:19:17', '2025-12-15 16:19:37', NULL, 0, NULL, NULL),
-(32, 'tokyo_88223db06daea4d1', 867, 'fued dos', 'fued2@live.com.mx', '+526183021446', 32010, 'MXN', 'paid', NULL, 'ord_2zCWSNaBCD7jU3PwM', '22f05dbb-795e-409c-a0ee-95740a20871c', 'https://pay.conekta.com/checkout/22f05dbb795e409ca0ee95740a20871c', '{\"items\":{\"105\":1,\"99\":1},\"envio_monto\":0,\"fee\":{\"method\":\"card\",\"surcharge_mx\":16.104938785708384,\"surcharge_cents\":1610}}', '{\"ref\":\"tokyo_88223db06daea4d1\",\"context\":{\"tipo\":\"rapido\",\"mesa_id\":null,\"repartidor_id\":null,\"usuario_id\":1,\"sede_id\":2,\"corte_id\":127,\"cajero_id\":8,\"observacion\":\"\",\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"mx\":16.104938785708384,\"cents\":1610,\"method\":\"card\",\"meta\":{\"method\":\"card\",\"rate\":0.034,\"fixed\":3,\"iva\":0.16,\"min_fee\":5.4,\"grossed_up\":true}}}', '{\"livemode\":false,\"amount\":32010,\"currency\":\"MXN\",\"payment_status\":null,\"amount_refunded\":0,\"split_payment\":null,\"customer_info\":{\"email\":\"fued2@live.com.mx\",\"phone\":\"+526183021446\",\"name\":\"fued dos\",\"corporate\":null,\"customer_id\":null,\"date_of_birth\":null,\"national_id\":null,\"object\":\"customer_info\"},\"shipping_contact\":null,\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"22f05dbb-795e-409c-a0ee-95740a20871c\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCWSNaBCD7jU3PwN\"},\"fiscal_entity\":null,\"checkout\":{\"id\":\"22f05dbb-795e-409c-a0ee-95740a20871c\",\"name\":\"ord-2zCWSNaBCD7jU3PwM\",\"livemode\":false,\"emails_sent\":0,\"success_url\":\"http:\\/\\/localhost\\/rest2\\/tokyo\\/vistas\\/pago_exitoso.php?ref=tokyo_88223db06daea4d1\",\"failure_url\":\"http:\\/\\/localhost\\/rest2\\/tokyo\\/vistas\\/pago_fallido.php?ref=tokyo_88223db06daea4d1\",\"payments_limit_count\":null,\"paid_payments_count\":0,\"sms_sent\":0,\"status\":\"Issued\",\"type\":\"HostedPayment\",\"recurrent\":false,\"starts_at\":1765778400,\"expires_at\":1766037599,\"allowed_payment_methods\":[\"card\"],\"exclude_card_networks\":[],\"needs_shipping_contact\":false,\"monthly_installments_options\":[],\"monthly_installments_enabled\":false,\"redirection_time\":null,\"force_3ds_flow\":false,\"plan_id\":null,\"metadata\":[],\"can_not_expire\":false,\"three_ds_mode\":null,\"max_failed_retries\":null,\"object\":\"checkout\",\"is_redirect_on_failure\":true,\"slug\":\"22f05dbb795e409ca0ee95740a20871c\",\"url\":\"https:\\/\\/pay.conekta.com\\/checkout\\/22f05dbb795e409ca0ee95740a20871c\"},\"object\":\"order\",\"id\":\"ord_2zCWSNaBCD7jU3PwM\",\"metadata\":{\"ref\":\"tokyo_88223db06daea4d1\",\"payment_id\":32,\"context\":{\"tipo\":\"rapido\",\"sede_id\":2,\"corte_id\":127,\"cajero_id\":8,\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"cents\":1610,\"method\":\"card\"}},\"is_refundable\":false,\"processing_mode\":null,\"created_at\":1765820890,\"updated_at\":1765820890,\"line_items\":{\"object\":\"list\",\"has_more\":false,\"total\":3,\"data\":[{\"name\":\"Comisión por método de pago (card)\",\"description\":null,\"unit_price\":1610,\"quantity\":1,\"sku\":\"FEE-CARD\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCWSNaBCD7jU3PwK\",\"parent_id\":\"ord_2zCWSNaBCD7jU3PwM\",\"metadata\":[],\"antifraud_info\":[]},{\"name\":\"Aguachile Especial Roll\",\"description\":null,\"unit_price\":16500,\"quantity\":1,\"sku\":\"99\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCWSNaBCD7jU3PwJ\",\"parent_id\":\"ord_2zCWSNaBCD7jU3PwM\",\"metadata\":[],\"antifraud_info\":[]},{\"name\":\"Alitas\",\"description\":null,\"unit_price\":13900,\"quantity\":1,\"sku\":\"105\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCWSNaBCD7jU3PwH\",\"parent_id\":\"ord_2zCWSNaBCD7jU3PwM\",\"metadata\":[],\"antifraud_info\":[]}]},\"shipping_lines\":null,\"tax_lines\":null,\"discount_lines\":null,\"charges\":null}', '2025-12-15 11:48:09', '2025-12-15 11:51:39', NULL, NULL, 0, NULL, NULL),
-(35, 'tokyo_323f4282d0703c63', NULL, 'joe', 'fued2@live.com.mx', '+526181234567', 13376, 'MXN', 'pending', NULL, 'ord_2zCWc8yLBgQmEdKcc', '8664d311-eeab-41da-ac4a-e26fe3edab67', 'https://pay.conekta.com/checkout/8664d311eeab41daac4ae26fe3edab67', '{\"items\":{\"14\":1},\"envio_monto\":0,\"fee\":{\"method\":\"card\",\"surcharge_mx\":8.755309402848326,\"surcharge_cents\":876}}', '{\"ref\":\"tokyo_323f4282d0703c63\",\"context\":{\"tipo\":\"rapido\",\"mesa_id\":null,\"repartidor_id\":null,\"usuario_id\":1,\"sede_id\":2,\"corte_id\":127,\"cajero_id\":8,\"observacion\":\"\",\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"mx\":8.755309402848326,\"cents\":876,\"method\":\"card\",\"meta\":{\"method\":\"card\",\"rate\":0.034,\"fixed\":3,\"iva\":0.16,\"min_fee\":5.4,\"grossed_up\":true}}}', '{\"livemode\":false,\"amount\":13376,\"currency\":\"MXN\",\"payment_status\":null,\"amount_refunded\":0,\"split_payment\":null,\"customer_info\":{\"email\":\"fued2@live.com.mx\",\"phone\":\"+526181234567\",\"name\":\"joe\",\"corporate\":null,\"customer_id\":null,\"date_of_birth\":null,\"national_id\":null,\"object\":\"customer_info\"},\"shipping_contact\":null,\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"8664d311-eeab-41da-ac4a-e26fe3edab67\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCWc8yLBgQmEdKce\"},\"fiscal_entity\":null,\"checkout\":{\"id\":\"8664d311-eeab-41da-ac4a-e26fe3edab67\",\"name\":\"ord-2zCWc8yLBgQmEdKcc\",\"livemode\":false,\"emails_sent\":0,\"success_url\":\"http:\\/\\/localhost\\/rest2\\/tokyo\\/vistas\\/pago_exitoso.php?ref=tokyo_323f4282d0703c63\",\"failure_url\":\"http:\\/\\/localhost\\/rest2\\/tokyo\\/vistas\\/pago_fallido.php?ref=tokyo_323f4282d0703c63\",\"payments_limit_count\":null,\"paid_payments_count\":0,\"sms_sent\":0,\"status\":\"Issued\",\"type\":\"HostedPayment\",\"recurrent\":false,\"starts_at\":1765778400,\"expires_at\":1766037599,\"allowed_payment_methods\":[\"card\"],\"exclude_card_networks\":[],\"needs_shipping_contact\":false,\"monthly_installments_options\":[],\"monthly_installments_enabled\":false,\"redirection_time\":null,\"force_3ds_flow\":false,\"plan_id\":null,\"metadata\":[],\"can_not_expire\":false,\"three_ds_mode\":null,\"max_failed_retries\":null,\"object\":\"checkout\",\"is_redirect_on_failure\":true,\"slug\":\"8664d311eeab41daac4ae26fe3edab67\",\"url\":\"https:\\/\\/pay.conekta.com\\/checkout\\/8664d311eeab41daac4ae26fe3edab67\"},\"object\":\"order\",\"id\":\"ord_2zCWc8yLBgQmEdKcc\",\"metadata\":{\"ref\":\"tokyo_323f4282d0703c63\",\"payment_id\":35,\"context\":{\"tipo\":\"rapido\",\"sede_id\":2,\"corte_id\":127,\"cajero_id\":8,\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"cents\":876,\"method\":\"card\"}},\"is_refundable\":false,\"processing_mode\":null,\"created_at\":1765821657,\"updated_at\":1765821657,\"line_items\":{\"object\":\"list\",\"has_more\":false,\"total\":2,\"data\":[{\"name\":\"Comisión por método de pago (card)\",\"description\":null,\"unit_price\":876,\"quantity\":1,\"sku\":\"FEE-CARD\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCWc8yLBgQmEdKca\",\"parent_id\":\"ord_2zCWc8yLBgQmEdKcc\",\"metadata\":[],\"antifraud_info\":[]},{\"name\":\"3 Quesos\",\"description\":null,\"unit_price\":12500,\"quantity\":1,\"sku\":\"14\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCWc8yLBgQmEdKcZ\",\"parent_id\":\"ord_2zCWc8yLBgQmEdKcc\",\"metadata\":[],\"antifraud_info\":[]}]},\"shipping_lines\":null,\"tax_lines\":null,\"discount_lines\":null,\"charges\":null}', '2025-12-15 12:00:56', '2025-12-15 16:19:17', '2025-12-15 16:19:37', NULL, 0, NULL, NULL),
-(36, 'tokyo_8192fd9635dd3da0', NULL, 'dojan', 'fued2@live.com.mx', '+526181234567', 27430, 'MXN', 'pending', NULL, 'ord_2zCXWSwSpp1VEk2cz', 'ee8c52a0-aff9-4673-8706-551c1217d875', 'https://pay.conekta.com/checkout/ee8c52a0aff946738706551c1217d875', '{\"items\":{\"14\":1,\"20\":1},\"envio_monto\":0,\"fee\":{\"method\":\"card\",\"surcharge_mx\":14.298325976513752,\"surcharge_cents\":1430}}', '{\"ref\":\"tokyo_8192fd9635dd3da0\",\"context\":{\"tipo\":\"rapido\",\"mesa_id\":null,\"repartidor_id\":null,\"usuario_id\":1,\"sede_id\":2,\"corte_id\":127,\"cajero_id\":8,\"observacion\":\"\",\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"mx\":14.298325976513752,\"cents\":1430,\"method\":\"card\",\"meta\":{\"method\":\"card\",\"rate\":0.034,\"fixed\":3,\"iva\":0.16,\"min_fee\":5.4,\"grossed_up\":true}}}', '{\"livemode\":false,\"amount\":27430,\"currency\":\"MXN\",\"payment_status\":null,\"amount_refunded\":0,\"split_payment\":null,\"customer_info\":{\"email\":\"fued2@live.com.mx\",\"phone\":\"+526181234567\",\"name\":\"dojan\",\"corporate\":null,\"customer_id\":null,\"date_of_birth\":null,\"national_id\":null,\"object\":\"customer_info\"},\"shipping_contact\":null,\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"ee8c52a0-aff9-4673-8706-551c1217d875\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCXWSwSpp1VEk2d1\"},\"fiscal_entity\":null,\"checkout\":{\"id\":\"ee8c52a0-aff9-4673-8706-551c1217d875\",\"name\":\"ord-2zCXWSwSpp1VEk2cz\",\"livemode\":false,\"emails_sent\":0,\"success_url\":\"http:\\/\\/localhost\\/rest2\\/tokyo\\/vistas\\/pago_exitoso.php?ref=tokyo_8192fd9635dd3da0\",\"failure_url\":\"http:\\/\\/localhost\\/rest2\\/tokyo\\/vistas\\/pago_fallido.php?ref=tokyo_8192fd9635dd3da0\",\"payments_limit_count\":null,\"paid_payments_count\":0,\"sms_sent\":0,\"status\":\"Issued\",\"type\":\"HostedPayment\",\"recurrent\":false,\"starts_at\":1765778400,\"expires_at\":1766037599,\"allowed_payment_methods\":[\"card\"],\"exclude_card_networks\":[],\"needs_shipping_contact\":false,\"monthly_installments_options\":[],\"monthly_installments_enabled\":false,\"redirection_time\":null,\"force_3ds_flow\":false,\"plan_id\":null,\"metadata\":[],\"can_not_expire\":false,\"three_ds_mode\":null,\"max_failed_retries\":null,\"object\":\"checkout\",\"is_redirect_on_failure\":true,\"slug\":\"ee8c52a0aff946738706551c1217d875\",\"url\":\"https:\\/\\/pay.conekta.com\\/checkout\\/ee8c52a0aff946738706551c1217d875\"},\"object\":\"order\",\"id\":\"ord_2zCXWSwSpp1VEk2cz\",\"metadata\":{\"ref\":\"tokyo_8192fd9635dd3da0\",\"context\":{\"tipo\":\"rapido\",\"sede_id\":2,\"corte_id\":127,\"cajero_id\":8,\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"cents\":1430,\"method\":\"card\"}},\"is_refundable\":false,\"processing_mode\":null,\"created_at\":1765825768,\"updated_at\":1765825768,\"line_items\":{\"object\":\"list\",\"has_more\":false,\"total\":3,\"data\":[{\"name\":\"Comisión por método de pago (card)\",\"description\":null,\"unit_price\":1430,\"quantity\":1,\"sku\":\"FEE-CARD\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCXWSwSpp1VEk2cx\",\"parent_id\":\"ord_2zCXWSwSpp1VEk2cz\",\"metadata\":[],\"antifraud_info\":[]},{\"name\":\"Bacon Cheese\",\"description\":null,\"unit_price\":13500,\"quantity\":1,\"sku\":\"20\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCXWSwSpp1VEk2cw\",\"parent_id\":\"ord_2zCXWSwSpp1VEk2cz\",\"metadata\":[],\"antifraud_info\":[]},{\"name\":\"3 Quesos\",\"description\":null,\"unit_price\":12500,\"quantity\":1,\"sku\":\"14\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCXWSwSpp1VEk2cv\",\"parent_id\":\"ord_2zCXWSwSpp1VEk2cz\",\"metadata\":[],\"antifraud_info\":[]}]},\"shipping_lines\":null,\"tax_lines\":null,\"discount_lines\":null,\"charges\":null}', '2025-12-15 13:09:28', '2025-12-15 16:19:17', '2025-12-15 16:19:37', NULL, 0, NULL, NULL),
-(37, 'tokyo_a7e1a2b6f1b5f8f9', NULL, 'tomas', 'fued2@live.com.mx', '+526181234567', 28887, 'MXN', 'pending', 'card', 'ord_2zCXpyY98gZxwjykL', '96435cd8-22d1-411d-8979-c21fec3757a5', 'https://pay.conekta.com/checkout/96435cd822d1411d8979c21fec3757a5', '{\"items\":{\"20\":1,\"9024\":1},\"envio_monto\":0,\"fee\":{\"method\":\"card\",\"surcharge_mx\":14.873157324893839,\"surcharge_cents\":1487}}', '{\"ref\":\"tokyo_a7e1a2b6f1b5f8f9\",\"context\":{\"tipo\":\"rapido\",\"mesa_id\":null,\"repartidor_id\":null,\"usuario_id\":1,\"sede_id\":1,\"corte_id\":113,\"cajero_id\":8,\"observacion\":\"\",\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"mx\":14.873157324893839,\"cents\":1487,\"method\":\"card\",\"meta\":{\"method\":\"card\",\"rate\":0.034,\"fixed\":3,\"iva\":0.16,\"min_fee\":5.4,\"grossed_up\":true}}}', '{\"livemode\":false,\"amount\":28887,\"currency\":\"MXN\",\"payment_status\":null,\"amount_refunded\":0,\"split_payment\":null,\"customer_info\":{\"email\":\"fued2@live.com.mx\",\"phone\":\"+526181234567\",\"name\":\"tomas\",\"corporate\":null,\"customer_id\":null,\"date_of_birth\":null,\"national_id\":null,\"object\":\"customer_info\"},\"shipping_contact\":null,\"channel\":{\"segment\":\"Checkout\",\"checkout_request_id\":\"96435cd8-22d1-411d-8979-c21fec3757a5\",\"checkout_request_type\":\"HostedPayment\",\"id\":\"channel_2zCXpyY98gZxwjykM\"},\"fiscal_entity\":null,\"checkout\":{\"id\":\"96435cd8-22d1-411d-8979-c21fec3757a5\",\"name\":\"ord-2zCXpyY98gZxwjykL\",\"livemode\":false,\"emails_sent\":0,\"success_url\":\"http:\\/\\/localhost\\/rest2\\/tokyo\\/vistas\\/pago_exitoso.php?ref=tokyo_a7e1a2b6f1b5f8f9\",\"failure_url\":\"http:\\/\\/localhost\\/rest2\\/tokyo\\/vistas\\/pago_fallido.php?ref=tokyo_a7e1a2b6f1b5f8f9\",\"payments_limit_count\":null,\"paid_payments_count\":0,\"sms_sent\":0,\"status\":\"Issued\",\"type\":\"HostedPayment\",\"recurrent\":false,\"starts_at\":1765778400,\"expires_at\":1766037599,\"allowed_payment_methods\":[\"card\"],\"exclude_card_networks\":[],\"needs_shipping_contact\":false,\"monthly_installments_options\":[],\"monthly_installments_enabled\":false,\"redirection_time\":null,\"force_3ds_flow\":false,\"plan_id\":null,\"metadata\":[],\"can_not_expire\":false,\"three_ds_mode\":null,\"max_failed_retries\":null,\"object\":\"checkout\",\"is_redirect_on_failure\":true,\"slug\":\"96435cd822d1411d8979c21fec3757a5\",\"url\":\"https:\\/\\/pay.conekta.com\\/checkout\\/96435cd822d1411d8979c21fec3757a5\"},\"object\":\"order\",\"id\":\"ord_2zCXpyY98gZxwjykL\",\"metadata\":{\"ref\":\"tokyo_a7e1a2b6f1b5f8f9\",\"context\":{\"tipo\":\"rapido\",\"sede_id\":1,\"corte_id\":113,\"cajero_id\":8,\"colonia_id\":null,\"envio_monto\":0},\"surcharge\":{\"cents\":1487,\"method\":\"card\"}},\"is_refundable\":false,\"processing_mode\":null,\"created_at\":1765827222,\"updated_at\":1765827222,\"line_items\":{\"object\":\"list\",\"has_more\":false,\"total\":3,\"data\":[{\"name\":\"Comisión por método de pago (card)\",\"description\":null,\"unit_price\":1487,\"quantity\":1,\"sku\":\"FEE-CARD\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCXpyY98gZxwjykJ\",\"parent_id\":\"ord_2zCXpyY98gZxwjykL\",\"metadata\":[],\"antifraud_info\":[]},{\"name\":\"Boneless BBQ\",\"description\":null,\"unit_price\":13900,\"quantity\":1,\"sku\":\"9024\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCXpyY98gZxwjykH\",\"parent_id\":\"ord_2zCXpyY98gZxwjykL\",\"metadata\":[],\"antifraud_info\":[]},{\"name\":\"Bacon Cheese\",\"description\":null,\"unit_price\":13500,\"quantity\":1,\"sku\":\"20\",\"tags\":null,\"brand\":null,\"type\":null,\"object\":\"line_item\",\"id\":\"line_item_2zCXpyY98gZxwjykG\",\"parent_id\":\"ord_2zCXpyY98gZxwjykL\",\"metadata\":[],\"antifraud_info\":[]}]},\"shipping_lines\":null,\"tax_lines\":null,\"discount_lines\":null,\"charges\":null}', '2025-12-15 13:33:42', '2025-12-15 16:19:17', '2025-12-15 16:19:37', NULL, 0, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -14986,8 +14972,9 @@ CREATE TABLE `corte_caja` (
 --
 
 INSERT INTO `corte_caja` (`id`, `usuario_id`, `fecha_inicio`, `folio_inicio`, `folio_fin`, `total_folios`, `fecha_fin`, `total`, `observaciones`, `fondo_inicial`) VALUES
-(113, 1, '2025-11-22 18:30:42', 2232, NULL, 0, NULL, NULL, NULL, 12547.00),
-(127, 46, '2025-12-15 18:22:41', 1003, NULL, 0, NULL, NULL, NULL, 1000.00);
+(133, 1, '2025-12-20 00:37:00', 2056, 2056, 0, '2025-12-19 17:37:31', 1000.00, '', 1000.00),
+(134, 1, '2025-12-20 00:38:04', 2056, NULL, 0, NULL, NULL, NULL, 500.00),
+(135, 46, '2025-12-20 05:04:38', 1003, NULL, 0, NULL, NULL, NULL, 1000.00);
 
 -- --------------------------------------------------------
 
@@ -15017,47 +15004,20 @@ CREATE TABLE `desglose_corte` (
   `denominacion` decimal(10,2) NOT NULL,
   `cantidad` int(11) NOT NULL,
   `tipo_pago` enum('efectivo','boucher','cheque') DEFAULT 'efectivo',
-  `denominacion_id` int(11) DEFAULT NULL
+  `denominacion_id` int(11) DEFAULT NULL,
+  `orden` enum('apertura','cierre') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `desglose_corte`
 --
 
-INSERT INTO `desglose_corte` (`id`, `corte_id`, `denominacion`, `cantidad`, `tipo_pago`, `denominacion_id`) VALUES
-(514, 113, 2.00, 1, 'efectivo', 3),
-(515, 113, 5.00, 1, 'efectivo', 4),
-(516, 113, 20.00, 2, 'efectivo', 6),
-(517, 113, 500.00, 1, 'efectivo', 10),
-(518, 113, 1000.00, 12, 'efectivo', 11),
-(519, 113, 1.00, 169, 'cheque', 13),
-(520, 113, 1.00, 223, 'cheque', 13),
-(521, 113, 1.00, 424, 'boucher', 12),
-(522, 113, 1.00, 355, 'cheque', 13),
-(523, 113, 1.00, 189, 'cheque', 13),
-(524, 113, 1.00, 416, 'cheque', 13),
-(525, 113, 1.00, 329, 'boucher', 12),
-(526, 113, 1.00, 209, 'boucher', 12),
-(527, 113, 1.00, 539, 'boucher', 12),
-(528, 113, 1.00, 0, 'cheque', 13),
-(529, 113, 1.00, 380, 'boucher', 12),
-(530, 113, 1.00, 380, 'boucher', 12),
-(531, 113, 1.00, 393, 'boucher', 12),
-(532, 113, 1.00, 487, 'boucher', 12),
-(533, 113, 1.00, 6, 'cheque', 13),
-(534, 113, 1.00, 719, 'boucher', 12),
-(535, 113, 1.00, 342, 'boucher', 12),
-(536, 113, 1.00, 395, 'boucher', 12),
-(537, 113, 1.00, 719, 'boucher', 12),
-(538, 113, 1.00, 533, 'boucher', 12),
-(539, 113, 1.00, 529, 'boucher', 12),
-(540, 113, 1.00, 338, 'cheque', 13),
-(541, 113, 1.00, 155, 'cheque', 13),
-(542, 113, 1.00, 332, 'boucher', 12),
-(543, 113, 1.00, 320, 'cheque', 13),
-(544, 113, 1.00, 289, 'boucher', 12),
-(545, 113, 1.00, 658, 'boucher', 12),
-(581, 127, 1000.00, 1, 'efectivo', 11);
+INSERT INTO `desglose_corte` (`id`, `corte_id`, `denominacion`, `cantidad`, `tipo_pago`, `denominacion_id`, `orden`) VALUES
+(592, 133, 1000.00, 1, 'efectivo', 11, 'apertura'),
+(593, 133, 500.00, 2, 'efectivo', 10, 'cierre'),
+(594, 134, 500.00, 1, 'efectivo', 10, 'apertura'),
+(595, 134, 1.00, 900, 'cheque', 13, 'cierre'),
+(596, 135, 1000.00, 1, 'efectivo', 11, 'apertura');
 
 -- --------------------------------------------------------
 
@@ -15120,31 +15080,12 @@ CREATE TABLE `facturas` (
 --
 
 INSERT INTO `facturas` (`id`, `facturama_id`, `ticket_id`, `cliente_id`, `folio`, `serie`, `uuid`, `subtotal`, `impuestos`, `total`, `metodo_pago`, `forma_pago`, `uso_cfdi`, `fecha_emision`, `estado`, `notas`, `xml_path`, `pdf_path`) VALUES
-(54, 'eyAjZCK_46nYnDadgeltQw2', 508, 32, '43', 'A', NULL, 464.66, 74.35, 539.01, 'PUE', '04', 'G03', '2025-11-22 16:04:03', 'generada', NULL, 'archivos/facturas/2025/11/cfdi_54.xml', 'archivos/facturas/2025/11/cfdi_54.pdf'),
-(55, '8WcMeKSQV-_Hac7aeWBMyA2', 512, 33, '44', 'A', NULL, 327.59, 52.41, 380.00, 'PUE', '04', 'G03', '2025-11-22 18:48:43', 'generada', NULL, 'archivos/facturas/2025/11/cfdi_55.xml', 'archivos/facturas/2025/11/cfdi_55.pdf'),
-(61, 'QFzfPsHhKS21k-9Gwqt-dA2', 514, 34, '12', 'A', '1903d622-39c4-4189-bb29-88a1492a9187', 171.55, 27.45, 199.00, 'PUE', '01', 'G03', '2025-11-22 19:40:32', 'generada', NULL, '/files/facturas/2025/11/cfdi_61.xml', '/files/facturas/2025/11/1903d622-39c4-4189-bb29-88a1492a9187.pdf'),
-(62, 'WktI2BhAWg_PLMCk3sv-QQ2', 513, 33, '13', 'A', '7a32f1b7-37aa-4d2e-ae28-8b7f97b341ea', 327.59, 52.41, 380.00, 'PUE', '28', 'G03', '2025-11-22 21:05:17', 'cancelada', NULL, '/files/facturas/2025/11/cfdi_62.xml', 'archivos/facturas/2025/11/7a32f1b7-37aa-4d2e-ae28-8b7f97b341ea.pdf'),
-(63, '6yDmKDPDe8MlHAi3wGBkWw2', 515, 36, '14', 'A', NULL, 338.79, 54.21, 393.00, 'PUE', '28', 'G03', '2025-11-23 11:56:15', 'generada', NULL, 'archivos/facturas/2025/11/cfdi_63.xml', 'archivos/facturas/2025/11/cfdi_63.pdf'),
-(64, 'Z_fK-GNEQjbE_XRnGsk6IA2', 516, 35, '15', 'A', NULL, 287.93, 46.07, 334.00, 'PUE', '01', 'G03', '2025-11-23 12:55:10', 'generada', NULL, 'archivos/facturas/2025/11/cfdi_64.xml', 'archivos/facturas/2025/11/cfdi_64.pdf'),
-(65, 'CBYzotfYBougWo1CNX71Cg2', 517, 37, '16', 'A', NULL, 419.82, 67.18, 487.00, 'PUE', '28', 'G03', '2025-11-23 13:24:43', 'generada', NULL, 'archivos/facturas/2025/11/cfdi_65.xml', 'archivos/facturas/2025/11/cfdi_65.pdf'),
-(66, '_2I4LyHAbJ3mho3qntg3cg2', 519, 39, '17', 'A', NULL, 309.49, 49.51, 359.00, 'PUE', '01', 'G03', '2025-11-25 16:47:59', 'generada', NULL, 'archivos/facturas/2025/11/cfdi_66.xml', 'archivos/facturas/2025/11/cfdi_66.pdf'),
-(67, 'Yy1Rd6g2rNktFloWZAedTg2', 520, 38, '18', 'A', NULL, 619.83, 99.17, 719.00, 'PUE', '28', 'G03', '2025-11-25 16:48:47', 'cancelada', NULL, 'archivos/facturas/2025/11/cfdi_67.xml', 'archivos/facturas/2025/11/cfdi_67.pdf'),
-(68, 'ok5vtXMyaFuXa5ryt1WRZQ2', 521, 42, '19', 'A', NULL, 294.83, 47.17, 342.00, 'PUE', '28', 'G03', '2025-11-27 08:43:51', 'generada', NULL, 'archivos/facturas/2025/11/cfdi_68.xml', 'archivos/facturas/2025/11/cfdi_68.pdf'),
-(69, 'FmbcyKScnPiPtniPMV6zFw2', 522, 43, '20', 'A', NULL, 187.93, 30.07, 218.00, 'PUE', '01', 'G03', '2025-11-27 08:47:20', 'generada', NULL, 'archivos/facturas/2025/11/cfdi_69.xml', 'archivos/facturas/2025/11/cfdi_69.pdf'),
-(70, 't4LEEas5T53hwKBHO5LSog2', 523, 45, '21', 'A', NULL, 340.52, 54.48, 395.00, 'PUE', '04', 'G03', '2025-11-27 08:52:22', 'generada', NULL, 'archivos/facturas/2025/11/cfdi_70.xml', 'archivos/facturas/2025/11/cfdi_70.pdf'),
-(71, 'F_WUim80LvJj6b9ee7xXaw2', 524, 229, '22', 'A', NULL, 396.55, 63.45, 460.00, 'PUE', '01', 'G03', '2025-11-27 18:02:05', 'generada', NULL, 'archivos/facturas/2025/11/cfdi_71.xml', 'archivos/facturas/2025/11/cfdi_71.pdf'),
-(72, '7t1pXa4bhOhhDu8jE9fx6g2', 525, 38, '23', 'A', NULL, 619.83, 99.17, 719.00, 'PUE', '04', 'G03', '2025-11-28 13:46:18', 'generada', NULL, 'archivos/facturas/2025/11/cfdi_72.xml', 'archivos/facturas/2025/11/cfdi_72.pdf'),
-(73, 'Z1qll8cn40eVE-FIYBoicA2', 528, 231, '24', 'A', NULL, 456.03, 72.97, 529.00, 'PUE', '28', 'G03', '2025-12-03 18:13:46', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_73.xml', 'archivos/facturas/2025/12/cfdi_73.pdf'),
-(74, '-s-AiD99IUyn2-sRg4bIoA2', 529, 43, '25', 'A', NULL, 145.69, 23.31, 169.00, 'PUE', '01', 'G03', '2025-12-03 23:30:48', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_74.xml', 'archivos/facturas/2025/12/cfdi_74.pdf'),
-(75, '2ML5rV7xEOKlrzqn8YoBDQ2', 530, 236, '26', 'A', NULL, 391.38, 62.62, 454.00, 'PUE', '01', 'G03', '2025-12-04 18:57:17', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_75.xml', 'archivos/facturas/2025/12/cfdi_75.pdf'),
-(86, '5gO9HaC3QvtXIhKBMovZ7Q2', 534, 39, '35', 'A', NULL, 133.62, 21.38, 155.00, 'PUE', '03', 'G03', '2025-12-05 21:56:16', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_86.xml', 'archivos/facturas/2025/12/cfdi_86.pdf'),
-(89, 'KFpj8qavGn81PlszKYJ4vA2', 533, 246, '38', 'A', NULL, 295.52, 42.48, 338.00, 'PUE', '03', 'G03', '2025-12-05 22:50:44', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_89.xml', 'archivos/facturas/2025/12/cfdi_89.pdf'),
-(90, 't2U_PVMn_eSmtSHQp5ajXw2', 536, 209, '39', 'A', NULL, 187.93, 30.07, 218.00, 'PUE', '01', 'G03', '2025-12-08 17:32:03', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_90.xml', 'archivos/facturas/2025/12/cfdi_90.pdf'),
-(93, 'eh0kCqNfI9jkLdBe_FD2Og2', 537, 232, '40', 'A', NULL, 764.71, 120.29, 885.00, 'PUE', '01', 'G03', '2025-12-09 17:51:31', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_93.xml', 'archivos/facturas/2025/12/cfdi_93.pdf'),
-(94, '7pDLnn_zlcIgMtK0k0MNfg2', 538, 247, '41', 'A', NULL, 286.20, 45.80, 332.00, 'PUE', '04', 'G03', '2025-12-09 19:56:42', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_94.xml', 'archivos/facturas/2025/12/cfdi_94.pdf'),
-(95, 'GpLwP3H0hRP8WqTmRyNNWQ2', 539, 248, '42', 'A', NULL, 554.32, 88.69, 643.01, 'PUE', '01', 'G03', '2025-12-09 21:17:53', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_95.xml', 'archivos/facturas/2025/12/cfdi_95.pdf'),
-(101, '2wflZAEoOuH01pEcqOWIlw2', 540, 252, '43', 'A', NULL, 275.86, 44.13, 319.99, 'PUE', '03', 'G03', '2025-12-12 20:40:24', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_101.xml', 'archivos/facturas/2025/12/cfdi_101.pdf'),
-(104, 'z6DozxSkGodZXQFIz9vzXA2', 542, 231, '46', 'A', NULL, 567.24, 90.76, 658.00, 'PUE', '28', 'G03', '2025-12-13 17:21:23', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_104.xml', 'archivos/facturas/2025/12/cfdi_104.pdf');
+(105, 'eMboqtraX8i0RH0LSrB-DQ2', 558, 32, '46', 'A', NULL, 129.31, 20.69, 150.00, 'PUE', '01', 'G03', '2025-12-19 20:47:35', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_105.xml', 'archivos/facturas/2025/12/cfdi_105.pdf'),
+(106, '1TycyDMXif0X0eCPM4jPRg2', 559, 32, '47', 'A', NULL, 12.93, 2.07, 15.00, 'PUE', '01', 'G03', '2025-12-19 20:54:15', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_106.xml', 'archivos/facturas/2025/12/cfdi_106.pdf'),
+(107, 'R5Afz6i1P7ntDmOiE4g8iw2', 560, 32, '48', 'A', NULL, 17.24, 2.76, 20.00, 'PUE', '01', 'G03', '2025-12-19 21:23:25', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_107.xml', 'archivos/facturas/2025/12/cfdi_107.pdf'),
+(108, 'ttytwTidW-YpUgqVKVo91A2', 561, 32, '49', 'A', NULL, 775.87, 124.13, 900.00, 'PUE', '03', 'G03', '2025-12-19 21:28:57', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_108.xml', 'archivos/facturas/2025/12/cfdi_108.pdf'),
+(109, 'nxMt8TRYjnezflgIK1qnlg2', 562, 32, '50', 'A', NULL, 38.62, 1.38, 40.00, 'PUE', '01', 'G03', '2025-12-19 21:51:41', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_109.xml', 'archivos/facturas/2025/12/cfdi_109.pdf'),
+(110, 'DcfPekGgRtdXdrTKDAZv_Q2', 563, 32, '51', 'A', NULL, 107.76, 17.24, 125.00, 'PUE', '01', 'G03', '2025-12-19 21:59:17', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_110.xml', 'archivos/facturas/2025/12/cfdi_110.pdf');
 
 -- --------------------------------------------------------
 
@@ -15168,88 +15109,16 @@ CREATE TABLE `factura_detalles` (
 --
 
 INSERT INTO `factura_detalles` (`id`, `factura_id`, `ticket_detalle_id`, `producto_id`, `descripcion`, `cantidad`, `precio_unitario`, `importe`) VALUES
-(128, 54, 1329, 43, 'Chow Mein Especial', 1, 150.26, 150.26),
-(129, 54, 1330, 9024, 'Boneless BBQ', 1, 130.87, 130.87),
-(130, 54, 1331, 54, 'Gohan', 1, 121.18, 121.18),
-(131, 54, 1332, 144, 'Rollitos (Camarón)', 1, 72.71, 72.71),
-(132, 54, 1333, 66, 'Consumo de bebidas en general', 2, 31.99, 63.98),
-(133, 55, 1340, 103, 'Dumplings', 4, 95.00, 380.00),
-(143, 61, 1342, 12, 'Mar y Tierra', 2, 76.54, 153.08),
-(144, 61, 1343, 66, 'Té de Jazmín (Litro)', 1, 24.05, 24.05),
-(145, 61, 1344, 9001, 'ENVÍO – Repartidor casa', 1, 21.87, 21.87),
-(147, 63, 1345, 53, 'Cajun Ramen', 1, 155.00, 155.00),
-(148, 63, 1346, 69, 'Consumo de bebidas en general', 1, 38.00, 38.00),
-(149, 63, 1347, 74, 'Consumo de bebidas en general', 1, 35.00, 35.00),
-(150, 63, 1348, 101, 'Maney Roll', 1, 165.00, 165.00),
-(151, 64, 1349, 12, 'Mar y Tierra', 1, 77.93, 77.93),
-(152, 64, 1350, 49, 'Tokyo ramen', 1, 92.78, 92.78),
-(153, 64, 1351, 15, 'Chiquilin Roll', 1, 85.36, 85.36),
-(154, 64, 1352, 16, 'Maki roll res', 1, 77.94, 77.94),
-(155, 65, 1353, 15, 'Chiquilin Roll', 1, 107.50, 107.50),
-(156, 65, 1354, 19, 'Culichi Roll', 1, 116.84, 116.84),
-(157, 65, 1355, 97, 'Royal Roll', 1, 129.93, 129.93),
-(158, 65, 1356, 66, 'Consumo de bebidas en general', 2, 30.85, 61.69),
-(159, 65, 1357, 77, 'Aderezo de Chipotle', 1, 9.35, 9.35),
-(160, 65, 1358, 66, 'Consumo de bebidas en general', 2, 30.84, 61.68),
-(161, 66, 1360, 9028, 'Empanada Tokyo', 1, 95.00, 95.00),
-(162, 66, 1361, 20, 'Bacon Cheese', 1, 125.00, 125.00),
-(163, 66, 1362, 97, 'Royal Roll', 1, 139.00, 139.00),
-(172, 68, 1371, 89, 'Topping Tampico', 1, 15.00, 15.00),
-(173, 68, 1372, 13, 'Cielo, Mar y Tierra', 3, 109.00, 327.00),
-(174, 69, 1373, 15, 'Chiquilin Roll', 1, 78.59, 78.59),
-(175, 69, 1374, 12, 'Mar y Tierra', 1, 71.76, 71.76),
-(176, 69, 1375, 66, 'Consumo de bebidas en general', 3, 22.55, 67.65),
-(177, 70, 1376, 93, 'Güerito Roll', 1, 145.00, 145.00),
-(178, 70, 1377, 94, 'Ebby Especial Roll', 1, 145.00, 145.00),
-(179, 70, 1378, 67, 'Consumo de bebidas en general', 3, 35.00, 105.00),
-(180, 71, 1379, 15, 'Chiquilin Roll', 5, 74.82, 374.12),
-(181, 71, 1380, 66, 'Consumo de bebidas en general', 4, 21.47, 85.89),
-(182, 72, 1381, 34, 'Empanada Horneada', 1, 115.00, 115.00),
-(183, 72, 1382, 93, 'Güerito Roll', 1, 145.00, 145.00),
-(184, 72, 1383, 69, 'Consumo de bebidas en general', 2, 38.00, 76.00),
-(185, 72, 1384, 79, 'Salsa Sriracha', 1, 10.00, 10.00),
-(186, 72, 1385, 85, 'Salsa de Anguila', 1, 10.00, 10.00),
-(187, 72, 1386, 77, 'Aderezo de Chipotle', 1, 10.00, 10.00),
-(188, 72, 1387, 62, 'postres preparados para consumo', 1, 49.00, 49.00),
-(189, 72, 1388, 98, 'Larry Roll', 1, 155.00, 155.00),
-(190, 72, 1389, 106, 'Sopa Pho', 1, 149.00, 149.00),
-(191, 73, 1397, 123, 'Consumo de bebidas en general', 2, 40.00, 80.00),
-(192, 73, 1398, 9007, 'charola oro', 1, 448.99, 448.99),
-(193, 74, 1399, 15, 'Chiquilin Roll', 2, 73.90, 147.79),
-(194, 74, 1400, 66, 'Consumo de bebidas en general', 1, 21.21, 21.21),
-(195, 75, 1401, 56, 'Yakimeshi', 1, 115.00, 115.00),
-(196, 75, 1402, 9008, 'charola plata', 1, 339.00, 339.00),
-(237, 86, 1415, 97, 'Royal Roll', 1, 155.00, 155.00),
-(246, 89, 1411, 50, 'Ramen Gran Meat', 1, 125.00, 125.00),
-(247, 89, 1412, 93, 'Güerito Roll', 1, 145.00, 145.00),
-(248, 89, 1413, 71, 'Consumo de bebidas en general', 1, 38.00, 38.00),
-(249, 89, 1414, 9001, 'ENVÍO – Repartidor casa', 1, 30.00, 30.00),
-(250, 90, 1420, 15, 'Chiquilin Roll', 1, 78.59, 78.59),
-(251, 90, 1421, 16, 'Maki roll res', 1, 71.76, 71.76),
-(252, 90, 1422, 66, 'Consumo de bebidas en general', 1, 22.55, 22.55),
-(253, 90, 1423, 66, 'Consumo de bebidas en general', 2, 22.55, 45.10),
-(266, 93, 1424, 15, 'Chiquilin Roll', 3, 74.34, 223.03),
-(267, 93, 1425, 15, 'Chiquilin Roll', 3, 74.34, 223.03),
-(268, 93, 1426, 16, 'Maki roll res', 3, 67.88, 203.63),
-(269, 93, 1427, 12, 'Mar y Tierra', 3, 67.88, 203.63),
-(270, 93, 1428, 76, 'Consumo de bebidas en general', 1, 18.75, 18.75),
-(271, 93, 1429, 9001, 'ENVÍO – Repartidor casa', 1, 12.91, 12.91),
-(272, 94, 1430, 134, 'Edamames', 1, 89.00, 89.00),
-(273, 94, 1431, 53, 'Cajun Ramen', 1, 165.00, 165.00),
-(274, 94, 1432, 69, 'Consumo de bebidas en general', 2, 39.00, 78.00),
-(275, 95, 1433, 15, 'Chiquilin Roll', 1, 125.00, 125.00),
-(276, 95, 1434, 7, 'Guerra', 1, 135.00, 135.00),
-(277, 95, 1435, 120, 'Consumo de bebidas en general', 1, 35.00, 35.00),
-(278, 95, 1436, 123, 'Consumo de bebidas en general', 3, 40.00, 120.00),
-(279, 95, 1437, 61, 'kids dedi', 1, 99.00, 99.00),
-(280, 95, 1438, 110, 'Guamuchilito Especial', 1, 129.01, 129.01),
-(292, 101, 1439, 18, 'Cordon Blue', 2, 125.00, 250.00),
-(293, 101, 1440, 76, 'Consumo de bebidas en general', 2, 35.00, 70.00),
-(300, 104, 1444, 103, 'Dumplings', 1, 99.00, 99.00),
-(301, 104, 1445, 93, 'Güerito Roll', 1, 155.00, 155.00),
-(302, 104, 1446, 123, 'Consumo de bebidas en general', 3, 40.00, 120.00),
-(303, 104, 1447, 9029, 'Banana Crunch', 1, 109.00, 109.00),
-(304, 104, 1448, 101, 'Maney Roll', 1, 175.00, 175.00);
+(305, 105, 1457, 15, 'Chiquilin Roll', 1, 150.00, 150.00),
+(306, 106, 1458, 77, 'Aderezo de Chipotle', 1, 15.00, 15.00),
+(307, 107, 1459, 78, 'Aderezo de Cilantro', 1, 20.00, 20.00),
+(308, 108, 1460, 15, 'Chiquilin Roll', 4, 125.00, 500.00),
+(309, 108, 1461, 66, 'Té de Jazmín (Litro)', 3, 40.00, 120.00),
+(310, 108, 1462, 141, 'Kushiages (Camarón)', 1, 120.00, 120.00),
+(311, 108, 1463, 9025, 'Alitas Búfalo', 1, 160.01, 160.01),
+(312, 109, 1464, 77, 'Aderezo de Chipotle', 1, 10.00, 10.00),
+(313, 109, 1465, 9001, 'ENVÍO – Repartidor casa', 1, 30.00, 30.00),
+(314, 110, 1466, 15, 'Chiquilin Roll', 1, 125.00, 125.00);
 
 -- --------------------------------------------------------
 
@@ -15267,28 +15136,12 @@ CREATE TABLE `factura_tickets` (
 --
 
 INSERT INTO `factura_tickets` (`factura_id`, `ticket_id`) VALUES
-(54, 508),
-(55, 512),
-(63, 515),
-(64, 516),
-(65, 517),
-(66, 519),
-(68, 521),
-(69, 522),
-(70, 523),
-(71, 524),
-(72, 525),
-(73, 528),
-(74, 529),
-(75, 530),
-(86, 534),
-(89, 533),
-(90, 536),
-(93, 537),
-(94, 538),
-(95, 539),
-(101, 540),
-(104, 542);
+(105, 558),
+(106, 559),
+(107, 560),
+(108, 561),
+(109, 562),
+(110, 563);
 
 -- --------------------------------------------------------
 
@@ -15306,7 +15159,7 @@ CREATE TABLE `fondo` (
 --
 
 INSERT INTO `fondo` (`usuario_id`, `monto`) VALUES
-(1, 12547.00),
+(1, 500.00),
 (46, 1000.00);
 
 -- --------------------------------------------------------
@@ -15343,18 +15196,23 @@ INSERT INTO `horarios` (`id`, `dia_semana`, `hora_inicio`, `hora_fin`) VALUES
 
 CREATE TABLE `impresoras` (
   `print_id` int(11) NOT NULL,
-  `nombre_logico` varchar(100) NOT NULL,
+  `nombre_logico` enum('barra','frio','caliente','ticket') NOT NULL,
   `lugar` varchar(255) NOT NULL,
   `ip` varchar(255) NOT NULL,
-  `activo` tinyint(1) NOT NULL DEFAULT 1
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `sede` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf32 COLLATE=utf32_bin;
 
 --
 -- Volcado de datos para la tabla `impresoras`
 --
 
-INSERT INTO `impresoras` (`print_id`, `nombre_logico`, `lugar`, `ip`, `activo`) VALUES
-(1, '', 'pruebas', 'smb://FUED/pos58', 1);
+INSERT INTO `impresoras` (`print_id`, `nombre_logico`, `lugar`, `ip`, `activo`, `sede`) VALUES
+(1, 'barra', 'pruebas', 'smb://FUED/pos58', 1, 1),
+(2, 'frio', 'pruebas2', 'smb://FUED/Microsoft Print to PDF', 1, 1),
+(3, 'caliente', 'pruebas3', 'smb://FUED/OneNote', 1, 1),
+(4, 'ticket', 'prueba4', 'smb://FUED/pos58', 1, 1),
+(5, 'ticket', 'prueba5', 'smb://FUED/pos58', 1, 1);
 
 -- --------------------------------------------------------
 
@@ -15594,444 +15452,18 @@ CREATE TABLE `logs_accion` (
 --
 
 INSERT INTO `logs_accion` (`id`, `usuario_id`, `modulo`, `accion`, `fecha`, `referencia_id`) VALUES
-(1443, NULL, 'ventas', 'Alta de venta', '2025-11-17 10:54:52', 593),
-(1444, NULL, 'ventas', 'Alta de venta', '2025-11-17 10:55:22', 594),
-(1445, NULL, 'ventas', 'Alta de venta', '2025-11-17 10:55:53', 595),
-(1446, NULL, 'ventas', 'Alta de venta', '2025-11-17 10:58:14', 596),
-(1447, NULL, 'ventas', 'Alta de venta', '2025-11-17 10:58:38', 597),
-(1448, NULL, 'ventas', 'Alta de venta', '2025-11-17 10:59:05', 598),
-(1449, NULL, 'ventas', 'Alta de venta', '2025-11-17 10:59:38', 599),
-(1450, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:00:57', 600),
-(1451, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:02:06', 601),
-(1452, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:04:52', 602),
-(1453, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:06:51', 603),
-(1454, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:13:36', 604),
-(1455, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:14:43', 605),
-(1456, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:15:22', 606),
-(1457, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:16:06', 607),
-(1458, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:17:00', 608),
-(1459, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:23:13', 609),
-(1460, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:24:31', 610),
-(1461, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:25:22', 611),
-(1462, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:26:11', 612),
-(1463, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:28:19', 613),
-(1464, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:28:37', 614),
-(1465, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:29:54', 615),
-(1466, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:30:11', 616),
-(1467, NULL, 'ventas', 'Alta de venta', '2025-11-17 11:30:27', 617),
-(1468, 5, 'ventas', 'Alta de venta', '2025-11-17 11:33:06', 618),
-(1469, 5, 'ventas', 'Alta de venta', '2025-11-17 11:34:06', 619),
-(1470, 5, 'ventas', 'Alta de venta', '2025-11-17 11:35:33', 620),
-(1471, 5, 'ventas', 'Alta de venta', '2025-11-17 11:48:08', 621),
-(1472, 5, 'ventas', 'Alta de venta', '2025-11-17 11:49:51', 622),
-(1473, 5, 'ventas', 'Alta de venta', '2025-11-17 11:54:25', 623),
-(1474, 5, 'ventas', 'Alta de venta', '2025-11-17 11:55:33', 624),
-(1475, 5, 'ventas', 'Alta de venta', '2025-11-17 11:58:19', 625),
-(1476, 5, 'ventas', 'Alta de venta', '2025-11-17 11:59:53', 626),
-(1477, 5, 'ventas', 'Alta de venta', '2025-11-17 12:01:16', 627),
-(1478, 5, 'ventas', 'Alta de venta', '2025-11-17 12:03:00', 628),
-(1479, 5, 'ventas', 'Alta de venta', '2025-11-17 12:04:54', 629),
-(1480, 5, 'ventas', 'Alta de venta', '2025-11-17 12:07:03', 630),
-(1481, 5, 'ventas', 'Alta de venta', '2025-11-17 12:09:09', 631),
-(1482, 6, 'ventas', 'Alta de venta', '2025-11-17 12:15:20', 632),
-(1483, 6, 'ventas', 'Alta de venta', '2025-11-17 12:16:58', 633),
-(1484, 6, 'ventas', 'Alta de venta', '2025-11-17 12:20:14', 634),
-(1485, 6, 'ventas', 'Alta de venta', '2025-11-17 12:21:52', 635),
-(1486, 6, 'ventas', 'Alta de venta', '2025-11-17 12:22:57', 636),
-(1487, 1, 'ventas', 'Alta de venta', '2025-11-17 12:27:10', 637),
-(1488, 1, 'ventas', 'Alta de venta', '2025-11-17 12:28:55', 638),
-(1489, 2, 'ventas', 'Alta de venta', '2025-11-17 12:31:54', 639),
-(1490, 2, 'ventas', 'Alta de venta', '2025-11-17 12:39:08', 640),
-(1491, 2, 'ventas', 'Alta de venta', '2025-11-17 12:40:15', 641),
-(1492, 2, 'ventas', 'Alta de venta', '2025-11-17 12:41:23', 642),
-(1493, 2, 'ventas', 'Alta de venta', '2025-11-17 12:44:43', 643),
-(1494, 2, 'ventas', 'Alta de venta', '2025-11-17 12:48:36', 644),
-(1495, 40, 'ventas', 'Alta de venta', '2025-11-17 12:55:06', 645),
-(1496, 40, 'ventas', 'Alta de venta', '2025-11-17 12:57:37', 646),
-(1497, 40, 'ventas', 'Alta de venta', '2025-11-17 12:58:41', 647),
-(1498, 40, 'ventas', 'Alta de venta', '2025-11-17 12:59:46', 648),
-(1499, 4, 'ventas', 'Alta de venta', '2025-11-17 13:06:00', 649),
-(1500, 2, 'ventas', 'Alta de venta', '2025-11-17 13:07:31', 650),
-(1501, 2, 'ventas', 'Alta de venta', '2025-11-17 13:08:54', 651),
-(1502, 4, 'ventas', 'Alta de venta', '2025-11-17 13:10:05', 652),
-(1503, 4, 'ventas', 'Alta de venta', '2025-11-17 13:11:12', 653),
-(1504, 4, 'ventas', 'Alta de venta', '2025-11-17 13:15:37', 654),
-(1505, NULL, 'ventas', 'Alta de venta', '2025-11-17 13:17:36', 655),
-(1506, NULL, 'ventas', 'Alta de venta', '2025-11-17 13:18:52', 656),
-(1507, 1, 'ventas', 'Alta de venta', '2025-11-17 13:20:39', 657),
-(1508, 1, 'ventas', 'Alta de venta', '2025-11-17 13:26:21', 658),
-(1509, 1, 'ventas', 'Alta de venta', '2025-11-17 13:28:00', 659),
-(1510, NULL, 'ventas', 'Alta de venta', '2025-11-17 13:32:06', 660),
-(1511, NULL, 'ventas', 'Alta de venta', '2025-11-17 13:32:40', 661),
-(1512, NULL, 'ventas', 'Alta de venta', '2025-11-17 13:33:22', 662),
-(1513, 36, 'ventas', 'Alta de venta', '2025-11-17 13:36:18', 663),
-(1514, 36, 'ventas', 'Alta de venta', '2025-11-17 13:44:07', 664),
-(1515, 36, 'ventas', 'Alta de venta', '2025-11-17 13:45:09', 665),
-(1516, 36, 'ventas', 'Alta de venta', '2025-11-17 13:47:34', 666),
-(1517, 36, 'ventas', 'Alta de venta', '2025-11-17 13:48:28', 667),
-(1518, 36, 'ventas', 'Alta de venta', '2025-11-17 13:49:25', 668),
-(1519, 36, 'ventas', 'Alta de venta', '2025-11-17 13:50:24', 669),
-(1520, 36, 'ventas', 'Alta de venta', '2025-11-17 13:51:54', 670),
-(1521, 36, 'ventas', 'Alta de venta', '2025-11-17 13:52:45', 671),
-(1522, 36, 'ventas', 'Alta de venta', '2025-11-17 13:54:53', 672),
-(1523, 36, 'ventas', 'Alta de venta', '2025-11-17 13:55:53', 673),
-(1524, 36, 'ventas', 'Alta de venta', '2025-11-17 13:56:45', 674),
-(1525, 36, 'ventas', 'Alta de venta', '2025-11-17 13:57:35', 675),
-(1526, 36, 'ventas', 'Alta de venta', '2025-11-17 13:58:22', 676),
-(1527, 36, 'ventas', 'Alta de venta', '2025-11-17 13:59:09', 677),
-(1528, 36, 'ventas', 'Alta de venta', '2025-11-17 14:00:00', 678),
-(1529, 36, 'ventas', 'Alta de venta', '2025-11-17 14:01:39', 679),
-(1530, 36, 'ventas', 'Alta de venta', '2025-11-17 14:02:30', 680),
-(1531, 36, 'ventas', 'Alta de venta', '2025-11-17 14:03:40', 681),
-(1532, 36, 'ventas', 'Alta de venta', '2025-11-17 14:04:31', 682),
-(1533, 36, 'ventas', 'Alta de venta', '2025-11-17 14:05:30', 683),
-(1534, 36, 'ventas', 'Alta de venta', '2025-11-17 14:08:00', 684),
-(1535, 36, 'ventas', 'Alta de venta', '2025-11-17 14:09:16', 685),
-(1536, 36, 'ventas', 'Alta de venta', '2025-11-17 14:09:55', 686),
-(1537, 36, 'ventas', 'Alta de venta', '2025-11-17 14:10:50', 687),
-(1538, 36, 'ventas', 'Alta de venta', '2025-11-17 14:14:00', 688),
-(1539, 1, 'ventas', 'Alta de venta', '2025-11-17 14:16:53', 689),
-(1540, 1, 'ventas', 'Alta de venta', '2025-11-17 14:20:55', 690),
-(1541, 44, 'ventas', 'Alta de venta', '2025-11-17 14:35:52', 691),
-(1542, 39, 'ventas', 'Alta de venta', '2025-11-17 14:38:07', 692),
-(1543, 1, 'ventas', 'Alta de venta', '2025-11-17 14:40:33', 693),
-(1544, 1, 'ventas', 'Alta de venta', '2025-11-17 14:42:07', 694),
-(1545, 1, 'ventas', 'Alta de venta', '2025-11-18 11:12:44', 695),
-(1546, 1, 'ventas', 'Alta de venta', '2025-11-18 12:47:58', 696),
-(1547, 1, 'ventas', 'Alta de venta', '2025-11-18 22:48:41', 697),
-(1548, 1, 'ventas', 'Alta de venta', '2025-11-18 22:51:19', 698),
-(1549, 1, 'ventas', 'Alta de venta', '2025-11-18 22:55:18', 699),
-(1550, 1, 'ventas', 'Alta de venta', '2025-11-18 22:56:14', 700),
-(1551, 1, 'ventas', 'Alta de venta', '2025-11-19 01:19:49', 701),
-(1552, 1, 'ventas', 'Alta de venta', '2025-11-19 12:54:42', 702),
-(1553, 1, 'ventas', 'Alta de venta', '2025-11-19 12:55:51', 703),
-(1554, 38, 'ventas', 'Alta de venta', '2025-11-19 22:10:11', 704),
-(1555, 38, 'ventas', 'Alta de venta', '2025-11-19 22:24:34', 705),
-(1556, 1, 'corte_caja', 'Creación de corte', '2025-11-19 23:05:11', 105),
-(1557, 1, 'corte_caja', 'Creación de corte', '2025-11-19 23:34:27', 106),
-(1558, 1, 'corte_caja', 'Cierre de corte', '2025-11-19 23:51:44', 106),
-(1559, 1, 'corte_caja', 'Creación de corte', '2025-11-20 11:10:06', 107),
-(1560, NULL, 'ventas', 'Alta de venta', '2025-11-20 11:11:09', 706),
-(1561, 1, 'ventas', 'Alta de venta', '2025-11-20 11:18:47', 707),
-(1562, 38, 'ventas', 'Alta de venta', '2025-11-20 11:20:13', 708),
-(1563, 1, 'ventas', 'Alta de venta', '2025-11-20 11:26:43', 709),
-(1564, 1, 'ventas', 'Alta de venta', '2025-11-20 11:28:13', 710),
-(1565, 1, 'ventas', 'Alta de venta', '2025-11-20 11:32:14', 711),
-(1566, 1, 'ventas', 'Alta de venta', '2025-11-20 11:38:32', 712),
-(1567, 1, 'ventas', 'Alta de venta', '2025-11-20 11:47:48', 713),
-(1568, 1, 'ventas', 'Alta de venta', '2025-11-20 11:49:31', 714),
-(1569, 1, 'ventas', 'Alta de venta', '2025-11-20 11:55:40', 715),
-(1570, 36, 'ventas', 'Alta de venta', '2025-11-20 12:31:39', 716),
-(1571, 36, 'ventas', 'Alta de venta', '2025-11-20 12:32:22', 717),
-(1572, 1, 'ventas', 'Alta de venta', '2025-11-20 12:42:50', 718),
-(1573, 1, 'corte_caja', 'Creación de corte', '2025-11-20 13:27:04', 108),
-(1574, 1, 'ventas', 'Alta de venta', '2025-11-20 13:42:29', 719),
-(1575, 5, 'ventas', 'Alta de venta', '2025-11-20 14:21:51', 720),
-(1576, 5, 'ventas', 'Alta de venta', '2025-11-20 14:35:10', 721),
-(1577, 1, 'ventas', 'Alta de venta', '2025-11-20 16:32:55', 722),
-(1578, 1, 'ventas', 'Alta de venta', '2025-11-20 19:40:19', 723),
-(1579, 1, 'ventas', 'Alta de venta', '2025-11-20 19:47:01', 724),
-(1580, 1, 'ventas', 'Alta de venta', '2025-11-20 20:20:19', 725),
-(1581, 1, 'ventas', 'Alta de venta', '2025-11-20 20:22:01', 726),
-(1582, 1, 'ventas', 'Alta de venta', '2025-11-20 20:23:26', 727),
-(1583, 1, 'ventas', 'Alta de venta', '2025-11-20 21:53:55', 728),
-(1584, 1, 'corte_caja', 'Creación de corte', '2025-11-20 22:14:25', 109),
-(1585, 1, 'ventas', 'Alta de venta', '2025-11-20 22:14:54', 729),
-(1586, 38, 'ventas', 'Alta de venta', '2025-11-20 22:30:43', 730),
-(1587, 1, 'ventas', 'Alta de venta', '2025-11-20 22:45:41', 731),
-(1588, 1, 'ventas', 'Alta de venta', '2025-11-20 22:46:31', 732),
-(1589, 1, 'ventas', 'Alta de venta', '2025-11-21 09:00:14', 733),
-(1590, 43, 'ventas', 'Alta de venta', '2025-11-21 09:01:06', 734),
-(1591, 1, 'ventas', 'Alta de venta', '2025-11-21 09:07:31', 735),
-(1592, 39, 'ventas', 'Alta de venta', '2025-11-21 11:13:30', 736),
-(1593, 1, 'corte_caja', 'Creación de corte', '2025-11-21 11:17:23', 110),
-(1594, NULL, 'ventas', 'Alta de venta', '2025-11-21 11:18:07', 737),
-(1595, 1, 'ventas', 'Alta de venta', '2025-11-21 11:37:12', 738),
-(1596, 1, 'ventas', 'Alta de venta', '2025-11-21 11:39:30', 739),
-(1597, 1, 'corte_caja', 'Creación de corte', '2025-11-21 15:02:46', 111),
-(1598, 1, 'ventas', 'Alta de venta', '2025-11-21 15:03:12', 742),
-(1599, NULL, 'ventas', 'Alta de venta', '2025-11-21 15:08:00', 743),
-(1600, 1, 'ventas', 'Alta de venta', '2025-11-21 20:39:41', 744),
-(1601, 1, 'corte_caja', 'Creación de corte', '2025-11-22 09:48:41', 112),
-(1602, 1, 'ventas', 'Alta de venta', '2025-11-22 09:49:06', 745),
-(1603, 1, 'corte_caja', 'Creación de corte', '2025-11-22 11:30:42', 113),
-(1604, NULL, 'ventas', 'Alta de venta', '2025-11-22 12:18:38', 746),
-(1605, NULL, 'ventas', 'Alta de venta', '2025-11-22 12:19:44', 747),
-(1606, 39, 'ventas', 'Alta de venta', '2025-11-22 12:31:07', 748),
-(1607, 35, 'ventas', 'Alta de venta', '2025-11-22 12:36:01', 749),
-(1608, NULL, 'ventas', 'Alta de venta', '2025-11-22 13:07:29', 750),
-(1609, NULL, 'ventas', 'Alta de venta', '2025-11-22 13:17:23', 751),
-(1610, 1, 'ventas', 'Alta de venta', '2025-11-22 13:23:28', 752),
-(1611, 1, 'ventas', 'Alta de venta', '2025-11-22 13:31:36', 753),
-(1612, 39, 'ventas', 'Alta de venta', '2025-11-22 13:34:28', 754),
-(1613, 1, 'ventas', 'Alta de venta', '2025-11-22 13:36:08', 755),
-(1614, 39, 'ventas', 'Alta de venta', '2025-11-22 13:38:32', 756),
-(1615, NULL, 'ventas', 'Alta de venta', '2025-11-22 13:45:42', 757),
-(1616, NULL, 'ventas', 'Alta de venta', '2025-11-22 13:49:20', 758),
-(1617, NULL, 'ventas', 'Alta de venta', '2025-11-22 13:51:08', 759),
-(1618, NULL, 'ventas', 'Alta de venta', '2025-11-22 14:02:56', 760),
-(1619, NULL, 'ventas', 'Alta de venta', '2025-11-22 14:09:19', 761),
-(1620, NULL, 'ventas', 'Alta de venta', '2025-11-22 14:14:05', 762),
-(1621, 1, 'ventas', 'Alta de venta', '2025-11-22 14:14:52', 763),
-(1622, 1, 'ventas', 'Alta de venta', '2025-11-22 14:15:44', 764),
-(1623, 39, 'ventas', 'Alta de venta', '2025-11-22 14:34:45', 765),
-(1624, NULL, 'ventas', 'Alta de venta', '2025-11-22 14:35:07', 766),
-(1625, 39, 'ventas', 'Alta de venta', '2025-11-22 14:40:19', 767),
-(1626, NULL, 'ventas', 'Alta de venta', '2025-11-22 14:41:56', 768),
-(1627, 1, 'ventas', 'Alta de venta', '2025-11-22 14:43:12', 769),
-(1628, 39, 'ventas', 'Alta de venta', '2025-11-22 14:47:12', 770),
-(1629, NULL, 'ventas', 'Alta de venta', '2025-11-22 14:49:18', 771),
-(1630, 1, 'ventas', 'Alta de venta', '2025-11-22 14:57:36', 772),
-(1631, 39, 'ventas', 'Alta de venta', '2025-11-22 15:04:08', 773),
-(1632, NULL, 'ventas', 'Alta de venta', '2025-11-22 15:09:19', 774),
-(1633, 1, 'ventas', 'Alta de venta', '2025-11-22 15:12:41', 775),
-(1634, 1, 'ventas', 'Alta de venta', '2025-11-22 15:13:31', 776),
-(1635, 2, 'ventas', 'Alta de venta', '2025-11-22 15:14:24', 777),
-(1636, NULL, 'ventas', 'Alta de venta', '2025-11-22 15:17:03', 778),
-(1637, 39, 'ventas', 'Alta de venta', '2025-11-22 15:23:26', 779),
-(1638, NULL, 'ventas', 'Alta de venta', '2025-11-22 15:25:47', 780),
-(1639, 1, 'ventas', 'Alta de venta', '2025-11-22 15:27:15', 781),
-(1640, 1, 'ventas', 'Alta de venta', '2025-11-22 15:27:47', 782),
-(1641, NULL, 'ventas', 'Alta de venta', '2025-11-22 15:30:13', 783),
-(1642, 1, 'ventas', 'Alta de venta', '2025-11-22 18:34:00', 784),
-(1643, 2, 'ventas', 'Alta de venta', '2025-11-22 18:49:54', 785),
-(1644, NULL, 'ventas', 'Alta de venta', '2025-11-22 19:02:20', 786),
-(1645, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:15', 2690),
-(1646, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:15', 2691),
-(1647, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:16', 2690),
-(1648, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:17', 2691),
-(1649, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:19', 2692),
-(1650, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:19', 2693),
-(1651, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:20', 2694),
-(1652, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:20', 2695),
-(1653, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:21', 2697),
-(1654, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:21', 2698),
-(1655, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:22', 2700),
-(1656, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:22', 2701),
-(1657, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:23', 2702),
-(1658, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:24', 2703),
-(1659, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:24', 2705),
-(1660, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:25', 2706),
-(1661, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:25', 2707),
-(1662, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:26', 2708),
-(1663, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:26', 2710),
-(1664, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:27', 2711),
-(1665, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:27', 2712),
-(1666, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:28', 2713),
-(1667, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:28', 2714),
-(1668, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:29', 2715),
-(1669, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:29', 2716),
-(1670, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:30', 2717),
-(1671, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:31', 2692),
-(1672, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:31', 2693),
-(1673, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:32', 2694),
-(1674, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:32', 2695),
-(1675, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:33', 2697),
-(1676, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:34', 2698),
-(1677, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:34', 2700),
-(1678, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:35', 2701),
-(1679, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:35', 2702),
-(1680, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:36', 2703),
-(1681, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:36', 2705),
-(1682, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:37', 2706),
-(1683, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:38', 2707),
-(1684, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:38', 2708),
-(1685, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:38', 2710),
-(1686, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:39', 2711),
-(1687, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:40', 2712),
-(1688, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:40', 2713),
-(1689, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:41', 2714),
-(1690, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:42', 2715),
-(1691, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:43', 2716),
-(1692, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:10:43', 2717),
-(1693, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:44', 2718),
-(1694, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:45', 2720),
-(1695, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:45', 2721),
-(1696, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:46', 2722),
-(1697, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:46', 2723),
-(1698, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:47', 2724),
-(1699, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:47', 2725),
-(1700, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:48', 2726),
-(1701, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:48', 2728),
-(1702, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:49', 2729),
-(1703, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:49', 2731),
-(1704, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:50', 2732),
-(1705, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:50', 2735),
-(1706, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:51', 2734),
-(1707, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:56', 2804),
-(1708, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:57', 2803),
-(1709, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:10:58', 2802),
-(1710, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:02', 2718),
-(1711, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:17', 2720),
-(1712, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:18', 2721),
-(1713, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:18', 2722),
-(1714, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:19', 2723),
-(1715, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:19', 2724),
-(1716, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:20', 2725),
-(1717, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:20', 2726),
-(1718, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:21', 2728),
-(1719, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:22', 2729),
-(1720, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:22', 2731),
-(1721, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:23', 2732),
-(1722, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:23', 2735),
-(1723, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:24', 2734),
-(1724, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:25', 2804),
-(1725, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:26', 2803),
-(1726, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:27', 2802),
-(1727, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:11:31', 2806),
-(1728, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:11:32', 2805),
-(1729, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:11:33', 2801),
-(1730, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:11:34', 2800),
-(1731, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:11:35', 2799),
-(1732, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:11:36', 2798),
-(1733, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:11:37', 2797),
-(1734, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:11:39', 2795),
-(1735, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:42', 2805),
-(1736, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:11:43', 2806),
-(1737, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:12:07', 2795),
-(1738, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:12:08', 2798),
-(1739, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:12:09', 2800),
-(1740, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:12:10', 2801),
-(1741, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:12:10', 2799),
-(1742, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:12:11', 2797),
-(1743, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:16', 2789),
-(1744, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:17', 2790),
-(1745, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:17', 2788),
-(1746, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:23', 2793),
-(1747, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:24', 2792),
-(1748, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:25', 2787),
-(1749, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:26', 2785),
-(1750, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:26', 2786),
-(1751, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:12:27', 2788),
-(1752, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:12:28', 2790),
-(1753, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:12:30', 2793),
-(1754, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:12:31', 2789),
-(1755, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:12:32', 2792),
-(1756, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:12:32', 2787),
-(1757, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:12:33', 2785),
-(1758, NULL, 'cocina', 'Producto marcado como listo', '2025-11-22 19:12:34', 2786),
-(1759, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:39', 2781),
-(1760, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:39', 2779),
-(1761, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:40', 2778),
-(1762, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:40', 2777),
-(1763, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:41', 2775),
-(1764, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:41', 2774),
-(1765, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:42', 2772),
-(1766, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:43', 2771),
-(1767, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:43', 2770),
-(1768, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:44', 2769),
-(1769, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:44', 2767),
-(1770, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:45', 2766),
-(1771, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:45', 2782),
-(1772, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:46', 2765),
-(1773, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:46', 2763),
-(1774, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:47', 2762),
-(1775, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:49', 2783),
-(1776, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:49', 2760),
-(1777, NULL, 'cocina', 'Producto iniciado', '2025-11-22 19:12:50', 2757),
-(1778, 1, 'ventas', 'Alta de venta', '2025-11-22 21:06:52', 787),
-(1779, 5, 'ventas', 'Alta de venta', '2025-11-23 11:51:33', 788),
-(1780, 1, 'ventas', 'Alta de venta', '2025-11-23 13:19:17', 789),
-(1781, NULL, 'ventas', 'Alta de venta', '2025-11-23 13:32:36', 790),
-(1782, NULL, 'ventas', 'Alta de venta', '2025-11-25 15:49:45', 791),
-(1783, 38, 'ventas', 'Alta de venta', '2025-11-25 15:51:49', 792),
-(1784, 1, 'ventas', 'Alta de venta', '2025-11-27 08:33:52', 794),
-(1785, 1, 'ventas', 'Alta de venta', '2025-11-27 08:36:05', 795),
-(1786, 6, 'ventas', 'Alta de venta', '2025-11-27 08:38:01', 796),
-(1787, 1, 'ventas', 'Alta de venta', '2025-11-27 16:37:31', 797),
-(1788, 1, 'ventas', 'Alta de venta', '2025-11-28 13:41:30', 798),
-(1789, 36, 'ventas', 'Alta de venta', '2025-11-28 13:48:44', 799),
-(1790, 1, 'ventas', 'Alta de venta', '2025-11-28 13:51:43', 800),
-(1791, 1, 'ventas', 'Alta de venta', '2025-11-28 15:04:06', 801),
-(1792, 1, 'ventas', 'Alta de venta', '2025-11-28 19:24:36', 802),
-(1793, 1, 'ventas', 'Alta de venta', '2025-11-30 20:28:37', 803),
-(1794, 5, 'ventas', 'Alta de venta', '2025-12-03 17:27:54', 804),
-(1795, 36, 'ventas', 'Alta de venta', '2025-12-03 17:37:32', 805),
-(1796, 1, 'ventas', 'Alta de venta', '2025-12-03 23:14:59', 806),
-(1797, 1, 'ventas', 'Alta de venta', '2025-12-03 23:26:49', 807),
-(1798, 1, 'ventas', 'Alta de venta', '2025-12-04 18:13:33', 808),
-(1799, 7, 'ventas', 'Alta de venta', '2025-12-04 19:24:32', 809),
-(1800, 7, 'ventas', 'Alta de venta', '2025-12-04 19:25:10', 810),
-(1801, 1, 'ventas', 'Alta de venta', '2025-12-05 04:41:50', 811),
-(1802, 36, 'ventas', 'Alta de venta', '2025-12-05 19:52:06', 812),
-(1803, 1, 'ventas', 'Alta de venta', '2025-12-08 17:09:40', 813),
-(1804, 1, 'ventas', 'Alta de venta', '2025-12-08 17:30:19', 814),
-(1805, 7, 'ventas', 'Alta de venta', '2025-12-08 22:50:46', 815),
-(1806, 36, 'ventas', 'Alta de venta', '2025-12-09 17:46:56', 816),
-(1807, 36, 'ventas', 'Alta de venta', '2025-12-09 17:49:11', 817),
-(1808, 2, 'ventas', 'Alta de venta', '2025-12-09 19:48:24', 818),
-(1809, 2, 'ventas', 'Alta de venta', '2025-12-09 20:54:13', 819),
-(1810, NULL, 'ventas', 'Alta de venta', '2025-12-10 21:50:42', 820),
-(1811, NULL, 'ventas', 'Alta de venta', '2025-12-10 21:52:03', 821),
-(1812, NULL, 'ventas', 'Alta de venta', '2025-12-10 21:52:37', 822),
-(1813, 1, 'ventas', 'Alta de venta', '2025-12-10 21:54:24', 823),
-(1814, 1, 'ventas', 'Alta de venta', '2025-12-10 21:55:30', 824),
-(1815, NULL, 'ventas', 'Alta de venta', '2025-12-10 21:55:55', 825),
-(1816, NULL, 'ventas', 'Alta de venta', '2025-12-10 21:56:30', 826),
-(1817, NULL, 'ventas', 'Alta de venta', '2025-12-10 22:02:08', 827),
-(1818, NULL, 'ventas', 'Alta de venta', '2025-12-10 22:02:55', 828),
-(1819, 1, 'ventas', 'Alta de venta', '2025-12-10 22:05:39', 829),
-(1820, NULL, 'ventas', 'Alta de venta', '2025-12-10 22:06:18', 830),
-(1821, NULL, 'ventas', 'Alta de venta', '2025-12-10 22:06:54', 831),
-(1822, NULL, 'ventas', 'Alta de venta', '2025-12-10 22:07:21', 832),
-(1823, 1, 'ventas', 'Alta de venta', '2025-12-10 22:07:47', 833),
-(1824, NULL, 'ventas', 'Alta de venta', '2025-12-10 22:12:50', 834),
-(1825, NULL, 'ventas', 'Alta de venta', '2025-12-10 22:13:55', 835),
-(1826, 1, 'ventas', 'Alta de venta', '2025-12-12 17:35:44', 836),
-(1827, 1, 'ventas', 'Alta de venta', '2025-12-12 17:45:41', 837),
-(1828, 1, 'ventas', 'Alta de venta', '2025-12-13 17:20:01', 838),
-(1968, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:27', 2757),
-(1969, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:28', 2760),
-(1970, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:30', 2762),
-(1971, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:30', 2763),
-(1972, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:31', 2765),
-(1973, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:32', 2766),
-(1974, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:32', 2767),
-(1975, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:33', 2769),
-(1976, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:34', 2770),
-(1977, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:35', 2771),
-(1978, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:36', 2772),
-(1979, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:37', 2774),
-(1980, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:38', 2775),
-(1981, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:39', 2777),
-(1982, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:40', 2778),
-(1983, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:41', 2779),
-(1984, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:42', 2781),
-(1985, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:43', 2782),
-(1986, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 17:59:43', 2783),
-(1987, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:45', 2736),
-(1988, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:45', 2737),
-(1989, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:46', 2738),
-(1990, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:47', 2739),
-(1991, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:48', 2740),
-(1992, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:48', 2741),
-(1993, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:49', 2742),
-(1994, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:50', 2743),
-(1995, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:51', 2744),
-(1996, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:51', 2745),
-(1997, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:52', 2746),
-(1998, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:53', 2747),
-(1999, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:53', 2748),
-(2000, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:54', 2750),
-(2001, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:54', 2751),
-(2002, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:55', 2752),
-(2003, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:56', 2753),
-(2004, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:56', 2754),
-(2005, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:57', 2755),
-(2006, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:58', 2756),
-(2007, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:59', 2758),
-(2008, NULL, 'cocina', 'Producto iniciado', '2025-12-13 17:59:59', 2791),
-(2009, NULL, 'cocina', 'Producto iniciado', '2025-12-13 18:00:00', 2808),
-(2010, NULL, 'cocina', 'Producto iniciado', '2025-12-13 18:00:01', 2809),
-(2011, NULL, 'cocina', 'Producto iniciado', '2025-12-13 18:00:01', 2810),
-(2012, NULL, 'cocina', 'Producto iniciado', '2025-12-13 18:00:02', 2811),
-(2013, NULL, 'cocina', 'Producto iniciado', '2025-12-13 18:00:04', 2812),
-(2014, NULL, 'cocina', 'Producto iniciado', '2025-12-13 18:00:05', 2813),
-(2015, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 18:00:06', 2736),
-(2016, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 18:00:07', 2737),
-(2017, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 18:00:07', 2738),
-(2018, NULL, 'cocina', 'Producto marcado como listo', '2025-12-13 18:00:08', 2739),
-(2019, 46, 'corte_caja', 'Creación de corte', '2025-12-15 11:22:41', 127);
+(2028, 1, 'corte_caja', 'Creación de corte', '2025-12-19 17:37:00', 133),
+(2029, 1, 'corte_caja', 'Cierre de corte', '2025-12-19 17:37:31', 133),
+(2030, 1, 'corte_caja', 'Creación de corte', '2025-12-19 17:38:04', 134),
+(2031, 1, 'ventas', 'Alta de venta', '2025-12-19 18:07:29', 875),
+(2032, 1, 'ventas', 'Alta de venta', '2025-12-19 20:36:56', 876),
+(2033, 1, 'ventas', 'Alta de venta', '2025-12-19 21:00:50', 877),
+(2034, 1, 'ventas', 'Alta de venta', '2025-12-19 21:27:15', 878),
+(2035, 1, 'ventas', 'Alta de venta', '2025-12-19 21:43:59', 879),
+(2036, 1, 'ventas', 'Alta de venta', '2025-12-19 21:58:52', 880),
+(2037, 46, 'corte_caja', 'Creación de corte', '2025-12-19 22:04:38', 135),
+(2038, 1, 'ventas', 'Alta de venta', '2025-12-20 13:27:04', 881),
+(2039, 1, 'ventas', 'Alta de venta', '2025-12-20 13:27:44', 882);
 
 -- --------------------------------------------------------
 
@@ -16066,26 +15498,6 @@ CREATE TABLE `log_cancelaciones` (
   `fecha` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `log_cancelaciones`
---
-
-INSERT INTO `log_cancelaciones` (`id`, `tipo`, `venta_id`, `venta_detalle_id`, `usuario_id`, `motivo`, `total_anterior`, `subtotal_detalle`, `fecha`) VALUES
-(185, 'detalle', 794, 2834, NULL, 'Eliminación de producto', NULL, 109.00, '2025-11-27 08:34:23'),
-(186, 'detalle', 797, 2844, NULL, 'Eliminación de producto', NULL, 99.00, '2025-11-27 16:38:18'),
-(187, 'detalle', 797, 2845, NULL, 'Eliminación de producto', NULL, 33.00, '2025-11-27 16:38:20'),
-(188, 'detalle', 806, 2875, NULL, 'Eliminación de producto', NULL, 230.00, '2025-12-03 23:15:07'),
-(189, 'venta', 806, NULL, 1, '', 0.00, NULL, '2025-12-03 23:15:11'),
-(190, 'detalle', 809, 2880, NULL, 'Eliminación de producto', NULL, 155.00, '2025-12-04 19:24:44'),
-(191, 'detalle', 809, 2881, NULL, 'Eliminación de producto', NULL, 105.00, '2025-12-04 19:24:45'),
-(192, 'detalle', 809, 2882, NULL, 'Eliminación de producto', NULL, 115.00, '2025-12-04 19:24:45'),
-(193, 'detalle', 809, 2883, NULL, 'Eliminación de producto', NULL, 125.00, '2025-12-04 19:24:45'),
-(194, 'detalle', 809, 2884, NULL, 'Eliminación de producto', NULL, 140.00, '2025-12-04 19:24:45'),
-(195, 'detalle', 809, 2885, NULL, 'Eliminación de producto', NULL, 35.00, '2025-12-04 19:24:45'),
-(196, 'venta', 809, NULL, 7, 'm14', 0.00, NULL, '2025-12-04 19:24:45'),
-(197, 'detalle', 819, 2924, NULL, 'Eliminación de producto', NULL, 119.00, '2025-12-09 20:55:41'),
-(198, 'detalle', 819, 2929, NULL, 'Eliminación de producto', NULL, 119.00, '2025-12-09 20:56:17');
-
 -- --------------------------------------------------------
 
 --
@@ -16106,18 +15518,7 @@ CREATE TABLE `log_mesas` (
 --
 
 INSERT INTO `log_mesas` (`id`, `mesa_id`, `venta_id`, `usuario_id`, `fecha_inicio`, `fecha_fin`) VALUES
-(179, 2, 777, 2, NULL, '2025-11-22 15:14:50'),
-(180, 3, 785, 2, NULL, '2025-11-22 18:50:12'),
-(181, 13, 788, 5, NULL, '2025-11-23 11:52:12'),
-(182, 3, 785, 2, NULL, '2025-11-23 16:09:30'),
-(183, 2, 777, 2, NULL, '2025-11-23 16:09:54'),
-(184, 2, 792, 38, NULL, '2025-11-25 15:52:06'),
-(185, 1, 796, 6, NULL, '2025-11-27 08:38:57'),
-(186, 5, 804, 5, NULL, '2025-12-03 17:29:09'),
-(187, 14, 810, 7, NULL, '2025-12-04 19:31:01'),
-(188, 3, 818, 2, NULL, '2025-12-09 19:50:07'),
-(189, 3, 818, 2, NULL, '2025-12-09 19:50:24'),
-(190, 7, 819, 2, NULL, '2025-12-09 21:00:27');
+(196, 12, 880, 1, NULL, '2025-12-19 21:59:03');
 
 -- --------------------------------------------------------
 
@@ -16228,19 +15629,6 @@ CREATE TABLE `movimientos_caja` (
   `motivo` text NOT NULL,
   `fecha` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `movimientos_caja`
---
-
-INSERT INTO `movimientos_caja` (`id`, `corte_id`, `usuario_id`, `tipo_movimiento`, `monto`, `motivo`, `fecha`) VALUES
-(26, 113, 1, 'retiro', 700.00, 'puerta', '2025-11-22 18:57:53'),
-(27, 113, 1, 'retiro', 264.00, 'azucar', '2025-11-22 19:32:57'),
-(28, 113, 1, 'retiro', 850.00, 'nomina erick', '2025-11-22 20:14:25'),
-(29, 113, 1, 'retiro', 510.00, 'hielo', '2025-11-22 21:16:07'),
-(30, 113, 1, 'deposito', 27.00, 'didi2', '2025-11-22 21:18:10'),
-(31, 113, 1, 'retiro', 9.00, 'didi3', '2025-11-22 21:51:29'),
-(32, 113, 1, 'deposito', 159.00, 'dsidi4', '2025-11-22 22:24:22');
 
 -- --------------------------------------------------------
 
@@ -16387,7 +15775,7 @@ INSERT INTO `productos` (`id`, `nombre`, `precio`, `descripcion`, `existencia`, 
 (106, 'Sopa Pho', 159.00, 'Rico fondo de pollo con vegetales, pechuga de pollo, fideos chinos y chile de árbol. Coronado con 4 piezas de dumplings.', 1665, 1, 'prod_68adce4f32265.jpg', 3),
 (107, 'Yummy Roll', 169.00, 'Alga por fuera, relleno de camarón, philadelphia, pepino y aguacate. Gratinado con queso spicy de la casa. Coronado con camarón, aguacate y bañado en salsa de anguila y ajonjolí.', 415, 1, 'prod_68add0c25fd53.jpg', 3),
 (108, 'Cebolla Caramelizada', 10.00, 'Cebolla Caramelizada', 499549, 1, NULL, 6),
-(109, 'Kintaro', 102.00, 'Plato de sushi con atún graso picado toro y cebollín', 415, 1, NULL, NULL),
+(109, 'Kintaro', 102.00, 'Plato de sushi con atún graso picado toro y cebollín', 415, 1, NULL, 3),
 (110, 'Guamuchilito Especial', 129.00, 'Bebida preparada con jugo de guamúchil, combinada con alcohol, salsas y especias.', 414, 1, 'prod_68add0071ee2a.jpg', 11),
 (111, 'Juny', 333.00, 'Juny', 415, 1, 'prod_693f59cf505a7.jpg', NULL),
 (112, 'Pork Spicy', 122.00, 'Platillo de cerdo picante.', 438, 1, 'prod_68adcf27bc6a4.jpg', 8),
@@ -17450,50 +16838,12 @@ CREATE TABLE `tickets` (
 --
 
 INSERT INTO `tickets` (`id`, `venta_id`, `folio`, `serie_id`, `total`, `descuento`, `desc_des`, `fecha`, `usuario_id`, `monto_recibido`, `tipo_pago`, `sede_id`, `mesa_nombre`, `mesero_nombre`, `fecha_inicio`, `fecha_fin`, `tiempo_servicio`, `nombre_negocio`, `direccion_negocio`, `rfc_negocio`, `telefono_negocio`, `tipo_entrega`, `tarjeta_marca_id`, `tarjeta_banco_id`, `boucher`, `cheque_numero`, `cheque_banco_id`) VALUES
-(499, 746, 2000, 2, 243.00, 74.00, NULL, '2025-11-22 19:19:12', 1, 169.00, 'cheque', 1, 'N/A', 'N/A', NULL, '2025-11-22 19:19:12', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, 'uberr', 3),
-(500, 747, 2001, 2, 223.00, 0.00, NULL, '2025-11-22 19:20:40', 1, 223.00, 'cheque', 1, 'N/A', 'N/A', NULL, '2025-11-22 19:20:40', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, 'didi1', 3),
-(501, 755, 2002, 2, 424.00, 0.00, NULL, '2025-11-22 20:37:24', 1, 424.00, 'boucher', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-22 20:37:24', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', 1, 5, '2132132', NULL, NULL),
-(502, 759, 2003, 2, 355.00, 0.00, NULL, '2025-11-22 20:51:30', 1, 355.00, 'efectivo', 1, 'N/A', 'N/A', NULL, '2025-11-22 20:51:30', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, 'didi2', 3),
-(503, 760, 2004, 2, 189.00, 0.00, NULL, '2025-11-22 21:03:22', 1, 189.00, 'cheque', 1, 'N/A', 'N/A', NULL, '2025-11-22 21:03:22', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, 'rappi', 3),
-(504, 761, 2005, 2, 416.00, 0.00, NULL, '2025-11-22 21:09:45', 1, 416.00, 'cheque', 1, 'N/A', 'N/A', NULL, '2025-11-22 21:09:45', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, 'didi3', 3),
-(505, 753, 2006, 2, 310.00, 17.00, NULL, '2025-11-22 21:11:36', 1, 293.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-22 21:11:36', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL),
-(506, 752, 2007, 2, 329.00, 0.00, NULL, '2025-11-22 21:22:05', 1, 329.00, 'boucher', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-22 21:22:05', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', 1, 3, '4445', NULL, NULL),
-(507, 769, 2008, 2, 325.00, 116.00, NULL, '2025-11-22 21:43:38', 1, 209.00, 'boucher', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-22 21:43:38', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', 1, 3, 'nu', NULL, NULL),
-(508, 763, 2009, 2, 556.00, 17.00, NULL, '2025-11-22 21:52:22', 1, 539.00, 'boucher', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-22 21:52:22', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', 1, 8, '5645', NULL, NULL),
-(509, 764, 2010, 2, 306.00, 17.00, NULL, '2025-11-22 21:58:40', 1, 289.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-22 21:58:40', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL),
-(510, 777, 2011, 2, 148.00, 0.00, NULL, '2025-11-22 22:14:50', 2, 148.00, 'efectivo', 1, 'Mesa 2', 'Javier Emanuel lopez lozano', NULL, '2025-11-22 22:14:50', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'mesa', NULL, NULL, NULL, NULL, NULL),
-(511, 780, 2012, 2, 109.00, 109.00, 'diudi4', '2025-11-22 22:26:46', 1, 0.00, 'cheque', 1, 'N/A', 'N/A', NULL, '2025-11-22 22:26:46', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, 'didi4', 3),
-(512, 784, 2013, 2, 380.00, 0.00, NULL, '2025-11-22 22:26:46', 1, 380.00, 'boucher', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-23 01:34:44', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', 1, 3, '444', NULL, NULL),
-(513, 785, 2014, 2, 380.00, 0.00, NULL, '2025-11-22 22:26:46', 2, 380.00, 'boucher', 1, 'Mesa 3', 'Javier Emanuel lopez lozano', NULL, '2025-11-23 01:50:12', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'mesa', 1, 3, '44444', NULL, NULL),
-(514, 786, 2015, 2, 273.00, 74.00, NULL, '2025-11-20 02:02:36', 1, 199.00, 'efectivo', 1, 'N/A', 'N/A', NULL, '2025-11-23 02:02:36', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, NULL, NULL),
-(515, 788, 2016, 2, 393.00, 0.00, NULL, '2025-11-23 18:52:11', 5, 393.00, 'boucher', 1, 'Mesa 13', 'gilberto ozuna carrillo', NULL, '2025-11-23 18:52:11', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'mesa', 1, 3, '6788', NULL, NULL),
-(516, 787, 2017, 2, 450.00, 116.00, NULL, '2025-11-23 19:54:13', 1, 334.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-23 19:54:13', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL),
-(517, 789, 2018, 2, 521.00, 34.00, NULL, '2025-11-23 20:20:16', 1, 487.00, 'boucher', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-23 20:20:16', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', 1, 8, '67767', NULL, NULL),
-(518, 790, 2019, 2, 115.00, 0.00, NULL, '2025-11-23 20:36:20', 1, 6.00, 'cheque', 1, 'N/A', 'N/A', NULL, '2025-11-23 20:36:20', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, '456', 6),
-(519, 791, 2020, 2, 359.00, 0.00, NULL, '2025-11-25 22:50:06', 1, 359.00, 'efectivo', 1, 'N/A', 'N/A', NULL, '2025-11-25 22:50:06', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, NULL, NULL),
-(520, 792, 2021, 2, 719.00, 0.00, NULL, '2025-11-25 22:52:05', 38, 719.00, 'boucher', 1, 'Mesa 2', 'beto', NULL, '2025-11-25 22:52:05', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'mesa', 1, 3, '6677', NULL, NULL),
-(521, 794, 2022, 2, 342.00, 0.00, NULL, '2025-11-27 15:35:11', 1, 342.00, 'boucher', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-27 15:35:11', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', 1, 3, '344', NULL, NULL),
-(522, 795, 2023, 2, 319.00, 101.00, NULL, '2025-11-27 15:36:19', 1, 218.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-27 15:36:19', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL),
-(523, 796, 2024, 2, 395.00, 0.00, NULL, '2025-11-27 15:38:57', 6, 395.00, 'boucher', 1, 'Mesa 1', 'alinne Guadalupe Gurrola ramirez', NULL, '2025-11-27 15:38:57', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'mesa', 1, 3, '456', NULL, NULL),
-(524, 797, 2025, 2, 707.00, 247.00, NULL, '2025-11-28 00:59:04', 1, 460.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-28 00:59:04', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL),
-(525, 798, 2026, 2, 719.00, 0.00, NULL, '2025-11-28 20:42:03', 1, 719.00, 'boucher', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-28 20:42:03', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', 1, 3, '1233', NULL, NULL),
-(526, 800, 2027, 2, 533.00, 0.00, NULL, '2025-11-28 20:55:19', 1, 533.00, 'boucher', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-28 20:55:19', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', 1, 3, '5556', NULL, NULL),
-(527, 803, 2028, 2, 480.00, 136.00, NULL, '2025-11-30 20:31:01', 1, 344.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-11-30 20:31:01', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL),
-(528, 804, 2029, 2, 529.00, 0.00, NULL, '2025-12-03 17:29:09', 5, 529.00, 'boucher', 1, 'Mesa 5', 'gilberto ozuna carrillo', NULL, '2025-12-03 17:29:09', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'mesa', 1, 1, '2', NULL, NULL),
-(529, 807, 2030, 2, 263.00, 94.00, NULL, '2025-12-03 23:28:38', 1, 169.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-12-03 23:28:38', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL),
-(530, 808, 2031, 2, 454.00, 0.00, NULL, '2025-12-04 18:13:49', 1, 454.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-12-04 18:13:49', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL),
-(531, 810, 2032, 2, 675.00, 0.00, NULL, '2025-12-04 19:31:01', 7, 675.00, 'efectivo', 1, 'Mesa 14', 'Mesas general', NULL, '2025-12-04 19:31:01', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'mesa', NULL, NULL, NULL, NULL, NULL),
-(532, 811, 2033, 2, 263.00, 94.00, NULL, '2025-12-05 04:42:22', 1, 169.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-12-05 04:42:22', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL),
-(533, 812, 2034, 2, 338.00, 0.00, NULL, '2025-12-05 20:11:10', 36, 338.00, 'cheque', 1, 'N/A', 'Carlos', NULL, '2025-12-05 20:11:10', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, '1', 2),
-(534, 801, 2035, 2, 155.00, 0.00, NULL, '2025-12-05 21:25:41', 1, 155.00, 'cheque', 1, 'Venta rápida', 'Administrador', NULL, '2025-12-05 21:25:41', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, 'uber', 3),
-(535, 813, 2036, 2, 385.00, 101.00, NULL, '2025-12-08 17:10:16', 1, 284.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-12-08 17:10:16', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL),
-(536, 814, 2037, 2, 319.00, 101.00, NULL, '2025-12-08 17:30:36', 1, 218.00, 'efectivo', 1, 'Venta rápida', 'Administrador', NULL, '2025-12-08 17:30:36', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, NULL, NULL),
-(537, 817, 2038, 2, 1369.00, 484.00, NULL, '2025-12-09 17:49:27', 36, 885.00, 'efectivo', 1, 'N/A', 'Carlos', NULL, '2025-12-09 17:49:27', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, NULL, NULL),
-(538, 818, 2039, 2, 332.00, 0.00, NULL, '2025-12-09 19:50:06', 2, 332.00, 'boucher', 1, 'Mesa 3', 'Javier Emanuel lopez lozano', NULL, '2025-12-09 19:50:06', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'mesa', 1, 1, '6615', NULL, NULL),
-(539, 819, 2040, 2, 643.00, 0.00, NULL, '2025-12-09 21:00:27', 2, 643.00, 'efectivo', 1, 'Mesa 7', 'Javier Emanuel lopez lozano', NULL, '2025-12-09 21:00:27', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'mesa', NULL, NULL, NULL, NULL, NULL),
-(540, 836, 2041, 2, 320.00, 0.00, NULL, '2025-12-12 17:36:15', 1, 320.00, 'cheque', 1, 'Venta rápida', 'Administrador', NULL, '2025-12-12 17:36:15', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', NULL, NULL, NULL, '1', 3),
-(541, 837, 2042, 2, 289.00, 0.00, NULL, '2025-12-12 17:50:29', 1, 289.00, 'boucher', 1, 'Venta rápida', 'Administrador', NULL, '2025-12-12 17:50:29', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', 2, 3, '1', NULL, NULL),
-(542, 838, 2043, 2, 658.00, 0.00, NULL, '2025-12-13 17:20:29', 1, 658.00, 'boucher', 1, 'Venta rápida', 'Administrador', NULL, '2025-12-13 17:20:29', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'rapido', 2, 3, '1', NULL, NULL);
+(558, 876, 2056, 2, 150.00, 0.00, NULL, '2025-12-19 20:37:36', 1, 150.00, 'efectivo', 1, 'N/A', 'Administrador', '2025-12-19 20:36:56', '2025-12-19 20:37:36', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, NULL, NULL),
+(559, 875, 2057, 2, 15.00, 0.00, NULL, '2025-12-19 20:48:51', 1, 15.00, 'efectivo', 1, 'N/A', 'Administrador', '2025-12-19 18:07:29', '2025-12-19 20:48:51', 161, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, NULL, NULL),
+(560, 877, 2058, 2, 15.00, 0.00, NULL, '2025-12-19 21:01:01', 1, 15.00, 'efectivo', 1, 'N/A', 'Administrador', '2025-12-19 21:00:50', '2025-12-19 21:01:01', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, NULL, NULL),
+(561, 878, 2059, 2, 900.00, 0.00, NULL, '2025-12-19 21:27:40', 1, 900.00, 'cheque', 1, 'N/A', 'Administrador', '2025-12-19 21:27:15', '2025-12-19 21:27:40', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, 'didi', 11),
+(562, 879, 2060, 2, 40.00, 0.00, NULL, '2025-12-19 21:44:15', 1, 40.00, 'efectivo', 1, 'N/A', 'Administrador', '2025-12-19 21:43:59', '2025-12-19 21:44:15', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, NULL, NULL),
+(563, 880, 2061, 2, 125.00, 0.00, NULL, '2025-12-19 21:59:02', 1, 125.00, 'efectivo', 1, 'Mesa 12', 'Administrador', '2025-12-19 21:58:52', '2025-12-19 21:59:02', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'mesa', NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -17513,29 +16863,6 @@ CREATE TABLE `ticket_descuentos` (
   `catalogo_promo_id` int(11) NOT NULL,
   `creado_en` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `ticket_descuentos`
---
-
-INSERT INTO `ticket_descuentos` (`id`, `ticket_id`, `tipo`, `venta_detalle_id`, `porcentaje`, `monto`, `motivo`, `usuario_id`, `catalogo_promo_id`, `creado_en`) VALUES
-(84, 499, 'promocion', NULL, NULL, 74.00, NULL, 1, 6, '2025-11-22 12:19:12'),
-(85, 505, 'promocion', NULL, NULL, 17.00, NULL, 1, 5, '2025-11-22 14:11:36'),
-(86, 507, 'promocion', NULL, NULL, 116.00, NULL, 1, 9, '2025-11-22 14:43:38'),
-(87, 508, 'promocion', NULL, NULL, 17.00, NULL, 1, 5, '2025-11-22 14:52:22'),
-(88, 509, 'promocion', NULL, NULL, 17.00, NULL, 1, 5, '2025-11-22 14:58:40'),
-(89, 511, 'cortesia', 2797, NULL, 109.00, NULL, 1, 0, '2025-11-22 15:26:47'),
-(90, 514, 'promocion', NULL, NULL, 74.00, NULL, 1, 6, '2025-11-22 19:02:36'),
-(91, 516, 'promocion', NULL, NULL, 116.00, NULL, 1, 9, '2025-11-23 12:54:13'),
-(92, 517, 'promocion', NULL, NULL, 34.00, NULL, 1, 5, '2025-11-23 13:20:16'),
-(93, 522, 'promocion', NULL, NULL, 101.00, NULL, 1, 5, '2025-11-27 08:36:19'),
-(94, 524, 'promocion', NULL, NULL, 247.00, NULL, 1, 5, '2025-11-27 17:59:04'),
-(95, 527, 'promocion', NULL, NULL, 136.00, NULL, 1, 9, '2025-11-30 20:31:01'),
-(96, 529, 'promocion', NULL, NULL, 94.00, NULL, 1, 6, '2025-12-03 23:28:38'),
-(97, 532, 'promocion', NULL, NULL, 94.00, NULL, 1, 6, '2025-12-05 04:42:22'),
-(98, 535, 'promocion', NULL, NULL, 101.00, NULL, 1, 5, '2025-12-08 17:10:16'),
-(99, 536, 'promocion', NULL, NULL, 101.00, NULL, 1, 6, '2025-12-08 17:30:36'),
-(100, 537, 'promocion', NULL, NULL, 484.00, NULL, 36, 9, '2025-12-09 17:49:27');
 
 -- --------------------------------------------------------
 
@@ -17557,151 +16884,16 @@ CREATE TABLE `ticket_detalles` (
 --
 
 INSERT INTO `ticket_detalles` (`id`, `ticket_id`, `producto_id`, `cantidad`, `precio_unitario`) VALUES
-(1304, 499, 12, 2, 105.00),
-(1305, 499, 66, 1, 33.00),
-(1306, 500, 144, 1, 75.00),
-(1307, 500, 66, 1, 33.00),
-(1308, 500, 56, 1, 115.00),
-(1309, 501, 56, 1, 115.00),
-(1310, 501, 19, 1, 125.00),
-(1311, 501, 12, 1, 105.00),
-(1312, 501, 61, 1, 79.00),
-(1313, 502, 15, 2, 115.00),
-(1314, 502, 49, 1, 125.00),
-(1315, 503, 13, 1, 109.00),
-(1316, 503, 9011, 8, 10.00),
-(1317, 504, 110, 1, 119.00),
-(1318, 504, 136, 2, 99.00),
-(1319, 504, 85, 2, 10.00),
-(1320, 504, 61, 1, 79.00),
-(1321, 505, 11, 1, 119.00),
-(1322, 505, 8, 1, 125.00),
-(1323, 505, 66, 2, 33.00),
-(1324, 506, 17, 1, 119.00),
-(1325, 506, 25, 1, 135.00),
-(1326, 506, 144, 1, 75.00),
-(1327, 507, 12, 2, 105.00),
-(1328, 507, 15, 1, 115.00),
-(1329, 508, 43, 1, 155.00),
-(1330, 508, 9024, 1, 135.00),
-(1331, 508, 54, 1, 125.00),
-(1332, 508, 144, 1, 75.00),
-(1333, 508, 66, 2, 33.00),
-(1334, 509, 15, 1, 115.00),
-(1335, 509, 21, 1, 125.00),
-(1336, 509, 66, 2, 33.00),
-(1337, 510, 15, 1, 115.00),
-(1338, 510, 66, 1, 33.00),
-(1339, 511, 13, 1, 109.00),
-(1340, 512, 103, 4, 95.00),
-(1341, 513, 103, 4, 95.00),
-(1342, 514, 12, 2, 105.00),
-(1343, 514, 66, 1, 33.00),
-(1344, 514, 9001, 1, 30.00),
-(1345, 515, 53, 1, 155.00),
-(1346, 515, 69, 1, 38.00),
-(1347, 515, 74, 1, 35.00),
-(1348, 515, 101, 1, 165.00),
-(1349, 516, 12, 1, 105.00),
-(1350, 516, 49, 1, 125.00),
-(1351, 516, 15, 1, 115.00),
-(1352, 516, 16, 1, 105.00),
-(1353, 517, 15, 1, 115.00),
-(1354, 517, 19, 1, 125.00),
-(1355, 517, 97, 1, 139.00),
-(1356, 517, 66, 2, 33.00),
-(1357, 517, 77, 1, 10.00),
-(1358, 517, 66, 2, 33.00),
-(1359, 518, 15, 1, 115.00),
-(1360, 519, 9028, 1, 95.00),
-(1361, 519, 20, 1, 125.00),
-(1362, 519, 97, 1, 139.00),
-(1363, 520, 34, 1, 115.00),
-(1364, 520, 93, 1, 145.00),
-(1365, 520, 69, 2, 38.00),
-(1366, 520, 79, 1, 10.00),
-(1367, 520, 77, 2, 10.00),
-(1368, 520, 62, 1, 49.00),
-(1369, 520, 106, 1, 149.00),
-(1370, 520, 98, 1, 155.00),
-(1371, 521, 89, 1, 15.00),
-(1372, 521, 13, 3, 109.00),
-(1373, 522, 15, 1, 115.00),
-(1374, 522, 12, 1, 105.00),
-(1375, 522, 66, 3, 33.00),
-(1376, 523, 93, 1, 145.00),
-(1377, 523, 94, 1, 145.00),
-(1378, 523, 67, 3, 35.00),
-(1379, 524, 15, 5, 115.00),
-(1380, 524, 66, 4, 33.00),
-(1381, 525, 34, 1, 115.00),
-(1382, 525, 93, 1, 145.00),
-(1383, 525, 69, 2, 38.00),
-(1384, 525, 79, 1, 10.00),
-(1385, 525, 85, 1, 10.00),
-(1386, 525, 77, 1, 10.00),
-(1387, 525, 62, 1, 49.00),
-(1388, 525, 98, 1, 155.00),
-(1389, 525, 106, 1, 149.00),
-(1390, 526, 35, 1, 75.00),
-(1391, 526, 49, 1, 125.00),
-(1392, 526, 13, 1, 109.00),
-(1393, 526, 67, 3, 35.00),
-(1394, 526, 17, 1, 119.00),
-(1395, 527, 42, 1, 135.00),
-(1396, 527, 15, 3, 115.00),
-(1397, 528, 123, 2, 40.00),
-(1398, 528, 9007, 1, 449.00),
-(1399, 529, 15, 2, 115.00),
-(1400, 529, 66, 1, 33.00),
-(1401, 530, 56, 1, 115.00),
-(1402, 530, 9008, 1, 339.00),
-(1403, 531, 53, 1, 155.00),
-(1404, 531, 12, 1, 105.00),
-(1405, 531, 23, 1, 115.00),
-(1406, 531, 67, 4, 35.00),
-(1407, 531, 19, 1, 125.00),
-(1408, 531, 90, 1, 35.00),
-(1409, 532, 15, 2, 115.00),
-(1410, 532, 66, 1, 33.00),
-(1411, 533, 50, 1, 125.00),
-(1412, 533, 93, 1, 145.00),
-(1413, 533, 71, 1, 38.00),
-(1414, 533, 9001, 1, 30.00),
-(1415, 534, 97, 1, 155.00),
-(1416, 535, 66, 4, 33.00),
-(1417, 535, 15, 1, 115.00),
-(1418, 535, 16, 1, 105.00),
-(1419, 535, 66, 1, 33.00),
-(1420, 536, 15, 1, 115.00),
-(1421, 536, 16, 1, 105.00),
-(1422, 536, 66, 1, 33.00),
-(1423, 536, 66, 2, 33.00),
-(1424, 537, 15, 3, 115.00),
-(1425, 537, 15, 3, 115.00),
-(1426, 537, 16, 3, 105.00),
-(1427, 537, 12, 3, 105.00),
-(1428, 537, 76, 1, 29.00),
-(1429, 537, 9001, 1, 20.00),
-(1430, 538, 134, 1, 89.00),
-(1431, 538, 53, 1, 165.00),
-(1432, 538, 69, 2, 39.00),
-(1433, 539, 15, 1, 125.00),
-(1434, 539, 7, 1, 135.00),
-(1435, 539, 120, 1, 35.00),
-(1436, 539, 123, 3, 40.00),
-(1437, 539, 61, 1, 99.00),
-(1438, 539, 110, 1, 129.00),
-(1439, 540, 18, 2, 125.00),
-(1440, 540, 76, 2, 35.00),
-(1441, 541, 56, 1, 125.00),
-(1442, 541, 110, 1, 129.00),
-(1443, 541, 76, 1, 35.00),
-(1444, 542, 103, 1, 99.00),
-(1445, 542, 93, 1, 155.00),
-(1446, 542, 123, 3, 40.00),
-(1447, 542, 9029, 1, 109.00),
-(1448, 542, 101, 1, 175.00);
+(1457, 558, 15, 1, 125.00),
+(1458, 559, 77, 1, 10.00),
+(1459, 560, 78, 1, 15.00),
+(1460, 561, 15, 4, 125.00),
+(1461, 561, 66, 3, 35.00),
+(1462, 561, 141, 1, 79.00),
+(1463, 561, 9025, 1, 139.00),
+(1464, 562, 77, 1, 10.00),
+(1465, 562, 9001, 1, 30.00),
+(1466, 563, 15, 1, 125.00);
 
 -- --------------------------------------------------------
 
@@ -17746,20 +16938,24 @@ INSERT INTO `usuarios` (`id`, `nombre`, `usuario`, `contrasena`, `rol`, `sede_id
 (32, 'Cajero General', 'CajeroG', 'admin', 'cajero', 1, 1),
 (33, 'Cocina General', 'CocinaG', 'admin', 'alimentos', 1, 1),
 (34, 'Barra General', 'BarraG', 'admin', 'barra', 1, 1),
-(35, 'Diego', 'Repartidor1', 'admin', 'repartidor', 1, 1),
-(36, 'Carlos', 'Repartidor2', 'admin', 'repartidor', 1, 1),
+(35, 'Diego forestal', 'diegof', 'admin', 'repartidor', 1, 1),
+(36, 'Carlos', 'carlos', 'admin', 'repartidor', 1, 1),
 (38, 'beto', 'beto', 'admin', 'mesero', 1, 1),
 (39, 'Ricardo', 'ricardo', 'admin', 'repartidor', 1, 1),
 (40, 'lebo', 'lebo', 'admin', 'mesero', 1, 1),
 (43, 'sergio', 'sergio', 'admin', 'mesero', 1, 1),
-(44, 'repartidor apoyo', 'apoyo', 'admin', 'repartidor', 1, 1),
-(45, 'America', 'america', 'admin', 'cajero', 2, 1),
+(44, 'repartidor apoyo forestal', 'apoyof', 'admin', 'repartidor', 1, 1),
+(45, 'America', 'america', 'admin', 'mesero', 2, 1),
 (46, 'Alexia', 'alexia', 'admin', 'cajero', 2, 1),
 (47, 'Joel', 'joel', 'admin', 'mesero', 2, 1),
 (48, 'Camila', 'camila', 'admin', 'mesero', 2, 1),
-(49, 'Daniel', 'daniel', 'admin', 'mesero', 2, 1),
 (50, 'Juan Madero', 'juanM', 'admin', 'mesero', 2, 1),
-(51, 'Omar', 'omar', 'admin', 'mesero', 2, 1);
+(51, 'Omar', 'omar', 'admin', 'mesero', 2, 1),
+(52, 'fernanda', 'fernanda', 'admin', 'cajero', 2, 1),
+(53, 'Dani', 'dani', 'admin', 'cajero', 2, 1),
+(54, 'Charly', 'carlosm', 'admin', 'repartidor', 2, 1),
+(55, 'Diegom', 'diegom', 'adminn', 'repartidor', 2, 1),
+(56, 'Repartidor de apoyo madero', 'apoyom', 'admin', 'repartidor', 2, 1);
 
 -- --------------------------------------------------------
 
@@ -17899,100 +17095,14 @@ CREATE TABLE `ventas` (
 --
 
 INSERT INTO `ventas` (`id`, `fecha`, `mesa_id`, `repartidor_id`, `tipo_entrega`, `usuario_id`, `total`, `estatus`, `entregado`, `estado_entrega`, `fecha_asignacion`, `fecha_inicio`, `fecha_entrega`, `seudonimo_entrega`, `foto_entrega`, `corte_id`, `cajero_id`, `observacion`, `sede_id`, `propina_efectivo`, `propina_cheque`, `propina_tarjeta`, `promocion_id`, `promocion_descuento`) VALUES
-(746, '2025-11-22 12:18:38', NULL, 3, 'domicilio', NULL, 243.00, 'cerrada', 0, 'pendiente', '2025-11-22 12:18:38', NULL, NULL, NULL, NULL, 113, 1, 'shakti', 1, 0.00, 0.00, 0.00, 6, 74.00),
-(747, '2025-11-22 12:19:44', NULL, 1, 'domicilio', NULL, 223.00, 'cerrada', 0, 'pendiente', '2025-11-22 12:19:44', NULL, NULL, NULL, NULL, 113, 1, 'didi1', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(748, '2025-11-22 12:31:07', NULL, 4, 'domicilio', 39, 509.00, 'activa', 0, 'pendiente', '2025-11-22 12:31:07', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(749, '2025-11-22 12:36:01', NULL, 4, 'domicilio', 35, 168.00, 'activa', 0, 'pendiente', '2025-11-22 12:36:01', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(750, '2025-11-22 13:07:29', NULL, 4, 'domicilio', NULL, 526.00, 'activa', 0, 'pendiente', '2025-11-22 13:07:29', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 6, 0.00),
-(751, '2025-11-22 13:17:23', NULL, 4, 'domicilio', NULL, 439.00, 'activa', 0, 'pendiente', '2025-11-22 13:17:23', NULL, NULL, NULL, NULL, 113, 1, 'sin kanikama', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(752, '2025-11-22 13:23:28', NULL, NULL, 'rapido', 1, 329.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'alejandro', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(753, '2025-11-22 13:31:36', NULL, NULL, 'rapido', 1, 310.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'valeria', 1, 0.00, 0.00, 0.00, 5, 17.00),
-(754, '2025-11-22 13:34:28', NULL, 4, 'domicilio', 39, 283.00, 'activa', 0, 'pendiente', '2025-11-22 13:34:28', NULL, NULL, NULL, NULL, 113, 1, '230pm', 1, 0.00, 0.00, 0.00, 6, 0.00),
-(755, '2025-11-22 13:36:08', NULL, NULL, 'rapido', 1, 424.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'bre morales', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(756, '2025-11-22 13:38:32', NULL, 4, 'domicilio', 39, 263.00, 'activa', 0, 'pendiente', '2025-11-22 13:38:32', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 6, 0.00),
-(757, '2025-11-22 13:45:42', NULL, 4, 'domicilio', NULL, 293.00, 'activa', 0, 'pendiente', '2025-11-22 13:45:42', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 6, 0.00),
-(758, '2025-11-22 13:49:20', NULL, 4, 'domicilio', NULL, 313.00, 'activa', 0, 'pendiente', '2025-11-22 13:49:20', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 6, 0.00),
-(759, '2025-11-22 13:51:08', NULL, 1, 'domicilio', NULL, 355.00, 'cerrada', 0, 'pendiente', '2025-11-22 13:51:08', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(760, '2025-11-22 14:02:56', NULL, 2, 'domicilio', NULL, 189.00, 'cerrada', 0, 'pendiente', '2025-11-22 14:02:56', NULL, NULL, NULL, NULL, 113, 1, 'edwin- extra camaron,pulpo, carne surimi', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(761, '2025-11-22 14:09:19', NULL, 1, 'domicilio', NULL, 416.00, 'cerrada', 0, 'pendiente', '2025-11-22 14:09:19', NULL, NULL, NULL, NULL, 113, 1, 'didi3', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(762, '2025-11-22 14:14:05', NULL, 4, 'domicilio', NULL, 526.00, 'activa', 0, 'pendiente', '2025-11-22 14:14:05', NULL, NULL, NULL, NULL, 113, 1, 'sin agucate-x', 1, 0.00, 0.00, 0.00, 5, 0.00),
-(763, '2025-11-22 14:14:52', NULL, NULL, 'rapido', 1, 556.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'licha', 1, 0.00, 0.00, 0.00, 5, 17.00),
-(764, '2025-11-22 14:15:44', NULL, NULL, 'rapido', 1, 306.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'denios', 1, 0.00, 0.00, 0.00, 5, 17.00),
-(765, '2025-11-22 14:34:45', NULL, 4, 'domicilio', 39, 145.00, 'activa', 0, 'pendiente', '2025-11-22 14:34:45', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(766, '2025-11-22 14:35:07', NULL, 4, 'domicilio', NULL, 365.00, 'activa', 0, 'pendiente', '2025-11-22 14:35:07', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 9, 0.00),
-(767, '2025-11-22 14:40:19', NULL, 4, 'domicilio', 39, 365.00, 'activa', 0, 'pendiente', '2025-11-22 14:40:19', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 9, 0.00),
-(768, '2025-11-22 14:41:56', NULL, 4, 'domicilio', NULL, 411.00, 'activa', 0, 'pendiente', '2025-11-22 14:41:56', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 5, 0.00),
-(769, '2025-11-22 14:43:12', NULL, NULL, 'rapido', 1, 325.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 9, 116.00),
-(770, '2025-11-22 14:47:12', NULL, 4, 'domicilio', 39, 364.00, 'activa', 0, 'pendiente', '2025-11-22 14:47:12', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 5, 0.00),
-(771, '2025-11-22 14:49:18', NULL, 4, 'domicilio', NULL, 355.00, 'activa', 0, 'pendiente', '2025-11-22 14:49:18', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 9, 0.00),
-(772, '2025-11-22 14:57:36', NULL, NULL, 'rapido', 1, 334.00, 'activa', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(773, '2025-11-22 15:04:08', NULL, 4, 'domicilio', 39, 260.00, 'activa', 0, 'pendiente', '2025-11-22 15:04:08', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(774, '2025-11-22 15:09:19', NULL, 4, 'domicilio', NULL, 650.00, 'activa', 0, 'pendiente', '2025-11-22 15:09:19', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(775, '2025-11-22 15:12:41', NULL, NULL, 'rapido', 1, 20.00, 'activa', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(776, '2025-11-22 15:13:31', NULL, NULL, 'rapido', 1, 493.00, 'activa', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 6, 0.00),
-(777, '2025-11-22 15:14:24', 2, NULL, 'mesa', 2, 148.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 45.00, 0.00, 0.00, NULL, 0.00),
-(778, '2025-11-22 15:17:03', NULL, 4, 'domicilio', NULL, 474.00, 'activa', 0, 'pendiente', '2025-11-22 15:17:03', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 9, 0.00),
-(779, '2025-11-22 15:23:26', NULL, 4, 'domicilio', 39, 365.00, 'activa', 0, 'en_camino', '2025-11-22 15:23:26', '2025-11-22 19:10:06', NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 9, 0.00),
-(780, '2025-11-22 15:25:47', NULL, 1, 'domicilio', NULL, 109.00, 'cerrada', 0, 'pendiente', '2025-11-22 15:25:47', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(781, '2025-11-22 15:27:15', NULL, NULL, 'rapido', 1, 336.00, 'activa', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'michelle', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(782, '2025-11-22 15:27:47', NULL, NULL, 'rapido', 1, 411.00, 'activa', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 5, 0.00),
-(783, '2025-11-22 15:30:13', NULL, 3, 'domicilio', NULL, 245.00, 'activa', 0, 'pendiente', '2025-11-22 15:30:13', NULL, NULL, NULL, NULL, 113, 1, 'uber  fer', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(784, '2025-11-22 18:34:00', NULL, NULL, 'rapido', 1, 380.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(785, '2025-11-22 18:49:54', 3, NULL, 'mesa', 2, 380.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 45.00, 0.00, 0.00, NULL, 0.00),
-(786, '2025-11-22 19:02:20', NULL, 4, 'domicilio', NULL, 273.00, 'cerrada', 0, 'entregado', '2025-11-22 19:02:20', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 6, 74.00),
-(787, '2025-11-22 21:06:52', NULL, NULL, 'rapido', 1, 450.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 9, 116.00),
-(788, '2025-11-23 11:51:33', 13, NULL, 'mesa', 5, 393.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(789, '2025-11-23 13:19:17', NULL, NULL, 'rapido', 1, 521.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 5, 34.00),
-(790, '2025-11-23 13:32:36', NULL, 1, 'domicilio', NULL, 115.00, 'cerrada', 0, 'pendiente', '2025-11-23 13:32:36', NULL, NULL, NULL, NULL, 113, 1, '', 1, 200.00, 0.00, 0.00, NULL, 0.00),
-(791, '2025-11-25 15:49:45', NULL, 2, 'domicilio', NULL, 359.00, 'cerrada', 0, 'pendiente', '2025-11-25 15:49:45', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(792, '2025-11-25 15:51:49', 2, NULL, 'mesa', 38, 719.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(794, '2025-11-27 08:33:52', NULL, NULL, 'rapido', 1, 342.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(795, '2025-11-27 08:36:05', NULL, NULL, 'rapido', 1, 319.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 5, 101.00),
-(796, '2025-11-27 08:38:01', 1, NULL, 'mesa', 6, 395.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 3, 0.00),
-(797, '2025-11-27 16:37:31', NULL, NULL, 'rapido', 1, 707.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 5, 247.00),
-(798, '2025-11-28 13:41:30', NULL, NULL, 'rapido', 1, 719.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(799, '2025-11-28 13:48:44', NULL, 4, 'domicilio', 36, 355.00, 'activa', 0, 'pendiente', '2025-11-28 13:48:44', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 9, 0.00),
-(800, '2025-11-28 13:51:43', NULL, NULL, 'rapido', 1, 533.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(801, '2025-11-28 15:04:06', NULL, NULL, 'rapido', 1, 155.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(802, '2025-11-28 19:24:36', NULL, NULL, 'rapido', 1, 380.00, 'activa', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(803, '2025-11-30 20:28:37', NULL, NULL, 'rapido', 1, 480.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 9, 136.00),
-(804, '2025-12-03 17:27:54', 5, NULL, 'mesa', 5, 529.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'M5', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(805, '2025-12-03 17:37:32', NULL, 4, 'domicilio', 36, 374.00, 'activa', 0, 'pendiente', '2025-12-03 17:37:32', NULL, NULL, NULL, NULL, 113, 1, 'GUADALUPE', 1, 0.00, 0.00, 0.00, 9, 0.00),
-(806, '2025-12-03 23:14:59', NULL, NULL, 'rapido', 1, 0.00, 'cancelada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(807, '2025-12-03 23:26:49', NULL, NULL, 'rapido', 1, 263.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'ERIKA', 1, 0.00, 0.00, 0.00, 6, 94.00),
-(808, '2025-12-04 18:13:33', NULL, NULL, 'rapido', 1, 454.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'roberto', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(809, '2025-12-04 19:24:32', 14, NULL, 'mesa', 7, 0.00, 'cancelada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'm14', 1, 0.00, 0.00, 0.00, 4, 0.00),
-(810, '2025-12-04 19:25:10', 14, NULL, 'mesa', 7, 675.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'M14', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(811, '2025-12-05 04:41:50', NULL, NULL, 'rapido', 1, 263.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'Erika Soto', 1, 0.00, 0.00, 0.00, 6, 94.00),
-(812, '2025-12-05 19:52:06', NULL, 4, 'domicilio', 36, 338.00, 'cerrada', 0, 'pendiente', '2025-12-05 19:52:06', NULL, NULL, NULL, NULL, 113, 1, 'karla', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(813, '2025-12-08 17:09:40', NULL, NULL, 'rapido', 1, 385.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'vitallanta', 1, 0.00, 0.00, 0.00, 5, 101.00),
-(814, '2025-12-08 17:30:19', NULL, NULL, 'rapido', 1, 319.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 6, 101.00),
-(815, '2025-12-08 22:50:46', 4, NULL, 'mesa', 7, 272.00, 'activa', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(816, '2025-12-09 17:46:56', NULL, 4, 'domicilio', 36, 1024.00, 'activa', 0, 'pendiente', '2025-12-09 17:46:56', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 9, 0.00),
-(817, '2025-12-09 17:49:11', NULL, 4, 'domicilio', 36, 1369.00, 'cerrada', 0, 'pendiente', '2025-12-09 17:49:11', NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, 9, 484.00),
-(818, '2025-12-09 19:48:24', 3, NULL, 'mesa', 2, 332.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 33.00, NULL, 0.00),
-(819, '2025-12-09 20:54:13', 7, NULL, 'mesa', 2, 643.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(820, '2025-12-10 21:50:42', NULL, 1, 'domicilio', NULL, 125.00, 'activa', 0, 'pendiente', '2025-12-10 21:50:42', NULL, NULL, NULL, NULL, 113, 1, 'didi1', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(821, '2025-12-10 21:52:03', NULL, 2, 'domicilio', NULL, 125.00, 'activa', 0, 'pendiente', '2025-12-10 21:52:03', NULL, NULL, NULL, NULL, 113, 1, 'rappiveronica', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(822, '2025-12-10 21:52:37', NULL, 1, 'domicilio', NULL, 238.00, 'activa', 0, 'pendiente', '2025-12-10 21:52:37', NULL, NULL, NULL, NULL, 113, 1, 'didi2', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(823, '2025-12-10 21:54:24', NULL, NULL, 'rapido', 1, 438.00, 'activa', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'sebastian', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(824, '2025-12-10 21:55:30', NULL, NULL, 'rapido', 1, 270.00, 'activa', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'marisela', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(825, '2025-12-10 21:55:55', NULL, 1, 'domicilio', NULL, 135.00, 'activa', 0, 'pendiente', '2025-12-10 21:55:55', NULL, NULL, NULL, NULL, 113, 1, 'didi3', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(826, '2025-12-10 21:56:30', NULL, 1, 'domicilio', NULL, 125.00, 'activa', 0, 'pendiente', '2025-12-10 21:56:30', NULL, NULL, NULL, NULL, 113, 1, 'didi4', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(827, '2025-12-10 22:02:08', NULL, 3, 'domicilio', NULL, 380.00, 'activa', 0, 'pendiente', '2025-12-10 22:02:08', NULL, NULL, NULL, NULL, 113, 1, 'uberguadalupe', 1, 0.00, 0.00, 0.00, 6, 0.00),
-(828, '2025-12-10 22:02:55', NULL, 2, 'domicilio', NULL, 234.00, 'activa', 0, 'pendiente', '2025-12-10 22:02:55', NULL, NULL, NULL, NULL, 113, 1, 'rappinorma', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(829, '2025-12-10 22:05:39', NULL, NULL, 'rapido', 1, 499.00, 'activa', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'yamileth', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(830, '2025-12-10 22:06:18', NULL, 2, 'domicilio', NULL, 125.00, 'activa', 0, 'pendiente', '2025-12-10 22:06:18', NULL, NULL, NULL, NULL, 113, 1, 'rappikarla', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(831, '2025-12-10 22:06:54', NULL, 2, 'domicilio', NULL, 119.00, 'activa', 0, 'pendiente', '2025-12-10 22:06:54', NULL, NULL, NULL, NULL, 113, 1, 'rappirosy', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(832, '2025-12-10 22:07:21', NULL, 1, 'domicilio', NULL, 250.00, 'activa', 0, 'pendiente', '2025-12-10 22:07:21', NULL, NULL, NULL, NULL, 113, 1, 'didi5', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(833, '2025-12-10 22:07:47', NULL, NULL, 'rapido', 1, 99.00, 'activa', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, 'dumplings', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(834, '2025-12-10 22:12:50', NULL, 2, 'domicilio', NULL, 125.00, 'activa', 0, 'pendiente', '2025-12-10 22:12:50', NULL, NULL, NULL, NULL, 113, 1, 'rappibrisia', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(835, '2025-12-10 22:13:55', NULL, 3, 'domicilio', NULL, 265.00, 'activa', 0, 'pendiente', '2025-12-10 22:13:55', NULL, NULL, NULL, NULL, 113, 1, 'ubereduardo', 1, 0.00, 0.00, 0.00, 6, 0.00),
-(836, '2025-12-12 17:35:44', NULL, NULL, 'rapido', 1, 320.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(837, '2025-12-12 17:45:41', NULL, NULL, 'rapido', 1, 289.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(838, '2025-12-13 17:20:01', NULL, NULL, 'rapido', 1, 658.00, 'cerrada', 0, 'pendiente', NULL, NULL, NULL, NULL, NULL, 113, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(866, '2025-12-15 11:32:41', NULL, NULL, 'rapido', 8, 164.99, 'activa', 0, 'pendiente', NULL, '2025-12-15 11:32:41', NULL, NULL, NULL, 127, 8, '', 2, 0.00, 0.00, 0.00, NULL, NULL),
-(867, '2025-12-15 11:51:39', NULL, NULL, 'rapido', 8, 320.10, 'activa', 0, 'pendiente', NULL, '2025-12-15 11:51:39', NULL, NULL, NULL, 127, 8, '', 2, 0.00, 0.00, 0.00, NULL, NULL);
+(875, '2025-12-19 18:07:29', NULL, 2, 'domicilio', 1, 10.00, 'cerrada', 0, 'pendiente', '2025-12-19 18:07:29', '2025-12-19 18:07:29', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
+(876, '2025-12-19 20:36:56', NULL, 2, 'domicilio', 1, 125.00, 'cerrada', 0, 'pendiente', '2025-12-19 20:36:56', '2025-12-19 20:36:56', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
+(877, '2025-12-19 21:00:50', NULL, 1, 'domicilio', 1, 15.00, 'cerrada', 0, 'pendiente', '2025-12-19 21:00:50', '2025-12-19 21:00:50', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
+(878, '2025-12-19 21:27:15', NULL, 1, 'domicilio', 1, 823.00, 'cerrada', 0, 'pendiente', '2025-12-19 21:27:15', '2025-12-19 21:27:15', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
+(879, '2025-12-19 21:43:59', NULL, 4, 'domicilio', 1, 40.00, 'cerrada', 0, 'pendiente', '2025-12-19 21:43:59', '2025-12-19 21:43:59', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
+(880, '2025-12-19 21:58:52', 12, NULL, 'mesa', 1, 125.00, 'cerrada', 0, 'pendiente', NULL, '2025-12-19 21:58:52', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
+(881, '2025-12-20 13:27:04', NULL, 1, 'domicilio', 1, 319.00, 'activa', 0, 'pendiente', '2025-12-20 13:27:04', '2025-12-20 13:27:04', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
+(882, '2025-12-20 13:27:44', NULL, NULL, 'rapido', 1, 69.00, 'activa', 0, 'pendiente', NULL, '2025-12-20 13:27:44', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00);
 
 --
 -- Disparadores `ventas`
@@ -18032,276 +17142,20 @@ CREATE TABLE `venta_detalles` (
 --
 
 INSERT INTO `venta_detalles` (`id`, `venta_id`, `producto_id`, `cantidad`, `precio_unitario`, `insumos_descargados`, `created_at`, `entregado_hr`, `estado_producto`, `observaciones`) VALUES
-(2690, 746, 12, 2, 105.00, 1, '2025-11-22 12:18:38', '2025-11-22 19:10:17', 'entregado', NULL),
-(2691, 746, 66, 1, 33.00, 1, '2025-11-22 12:18:38', '2025-11-22 19:10:18', 'entregado', NULL),
-(2692, 747, 144, 1, 75.00, 1, '2025-11-22 12:19:44', '2025-11-22 19:11:02', 'entregado', NULL),
-(2693, 747, 66, 1, 33.00, 1, '2025-11-22 12:19:44', '2025-11-22 19:11:03', 'entregado', NULL),
-(2694, 747, 56, 1, 115.00, 1, '2025-11-22 12:19:44', '2025-11-22 19:11:04', 'entregado', NULL),
-(2695, 748, 9009, 1, 479.00, 1, '2025-11-22 12:31:07', '2025-11-22 19:11:05', 'entregado', NULL),
-(2696, 748, 9001, 1, 30.00, 0, '2025-11-22 12:31:07', NULL, 'entregado', NULL),
-(2697, 749, 12, 1, 105.00, 1, '2025-11-22 12:36:01', '2025-11-22 19:11:05', 'entregado', NULL),
-(2698, 749, 66, 1, 33.00, 1, '2025-11-22 12:36:01', '2025-11-22 19:11:05', 'entregado', NULL),
-(2699, 749, 9001, 1, 30.00, 0, '2025-11-22 12:36:01', NULL, 'entregado', NULL),
-(2700, 750, 12, 1, 105.00, 1, '2025-11-22 13:07:29', '2025-11-22 19:11:06', 'entregado', NULL),
-(2701, 750, 15, 1, 115.00, 1, '2025-11-22 13:07:29', '2025-11-22 19:11:06', 'entregado', NULL),
-(2702, 750, 16, 2, 105.00, 1, '2025-11-22 13:07:29', '2025-11-22 19:11:07', 'entregado', NULL),
-(2703, 750, 66, 2, 33.00, 1, '2025-11-22 13:07:29', '2025-11-22 19:11:07', 'entregado', NULL),
-(2704, 750, 9001, 1, 30.00, 0, '2025-11-22 13:07:29', NULL, 'entregado', NULL),
-(2705, 751, 134, 1, 79.00, 1, '2025-11-22 13:17:23', '2025-11-22 19:11:07', 'entregado', NULL),
-(2706, 751, 9, 1, 139.00, 1, '2025-11-22 13:17:23', '2025-11-22 19:11:08', 'entregado', NULL),
-(2707, 751, 7, 1, 125.00, 1, '2025-11-22 13:17:23', '2025-11-22 19:11:08', 'entregado', NULL),
-(2708, 751, 66, 1, 33.00, 1, '2025-11-22 13:17:23', '2025-11-22 19:11:09', 'entregado', NULL),
-(2709, 751, 9001, 1, 30.00, 0, '2025-11-22 13:17:23', NULL, 'entregado', NULL),
-(2710, 751, 66, 1, 33.00, 1, '2025-11-22 13:17:50', '2025-11-22 19:11:10', 'entregado', NULL),
-(2711, 752, 17, 1, 119.00, 1, '2025-11-22 13:23:28', '2025-11-22 19:11:11', 'entregado', NULL),
-(2712, 752, 25, 1, 135.00, 1, '2025-11-22 13:23:28', '2025-11-22 19:11:12', 'entregado', NULL),
-(2713, 752, 144, 1, 75.00, 1, '2025-11-22 13:24:33', '2025-11-22 19:11:12', 'entregado', NULL),
-(2714, 753, 11, 1, 119.00, 1, '2025-11-22 13:31:36', '2025-11-22 19:11:13', 'entregado', NULL),
-(2715, 753, 8, 1, 125.00, 1, '2025-11-22 13:31:36', '2025-11-22 19:11:13', 'entregado', NULL),
-(2716, 753, 66, 2, 33.00, 1, '2025-11-22 13:31:36', '2025-11-22 19:11:15', 'entregado', NULL),
-(2717, 754, 16, 2, 105.00, 1, '2025-11-22 13:34:28', '2025-11-22 19:11:14', 'entregado', NULL),
-(2718, 754, 66, 1, 33.00, 1, '2025-11-22 13:34:28', '2025-11-22 19:11:16', 'entregado', NULL),
-(2719, 754, 9001, 1, 40.00, 0, '2025-11-22 13:34:28', NULL, 'entregado', NULL),
-(2720, 755, 56, 1, 115.00, 1, '2025-11-22 13:36:08', '2025-11-22 19:11:27', 'entregado', NULL),
-(2721, 755, 19, 1, 125.00, 1, '2025-11-22 13:36:08', '2025-11-22 19:11:28', 'entregado', NULL),
-(2722, 755, 12, 1, 105.00, 1, '2025-11-22 13:36:08', '2025-11-22 19:11:29', 'entregado', NULL),
-(2723, 755, 61, 1, 79.00, 1, '2025-11-22 13:36:46', '2025-11-22 19:11:29', 'entregado', NULL),
-(2724, 756, 12, 1, 105.00, 1, '2025-11-22 13:38:32', '2025-11-22 19:11:30', 'entregado', NULL),
-(2725, 756, 16, 1, 105.00, 1, '2025-11-22 13:38:32', '2025-11-22 19:12:04', 'entregado', NULL),
-(2726, 756, 66, 1, 33.00, 1, '2025-11-22 13:38:32', '2025-11-22 19:12:03', 'entregado', NULL),
-(2727, 756, 9001, 1, 20.00, 0, '2025-11-22 13:38:32', NULL, 'entregado', NULL),
-(2728, 757, 15, 2, 115.00, 1, '2025-11-22 13:45:42', '2025-11-22 19:12:03', 'entregado', NULL),
-(2729, 757, 66, 1, 33.00, 1, '2025-11-22 13:45:42', '2025-11-22 19:12:02', 'entregado', NULL),
-(2730, 757, 9001, 1, 20.00, 0, '2025-11-22 13:45:42', NULL, 'entregado', NULL),
-(2731, 758, 15, 2, 115.00, 1, '2025-11-22 13:49:20', '2025-11-22 19:12:02', 'entregado', NULL),
-(2732, 758, 66, 1, 33.00, 1, '2025-11-22 13:49:20', '2025-11-22 19:12:01', 'entregado', NULL),
-(2733, 758, 9001, 1, 50.00, 0, '2025-11-22 13:49:20', NULL, 'entregado', NULL),
-(2734, 757, 77, 1, 10.00, 1, '2025-11-22 13:50:48', '2025-11-22 19:12:00', 'entregado', NULL),
-(2735, 759, 15, 2, 115.00, 1, '2025-11-22 13:51:08', '2025-11-22 19:12:01', 'entregado', NULL),
-(2736, 759, 49, 1, 125.00, 1, '2025-11-22 13:51:08', NULL, 'listo', NULL),
-(2737, 760, 13, 1, 109.00, 1, '2025-11-22 14:02:56', NULL, 'listo', NULL),
-(2738, 760, 9011, 8, 10.00, 1, '2025-11-22 14:02:56', NULL, 'listo', NULL),
-(2739, 761, 110, 1, 119.00, 1, '2025-11-22 14:09:19', NULL, 'listo', NULL),
-(2740, 761, 136, 2, 99.00, 0, '2025-11-22 14:09:19', NULL, 'en_preparacion', NULL),
-(2741, 761, 85, 2, 10.00, 0, '2025-11-22 14:09:19', NULL, 'en_preparacion', NULL),
-(2742, 761, 61, 1, 79.00, 0, '2025-11-22 14:09:19', NULL, 'en_preparacion', NULL),
-(2743, 762, 12, 1, 105.00, 0, '2025-11-22 14:14:05', NULL, 'en_preparacion', NULL),
-(2744, 762, 14, 1, 115.00, 0, '2025-11-22 14:14:05', NULL, 'en_preparacion', NULL),
-(2745, 762, 9022, 1, 135.00, 0, '2025-11-22 14:14:05', NULL, 'en_preparacion', NULL),
-(2746, 762, 37, 1, 65.00, 0, '2025-11-22 14:14:05', NULL, 'en_preparacion', NULL),
-(2747, 762, 85, 2, 10.00, 0, '2025-11-22 14:14:05', NULL, 'en_preparacion', NULL),
-(2748, 762, 66, 2, 33.00, 0, '2025-11-22 14:14:05', NULL, 'en_preparacion', NULL),
-(2749, 762, 9001, 1, 20.00, 0, '2025-11-22 14:14:05', NULL, 'entregado', NULL),
-(2750, 763, 43, 1, 155.00, 0, '2025-11-22 14:14:52', NULL, 'en_preparacion', NULL),
-(2751, 763, 9024, 1, 135.00, 0, '2025-11-22 14:14:52', NULL, 'en_preparacion', NULL),
-(2752, 763, 54, 1, 125.00, 0, '2025-11-22 14:14:52', NULL, 'en_preparacion', NULL),
-(2753, 763, 144, 1, 75.00, 0, '2025-11-22 14:14:52', NULL, 'en_preparacion', NULL),
-(2754, 763, 66, 2, 33.00, 0, '2025-11-22 14:14:52', NULL, 'en_preparacion', NULL),
-(2755, 764, 15, 1, 115.00, 0, '2025-11-22 14:15:44', NULL, 'en_preparacion', NULL),
-(2756, 764, 21, 1, 125.00, 0, '2025-11-22 14:15:44', NULL, 'en_preparacion', NULL),
-(2757, 764, 66, 2, 33.00, 1, '2025-11-22 14:15:44', NULL, 'listo', NULL),
-(2758, 765, 15, 1, 115.00, 0, '2025-11-22 14:34:45', NULL, 'en_preparacion', NULL),
-(2759, 765, 9001, 1, 30.00, 0, '2025-11-22 14:34:45', NULL, 'entregado', NULL),
-(2760, 766, 15, 3, 115.00, 1, '2025-11-22 14:35:07', NULL, 'listo', NULL),
-(2761, 766, 9001, 1, 20.00, 0, '2025-11-22 14:35:07', NULL, 'entregado', NULL),
-(2762, 767, 15, 2, 115.00, 1, '2025-11-22 14:40:19', NULL, 'listo', NULL),
-(2763, 767, 16, 1, 105.00, 1, '2025-11-22 14:40:19', NULL, 'listo', NULL),
-(2764, 767, 9001, 1, 30.00, 0, '2025-11-22 14:40:19', NULL, 'entregado', NULL),
-(2765, 768, 12, 2, 105.00, 1, '2025-11-22 14:41:56', NULL, 'listo', NULL),
-(2766, 768, 15, 1, 115.00, 1, '2025-11-22 14:41:56', NULL, 'listo', NULL),
-(2767, 768, 66, 2, 33.00, 1, '2025-11-22 14:41:56', NULL, 'listo', NULL),
-(2768, 768, 9001, 1, 20.00, 0, '2025-11-22 14:41:56', NULL, 'entregado', NULL),
-(2769, 769, 12, 2, 105.00, 1, '2025-11-22 14:43:12', NULL, 'listo', NULL),
-(2770, 769, 15, 1, 115.00, 1, '2025-11-22 14:43:12', NULL, 'listo', NULL),
-(2771, 770, 41, 2, 139.00, 1, '2025-11-22 14:47:12', NULL, 'listo', NULL),
-(2772, 770, 66, 2, 33.00, 1, '2025-11-22 14:47:12', NULL, 'listo', NULL),
-(2773, 770, 9001, 1, 20.00, 0, '2025-11-22 14:47:12', NULL, 'entregado', NULL),
-(2774, 771, 15, 2, 115.00, 1, '2025-11-22 14:49:18', NULL, 'listo', NULL),
-(2775, 771, 12, 1, 105.00, 1, '2025-11-22 14:49:18', NULL, 'listo', NULL),
-(2776, 771, 9001, 1, 20.00, 0, '2025-11-22 14:49:18', NULL, 'entregado', NULL),
-(2777, 772, 43, 1, 155.00, 1, '2025-11-22 14:57:36', NULL, 'listo', NULL),
-(2778, 772, 46, 1, 179.00, 1, '2025-11-22 14:57:36', NULL, 'listo', NULL),
-(2779, 773, 15, 2, 115.00, 1, '2025-11-22 15:04:08', NULL, 'listo', NULL),
-(2780, 773, 9001, 1, 30.00, 0, '2025-11-22 15:04:08', NULL, 'entregado', NULL),
-(2781, 774, 10, 2, 135.00, 1, '2025-11-22 15:09:19', NULL, 'listo', NULL),
-(2782, 774, 8, 1, 125.00, 1, '2025-11-22 15:09:19', NULL, 'listo', NULL),
-(2783, 774, 144, 3, 75.00, 1, '2025-11-22 15:09:19', NULL, 'listo', NULL),
-(2784, 774, 9001, 1, 30.00, 0, '2025-11-22 15:09:19', NULL, 'entregado', NULL),
-(2785, 775, 86, 2, 10.00, 1, '2025-11-22 15:12:41', '2025-11-22 19:12:36', 'entregado', NULL),
-(2786, 776, 15, 2, 115.00, 1, '2025-11-22 15:13:31', '2025-11-22 19:12:38', 'entregado', NULL),
-(2787, 776, 66, 1, 33.00, 1, '2025-11-22 15:13:31', '2025-11-22 19:12:36', 'entregado', NULL),
-(2788, 776, 18, 2, 115.00, 1, '2025-11-22 15:13:31', '2025-11-22 19:12:28', 'entregado', NULL),
-(2789, 777, 15, 1, 115.00, 1, '2025-11-22 15:14:24', '2025-11-22 19:12:35', 'entregado', NULL),
-(2790, 777, 66, 1, 33.00, 1, '2025-11-22 15:14:24', '2025-11-22 19:12:29', 'entregado', NULL),
-(2791, 778, 12, 2, 105.00, 0, '2025-11-22 15:17:03', NULL, 'en_preparacion', NULL),
-(2792, 778, 16, 1, 105.00, 1, '2025-11-22 15:17:03', '2025-11-22 19:12:35', 'entregado', NULL),
-(2793, 778, 110, 1, 119.00, 1, '2025-11-22 15:17:03', '2025-11-22 19:12:34', 'entregado', NULL),
-(2794, 778, 9001, 1, 40.00, 0, '2025-11-22 15:17:03', NULL, 'entregado', NULL),
-(2795, 779, 15, 3, 115.00, 1, '2025-11-22 15:23:26', '2025-11-22 19:12:12', 'entregado', NULL),
-(2796, 779, 9001, 1, 20.00, 0, '2025-11-22 15:23:26', NULL, 'entregado', NULL),
-(2797, 780, 13, 1, 109.00, 1, '2025-11-22 15:25:47', '2025-11-22 19:12:29', 'entregado', NULL),
-(2798, 781, 24, 2, 135.00, 1, '2025-11-22 15:27:15', '2025-11-22 19:12:12', 'entregado', NULL),
-(2799, 781, 66, 2, 33.00, 1, '2025-11-22 15:27:15', '2025-11-22 19:12:14', 'entregado', NULL),
-(2800, 782, 15, 3, 115.00, 1, '2025-11-22 15:27:47', '2025-11-22 19:12:13', 'entregado', NULL),
-(2801, 782, 66, 2, 33.00, 1, '2025-11-22 15:27:47', '2025-11-22 19:12:14', 'entregado', NULL),
-(2802, 783, 26, 1, 245.00, 1, '2025-11-22 15:30:13', '2025-11-22 19:12:06', 'entregado', NULL),
-(2803, 784, 103, 4, 95.00, 1, '2025-11-22 18:34:00', '2025-11-22 19:12:05', 'entregado', NULL),
-(2804, 785, 103, 4, 95.00, 1, '2025-11-22 18:49:54', '2025-11-22 19:12:04', 'entregado', NULL),
-(2805, 786, 12, 2, 105.00, 1, '2025-11-22 19:02:20', '2025-11-22 19:11:47', 'entregado', NULL),
-(2806, 786, 66, 1, 33.00, 1, '2025-11-22 19:02:20', '2025-11-22 19:11:45', 'entregado', NULL),
-(2807, 786, 9001, 1, 30.00, 0, '2025-11-22 19:02:20', NULL, 'entregado', NULL),
-(2808, 787, 12, 1, 105.00, 0, '2025-11-22 21:06:52', NULL, 'en_preparacion', NULL),
-(2809, 787, 49, 1, 125.00, 0, '2025-11-22 21:06:52', NULL, 'en_preparacion', NULL),
-(2810, 787, 15, 1, 115.00, 0, '2025-11-22 21:06:52', NULL, 'en_preparacion', NULL),
-(2811, 787, 16, 1, 105.00, 0, '2025-11-22 21:06:52', NULL, 'en_preparacion', NULL),
-(2812, 788, 53, 1, 155.00, 0, '2025-11-23 11:51:33', NULL, 'en_preparacion', NULL),
-(2813, 788, 69, 1, 38.00, 0, '2025-11-23 11:51:33', NULL, 'en_preparacion', NULL),
-(2814, 788, 74, 1, 35.00, 0, '2025-11-23 11:51:33', NULL, 'pendiente', NULL),
-(2815, 788, 101, 1, 165.00, 0, '2025-11-23 11:51:33', NULL, 'pendiente', NULL),
-(2816, 789, 15, 1, 115.00, 0, '2025-11-23 13:19:17', NULL, 'pendiente', NULL),
-(2817, 789, 19, 1, 125.00, 0, '2025-11-23 13:19:17', NULL, 'pendiente', NULL),
-(2818, 789, 97, 1, 139.00, 0, '2025-11-23 13:19:17', NULL, 'pendiente', NULL),
-(2819, 789, 66, 2, 33.00, 0, '2025-11-23 13:19:17', NULL, 'pendiente', NULL),
-(2820, 789, 77, 1, 10.00, 0, '2025-11-23 13:19:17', NULL, 'pendiente', NULL),
-(2821, 789, 66, 2, 33.00, 0, '2025-11-23 13:19:51', NULL, 'pendiente', NULL),
-(2822, 790, 15, 1, 115.00, 0, '2025-11-23 13:32:36', NULL, 'pendiente', NULL),
-(2823, 791, 9028, 1, 95.00, 0, '2025-11-25 15:49:45', NULL, 'pendiente', NULL),
-(2824, 791, 20, 1, 125.00, 0, '2025-11-25 15:49:45', NULL, 'pendiente', NULL),
-(2825, 791, 97, 1, 139.00, 0, '2025-11-25 15:49:45', NULL, 'pendiente', NULL),
-(2826, 792, 34, 1, 115.00, 0, '2025-11-25 15:51:49', NULL, 'pendiente', NULL),
-(2827, 792, 93, 1, 145.00, 0, '2025-11-25 15:51:49', NULL, 'pendiente', NULL),
-(2828, 792, 69, 2, 38.00, 0, '2025-11-25 15:51:49', NULL, 'pendiente', NULL),
-(2829, 792, 79, 1, 10.00, 0, '2025-11-25 15:51:49', NULL, 'pendiente', NULL),
-(2830, 792, 77, 2, 10.00, 0, '2025-11-25 15:51:49', NULL, 'pendiente', NULL),
-(2831, 792, 62, 1, 49.00, 0, '2025-11-25 15:51:49', NULL, 'pendiente', NULL),
-(2832, 792, 106, 1, 149.00, 0, '2025-11-25 15:51:49', NULL, 'pendiente', NULL),
-(2833, 792, 98, 1, 155.00, 0, '2025-11-25 15:51:49', NULL, 'pendiente', NULL),
-(2835, 794, 89, 1, 15.00, 0, '2025-11-27 08:33:52', NULL, 'pendiente', NULL),
-(2836, 794, 13, 3, 109.00, 0, '2025-11-27 08:34:29', NULL, 'pendiente', NULL),
-(2837, 795, 15, 1, 115.00, 0, '2025-11-27 08:36:05', NULL, 'pendiente', NULL),
-(2838, 795, 12, 1, 105.00, 0, '2025-11-27 08:36:05', NULL, 'pendiente', NULL),
-(2839, 795, 66, 3, 33.00, 0, '2025-11-27 08:36:05', NULL, 'pendiente', NULL),
-(2840, 796, 93, 1, 145.00, 0, '2025-11-27 08:38:01', NULL, 'pendiente', NULL),
-(2841, 796, 94, 1, 145.00, 0, '2025-11-27 08:38:01', NULL, 'pendiente', NULL),
-(2842, 796, 67, 3, 35.00, 0, '2025-11-27 08:38:01', NULL, 'pendiente', NULL),
-(2843, 797, 15, 5, 115.00, 0, '2025-11-27 16:37:31', NULL, 'pendiente', NULL),
-(2846, 797, 66, 4, 33.00, 0, '2025-11-27 16:38:26', NULL, 'pendiente', NULL),
-(2847, 798, 34, 1, 115.00, 0, '2025-11-28 13:41:30', NULL, 'pendiente', NULL),
-(2848, 798, 93, 1, 145.00, 0, '2025-11-28 13:41:30', NULL, 'pendiente', NULL),
-(2849, 798, 69, 2, 38.00, 0, '2025-11-28 13:41:30', NULL, 'pendiente', NULL),
-(2850, 798, 79, 1, 10.00, 0, '2025-11-28 13:41:30', NULL, 'pendiente', NULL),
-(2851, 798, 85, 1, 10.00, 0, '2025-11-28 13:41:30', NULL, 'pendiente', NULL),
-(2852, 798, 77, 1, 10.00, 0, '2025-11-28 13:41:30', NULL, 'pendiente', NULL),
-(2853, 798, 62, 1, 49.00, 0, '2025-11-28 13:41:30', NULL, 'pendiente', NULL),
-(2854, 798, 98, 1, 155.00, 0, '2025-11-28 13:41:30', NULL, 'pendiente', NULL),
-(2855, 798, 106, 1, 149.00, 0, '2025-11-28 13:41:30', NULL, 'pendiente', NULL),
-(2856, 799, 15, 2, 115.00, 0, '2025-11-28 13:48:44', NULL, 'pendiente', NULL),
-(2857, 799, 12, 1, 105.00, 0, '2025-11-28 13:48:44', NULL, 'pendiente', NULL),
-(2858, 799, 9001, 1, 20.00, 0, '2025-11-28 13:48:44', NULL, 'entregado', NULL),
-(2859, 800, 35, 1, 75.00, 0, '2025-11-28 13:51:43', NULL, 'pendiente', NULL),
-(2860, 800, 49, 1, 125.00, 0, '2025-11-28 13:51:43', NULL, 'pendiente', NULL),
-(2861, 800, 13, 1, 109.00, 0, '2025-11-28 13:51:43', NULL, 'pendiente', NULL),
-(2862, 800, 67, 3, 35.00, 0, '2025-11-28 13:51:43', NULL, 'pendiente', NULL),
-(2863, 800, 17, 1, 119.00, 0, '2025-11-28 13:51:43', NULL, 'pendiente', NULL),
-(2864, 801, 97, 1, 155.00, 0, '2025-11-28 15:04:06', NULL, 'pendiente', NULL),
-(2865, 802, 103, 4, 95.00, 0, '2025-11-28 19:24:36', NULL, 'pendiente', NULL),
-(2866, 803, 42, 1, 135.00, 0, '2025-11-30 20:28:37', NULL, 'pendiente', NULL),
-(2867, 803, 15, 3, 115.00, 0, '2025-11-30 20:28:37', NULL, 'pendiente', NULL),
-(2868, 804, 123, 2, 40.00, 0, '2025-12-03 17:27:54', NULL, 'pendiente', NULL),
-(2869, 804, 9007, 1, 449.00, 0, '2025-12-03 17:27:54', NULL, 'pendiente', NULL),
-(2870, 805, 4, 1, 29.00, 0, '2025-12-03 17:37:32', NULL, 'pendiente', NULL),
-(2871, 805, 15, 1, 115.00, 0, '2025-12-03 17:37:32', NULL, 'pendiente', NULL),
-(2872, 805, 12, 1, 105.00, 0, '2025-12-03 17:37:32', NULL, 'pendiente', NULL),
-(2873, 805, 16, 1, 105.00, 0, '2025-12-03 17:37:32', NULL, 'pendiente', NULL),
-(2874, 805, 9001, 1, 20.00, 0, '2025-12-03 17:37:32', NULL, 'entregado', NULL),
-(2876, 807, 15, 2, 115.00, 0, '2025-12-03 23:26:49', NULL, 'pendiente', NULL),
-(2877, 807, 66, 1, 33.00, 0, '2025-12-03 23:26:49', NULL, 'pendiente', NULL),
-(2878, 808, 56, 1, 115.00, 0, '2025-12-04 18:13:33', NULL, 'pendiente', NULL),
-(2879, 808, 9008, 1, 339.00, 0, '2025-12-04 18:13:33', NULL, 'pendiente', NULL),
-(2886, 810, 53, 1, 155.00, 0, '2025-12-04 19:25:10', NULL, 'pendiente', NULL),
-(2887, 810, 12, 1, 105.00, 0, '2025-12-04 19:25:28', NULL, 'pendiente', NULL),
-(2888, 810, 23, 1, 115.00, 0, '2025-12-04 19:25:48', NULL, 'pendiente', NULL),
-(2889, 810, 67, 4, 35.00, 0, '2025-12-04 19:25:57', NULL, 'pendiente', NULL),
-(2890, 810, 19, 1, 125.00, 0, '2025-12-04 19:26:57', NULL, 'pendiente', NULL),
-(2891, 810, 90, 1, 35.00, 0, '2025-12-04 19:27:09', NULL, 'pendiente', NULL),
-(2892, 811, 15, 2, 115.00, 0, '2025-12-05 04:41:50', NULL, 'pendiente', NULL),
-(2893, 811, 66, 1, 33.00, 0, '2025-12-05 04:41:50', NULL, 'pendiente', NULL),
-(2894, 812, 50, 1, 125.00, 0, '2025-12-05 19:52:06', NULL, 'pendiente', NULL),
-(2895, 812, 93, 1, 145.00, 0, '2025-12-05 19:52:06', NULL, 'pendiente', NULL),
-(2896, 812, 71, 1, 38.00, 0, '2025-12-05 19:52:06', NULL, 'pendiente', NULL),
-(2897, 812, 9001, 1, 30.00, 0, '2025-12-05 19:52:06', NULL, 'entregado', NULL),
-(2898, 813, 66, 4, 33.00, 0, '2025-12-08 17:09:40', NULL, 'pendiente', NULL),
-(2899, 813, 15, 1, 115.00, 0, '2025-12-08 17:09:40', NULL, 'pendiente', NULL),
-(2900, 813, 16, 1, 105.00, 0, '2025-12-08 17:09:40', NULL, 'pendiente', NULL),
-(2901, 813, 66, 1, 33.00, 0, '2025-12-08 17:09:40', NULL, 'pendiente', NULL),
-(2902, 814, 15, 1, 115.00, 0, '2025-12-08 17:30:19', NULL, 'pendiente', NULL),
-(2903, 814, 16, 1, 105.00, 0, '2025-12-08 17:30:19', NULL, 'pendiente', NULL),
-(2904, 814, 66, 1, 33.00, 0, '2025-12-08 17:30:19', NULL, 'pendiente', NULL),
-(2905, 814, 66, 2, 33.00, 0, '2025-12-08 17:30:19', NULL, 'pendiente', NULL),
-(2906, 815, 134, 1, 79.00, 0, '2025-12-08 22:50:46', NULL, 'pendiente', NULL),
-(2907, 815, 53, 1, 155.00, 0, '2025-12-08 22:50:46', NULL, 'pendiente', NULL),
-(2908, 815, 69, 1, 38.00, 0, '2025-12-08 22:50:46', NULL, 'pendiente', NULL),
-(2909, 816, 76, 1, 29.00, 0, '2025-12-09 17:46:56', NULL, 'pendiente', NULL),
-(2910, 816, 15, 3, 115.00, 0, '2025-12-09 17:46:56', NULL, 'pendiente', NULL),
-(2911, 816, 16, 3, 105.00, 0, '2025-12-09 17:46:56', NULL, 'pendiente', NULL),
-(2912, 816, 12, 3, 105.00, 0, '2025-12-09 17:46:56', NULL, 'pendiente', NULL),
-(2913, 816, 9001, 1, 20.00, 0, '2025-12-09 17:46:56', NULL, 'entregado', NULL),
-(2914, 817, 15, 3, 115.00, 0, '2025-12-09 17:49:11', NULL, 'pendiente', NULL),
-(2915, 817, 15, 3, 115.00, 0, '2025-12-09 17:49:11', NULL, 'pendiente', NULL),
-(2916, 817, 16, 3, 105.00, 0, '2025-12-09 17:49:11', NULL, 'pendiente', NULL),
-(2917, 817, 12, 3, 105.00, 0, '2025-12-09 17:49:11', NULL, 'pendiente', NULL),
-(2918, 817, 76, 1, 29.00, 0, '2025-12-09 17:49:11', NULL, 'pendiente', NULL),
-(2919, 817, 9001, 1, 20.00, 0, '2025-12-09 17:49:11', NULL, 'entregado', NULL),
-(2920, 818, 134, 1, 89.00, 0, '2025-12-09 19:48:24', NULL, 'pendiente', NULL),
-(2921, 818, 53, 1, 165.00, 0, '2025-12-09 19:48:24', NULL, 'pendiente', NULL),
-(2922, 818, 69, 2, 39.00, 0, '2025-12-09 19:48:24', NULL, 'pendiente', NULL),
-(2923, 819, 15, 1, 125.00, 0, '2025-12-09 20:54:13', NULL, 'pendiente', NULL),
-(2925, 819, 7, 1, 135.00, 0, '2025-12-09 20:54:13', NULL, 'pendiente', NULL),
-(2926, 819, 120, 1, 35.00, 0, '2025-12-09 20:54:13', NULL, 'pendiente', NULL),
-(2927, 819, 123, 3, 40.00, 0, '2025-12-09 20:54:13', NULL, 'pendiente', NULL),
-(2928, 819, 61, 1, 99.00, 0, '2025-12-09 20:54:13', NULL, 'pendiente', NULL),
-(2930, 819, 110, 1, 129.00, 0, '2025-12-09 20:56:37', NULL, 'pendiente', NULL),
-(2931, 820, 15, 1, 125.00, 0, '2025-12-10 21:50:42', NULL, 'pendiente', NULL),
-(2932, 821, 15, 1, 125.00, 0, '2025-12-10 21:52:03', NULL, 'pendiente', NULL),
-(2933, 822, 13, 2, 119.00, 0, '2025-12-10 21:52:37', NULL, 'pendiente', NULL),
-(2934, 823, 97, 2, 139.00, 0, '2025-12-10 21:54:24', NULL, 'pendiente', NULL),
-(2935, 823, 23, 1, 125.00, 0, '2025-12-10 21:54:24', NULL, 'pendiente', NULL),
-(2936, 823, 66, 1, 35.00, 0, '2025-12-10 21:54:24', NULL, 'pendiente', NULL),
-(2937, 824, 12, 1, 115.00, 0, '2025-12-10 21:55:30', NULL, 'pendiente', NULL),
-(2938, 824, 93, 1, 155.00, 0, '2025-12-10 21:55:30', NULL, 'pendiente', NULL),
-(2939, 825, 19, 1, 135.00, 0, '2025-12-10 21:55:55', NULL, 'pendiente', NULL),
-(2940, 826, 15, 1, 125.00, 0, '2025-12-10 21:56:30', NULL, 'pendiente', NULL),
-(2941, 827, 12, 2, 115.00, 0, '2025-12-10 22:02:08', NULL, 'pendiente', NULL),
-(2942, 827, 66, 1, 35.00, 0, '2025-12-10 22:02:08', NULL, 'pendiente', NULL),
-(2943, 827, 12, 1, 115.00, 0, '2025-12-10 22:02:08', NULL, 'pendiente', NULL),
-(2944, 828, 138, 1, 135.00, 0, '2025-12-10 22:02:55', NULL, 'pendiente', NULL),
-(2945, 828, 103, 1, 99.00, 0, '2025-12-10 22:02:55', NULL, 'pendiente', NULL),
-(2946, 829, 9009, 1, 499.00, 0, '2025-12-10 22:05:39', NULL, 'pendiente', NULL),
-(2947, 830, 15, 1, 125.00, 0, '2025-12-10 22:06:18', NULL, 'pendiente', NULL),
-(2948, 831, 13, 1, 119.00, 0, '2025-12-10 22:06:54', NULL, 'pendiente', NULL),
-(2949, 832, 15, 2, 125.00, 0, '2025-12-10 22:07:21', NULL, 'pendiente', NULL),
-(2950, 833, 103, 1, 99.00, 0, '2025-12-10 22:07:47', NULL, 'pendiente', NULL),
-(2951, 834, 15, 1, 125.00, 0, '2025-12-10 22:12:50', NULL, 'pendiente', NULL),
-(2952, 835, 12, 1, 115.00, 0, '2025-12-10 22:13:55', NULL, 'pendiente', NULL),
-(2953, 835, 12, 1, 115.00, 0, '2025-12-10 22:13:55', NULL, 'pendiente', NULL),
-(2954, 835, 66, 1, 35.00, 0, '2025-12-10 22:13:55', NULL, 'pendiente', NULL),
-(2955, 836, 18, 2, 125.00, 0, '2025-12-12 17:35:44', NULL, 'pendiente', NULL),
-(2956, 836, 76, 2, 35.00, 0, '2025-12-12 17:35:44', NULL, 'pendiente', NULL),
-(2957, 837, 56, 1, 125.00, 0, '2025-12-12 17:45:41', NULL, 'pendiente', NULL),
-(2958, 837, 110, 1, 129.00, 0, '2025-12-12 17:45:41', NULL, 'pendiente', NULL),
-(2959, 837, 76, 1, 35.00, 0, '2025-12-12 17:45:41', NULL, 'pendiente', NULL),
-(2960, 838, 103, 1, 99.00, 0, '2025-12-13 17:20:01', NULL, 'pendiente', NULL),
-(2961, 838, 93, 1, 155.00, 0, '2025-12-13 17:20:01', NULL, 'pendiente', NULL),
-(2962, 838, 123, 3, 40.00, 0, '2025-12-13 17:20:01', NULL, 'pendiente', NULL),
-(2963, 838, 9029, 1, 109.00, 0, '2025-12-13 17:20:01', NULL, 'pendiente', NULL),
-(2964, 838, 101, 1, 175.00, 0, '2025-12-13 17:20:01', NULL, 'pendiente', NULL),
-(2981, 866, 14, 1, 125.00, 0, '2025-12-15 11:32:41', NULL, 'pendiente', NULL),
-(2982, 866, 77, 1, 10.00, 0, '2025-12-15 11:32:41', NULL, 'pendiente', NULL),
-(2983, 866, 9010, 1, 20.00, 0, '2025-12-15 11:32:41', NULL, 'pendiente', NULL),
-(2984, 866, 9000, 1, 9.99, 0, '2025-12-15 11:32:41', NULL, 'entregado', NULL),
-(2985, 867, 105, 1, 139.00, 0, '2025-12-15 11:51:39', NULL, 'pendiente', NULL),
-(2986, 867, 99, 1, 165.00, 0, '2025-12-15 11:51:39', NULL, 'pendiente', NULL),
-(2987, 867, 9000, 1, 16.10, 0, '2025-12-15 11:51:39', NULL, 'entregado', NULL);
+(3003, 875, 77, 1, 10.00, 0, '2025-12-19 18:07:29', NULL, 'pendiente', NULL),
+(3004, 876, 15, 1, 125.00, 0, '2025-12-19 20:36:56', NULL, 'pendiente', NULL),
+(3005, 877, 78, 1, 15.00, 0, '2025-12-19 21:00:50', NULL, 'pendiente', NULL),
+(3006, 878, 15, 4, 125.00, 0, '2025-12-19 21:27:15', NULL, 'pendiente', NULL),
+(3007, 878, 66, 3, 35.00, 0, '2025-12-19 21:27:15', NULL, 'pendiente', NULL),
+(3008, 878, 141, 1, 79.00, 0, '2025-12-19 21:27:15', NULL, 'pendiente', NULL),
+(3009, 878, 9025, 1, 139.00, 0, '2025-12-19 21:27:15', NULL, 'pendiente', NULL),
+(3010, 879, 77, 1, 10.00, 0, '2025-12-19 21:43:59', NULL, 'pendiente', NULL),
+(3011, 879, 9001, 1, 30.00, 0, '2025-12-19 21:43:59', NULL, 'entregado', NULL),
+(3012, 880, 15, 1, 125.00, 0, '2025-12-19 21:58:52', NULL, 'pendiente', NULL),
+(3013, 881, 15, 1, 125.00, 0, '2025-12-20 13:27:04', NULL, 'pendiente', NULL),
+(3014, 881, 106, 1, 159.00, 0, '2025-12-20 13:27:04', NULL, 'pendiente', NULL),
+(3015, 881, 66, 1, 35.00, 0, '2025-12-20 13:27:04', NULL, 'pendiente', NULL),
+(3016, 882, 37, 1, 69.00, 0, '2025-12-20 13:27:44', NULL, 'pendiente', NULL);
 
 --
 -- Disparadores `venta_detalles`
@@ -18366,24 +17220,6 @@ CREATE TABLE `venta_detalles_cancelados` (
   `motivo` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `venta_detalles_cancelados`
---
-
-INSERT INTO `venta_detalles_cancelados` (`id`, `venta_detalle_id_original`, `venta_id`, `producto_id`, `cantidad`, `precio_unitario`, `insumos_descargados`, `created_at`, `entregado_hr`, `estado_producto`, `observaciones`, `cancelado_por`, `fecha_cancelacion`, `motivo`) VALUES
-(173, 2834, 794, 13, 1, 109.00, 0, '2025-11-27 08:33:52', NULL, 'pendiente', NULL, NULL, '2025-11-27 08:34:23', NULL),
-(174, 2844, 797, 66, 3, 33.00, 0, '2025-11-27 16:37:31', NULL, 'pendiente', NULL, NULL, '2025-11-27 16:38:18', NULL),
-(175, 2845, 797, 66, 1, 33.00, 0, '2025-11-27 16:38:09', NULL, 'pendiente', NULL, NULL, '2025-11-27 16:38:20', NULL),
-(176, 2875, 806, 15, 2, 115.00, 0, '2025-12-03 23:14:59', NULL, 'pendiente', NULL, NULL, '2025-12-03 23:15:07', NULL),
-(177, 2880, 809, 53, 1, 155.00, 0, '2025-12-04 19:24:32', NULL, 'pendiente', NULL, NULL, '2025-12-04 19:24:44', NULL),
-(178, 2881, 809, 12, 1, 105.00, 0, '2025-12-04 19:24:32', NULL, 'pendiente', NULL, NULL, '2025-12-04 19:24:45', NULL),
-(179, 2882, 809, 23, 1, 115.00, 0, '2025-12-04 19:24:32', NULL, 'pendiente', NULL, NULL, '2025-12-04 19:24:45', NULL),
-(180, 2883, 809, 19, 1, 125.00, 0, '2025-12-04 19:24:32', NULL, 'pendiente', NULL, NULL, '2025-12-04 19:24:45', NULL),
-(181, 2884, 809, 67, 4, 35.00, 0, '2025-12-04 19:24:32', NULL, 'pendiente', NULL, NULL, '2025-12-04 19:24:45', NULL),
-(182, 2885, 809, 90, 1, 35.00, 0, '2025-12-04 19:24:32', NULL, 'pendiente', NULL, NULL, '2025-12-04 19:24:45', NULL),
-(183, 2924, 819, 110, 1, 119.00, 0, '2025-12-09 20:54:13', NULL, 'pendiente', NULL, NULL, '2025-12-09 20:55:41', NULL),
-(184, 2929, 819, 110, 1, 119.00, 0, '2025-12-09 20:55:59', NULL, 'pendiente', NULL, NULL, '2025-12-09 20:56:17', NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -18403,274 +17239,7 @@ CREATE TABLE `venta_detalles_log` (
 --
 
 INSERT INTO `venta_detalles_log` (`id`, `venta_detalle_id`, `estado_anterior`, `estado_nuevo`, `cambiado_en`) VALUES
-(934, 2696, 'pendiente', 'entregado', '2025-11-22 12:31:07'),
-(935, 2699, 'pendiente', 'entregado', '2025-11-22 12:36:01'),
-(936, 2704, 'pendiente', 'entregado', '2025-11-22 13:07:29'),
-(937, 2709, 'pendiente', 'entregado', '2025-11-22 13:17:23'),
-(938, 2719, 'pendiente', 'entregado', '2025-11-22 13:34:28'),
-(939, 2727, 'pendiente', 'entregado', '2025-11-22 13:38:32'),
-(940, 2730, 'pendiente', 'entregado', '2025-11-22 13:45:42'),
-(941, 2733, 'pendiente', 'entregado', '2025-11-22 13:49:20'),
-(942, 2749, 'pendiente', 'entregado', '2025-11-22 14:14:05'),
-(943, 2759, 'pendiente', 'entregado', '2025-11-22 14:34:45'),
-(944, 2761, 'pendiente', 'entregado', '2025-11-22 14:35:07'),
-(945, 2764, 'pendiente', 'entregado', '2025-11-22 14:40:19'),
-(946, 2768, 'pendiente', 'entregado', '2025-11-22 14:41:56'),
-(947, 2773, 'pendiente', 'entregado', '2025-11-22 14:47:12'),
-(948, 2776, 'pendiente', 'entregado', '2025-11-22 14:49:18'),
-(949, 2780, 'pendiente', 'entregado', '2025-11-22 15:04:08'),
-(950, 2784, 'pendiente', 'entregado', '2025-11-22 15:09:19'),
-(951, 2794, 'pendiente', 'entregado', '2025-11-22 15:17:03'),
-(952, 2796, 'pendiente', 'entregado', '2025-11-22 15:23:26'),
-(953, 2807, 'pendiente', 'entregado', '2025-11-22 19:02:20'),
-(954, 2690, 'pendiente', 'en_preparacion', '2025-11-22 19:10:15'),
-(955, 2691, 'pendiente', 'en_preparacion', '2025-11-22 19:10:15'),
-(956, 2690, 'en_preparacion', 'listo', '2025-11-22 19:10:16'),
-(957, 2691, 'en_preparacion', 'listo', '2025-11-22 19:10:17'),
-(958, 2690, 'listo', 'entregado', '2025-11-22 19:10:17'),
-(959, 2691, 'listo', 'entregado', '2025-11-22 19:10:18'),
-(960, 2692, 'pendiente', 'en_preparacion', '2025-11-22 19:10:19'),
-(961, 2693, 'pendiente', 'en_preparacion', '2025-11-22 19:10:19'),
-(962, 2694, 'pendiente', 'en_preparacion', '2025-11-22 19:10:20'),
-(963, 2695, 'pendiente', 'en_preparacion', '2025-11-22 19:10:20'),
-(964, 2697, 'pendiente', 'en_preparacion', '2025-11-22 19:10:21'),
-(965, 2698, 'pendiente', 'en_preparacion', '2025-11-22 19:10:21'),
-(966, 2700, 'pendiente', 'en_preparacion', '2025-11-22 19:10:22'),
-(967, 2701, 'pendiente', 'en_preparacion', '2025-11-22 19:10:22'),
-(968, 2702, 'pendiente', 'en_preparacion', '2025-11-22 19:10:23'),
-(969, 2703, 'pendiente', 'en_preparacion', '2025-11-22 19:10:24'),
-(970, 2705, 'pendiente', 'en_preparacion', '2025-11-22 19:10:24'),
-(971, 2706, 'pendiente', 'en_preparacion', '2025-11-22 19:10:25'),
-(972, 2707, 'pendiente', 'en_preparacion', '2025-11-22 19:10:25'),
-(973, 2708, 'pendiente', 'en_preparacion', '2025-11-22 19:10:26'),
-(974, 2710, 'pendiente', 'en_preparacion', '2025-11-22 19:10:26'),
-(975, 2711, 'pendiente', 'en_preparacion', '2025-11-22 19:10:27'),
-(976, 2712, 'pendiente', 'en_preparacion', '2025-11-22 19:10:27'),
-(977, 2713, 'pendiente', 'en_preparacion', '2025-11-22 19:10:28'),
-(978, 2714, 'pendiente', 'en_preparacion', '2025-11-22 19:10:28'),
-(979, 2715, 'pendiente', 'en_preparacion', '2025-11-22 19:10:29'),
-(980, 2716, 'pendiente', 'en_preparacion', '2025-11-22 19:10:29'),
-(981, 2717, 'pendiente', 'en_preparacion', '2025-11-22 19:10:30'),
-(982, 2692, 'en_preparacion', 'listo', '2025-11-22 19:10:31'),
-(983, 2693, 'en_preparacion', 'listo', '2025-11-22 19:10:31'),
-(984, 2694, 'en_preparacion', 'listo', '2025-11-22 19:10:32'),
-(985, 2695, 'en_preparacion', 'listo', '2025-11-22 19:10:32'),
-(986, 2697, 'en_preparacion', 'listo', '2025-11-22 19:10:33'),
-(987, 2698, 'en_preparacion', 'listo', '2025-11-22 19:10:34'),
-(988, 2700, 'en_preparacion', 'listo', '2025-11-22 19:10:34'),
-(989, 2701, 'en_preparacion', 'listo', '2025-11-22 19:10:35'),
-(990, 2702, 'en_preparacion', 'listo', '2025-11-22 19:10:35'),
-(991, 2703, 'en_preparacion', 'listo', '2025-11-22 19:10:36'),
-(992, 2705, 'en_preparacion', 'listo', '2025-11-22 19:10:36'),
-(993, 2706, 'en_preparacion', 'listo', '2025-11-22 19:10:37'),
-(994, 2707, 'en_preparacion', 'listo', '2025-11-22 19:10:37'),
-(995, 2708, 'en_preparacion', 'listo', '2025-11-22 19:10:38'),
-(996, 2710, 'en_preparacion', 'listo', '2025-11-22 19:10:38'),
-(997, 2711, 'en_preparacion', 'listo', '2025-11-22 19:10:39'),
-(998, 2712, 'en_preparacion', 'listo', '2025-11-22 19:10:39'),
-(999, 2713, 'en_preparacion', 'listo', '2025-11-22 19:10:40'),
-(1000, 2714, 'en_preparacion', 'listo', '2025-11-22 19:10:41'),
-(1001, 2715, 'en_preparacion', 'listo', '2025-11-22 19:10:42'),
-(1002, 2716, 'en_preparacion', 'listo', '2025-11-22 19:10:43'),
-(1003, 2717, 'en_preparacion', 'listo', '2025-11-22 19:10:43'),
-(1004, 2718, 'pendiente', 'en_preparacion', '2025-11-22 19:10:44'),
-(1005, 2720, 'pendiente', 'en_preparacion', '2025-11-22 19:10:45'),
-(1006, 2721, 'pendiente', 'en_preparacion', '2025-11-22 19:10:45'),
-(1007, 2722, 'pendiente', 'en_preparacion', '2025-11-22 19:10:46'),
-(1008, 2723, 'pendiente', 'en_preparacion', '2025-11-22 19:10:46'),
-(1009, 2724, 'pendiente', 'en_preparacion', '2025-11-22 19:10:47'),
-(1010, 2725, 'pendiente', 'en_preparacion', '2025-11-22 19:10:47'),
-(1011, 2726, 'pendiente', 'en_preparacion', '2025-11-22 19:10:48'),
-(1012, 2728, 'pendiente', 'en_preparacion', '2025-11-22 19:10:48'),
-(1013, 2729, 'pendiente', 'en_preparacion', '2025-11-22 19:10:49'),
-(1014, 2731, 'pendiente', 'en_preparacion', '2025-11-22 19:10:49'),
-(1015, 2732, 'pendiente', 'en_preparacion', '2025-11-22 19:10:50'),
-(1016, 2735, 'pendiente', 'en_preparacion', '2025-11-22 19:10:50'),
-(1017, 2734, 'pendiente', 'en_preparacion', '2025-11-22 19:10:51'),
-(1018, 2804, 'pendiente', 'en_preparacion', '2025-11-22 19:10:56'),
-(1019, 2803, 'pendiente', 'en_preparacion', '2025-11-22 19:10:57'),
-(1020, 2802, 'pendiente', 'en_preparacion', '2025-11-22 19:10:58'),
-(1021, 2718, 'en_preparacion', 'listo', '2025-11-22 19:11:02'),
-(1022, 2692, 'listo', 'entregado', '2025-11-22 19:11:02'),
-(1023, 2693, 'listo', 'entregado', '2025-11-22 19:11:03'),
-(1024, 2694, 'listo', 'entregado', '2025-11-22 19:11:04'),
-(1025, 2695, 'listo', 'entregado', '2025-11-22 19:11:05'),
-(1026, 2697, 'listo', 'entregado', '2025-11-22 19:11:05'),
-(1027, 2698, 'listo', 'entregado', '2025-11-22 19:11:05'),
-(1028, 2700, 'listo', 'entregado', '2025-11-22 19:11:06'),
-(1029, 2701, 'listo', 'entregado', '2025-11-22 19:11:06'),
-(1030, 2702, 'listo', 'entregado', '2025-11-22 19:11:07'),
-(1031, 2703, 'listo', 'entregado', '2025-11-22 19:11:07'),
-(1032, 2705, 'listo', 'entregado', '2025-11-22 19:11:07'),
-(1033, 2706, 'listo', 'entregado', '2025-11-22 19:11:08'),
-(1034, 2707, 'listo', 'entregado', '2025-11-22 19:11:08'),
-(1035, 2708, 'listo', 'entregado', '2025-11-22 19:11:09'),
-(1036, 2710, 'listo', 'entregado', '2025-11-22 19:11:10'),
-(1037, 2711, 'listo', 'entregado', '2025-11-22 19:11:11'),
-(1038, 2712, 'listo', 'entregado', '2025-11-22 19:11:12'),
-(1039, 2713, 'listo', 'entregado', '2025-11-22 19:11:12'),
-(1040, 2714, 'listo', 'entregado', '2025-11-22 19:11:13'),
-(1041, 2715, 'listo', 'entregado', '2025-11-22 19:11:13'),
-(1042, 2717, 'listo', 'entregado', '2025-11-22 19:11:14'),
-(1043, 2716, 'listo', 'entregado', '2025-11-22 19:11:15'),
-(1044, 2718, 'listo', 'entregado', '2025-11-22 19:11:16'),
-(1045, 2720, 'en_preparacion', 'listo', '2025-11-22 19:11:17'),
-(1046, 2721, 'en_preparacion', 'listo', '2025-11-22 19:11:18'),
-(1047, 2722, 'en_preparacion', 'listo', '2025-11-22 19:11:18'),
-(1048, 2723, 'en_preparacion', 'listo', '2025-11-22 19:11:19'),
-(1049, 2724, 'en_preparacion', 'listo', '2025-11-22 19:11:19'),
-(1050, 2725, 'en_preparacion', 'listo', '2025-11-22 19:11:20'),
-(1051, 2726, 'en_preparacion', 'listo', '2025-11-22 19:11:20'),
-(1052, 2728, 'en_preparacion', 'listo', '2025-11-22 19:11:21'),
-(1053, 2729, 'en_preparacion', 'listo', '2025-11-22 19:11:22'),
-(1054, 2731, 'en_preparacion', 'listo', '2025-11-22 19:11:22'),
-(1055, 2732, 'en_preparacion', 'listo', '2025-11-22 19:11:23'),
-(1056, 2735, 'en_preparacion', 'listo', '2025-11-22 19:11:23'),
-(1057, 2734, 'en_preparacion', 'listo', '2025-11-22 19:11:24'),
-(1058, 2804, 'en_preparacion', 'listo', '2025-11-22 19:11:25'),
-(1059, 2803, 'en_preparacion', 'listo', '2025-11-22 19:11:26'),
-(1060, 2802, 'en_preparacion', 'listo', '2025-11-22 19:11:27'),
-(1061, 2720, 'listo', 'entregado', '2025-11-22 19:11:27'),
-(1062, 2721, 'listo', 'entregado', '2025-11-22 19:11:28'),
-(1063, 2722, 'listo', 'entregado', '2025-11-22 19:11:29'),
-(1064, 2723, 'listo', 'entregado', '2025-11-22 19:11:29'),
-(1065, 2724, 'listo', 'entregado', '2025-11-22 19:11:30'),
-(1066, 2806, 'pendiente', 'en_preparacion', '2025-11-22 19:11:31'),
-(1067, 2805, 'pendiente', 'en_preparacion', '2025-11-22 19:11:32'),
-(1068, 2801, 'pendiente', 'en_preparacion', '2025-11-22 19:11:33'),
-(1069, 2800, 'pendiente', 'en_preparacion', '2025-11-22 19:11:34'),
-(1070, 2799, 'pendiente', 'en_preparacion', '2025-11-22 19:11:35'),
-(1071, 2798, 'pendiente', 'en_preparacion', '2025-11-22 19:11:36'),
-(1072, 2797, 'pendiente', 'en_preparacion', '2025-11-22 19:11:37'),
-(1073, 2795, 'pendiente', 'en_preparacion', '2025-11-22 19:11:38'),
-(1074, 2805, 'en_preparacion', 'listo', '2025-11-22 19:11:42'),
-(1075, 2806, 'en_preparacion', 'listo', '2025-11-22 19:11:43'),
-(1076, 2806, 'listo', 'entregado', '2025-11-22 19:11:45'),
-(1077, 2805, 'listo', 'entregado', '2025-11-22 19:11:47'),
-(1078, 2734, 'listo', 'entregado', '2025-11-22 19:12:00'),
-(1079, 2735, 'listo', 'entregado', '2025-11-22 19:12:01'),
-(1080, 2732, 'listo', 'entregado', '2025-11-22 19:12:01'),
-(1081, 2731, 'listo', 'entregado', '2025-11-22 19:12:02'),
-(1082, 2729, 'listo', 'entregado', '2025-11-22 19:12:02'),
-(1083, 2728, 'listo', 'entregado', '2025-11-22 19:12:03'),
-(1084, 2726, 'listo', 'entregado', '2025-11-22 19:12:03'),
-(1085, 2725, 'listo', 'entregado', '2025-11-22 19:12:04'),
-(1086, 2804, 'listo', 'entregado', '2025-11-22 19:12:04'),
-(1087, 2803, 'listo', 'entregado', '2025-11-22 19:12:05'),
-(1088, 2802, 'listo', 'entregado', '2025-11-22 19:12:06'),
-(1089, 2795, 'en_preparacion', 'listo', '2025-11-22 19:12:07'),
-(1090, 2798, 'en_preparacion', 'listo', '2025-11-22 19:12:08'),
-(1091, 2800, 'en_preparacion', 'listo', '2025-11-22 19:12:09'),
-(1092, 2801, 'en_preparacion', 'listo', '2025-11-22 19:12:10'),
-(1093, 2799, 'en_preparacion', 'listo', '2025-11-22 19:12:10'),
-(1094, 2797, 'en_preparacion', 'listo', '2025-11-22 19:12:11'),
-(1095, 2795, 'listo', 'entregado', '2025-11-22 19:12:12'),
-(1096, 2798, 'listo', 'entregado', '2025-11-22 19:12:12'),
-(1097, 2800, 'listo', 'entregado', '2025-11-22 19:12:13'),
-(1098, 2801, 'listo', 'entregado', '2025-11-22 19:12:14'),
-(1099, 2799, 'listo', 'entregado', '2025-11-22 19:12:14'),
-(1100, 2789, 'pendiente', 'en_preparacion', '2025-11-22 19:12:16'),
-(1101, 2790, 'pendiente', 'en_preparacion', '2025-11-22 19:12:17'),
-(1102, 2788, 'pendiente', 'en_preparacion', '2025-11-22 19:12:17'),
-(1103, 2793, 'pendiente', 'en_preparacion', '2025-11-22 19:12:23'),
-(1104, 2792, 'pendiente', 'en_preparacion', '2025-11-22 19:12:24'),
-(1105, 2787, 'pendiente', 'en_preparacion', '2025-11-22 19:12:25'),
-(1106, 2785, 'pendiente', 'en_preparacion', '2025-11-22 19:12:25'),
-(1107, 2786, 'pendiente', 'en_preparacion', '2025-11-22 19:12:26'),
-(1108, 2788, 'en_preparacion', 'listo', '2025-11-22 19:12:27'),
-(1109, 2790, 'en_preparacion', 'listo', '2025-11-22 19:12:28'),
-(1110, 2788, 'listo', 'entregado', '2025-11-22 19:12:28'),
-(1111, 2790, 'listo', 'entregado', '2025-11-22 19:12:29'),
-(1112, 2797, 'listo', 'entregado', '2025-11-22 19:12:29'),
-(1113, 2793, 'en_preparacion', 'listo', '2025-11-22 19:12:30'),
-(1114, 2789, 'en_preparacion', 'listo', '2025-11-22 19:12:31'),
-(1115, 2792, 'en_preparacion', 'listo', '2025-11-22 19:12:32'),
-(1116, 2787, 'en_preparacion', 'listo', '2025-11-22 19:12:32'),
-(1117, 2785, 'en_preparacion', 'listo', '2025-11-22 19:12:33'),
-(1118, 2786, 'en_preparacion', 'listo', '2025-11-22 19:12:34'),
-(1119, 2793, 'listo', 'entregado', '2025-11-22 19:12:34'),
-(1120, 2789, 'listo', 'entregado', '2025-11-22 19:12:35'),
-(1121, 2792, 'listo', 'entregado', '2025-11-22 19:12:35'),
-(1122, 2787, 'listo', 'entregado', '2025-11-22 19:12:36'),
-(1123, 2785, 'listo', 'entregado', '2025-11-22 19:12:36'),
-(1124, 2786, 'listo', 'entregado', '2025-11-22 19:12:38'),
-(1125, 2781, 'pendiente', 'en_preparacion', '2025-11-22 19:12:39'),
-(1126, 2779, 'pendiente', 'en_preparacion', '2025-11-22 19:12:39'),
-(1127, 2778, 'pendiente', 'en_preparacion', '2025-11-22 19:12:40'),
-(1128, 2777, 'pendiente', 'en_preparacion', '2025-11-22 19:12:40'),
-(1129, 2775, 'pendiente', 'en_preparacion', '2025-11-22 19:12:41'),
-(1130, 2774, 'pendiente', 'en_preparacion', '2025-11-22 19:12:41'),
-(1131, 2772, 'pendiente', 'en_preparacion', '2025-11-22 19:12:42'),
-(1132, 2771, 'pendiente', 'en_preparacion', '2025-11-22 19:12:43'),
-(1133, 2770, 'pendiente', 'en_preparacion', '2025-11-22 19:12:43'),
-(1134, 2769, 'pendiente', 'en_preparacion', '2025-11-22 19:12:44'),
-(1135, 2767, 'pendiente', 'en_preparacion', '2025-11-22 19:12:44'),
-(1136, 2766, 'pendiente', 'en_preparacion', '2025-11-22 19:12:45'),
-(1137, 2782, 'pendiente', 'en_preparacion', '2025-11-22 19:12:45'),
-(1138, 2765, 'pendiente', 'en_preparacion', '2025-11-22 19:12:46'),
-(1139, 2763, 'pendiente', 'en_preparacion', '2025-11-22 19:12:46'),
-(1140, 2762, 'pendiente', 'en_preparacion', '2025-11-22 19:12:47'),
-(1141, 2783, 'pendiente', 'en_preparacion', '2025-11-22 19:12:49'),
-(1142, 2760, 'pendiente', 'en_preparacion', '2025-11-22 19:12:49'),
-(1143, 2757, 'pendiente', 'en_preparacion', '2025-11-22 19:12:50'),
-(1144, 2858, 'pendiente', 'entregado', '2025-11-28 13:48:44'),
-(1145, 2874, 'pendiente', 'entregado', '2025-12-03 17:37:32'),
-(1146, 2897, 'pendiente', 'entregado', '2025-12-05 19:52:06'),
-(1147, 2913, 'pendiente', 'entregado', '2025-12-09 17:46:56'),
-(1148, 2919, 'pendiente', 'entregado', '2025-12-09 17:49:11'),
-(1308, 2757, 'en_preparacion', 'listo', '2025-12-13 17:59:27'),
-(1309, 2760, 'en_preparacion', 'listo', '2025-12-13 17:59:28'),
-(1310, 2762, 'en_preparacion', 'listo', '2025-12-13 17:59:29'),
-(1311, 2763, 'en_preparacion', 'listo', '2025-12-13 17:59:30'),
-(1312, 2765, 'en_preparacion', 'listo', '2025-12-13 17:59:31'),
-(1313, 2766, 'en_preparacion', 'listo', '2025-12-13 17:59:32'),
-(1314, 2767, 'en_preparacion', 'listo', '2025-12-13 17:59:32'),
-(1315, 2769, 'en_preparacion', 'listo', '2025-12-13 17:59:33'),
-(1316, 2770, 'en_preparacion', 'listo', '2025-12-13 17:59:34'),
-(1317, 2771, 'en_preparacion', 'listo', '2025-12-13 17:59:35'),
-(1318, 2772, 'en_preparacion', 'listo', '2025-12-13 17:59:36'),
-(1319, 2774, 'en_preparacion', 'listo', '2025-12-13 17:59:37'),
-(1320, 2775, 'en_preparacion', 'listo', '2025-12-13 17:59:38'),
-(1321, 2777, 'en_preparacion', 'listo', '2025-12-13 17:59:39'),
-(1322, 2778, 'en_preparacion', 'listo', '2025-12-13 17:59:40'),
-(1323, 2779, 'en_preparacion', 'listo', '2025-12-13 17:59:41'),
-(1324, 2781, 'en_preparacion', 'listo', '2025-12-13 17:59:42'),
-(1325, 2782, 'en_preparacion', 'listo', '2025-12-13 17:59:43'),
-(1326, 2783, 'en_preparacion', 'listo', '2025-12-13 17:59:43'),
-(1327, 2736, 'pendiente', 'en_preparacion', '2025-12-13 17:59:45'),
-(1328, 2737, 'pendiente', 'en_preparacion', '2025-12-13 17:59:45'),
-(1329, 2738, 'pendiente', 'en_preparacion', '2025-12-13 17:59:46'),
-(1330, 2739, 'pendiente', 'en_preparacion', '2025-12-13 17:59:47'),
-(1331, 2740, 'pendiente', 'en_preparacion', '2025-12-13 17:59:48'),
-(1332, 2741, 'pendiente', 'en_preparacion', '2025-12-13 17:59:48'),
-(1333, 2742, 'pendiente', 'en_preparacion', '2025-12-13 17:59:49'),
-(1334, 2743, 'pendiente', 'en_preparacion', '2025-12-13 17:59:50'),
-(1335, 2744, 'pendiente', 'en_preparacion', '2025-12-13 17:59:51'),
-(1336, 2745, 'pendiente', 'en_preparacion', '2025-12-13 17:59:51'),
-(1337, 2746, 'pendiente', 'en_preparacion', '2025-12-13 17:59:52'),
-(1338, 2747, 'pendiente', 'en_preparacion', '2025-12-13 17:59:53'),
-(1339, 2748, 'pendiente', 'en_preparacion', '2025-12-13 17:59:53'),
-(1340, 2750, 'pendiente', 'en_preparacion', '2025-12-13 17:59:54'),
-(1341, 2751, 'pendiente', 'en_preparacion', '2025-12-13 17:59:54'),
-(1342, 2752, 'pendiente', 'en_preparacion', '2025-12-13 17:59:55'),
-(1343, 2753, 'pendiente', 'en_preparacion', '2025-12-13 17:59:56'),
-(1344, 2754, 'pendiente', 'en_preparacion', '2025-12-13 17:59:56'),
-(1345, 2755, 'pendiente', 'en_preparacion', '2025-12-13 17:59:57'),
-(1346, 2756, 'pendiente', 'en_preparacion', '2025-12-13 17:59:58'),
-(1347, 2758, 'pendiente', 'en_preparacion', '2025-12-13 17:59:59'),
-(1348, 2791, 'pendiente', 'en_preparacion', '2025-12-13 17:59:59'),
-(1349, 2808, 'pendiente', 'en_preparacion', '2025-12-13 18:00:00'),
-(1350, 2809, 'pendiente', 'en_preparacion', '2025-12-13 18:00:01'),
-(1351, 2810, 'pendiente', 'en_preparacion', '2025-12-13 18:00:01'),
-(1352, 2811, 'pendiente', 'en_preparacion', '2025-12-13 18:00:02'),
-(1353, 2812, 'pendiente', 'en_preparacion', '2025-12-13 18:00:04'),
-(1354, 2813, 'pendiente', 'en_preparacion', '2025-12-13 18:00:05'),
-(1355, 2736, 'en_preparacion', 'listo', '2025-12-13 18:00:06'),
-(1356, 2737, 'en_preparacion', 'listo', '2025-12-13 18:00:07'),
-(1357, 2738, 'en_preparacion', 'listo', '2025-12-13 18:00:07'),
-(1358, 2739, 'en_preparacion', 'listo', '2025-12-13 18:00:08'),
-(1359, 2984, 'pendiente', 'entregado', '2025-12-15 11:32:41'),
-(1360, 2987, 'pendiente', 'entregado', '2025-12-15 11:51:39');
+(1368, 3011, 'pendiente', 'entregado', '2025-12-19 21:43:59');
 
 -- --------------------------------------------------------
 
@@ -18685,47 +17254,6 @@ CREATE TABLE `venta_promos` (
   `descuento_aplicado` decimal(10,2) DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `venta_promos`
---
-
-INSERT INTO `venta_promos` (`id`, `venta_id`, `promo_id`, `descuento_aplicado`, `created_at`) VALUES
-(44, 750, 6, NULL, '2025-11-22 13:07:29'),
-(45, 750, 6, NULL, '2025-11-22 13:07:29'),
-(47, 754, 6, NULL, '2025-11-22 13:34:28'),
-(48, 756, 6, NULL, '2025-11-22 13:38:32'),
-(49, 757, 6, NULL, '2025-11-22 13:45:42'),
-(50, 758, 6, NULL, '2025-11-22 13:49:20'),
-(51, 762, 5, NULL, '2025-11-22 14:14:05'),
-(54, 766, 9, NULL, '2025-11-22 14:35:07'),
-(55, 767, 9, NULL, '2025-11-22 14:40:19'),
-(56, 768, 5, NULL, '2025-11-22 14:41:56'),
-(57, 768, 9, NULL, '2025-11-22 14:41:56'),
-(59, 770, 5, NULL, '2025-11-22 14:47:12'),
-(60, 771, 9, NULL, '2025-11-22 14:49:18'),
-(61, 776, 6, NULL, '2025-11-22 15:13:31'),
-(62, 778, 9, NULL, '2025-11-22 15:17:03'),
-(63, 779, 9, NULL, '2025-11-22 15:23:26'),
-(64, 782, 5, NULL, '2025-11-22 15:27:47'),
-(65, 782, 9, NULL, '2025-11-22 15:27:47'),
-(70, 795, 5, 50.50, '2025-11-27 08:36:19'),
-(71, 795, 6, 50.50, '2025-11-27 08:36:19'),
-(76, 797, 5, 82.33, '2025-11-27 17:59:04'),
-(77, 797, 6, 82.33, '2025-11-27 17:59:04'),
-(78, 797, 9, 82.34, '2025-11-27 17:59:04'),
-(79, 799, 9, NULL, '2025-11-28 13:48:44'),
-(81, 805, 9, NULL, '2025-12-03 17:37:32'),
-(83, 809, 4, NULL, '2025-12-04 19:24:32'),
-(87, 813, 5, 50.50, '2025-12-08 17:10:16'),
-(88, 813, 6, 50.50, '2025-12-08 17:10:16'),
-(91, 814, 6, 50.50, '2025-12-08 17:30:36'),
-(92, 814, 5, 50.50, '2025-12-08 17:30:36'),
-(93, 816, 9, NULL, '2025-12-09 17:46:56'),
-(94, 816, 9, NULL, '2025-12-09 17:46:56'),
-(95, 816, 9, NULL, '2025-12-09 17:46:56'),
-(100, 827, 6, NULL, '2025-12-10 22:02:08'),
-(101, 835, 6, NULL, '2025-12-10 22:13:55');
 
 -- --------------------------------------------------------
 
@@ -19104,7 +17632,9 @@ ALTER TABLE `catalogo_bancos`
 -- Indices de la tabla `catalogo_categorias`
 --
 ALTER TABLE `catalogo_categorias`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_catalogo_categorias_impresora_id` (`impresoras_id`),
+  ADD KEY `idx_catcat_impresoras_id` (`impresoras_id`);
 
 --
 -- Indices de la tabla `catalogo_denominaciones`
@@ -19272,6 +17802,14 @@ ALTER TABLE `fondo`
 --
 ALTER TABLE `horarios`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indices de la tabla `impresoras`
+--
+ALTER TABLE `impresoras`
+  ADD PRIMARY KEY (`print_id`),
+  ADD KEY `idx_impresoras_sede` (`sede`),
+  ADD KEY `idx_impresoras_sedes` (`sede`);
 
 --
 -- Indices de la tabla `insumos`
@@ -19532,7 +18070,7 @@ ALTER TABLE `clientes`
 -- AUTO_INCREMENT de la tabla `clientes_facturacion`
 --
 ALTER TABLE `clientes_facturacion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=253;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=262;
 
 --
 -- AUTO_INCREMENT de la tabla `cliente_venta`
@@ -19550,13 +18088,13 @@ ALTER TABLE `colonias`
 -- AUTO_INCREMENT de la tabla `conekta_events`
 --
 ALTER TABLE `conekta_events`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
 
 --
 -- AUTO_INCREMENT de la tabla `conekta_payments`
 --
 ALTER TABLE `conekta_payments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT de la tabla `cortes_almacen`
@@ -19574,7 +18112,7 @@ ALTER TABLE `cortes_almacen_detalle`
 -- AUTO_INCREMENT de la tabla `corte_caja`
 --
 ALTER TABLE `corte_caja`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=128;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=136;
 
 --
 -- AUTO_INCREMENT de la tabla `corte_caja_historial`
@@ -19586,7 +18124,7 @@ ALTER TABLE `corte_caja_historial`
 -- AUTO_INCREMENT de la tabla `desglose_corte`
 --
 ALTER TABLE `desglose_corte`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=582;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=597;
 
 --
 -- AUTO_INCREMENT de la tabla `entradas_detalle`
@@ -19604,19 +18142,25 @@ ALTER TABLE `entradas_insumo`
 -- AUTO_INCREMENT de la tabla `facturas`
 --
 ALTER TABLE `facturas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=105;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=111;
 
 --
 -- AUTO_INCREMENT de la tabla `factura_detalles`
 --
 ALTER TABLE `factura_detalles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=305;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=315;
 
 --
 -- AUTO_INCREMENT de la tabla `horarios`
 --
 ALTER TABLE `horarios`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT de la tabla `impresoras`
+--
+ALTER TABLE `impresoras`
+  MODIFY `print_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `insumos`
@@ -19628,7 +18172,7 @@ ALTER TABLE `insumos`
 -- AUTO_INCREMENT de la tabla `logs_accion`
 --
 ALTER TABLE `logs_accion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2020;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2040;
 
 --
 -- AUTO_INCREMENT de la tabla `log_asignaciones_mesas`
@@ -19646,7 +18190,7 @@ ALTER TABLE `log_cancelaciones`
 -- AUTO_INCREMENT de la tabla `log_mesas`
 --
 ALTER TABLE `log_mesas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=196;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=197;
 
 --
 -- AUTO_INCREMENT de la tabla `mesas`
@@ -19712,7 +18256,7 @@ ALTER TABLE `sedes`
 -- AUTO_INCREMENT de la tabla `tickets`
 --
 ALTER TABLE `tickets`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=558;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=564;
 
 --
 -- AUTO_INCREMENT de la tabla `ticket_descuentos`
@@ -19724,13 +18268,13 @@ ALTER TABLE `ticket_descuentos`
 -- AUTO_INCREMENT de la tabla `ticket_detalles`
 --
 ALTER TABLE `ticket_detalles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1457;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1467;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
 
 --
 -- AUTO_INCREMENT de la tabla `usuario_ruta`
@@ -19742,13 +18286,13 @@ ALTER TABLE `usuario_ruta`
 -- AUTO_INCREMENT de la tabla `ventas`
 --
 ALTER TABLE `ventas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=868;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=883;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalles`
 --
 ALTER TABLE `venta_detalles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2988;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3017;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalles_cancelados`
@@ -19760,7 +18304,7 @@ ALTER TABLE `venta_detalles_cancelados`
 -- AUTO_INCREMENT de la tabla `venta_detalles_log`
 --
 ALTER TABLE `venta_detalles_log`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1361;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1369;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_promos`
@@ -19771,6 +18315,12 @@ ALTER TABLE `venta_promos`
 --
 -- Restricciones para tablas volcadas
 --
+
+--
+-- Filtros para la tabla `catalogo_categorias`
+--
+ALTER TABLE `catalogo_categorias`
+  ADD CONSTRAINT `fk_catalogo_categorias_impresora` FOREIGN KEY (`impresoras_id`) REFERENCES `impresoras` (`print_id`) ON UPDATE CASCADE;
 
 --
 -- Filtros para la tabla `clientes`
@@ -19851,6 +18401,12 @@ ALTER TABLE `factura_tickets`
 --
 ALTER TABLE `fondo`
   ADD CONSTRAINT `fondo_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
+
+--
+-- Filtros para la tabla `impresoras`
+--
+ALTER TABLE `impresoras`
+  ADD CONSTRAINT `fk_impresoras_sede` FOREIGN KEY (`sede`) REFERENCES `sedes` (`id`) ON UPDATE CASCADE;
 
 --
 -- Filtros para la tabla `log_asignaciones_mesas`

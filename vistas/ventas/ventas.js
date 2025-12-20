@@ -198,6 +198,7 @@ const normalizarClienteTexto = (txt) => {
 // ==== [INICIO BLOQUE valida: validación para cierre de corte] ====
 const VENTAS_URL = typeof API_LISTAR_VENTAS !== 'undefined' ? API_LISTAR_VENTAS : '../../api/ventas/listar_ventas.php';
 const MESAS_URL = typeof API_LISTAR_MESAS !== 'undefined' ? API_LISTAR_MESAS : '../../api/mesas/listar_mesas.php';
+const MESEROS_URL = typeof API_MESEROS !== 'undefined' ? API_MESEROS : '../../api/mesas/meseros.php';
 function buildMesasUrl() {
     const base = MESAS_URL;
     const u = base.startsWith('http') ? new URL(base) : new URL(base, window.location.href);
@@ -2020,7 +2021,7 @@ function toggleSeccionClienteDomicilio() {
 // Carga el catálogo de meseros desde el backend de mesas
 async function cargarMeseros() {
     try {
-        const resp = await fetch('../../api/mesas/meseros.php');
+        const resp = await fetch(MESEROS_URL);
         const data = await resp.json();
         const select = document.getElementById('usuario_id');
         if (!select) return;

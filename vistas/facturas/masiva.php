@@ -42,6 +42,8 @@ ob_start();
     .selector-autocomplete .sugerencias { list-style:none; padding:0; margin:4px 0 0 0; position:absolute; left:0; right:0; background:#111; border:1px solid #333; border-radius:6px; max-height:220px; overflow:auto; z-index:20; display:none; }
     .selector-autocomplete .sugerencias li { padding:6px 10px; cursor:pointer; }
     .selector-autocomplete .sugerencias li:hover { background:#222; }
+    .spinner { width:48px; height:48px; border:4px solid #333; border-top-color:#fff; border-radius:50%; margin:8px auto 12px; animation: spin .9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 
   <!-- 1) Filtros del periodo -->
@@ -155,6 +157,7 @@ ob_start();
     <div class="actions">
       <button id="btn-uno-a-uno" type="button" class="btn custom-btn" disabled>Facturar 1:1</button>
       <button id="btn-global" type="button" class="btn custom-btn" disabled>Factura global 1:muchos</button>
+      <button id="btn-editar-ticket" type="button" class="btn custom-btn" disabled>Editar ticket</button>
     </div>
     <p class="muted">Los botones se habilitan al elegir cliente y tickets.</p>
   </section>
@@ -300,6 +303,49 @@ ob_start();
       </div>
       <div class="mt-3" style="display:flex; justify-content:flex-end; gap:8px;">
         <button type="button" class="btn custom-btn" id="btn-reenviar-confirmar">Enviar</button>
+      </div>
+    </div>
+  </div>
+  <!-- Modal Editar Ticket -->
+  <div class="modal" id="modal-editar-ticket">
+    <div class="box">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <h3>Editar ticket para facturar</h3>
+        <button type="button" id="btn-cerrar-modal-editar-ticket" class="btn custom-btn">Cerrar</button>
+      </div>
+      <div id="editar-ticket-info" class="muted" style="margin-top:6px;"></div>
+      <div class="table-responsive" style="margin-top:12px;">
+        <table id="tabla-editar-ticket">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Descripcion</th>
+              <th class="right">Cantidad</th>
+              <th class="right">P.Unit</th>
+              <th class="right">Importe</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="totales" style="margin-top:8px;">
+        <div>Subtotal: <strong id="editar-ticket-subtotal">0.00</strong></div>
+        <div>Total ticket: <strong id="editar-ticket-total">0.00</strong></div>
+      </div>
+      <div class="actions" style="justify-content:flex-end; margin-top:12px;">
+        <button type="button" id="btn-aplicar-edicion-ticket" class="btn custom-btn">Aplicar para facturar</button>
+      </div>
+    </div>
+  </div>
+  <!-- Modal Procesando -->
+  <div class="modal" id="modal-procesando">
+    <div class="box" style="max-width:420px; text-align:center;">
+      <div class="spinner" id="procesando-spinner" aria-hidden="true"></div>
+      <h3 id="procesando-titulo">Procesando factura</h3>
+      <p class="muted" id="procesando-mensaje">Procesando factura, espere por favor.</p>
+      <p class="muted" id="procesando-detalle"></p>
+      <div class="actions" style="justify-content:center; margin-top:12px;">
+        <button type="button" id="btn-cerrar-procesando" class="btn custom-btn" style="display:none;">Cerrar</button>
       </div>
     </div>
   </div>

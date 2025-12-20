@@ -20,13 +20,18 @@ async function cargarDatos() {
         u.searchParams.set('usuario_id', usuarioId);
     }
     const m = await fetch(u.toString()).then(r => r.json());
-    const u = await fetch('../../api/mesas/meseros.php').then(r => r.json());
-    if (!m.success || !u.success) {
+    const meserosUrl = new URL('../../api/mesas/meseros.php', window.location.href);
+    if (usuarioId) {
+        meserosUrl.searchParams.set('user_id', usuarioId);
+        meserosUrl.searchParams.set('usuario_id', usuarioId);
+    }
+    const meserosResp = await fetch(meserosUrl.toString()).then(r => r.json());
+    if (!m.success || !meserosResp.success) {
         alert('Error al cargar datos');
         return;
     }
     mesas = m.resultado || [];
-    meseros = u.resultado || [];
+    meseros = meserosResp.resultado || [];
     filtradas = mesas;
     renderTabla(1);
 }

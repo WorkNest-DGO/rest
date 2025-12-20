@@ -37,10 +37,10 @@ function column_exists(mysqli $db, string $t, string $c): bool {
  * Enviar correo usando SMTP de Gmail sin librerías externas
  */
 function send_via_gmail_smtp(string $to, string $subject, string $body, string $headers): bool {
-    $smtpServer = 'smtp.gmail.com';
+    $smtpServer = 'smtp.hostinger.com'; //'smtp.gmail.com';
     $port       = 465; // SSL directo
-    $username   = 'tokyosushiprime@gmail.com';
-    $password   = 'chffrfdlabfuzzbl'; 
+    $username   = 'facturas@tokyosushiprime.com';  //'tokyosushiprime@gmail.com';
+    $password = 'Marf9401109i5@'; // 'hduydbzikybvlpxr';
 
     $errno  = 0;
     $errstr = '';
@@ -251,7 +251,7 @@ try {
     // Construir correo con enlaces + adjuntos si existen
     $subject  = "Factura #" . $facturaId . ($uuid ? " - $uuid" : '');
     $boundary = '==MIME_BOUND_' . md5(uniqid((string)$facturaId, true));
-    $headers  = "From: Tokyo Sushi Prime <tokyosushiprime@gmail.com>\r\n";
+    $headers  = "From: Tokyo Sushi Prime <facturas@tokyosushiprime.com>\r\n";
     $headers .= "MIME-Version: 1.0\r\n";
 
     $hasAttach = !empty($attachments);

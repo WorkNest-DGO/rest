@@ -260,7 +260,20 @@ async function abrirAsignarMesero(mesa) {
     try {
         // Cargar meseros si no están en cache
         if (!Array.isArray(window.__meserosCat) || !window.__meserosCat?.length) {
-            const r = await fetch('../../api/usuarios/listar_meseros.php');
+            const baseMeseros = typeof API_LISTAR_MESEROS_USUARIOS !== 'undefined'
+                ? API_LISTAR_MESEROS_USUARIOS
+                : '../../api/usuarios/listar_meseros.php';
+            const meserosUrl = baseMeseros.startsWith('http')
+                ? new URL(baseMeseros)
+                : new URL(baseMeseros, window.location.href);
+            if (!meserosUrl.searchParams.get('user_id') && !meserosUrl.searchParams.get('usuario_id')) {
+                const usuarioId = window.usuarioActual?.id || 0;
+                if (usuarioId) {
+                    meserosUrl.searchParams.set('user_id', usuarioId);
+                    meserosUrl.searchParams.set('usuario_id', usuarioId);
+                }
+            }
+            const r = await fetch(meserosUrl.toString());
             const j = await r.json();
             if (j && j.success) {
                 window.__meserosCat = j.resultado || [];

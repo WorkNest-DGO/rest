@@ -718,6 +718,8 @@ ob_start();
     window.usuarioId = <?php echo json_encode($_SESSION['usuario_id']); ?>;
     // URL de mesas filtrada por usuario para evitar mostrar todas las sedes
     window.API_LISTAR_MESAS = '../../api/mesas/listar_mesas.php?user_id=' + encodeURIComponent(window.usuarioId || '') + '&usuario_id=' + encodeURIComponent(window.usuarioId || '');
+    // URL de meseros filtrada por usuario para validar sede
+    window.API_MESEROS = '../../api/mesas/meseros.php?user_id=' + encodeURIComponent(window.usuarioId || '') + '&usuario_id=' + encodeURIComponent(window.usuarioId || '');
     // ID de sede actual de la sesión (para validar corte por sede)
     window.sedeId = <?php echo json_encode($_SESSION['sede_id'] ?? null); ?>;
     // ID de la venta actualmente consultada en detalle
