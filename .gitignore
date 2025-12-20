@@ -16,3 +16,4 @@ logs/facturama-2025-12.log
 /api/ventas/runtime
 /api/cocina/runtime
 /api/ventas/runtime
+api/cocina/runtime/cocina_events.jsonl
