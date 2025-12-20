@@ -14,3 +14,5 @@ api/ventas/runtime/ventas_version.txt
 logs/facturama-2025-12.log
 /api/cocina/runtime
 /api/ventas/runtime
+/api/cocina/runtime
+/api/ventas/runtime
