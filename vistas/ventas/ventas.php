@@ -139,11 +139,17 @@ ob_start();
             </div>
             <div class="row mt-3">
               <div class="col-md-4">
-                <label for="costoForeInput" class="text-white mb-1">Costo de envío (costo_fore):</label>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <input type="radio" name="costoEnvioTipo" id="costoForeRadio" value="fore" checked>
+                  <label for="costoForeInput" class="text-white mb-0">Costo de envio (costo_fore):</label>
+                </div>
                 <input type="number" step="0.01" min="0" class="form-control" id="costoForeInput" placeholder="Captura el costo">
               </div>
               <div class="col-md-4">
-                <label for="costoMaderoInput" class="text-white mb-1">Costo de envío (costo_madero):</label>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <input type="radio" name="costoEnvioTipo" id="costoMaderoRadio" value="madero">
+                  <label for="costoMaderoInput" class="text-white mb-0">Costo de envio (costo_madero):</label>
+                </div>
                 <input type="number" step="0.01" min="0" class="form-control" id="costoMaderoInput" placeholder="Solo lectura" readonly>
               </div>
               <div class="col-md-4 align-self-end">

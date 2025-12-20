@@ -1799,6 +1799,8 @@ function actualizarResumenCliente(cliente) {
     const distNaranjal = document.getElementById('clienteDistanciaNaranjal');
     const costoInput = document.getElementById('costoForeInput');
     const costoMaderoInput = document.getElementById('costoMaderoInput');
+    const radioFore = document.getElementById('costoForeRadio');
+    const radioMadero = document.getElementById('costoMaderoRadio');
     const colSelectWrap = document.getElementById('clienteColoniaSelectWrap');
     const colSelect = document.getElementById('clienteColoniaSelect');
     const clienteIdActual = cliente ? Number(cliente.id) : null;
@@ -1814,6 +1816,8 @@ function actualizarResumenCliente(cliente) {
         resumen.style.display = 'none';
         if (costoInput) costoInput.value = '';
         if (costoMaderoInput) costoMaderoInput.value = '';
+        if (radioFore) radioFore.checked = true;
+        if (radioMadero) radioMadero.checked = false;
         if (colSelectWrap) colSelectWrap.style.display = 'none';
         if (colSelect) colSelect.value = '';
         if (dist) dist.textContent = '-';
@@ -1857,9 +1861,7 @@ function actualizarResumenCliente(cliente) {
     if (costoMaderoInput) costoMaderoInput.value = costoMaderoVal !== null && costoMaderoVal !== undefined ? costoMaderoVal : '';
 
     resumen.style.display = 'block';
-    if (costoForeVal !== null && costoForeVal !== undefined && costoForeVal !== '') {
-        actualizarPrecioEnvio(costoForeVal);
-    }
+    syncCostoEnvioSeleccionado();
     prepararColoniaSelect(cliente);
     if (colSelect && colSelect.value) {
         onSeleccionColoniaManual();
@@ -1872,6 +1874,48 @@ function actualizarPrecioEnvio(monto) {
         precioInput.value = monto;
         window.recalcularTotalesUI();
     }
+}
+
+function getCostoEnvioSeleccionado() {
+    const radioFore = document.getElementById('costoForeRadio');
+    const radioMadero = document.getElementById('costoMaderoRadio');
+    const costoForeInput = document.getElementById('costoForeInput');
+    const costoMaderoInput = document.getElementById('costoMaderoInput');
+    const maderoChecked = radioMadero ? radioMadero.checked : false;
+    const tipo = maderoChecked ? 'madero' : 'fore';
+    const raw = tipo === 'madero'
+        ? (costoMaderoInput ? costoMaderoInput.value : '')
+        : (costoForeInput ? costoForeInput.value : '');
+    return { tipo, raw };
+}
+
+function actualizarPrecioEnvioSeleccionado() {
+    const { raw } = getCostoEnvioSeleccionado();
+    const num = Number(raw);
+    if (!Number.isNaN(num) && num > 0) {
+        actualizarPrecioEnvio(num);
+    }
+}
+
+function syncCostoEnvioSeleccionado() {
+    const radioFore = document.getElementById('costoForeRadio');
+    const radioMadero = document.getElementById('costoMaderoRadio');
+    const costoForeInput = document.getElementById('costoForeInput');
+    const costoMaderoInput = document.getElementById('costoMaderoInput');
+    if (!radioFore || !radioMadero) return;
+    const foreVal = costoForeInput ? String(costoForeInput.value || '').trim() : '';
+    const maderoVal = costoMaderoInput ? String(costoMaderoInput.value || '').trim() : '';
+    const hasFore = foreVal !== '';
+    const hasMadero = maderoVal !== '';
+    if (radioFore.checked && !hasFore && hasMadero) {
+        radioMadero.checked = true;
+    } else if (radioMadero.checked && !hasMadero && hasFore) {
+        radioFore.checked = true;
+    } else if (!radioFore.checked && !radioMadero.checked) {
+        radioFore.checked = hasFore || !hasMadero;
+        radioMadero.checked = !radioFore.checked;
+    }
+    actualizarPrecioEnvioSeleccionado();
 }
 
 function prepararColoniaSelect(cliente) {
@@ -1935,10 +1979,7 @@ function onSeleccionColoniaManual() {
     const costoMadero = opt.dataset?.costoMadero;
     if (costoInput) costoInput.value = (costo !== undefined && costo !== '') ? costo : '';
     if (costoMaderoInput) costoMaderoInput.value = (costoMadero !== undefined && costoMadero !== '') ? costoMadero : '';
-    if (costo !== undefined && costo !== '') {
-        const num = Number(costo);
-        if (!Number.isNaN(num)) actualizarPrecioEnvio(num);
-    }
+    syncCostoEnvioSeleccionado();
     sincronizarBuscadorColonia();
     const ul = document.getElementById('listaColoniasCliente');
     if (ul) ul.style.display = 'none';
@@ -2732,6 +2773,7 @@ async function registrarVenta() {
     const productos = obtenerCarritoActual();
     let cliente_id = null;
     let costoForeCapturado = null;
+    let costoEnvioCapturado = null;
     let clienteColoniaSeleccionadaId = null;
 
     if (!validarInventario()) {
@@ -2774,26 +2816,32 @@ async function registrarVenta() {
                 return;
             }
             const cliSel = document.getElementById('cliente_id');
-            const costoInput = document.getElementById('costoForeInput');
             cliente_id = parseInt(cliSel?.value || '');
             // La selección del cliente es informativa y opcional.
             if (isNaN(cliente_id) || !cliente_id) {
                 cliente_id = null;
             }
             if (cliente_id) {
-                costoForeCapturado = costoInput ? Number(costoInput.value || 0) : null;
-                if (!costoForeCapturado || costoForeCapturado <= 0) {
-                    alert('Captura el costo de envío para la colonia seleccionada');
+                const costoSel = getCostoEnvioSeleccionado();
+                const costoNum = Number(costoSel.raw || 0);
+                if (!costoNum || costoNum <= 0) {
+                    alert('Captura el costo de envio para la colonia seleccionada');
                     return;
                 }
-                actualizarPrecioEnvio(costoForeCapturado);
+                costoEnvioCapturado = costoNum;
+                if (costoSel.tipo === 'fore') {
+                    costoForeCapturado = costoNum;
+                }
+                actualizarPrecioEnvio(costoEnvioCapturado);
             } else {
-                // Sin cliente, usar el precio configurado en el panel de envío (concepto default).
+                // Sin cliente, usar el precio configurado en el panel de envio (concepto default).
                 const precioConcepto = Number(
                     (document.getElementById('envioPrecio')?.value) || (window.ENVIO_CASA_DEFAULT_PRECIO || 30)
                 );
-                costoForeCapturado = Number.isFinite(precioConcepto) ? precioConcepto : (window.ENVIO_CASA_DEFAULT_PRECIO || 30);
-                actualizarPrecioEnvio(costoForeCapturado);
+                costoEnvioCapturado = Number.isFinite(precioConcepto)
+                    ? precioConcepto
+                    : (window.ENVIO_CASA_DEFAULT_PRECIO || 30);
+                actualizarPrecioEnvio(costoEnvioCapturado);
             }
         }
     } else if (tipo !== 'rapido') {
@@ -2827,8 +2875,8 @@ async function registrarVenta() {
     if (cliente_id && costoForeCapturado !== null && !isNaN(costoForeCapturado)) {
         payload.costo_fore = costoForeCapturado;
     }
-    if (costoForeCapturado !== null && !isNaN(costoForeCapturado)) {
-        payload.precio_envio = costoForeCapturado;
+    if (costoEnvioCapturado !== null && !isNaN(costoEnvioCapturado)) {
+        payload.precio_envio = costoEnvioCapturado;
     }
     // Promociones seleccionadas (opcional)
     try {
@@ -2906,8 +2954,14 @@ async function resetFormularioVenta() {
     limpiarPanelPromosVenta();
     const selCliente = document.getElementById('cliente_id');
     const costoFore = document.getElementById('costoForeInput');
+    const costoMadero = document.getElementById('costoMaderoInput');
+    const radioFore = document.getElementById('costoForeRadio');
+    const radioMadero = document.getElementById('costoMaderoRadio');
     if (selCliente) selCliente.value = '';
     if (costoFore) costoFore.value = '';
+    if (costoMadero) costoMadero.value = '';
+    if (radioFore) radioFore.checked = true;
+    if (radioMadero) radioMadero.checked = false;
     actualizarResumenCliente(null);
 
     // Forzar placeholder y repintar selects clave
@@ -3056,9 +3110,7 @@ async function guardarNuevoCliente() {
             if (nuevo) {
                 clientesDomicilio.push(nuevo);
                 seleccionarCliente(nuevo);
-                if (nuevo.costo_fore !== null && nuevo.costo_fore !== undefined) {
-                    actualizarPrecioEnvio(nuevo.costo_fore);
-                }
+                syncCostoEnvioSeleccionado();
             }
             cerrarModalNuevoCliente();
             document.getElementById('formNuevoCliente')?.reset();
@@ -4180,14 +4232,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const clienteColoniaSelect = document.getElementById('clienteColoniaSelect');
     if (clienteColoniaSelect) clienteColoniaSelect.addEventListener('change', onSeleccionColoniaManual);
     const costoForeInput = document.getElementById('costoForeInput');
+    const costoForeRadio = document.getElementById('costoForeRadio');
+    const costoMaderoRadio = document.getElementById('costoMaderoRadio');
     if (costoForeInput) {
         costoForeInput.addEventListener('input', () => {
+            if (costoForeRadio && !costoForeRadio.checked) return;
             const val = Number(costoForeInput.value || 0);
             if (val > 0) {
                 actualizarPrecioEnvio(val);
             }
         });
     }
+    if (costoForeRadio) costoForeRadio.addEventListener('change', actualizarPrecioEnvioSeleccionado);
+    if (costoMaderoRadio) costoMaderoRadio.addEventListener('change', actualizarPrecioEnvioSeleccionado);
 
     // Delegación de eventos con JavaScript puro para botones dinámicos
     const cancelModal = document.getElementById('cancelVentaModal');
