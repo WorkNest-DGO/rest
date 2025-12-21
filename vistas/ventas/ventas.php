@@ -74,13 +74,6 @@ ob_start();
             <option value="rapido">Rápido</option>
           </select>
         </div>
-        <div class="form-group">
-          <label for="impresora_id" class="text-white">Impresora:</label>
-          <select id="impresora_id" name="impresora_id" class="form-control">
-            <option value="">Selecciona impresora</option>
-          </select>
-        </div>
-
         <div id="campoObservacion" class="form-group" style="display:none;">
           <label for="observacion" class="text-white">Observación:</label>
           <textarea id="observacion" name="observacion" class="form-control"></textarea>

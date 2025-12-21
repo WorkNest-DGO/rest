@@ -2,50 +2,114 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 
+function column_exists(mysqli $db, string $table, string $column): bool {
+    $tableSafe = $db->real_escape_string($table);
+    $colSafe = $db->real_escape_string($column);
+    $sql = "SHOW COLUMNS FROM `{$tableSafe}` LIKE '{$colSafe}'";
+    $res = $db->query($sql);
+    if (!$res) return false;
+    $ok = $res->num_rows > 0;
+    $res->close();
+    return $ok;
+}
+
+$input = json_decode(file_get_contents('php://input'), true);
+
 $repartidor_id = null;
 
 if (isset($_GET['repartidor_id'])) {
     $repartidor_id = (int) $_GET['repartidor_id'];
 } elseif (isset($_POST['repartidor_id'])) {
     $repartidor_id = (int) $_POST['repartidor_id'];
-} else {
-    $input = json_decode(file_get_contents('php://input'), true);
-    if ($input && isset($input['repartidor_id'])) {
-        $repartidor_id = (int) $input['repartidor_id'];
-    }
+} elseif ($input && isset($input['repartidor_id'])) {
+    $repartidor_id = (int) $input['repartidor_id'];
 }
 
-if ($repartidor_id) {
-    $stmt = $conn->prepare(
-        "SELECT v.id, v.usuario_id, v.repartidor_id, v.fecha, v.total, v.estatus, v.entregado, v.estado_entrega, v.fecha_asignacion, v.fecha_inicio, v.fecha_entrega, v.seudonimo_entrega, v.foto_entrega, v.observacion,
-                COALESCE(u.nombre, r.nombre) AS repartidor
-           FROM ventas v
-      LEFT JOIN usuarios u ON u.id = v.usuario_id AND u.rol = 'repartidor'
-      LEFT JOIN repartidores r ON r.id = v.repartidor_id
-          WHERE v.repartidor_id = ?
-            AND v.estatus IN ('activa','cerrada')
-       ORDER BY v.fecha DESC"
-    );
-    if (!$stmt) {
-        error('Error al preparar consulta: ' . $conn->error);
-    }
-    $stmt->bind_param('i', $repartidor_id);
-} else {
-    $stmt = $conn->prepare(
-        "SELECT v.id, v.usuario_id, v.repartidor_id, v.fecha, v.total, v.estatus, v.entregado, v.estado_entrega, v.fecha_asignacion, v.fecha_inicio, v.fecha_entrega, v.seudonimo_entrega, v.foto_entrega, v.observacion,
-                COALESCE(u.nombre, r.nombre) AS repartidor
-           FROM ventas v
-      LEFT JOIN usuarios u ON u.id = v.usuario_id AND u.rol = 'repartidor'
-      LEFT JOIN repartidores r ON r.id = v.repartidor_id
-          WHERE v.tipo_entrega = 'domicilio'
-            AND v.estatus IN ('activa','cerrada')
-            AND (u.id IS NOT NULL OR v.repartidor_id = 4)
-       ORDER BY v.fecha DESC"
-    );
-    if (!$stmt) {
-        error('Error al preparar consulta: ' . $conn->error);
+$usuario_id = null;
+if (isset($_GET['user_id'])) {
+    $usuario_id = (int) $_GET['user_id'];
+} elseif (isset($_GET['usuario_id'])) {
+    $usuario_id = (int) $_GET['usuario_id'];
+} elseif (isset($_POST['user_id'])) {
+    $usuario_id = (int) $_POST['user_id'];
+} elseif (isset($_POST['usuario_id'])) {
+    $usuario_id = (int) $_POST['usuario_id'];
+} elseif ($input && isset($input['user_id'])) {
+    $usuario_id = (int) $input['user_id'];
+} elseif ($input && isset($input['usuario_id'])) {
+    $usuario_id = (int) $input['usuario_id'];
+}
+
+if (!$usuario_id) {
+    error('Debe indicar un usuario para listar entregas');
+}
+
+$colUsuarioSede = null;
+if (column_exists($conn, 'usuarios', 'sede_id')) {
+    $colUsuarioSede = 'sede_id';
+} elseif (column_exists($conn, 'usuarios', 'sede')) {
+    $colUsuarioSede = 'sede';
+}
+if (!$colUsuarioSede) {
+    error('No existe columna de sede en usuarios');
+}
+
+$sedeFiltro = null;
+$stmtSede = $conn->prepare("SELECT {$colUsuarioSede} AS sede_val FROM usuarios WHERE id = ? LIMIT 1");
+if (!$stmtSede) {
+    error('Error al preparar usuario: ' . $conn->error);
+}
+$stmtSede->bind_param('i', $usuario_id);
+if ($stmtSede->execute()) {
+    $rs = $stmtSede->get_result();
+    if ($row = $rs->fetch_assoc()) {
+        if (isset($row['sede_val'])) $sedeFiltro = (int)$row['sede_val'];
     }
 }
+$stmtSede->close();
+if ($sedeFiltro === null) {
+    error('No se pudo determinar la sede del usuario');
+}
+
+$colVentaSede = null;
+if (column_exists($conn, 'ventas', 'sede_id')) {
+    $colVentaSede = 'sede_id';
+} elseif (column_exists($conn, 'ventas', 'sede')) {
+    $colVentaSede = 'sede';
+}
+if (!$colVentaSede) {
+    error('No existe columna de sede en ventas');
+}
+
+$sql = "SELECT v.id, v.usuario_id, v.repartidor_id, v.fecha, v.total, v.estatus, v.entregado, v.estado_entrega, v.fecha_asignacion, v.fecha_inicio, v.fecha_entrega, v.seudonimo_entrega, v.foto_entrega, v.observacion,
+                COALESCE(u.nombre, r.nombre) AS repartidor
+           FROM ventas v
+      LEFT JOIN usuarios u ON u.id = v.usuario_id AND u.rol = 'repartidor'
+      LEFT JOIN repartidores r ON r.id = v.repartidor_id
+          WHERE v.estatus IN ('activa','cerrada')";
+if ($repartidor_id) {
+    $sql .= " AND v.repartidor_id = ?";
+} else {
+    $sql .= " AND v.tipo_entrega = 'domicilio'
+              AND (u.id IS NOT NULL OR v.repartidor_id = 4)";
+}
+$sql .= " AND v.{$colVentaSede} = ?
+       ORDER BY v.fecha DESC";
+
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    error('Error al preparar consulta: ' . $conn->error);
+}
+
+$types = '';
+$params = [];
+if ($repartidor_id) {
+    $types .= 'i';
+    $params[] = $repartidor_id;
+}
+$types .= 'i';
+$params[] = $sedeFiltro;
+$stmt->bind_param($types, ...$params);
 if (!$stmt->execute()) {
     $stmt->close();
     error('Error al ejecutar consulta: ' . $stmt->error);

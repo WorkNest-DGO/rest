@@ -313,8 +313,6 @@ async function abrirAsignarMesero(mesa) {
                     body: JSON.stringify({ mesa_id: parseInt(mesa.id), usuario_id: meseroId, usuario_asignador_id: (usuarioActual?.id || null) })
                 }).then(r => r.json()).catch(() => null);
                 if (!a || !a.success) { alert((a && a.mensaje) || 'No se pudo asignar'); return; }
-                // Guardar autorización temporal y abrir directamente la modal de cambio de estado
-                window.__mesaAuthTemp = { mesaId: parseInt(mesa.id), pass: pwd };
                 hideModal('#modalAsignarMesero');
                 // Simular que ya está asignada en el objeto actual para el flujo
                 try {
@@ -328,8 +326,11 @@ async function abrirAsignarMesero(mesa) {
                     const btnAsign = card && card.querySelector('button.asignar');
                     if (btnAsign) btnAsign.hidden = true;
                 } catch(_) {}
-                // Abrir modal de cambio de estado sin solicitar nuevamente contraseña
-                abrirCambioEstado(mesa);
+                // Cambiar a ocupada despues de asignar
+                const ok = await cambiarEstado(mesa.id, 'ocupada', pwd);
+                if (ok) {
+                    await cargarMesas();
+                }
             };
         }
         showModal('#modalAsignarMesero');

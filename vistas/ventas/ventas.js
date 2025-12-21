@@ -180,8 +180,6 @@ let mesas = [];
 let coloniasData = [];
 let clientesDomicilio = [];
 let clienteSeleccionado = null;
-let impresorasData = [];
-let impresoraSeleccionada = null;
 // Catálogo de promociones para selección en ventas
 let catalogoPromocionesVenta = [];
 let catalogoPromocionesVentaFiltradas = [];
@@ -517,7 +515,7 @@ function buildCorteTicket(resultado, cajeroOpt) {
 
 // ====== Controladores del modal ======
 function showCortePreview(resultado, cajero) {
-    window.open(urlConImpresora('../../api/corte_caja/imprime_corte.php?datos=' + JSON.stringify(resultado) + '&detalle=' + JSON.stringify(cajero)));
+    window.open('../../api/corte_caja/imprime_corte.php?datos=' + JSON.stringify(resultado) + '&detalle=' + JSON.stringify(cajero));
     // try {
     //   const txt = buildCorteTicket(resultado, cajero);
     //   const pre = document.getElementById('corteTicketText');
@@ -577,55 +575,10 @@ function deshabilitarCobro() {
     btns.forEach(sel => { const b = document.querySelector(sel); if (b) b.disabled = true; });
 }
 
-// ===== Impresoras =====
-function getImpresoraSeleccionada() {
-    return impresoraSeleccionada || localStorage.getItem('impresora_print_id') || '';
-}
-
-function setImpresoraSeleccionada(val) {
-    impresoraSeleccionada = val || '';
-    localStorage.setItem('impresora_print_id', impresoraSeleccionada);
-    const sel = document.getElementById('impresora_id');
-    if (sel) sel.value = impresoraSeleccionada;
-}
-
-function urlConImpresora(url) {
-    const pid = getImpresoraSeleccionada();
-    if (!pid) return url;
-    return url + (url.includes('?') ? '&' : '?') + 'print_id=' + encodeURIComponent(pid);
-}
-
-async function cargarImpresoras() {
-    try {
-        const res = await fetch('../../api/impresoras/listar.php');
-        const data = await res.json();
-        if (!data.success) throw new Error(data.mensaje || 'Error al listar impresoras');
-        impresorasData = Array.isArray(data.resultado) ? data.resultado : [];
-        const sel = document.getElementById('impresora_id');
-        if (sel) {
-            sel.innerHTML = '<option value="">Selecciona impresora</option>';
-            impresorasData.forEach(imp => {
-                const opt = document.createElement('option');
-                opt.value = imp.print_id;
-                opt.textContent = `${imp.lugar} (${imp.ip})`;
-                sel.appendChild(opt);
-            });
-            const stored = getImpresoraSeleccionada();
-            if (stored) sel.value = stored;
-            sel.addEventListener('change', () => setImpresoraSeleccionada(sel.value));
-            // Mostrar select solo si hay datos
-            const wrap = sel.closest('.form-group');
-            if (wrap) wrap.style.display = '';
-        }
-    } catch (e) {
-        console.error('No se pudieron cargar impresoras', e);
-    }
-}
-
 async function imprimirComanda(ventaId) {
     if (!ventaId) return;
     try {
-        const url = urlConImpresora('../../api/tickets/imprime_comanda.php?venta_id=' + encodeURIComponent(ventaId));
+        const url = '../../api/tickets/imprime_comanda.php?venta_id=' + encodeURIComponent(ventaId);
         console.log('[COMANDA] solicitando impresión', url);
         const res = await fetch(url, { method: 'GET' });
         if (!res.ok) {
@@ -1200,7 +1153,7 @@ function guardarCorteTemporal(datos) {
 
 function imprimirCorteTemporal(datos, observaciones = '') {
     const payload = Object.assign({}, datos, { observaciones });
-    const url = urlConImpresora('../../api/corte_caja/imprime_corte_temp.php?datos=' + encodeURIComponent(JSON.stringify(payload)));
+    const url = '../../api/corte_caja/imprime_corte_temp.php?datos=' + encodeURIComponent(JSON.stringify(payload));
     window.open(url);
 
     // const win = window.open('', '_blank', 'width=600,height=800');
@@ -2081,7 +2034,13 @@ function setLabelUsuario(texto) {
 
 async function cargarUsuariosPorRol() {
     try {
-        const resp = await fetch('../../api/usuarios/listar_repartidor.php');
+        const baseUrl = '../../api/usuarios/listar_repartidor.php';
+        const url = new URL(baseUrl, window.location.href);
+        if (usuarioId) {
+            url.searchParams.set('user_id', usuarioId);
+            url.searchParams.set('usuario_id', usuarioId);
+        }
+        const resp = await fetch(url.toString());
         const data = await resp.json();
         const select = document.getElementById('usuario_id');
         if (!select) return;
@@ -3244,7 +3203,7 @@ async function verDetalles(id) {
                 if (btnReimp) {
                     btnReimp.addEventListener('click', () => {
                         // Reimprime los tickets ya generados para esta venta desde el backend
-                        window.open(urlConImpresora('../../api/tickets/reimprime_ticket.php?venta_id=' + encodeURIComponent(id)));
+                        window.open('../../api/tickets/reimprime_ticket.php?venta_id=' + encodeURIComponent(id));
                     });
                 }
             }
@@ -4156,7 +4115,6 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarHistorial();
     cargarSolicitudes();
     cargarPromocionesVenta();
-    cargarImpresoras();
     cargarColoniasCatalogo();
     cargarClientesDomicilio();
     document.getElementById('registrarVenta').addEventListener('click', registrarVenta);

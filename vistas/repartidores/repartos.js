@@ -20,7 +20,13 @@ const repartidorId = params.get('id');
 let usuariosRepartidores = [];
 async function cargarUsuariosRepartidores() {
     try {
-        const resp = await fetch('../../api/usuarios/listar_repartidores.php');
+        const baseUrl = '../../api/usuarios/listar_repartidor.php';
+        const url = new URL(baseUrl, window.location.href);
+        if (USER_ID) {
+            url.searchParams.set('user_id', USER_ID);
+            url.searchParams.set('usuario_id', USER_ID);
+        }
+        const resp = await fetch(url.toString());
         const data = await resp.json();
         usuariosRepartidores = (data && data.success) ? (data.resultado || []) : [];
     } catch (e) {
@@ -44,7 +50,8 @@ async function cargarEntregas() {
         if (repartidorId) {
             qs.set('repartidor_id', repartidorId);
         }
-        if (!IS_PRIVILEGED) {
+        if (USER_ID) {
+            qs.set('user_id', String(USER_ID));
             qs.set('usuario_id', String(USER_ID));
         }
         if ([...qs].length) {
