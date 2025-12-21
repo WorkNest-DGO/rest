@@ -30,8 +30,7 @@ ob_start();
 </div>
 <!-- Page Header End -->
 
-<div id="user-info" data-usuario-id="<?php echo htmlspecialchars($_SESSION['usuario_id'] ?? '', ENT_QUOTES); ?>" data-rol="<?php echo htmlspecialchars($_SESSION['rol'] ?? '', ENT_QUOTES); ?>" hidden></div>
-<div id="limit-alert" class="alert alert-warning d-none">Vista limitada a tus registros</div>
+<div id="user-info" data-usuario-id="<?php echo htmlspecialchars($_SESSION['usuario_id'] ?? '', ENT_QUOTES); ?>" hidden></div>
 
 <div class="container mt-5 mb-5 ">
     <h1 class="section-header">Repartos</h1>

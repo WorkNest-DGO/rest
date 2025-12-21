@@ -6,13 +6,6 @@ function showAppMsg(msg) {
 window.alert = showAppMsg;
 const userDiv = document.getElementById('user-info');
 const USER_ID = parseInt(userDiv?.dataset.usuarioId || '0', 10);
-const USER_ROL = userDiv?.dataset.rol || '';
-const IS_PRIVILEGED = USER_ROL === 'admin' || USER_ROL === 'cajero';
-
-if (!IS_PRIVILEGED) {
-    const alertBox = document.getElementById('limit-alert');
-    if (alertBox) alertBox.classList.remove('d-none');
-}
 
 const params = new URLSearchParams(location.search);
 const repartidorId = params.get('id');
@@ -65,9 +58,6 @@ async function cargarEntregas() {
             pendientesBody.innerHTML = '';
             entregadasBody.innerHTML = '';
             let registros = data.resultado || [];
-            if (!IS_PRIVILEGED) {
-                registros = registros.filter(v => parseInt(v.usuario_id) === USER_ID);
-            }
             // Mostrar solo registros del repartidor "Repartidor casa"
 
             registros.forEach(v => {
@@ -371,13 +361,6 @@ function mostrarDetalle(info) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (!IS_PRIVILEGED) {
-        const sel = document.querySelector('select[name="usuario_id"], #usuario_id');
-        if (sel) {
-            sel.value = USER_ID;
-            sel.disabled = true;
-        }
-    }
     cargarEntregas();
 });
 

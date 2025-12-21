@@ -164,6 +164,7 @@ foreach ($rutas as $ruta) {
                             <span class="dropdown-item-text">Sede: <?php echo htmlspecialchars($navUserSede); ?></span>
                         <?php endif; ?>
                         <div class="dropdown-divider"></div>
+                        <a href="<?= $base_url ?>/vistas/dashboard/usuario.php" class="dropdown-item">Mis datos</a>
                         <a href="<?= $base_url ?>/vistas/logout.php" class="dropdown-item">Cerrar sesión</a>
                     </div>
                 </div>

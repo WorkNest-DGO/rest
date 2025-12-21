@@ -60,7 +60,7 @@ ob_start();
                 </tr>       
                 <tr class="text-center">
                     <td class="px-3 py-4">
-                        <a href="" class="btn custom-btn">Tabla 7</a>
+                        <a href="./usuario.php" class="btn custom-btn">Mi usuario</a>
                     </td>
                     <td class="px-3 py-4">
                         <a href="" class="btn custom-btn">Tabla 8</a>
