@@ -1,12 +1,14 @@
 <?php
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../utils/response.php';
+require_once __DIR__ . '/../../utils/sedes.php';
 
 // Lista registros de la tabla cortes_almacen
 // Parámetros opcionales (GET):
 // - id: filtra por id exacto
 // - fecha: filtra por DATE(fecha_inicio) = YYYY-MM-DD
 // - abiertos: 1 para solo abiertos (fecha_fin IS NULL)
+// - usuario_id/user_id: determina la sede a filtrar
 
 try {
     $id       = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -14,6 +16,13 @@ try {
     $desde    = isset($_GET['desde']) ? trim($_GET['desde']) : null;
     $hasta    = isset($_GET['hasta']) ? trim($_GET['hasta']) : null;
     $abiertos = isset($_GET['abiertos']) ? (int)$_GET['abiertos'] : 0;
+    $usuario  = isset($_GET['usuario_id']) ? (int)$_GET['usuario_id'] : (isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0);
+
+    $sedeFiltro = sede_resolver_usuario($conn, $usuario);
+    $corteSedeCol = sede_column_name($conn, 'cortes_almacen');
+    if ($usuario && $corteSedeCol && $sedeFiltro === null) {
+        error('No se pudo determinar la sede del usuario');
+    }
 
     $sql = "SELECT id, fecha_inicio, fecha_fin, usuario_abre_id, usuario_cierra_id, observaciones
             FROM cortes_almacen";
@@ -53,6 +62,12 @@ try {
         $conds[] = 'fecha_fin IS NULL';
     }
 
+    if ($corteSedeCol && $sedeFiltro !== null) {
+        $conds[] = "{$corteSedeCol} = ?";
+        $types  .= 'i';
+        $vals[]   = $sedeFiltro;
+    }
+
     if ($conds) {
         $sql .= ' WHERE ' . implode(' AND ', $conds);
     }
@@ -63,7 +78,11 @@ try {
         if (!$stmt) {
             error('Error al preparar consulta: ' . $conn->error);
         }
-        $stmt->bind_param($types, ...$vals);
+        $params = [$types];
+        foreach ($vals as $k => $v) {
+            $params[] = &$vals[$k];
+        }
+        call_user_func_array([$stmt, 'bind_param'], $params);
         $stmt->execute();
         $res = $stmt->get_result();
     } else {

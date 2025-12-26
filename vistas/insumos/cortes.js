@@ -1,4 +1,4 @@
-const usuarioId = 1; // reemplazar con id de sesión en producción
+const usuarioId = (typeof window !== 'undefined' && window.SESSION_USUARIO_ID) ? Number(window.SESSION_USUARIO_ID) : null;
 let detalles = [];
 let corteActual = null;
 let pagina = 1;
@@ -26,11 +26,18 @@ function buildQuery(params) {
 function getBaseParams() {
   const desde = document.getElementById('buscarDesde')?.value || '';
   const hasta = document.getElementById('buscarHasta')?.value || '';
-  if (!desde && !hasta) return { abiertos: 1 };
   const p = {};
+  if (usuarioId) {
+    p.usuario_id = usuarioId;
+  }
+  if (!desde && !hasta) return { ...p, abiertos: 1 };
   if (desde) p.desde = desde;
   if (hasta) p.hasta = hasta;
   return p;
+}
+
+function getUsuarioParam() {
+  return usuarioId ? { usuario_id: usuarioId } : {};
 }
 
 function updateExportButtons() {
@@ -42,6 +49,10 @@ function updateExportButtons() {
 }
 
 async function abrirCorte() {
+  if (!usuarioId) {
+    alert('No se pudo identificar al usuario para abrir el corte.');
+    return;
+  }
   try {
     const resp = await fetch('../../api/insumos/cortes_almacen.php', {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -65,6 +76,10 @@ async function guardarCierre() {
   const obs = document.getElementById('observaciones').value;
   const corteId = selCortes?.value || prompt('ID de corte a cerrar');
   if (!corteId) return;
+  if (!usuarioId) {
+    alert('No se pudo identificar al usuario para cerrar el corte.');
+    return;
+  }
   try {
     const resp = await fetch('../../api/insumos/cortes_almacen.php', {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -117,7 +132,8 @@ async function cargarCortes(preserveSelection = true) {
 async function cargarDetalleCorte(corteId) {
   if (!corteId) { corteActual = null; detalles = []; renderTabla(); updateExportButtons(); return; }
   try {
-    const r = await fetch(`../../api/insumos/listar_cortes_almacen_detalle.php?corte_id=${encodeURIComponent(corteId)}`, { credentials: 'same-origin' });
+    const url = '../../api/insumos/listar_cortes_almacen_detalle.php' + buildQuery({ corte_id: corteId, ...getUsuarioParam() });
+    const r = await fetch(url, { credentials: 'same-origin' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const json = await r.json();
     const rows = Array.isArray(json) ? json : (json.resultado || json.rows || []);
@@ -172,8 +188,9 @@ function exportarCsv() {
 
 async function exportarPdf() {
   if (!corteActual) { alert('Seleccione un corte'); return; }
+  if (!usuarioId) { alert('No se pudo identificar al usuario.'); return; }
   try {
-    const resp = await fetch('../../api/insumos/cortes_almacen.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ accion: 'exportar_pdf', corte_id: corteActual }) });
+    const resp = await fetch('../../api/insumos/cortes_almacen.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ accion: 'exportar_pdf', corte_id: corteActual, usuario_id: usuarioId }) });
     const data = await resp.json();
     if (data.success) { window.open(data.resultado.archivo, '_blank'); } else { alert(data.mensaje || 'No se pudo exportar'); }
   } catch (err) { console.error(err); alert('No se pudo exportar'); }
@@ -202,4 +219,3 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (selCortes && selCortes.value) { await cargarDetalleCorte(selCortes.value); }
   updateExportButtons();
 });
-
