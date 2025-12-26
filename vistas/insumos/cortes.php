@@ -90,6 +90,18 @@ ob_start();
 </div>
 
 <?php require_once __DIR__ . '/../footer.php'; ?>
+<script>
+    window.SESSION_USUARIO_ID = <?php echo isset($_SESSION['usuario_id']) ? (int)$_SESSION['usuario_id'] : 'null'; ?>;
+    window.SESSION_SEDE_ID = <?php
+        if (isset($_SESSION['sede_id'])) {
+            echo (int)$_SESSION['sede_id'];
+        } elseif (isset($_SESSION['sede'])) {
+            echo (int)$_SESSION['sede'];
+        } else {
+            echo 'null';
+        }
+    ?>;
+</script>
 <script src="cortes.js"></script>
 </body>
 </html>
