@@ -89,8 +89,18 @@ function contar($db, $sql, $params = [], $types = '') {
 }
 
 // Construir filtros seguros según columnas disponibles
-$ventasTieneSede = columna_existe($conn, 'ventas', 'sede_id');
-$mesasTieneSede  = columna_existe($conn, 'mesas', 'sede_id');
+$ventasSedeCol = null;
+if (columna_existe($conn, 'ventas', 'sede_id')) {
+    $ventasSedeCol = 'sede_id';
+} elseif (columna_existe($conn, 'ventas', 'sede')) {
+    $ventasSedeCol = 'sede';
+}
+$mesasSedeCol = null;
+if (columna_existe($conn, 'mesas', 'sede_id')) {
+    $mesasSedeCol = 'sede_id';
+} elseif (columna_existe($conn, 'mesas', 'sede')) {
+    $mesasSedeCol = 'sede';
+}
 $ventasTieneCorte = columna_existe($conn, 'ventas', 'corte_id');
 
 $ventasWhere = "estatus='activa'";
@@ -100,8 +110,8 @@ if ($ventasTieneCorte) { // priorizar filtrar por corte
     $ventasWhere .= " AND corte_id = ?";
     $ventasParams[] = $corte_id;
     $ventasTypes   .= 'i';
-} elseif ($sedeFiltro && $ventasTieneSede) { // fallback a sede si existe
-    $ventasWhere .= " AND sede_id = ?";
+} elseif ($sedeFiltro && $ventasSedeCol) { // fallback a sede si existe
+    $ventasWhere .= " AND {$ventasSedeCol} = ?";
     $ventasParams[] = $sedeFiltro;
     $ventasTypes   .= 'i';
 }
@@ -110,8 +120,8 @@ $ventasActivas = contar($conn, "SELECT COUNT(*) AS c FROM ventas WHERE $ventasWh
 $mesasWhere = "estado='ocupada'";
 $mesasParams = [];
 $mesasTypes = '';
-if ($sedeFiltro && $mesasTieneSede) {
-    $mesasWhere .= " AND sede_id = ?";
+if ($sedeFiltro && $mesasSedeCol) {
+    $mesasWhere .= " AND {$mesasSedeCol} = ?";
     $mesasParams[] = $sedeFiltro;
     $mesasTypes   .= 'i';
 }

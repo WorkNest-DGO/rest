@@ -38,6 +38,17 @@ function unwrap_if_base64_or_json($input) {
   return $input;
 }
 
+function normalize_xml_payload($input) {
+  if (!is_string($input) || $input === '') return $input;
+  $trimmed = ltrim($input);
+  if ($trimmed === '') return $input;
+  if (strncmp($trimmed, "\xEF\xBB\xBF", 3) === 0) {
+    $trimmed = substr($trimmed, 3);
+  }
+  if ($trimmed !== '' && $trimmed[0] === '<') return $trimmed;
+  return $input;
+}
+
 function json_error_exit(string $msg, int $code = 400) {
   http_response_code($code);
   echo json_encode(['success'=>false,'mensaje'=>$msg], JSON_UNESCAPED_UNICODE);
@@ -89,6 +100,9 @@ try {
 
   [$bin, $ct] = facturama_download_issued($tipo, $fid);
   $clean = unwrap_if_base64_or_json($bin);
+  if ($tipo === 'xml') {
+    $clean = normalize_xml_payload($clean);
+  }
   $year = date('Y'); $month = date('m');
   $dir = rtrim($baseDir, '/\\') . '/archivos/facturas/' . $year . '/' . $month;
   if (!is_dir($dir)) { @mkdir($dir, 0775, true); }

@@ -51,6 +51,14 @@ try {
 
   $t_fecha = column_exists($db,'tickets','fecha') ? 'fecha' : null;
   $t_tipo_pago = column_exists($db,'tickets','tipo_pago') ? 'tipo_pago' : null;
+  $t_sede_col = null;
+  if (column_exists($db,'tickets','sede_id')) {
+    $t_sede_col = 'sede_id';
+  } elseif (column_exists($db,'tickets','sede')) {
+    $t_sede_col = 'sede';
+  }
+  $has_sedes_tbl = table_exists($db,'sedes');
+  $has_sede_nombre = $has_sedes_tbl && column_exists($db,'sedes','nombre');
 
   $has_cf_tbl = table_exists($db,'clientes_facturacion');
   $cf_nombre  = $has_cf_tbl && column_exists($db,'clientes_facturacion','razon_social') ? 'razon_social'
@@ -133,11 +141,16 @@ try {
     $pend_limit  = isset($_GET['pend_limit'])  ? max(1, min(100, (int)$_GET['pend_limit'])) : 20;
     $pend_offset = isset($_GET['pend_offset']) ? max(0, (int)$_GET['pend_offset']) : 0;
     $want_count  = isset($_GET['pend_count']) ? (int)$_GET['pend_count'] : 0;
-    $sql = "SELECT t.id, t.folio, COALESCE(t.monto_recibido, t.total) AS total, ".($t_fecha ? "t.$t_fecha AS fecha" : "NULL AS fecha").", ".($t_tipo_pago ? "t.$t_tipo_pago AS tipo_pago" : "NULL AS tipo_pago")."
+    $selSedeId = $t_sede_col ? "t.$t_sede_col AS sede_id" : "NULL AS sede_id";
+    $selSede = ($t_sede_col && $has_sede_nombre) ? "s.nombre AS sede" : "NULL AS sede";
+    $joinSede = ($t_sede_col && $has_sedes_tbl) ? " LEFT JOIN sedes s ON s.id = t.$t_sede_col " : "";
+    $sedeFiltro = isset($_GET['sede_id']) ? (int)$_GET['sede_id'] : 0;
+    $sql = "SELECT t.id, t.folio, $selSedeId, $selSede, COALESCE(t.monto_recibido, t.total) AS total, ".($t_fecha ? "t.$t_fecha AS fecha" : "NULL AS fecha").", ".($t_tipo_pago ? "t.$t_tipo_pago AS tipo_pago" : "NULL AS tipo_pago")."
             FROM tickets t
             LEFT JOIN factura_tickets ft ON ft.ticket_id = t.id
             LEFT JOIN facturas f ON ".($has_ticket_id ? "f.ticket_id = t.id" : "0")."
                AND ".($f_status ? "COALESCE(f.$f_status,'generada')" : "'generada'")." <> 'cancelada'
+            $joinSede
             WHERE ft.ticket_id IS NULL " . ($has_ticket_id ? "AND f.id IS NULL " : "");
     // Importante: Los pendientes deben mostrar TODOS los tickets sin factura, sin limitar por usuario ni cajero.
     // Para no ocultar cobros de otros usuarios, NO aplicamos filtro de fecha aqui.
@@ -146,6 +159,7 @@ try {
       $sql .= "AND t.$t_fecha >= ? AND t.$t_fecha < ? ";
       $types.='ss'; $params[]=$desde; $params[]=$hasta;
     }
+    if ($sedeFiltro > 0 && $t_sede_col) { $sql .= "AND t.$t_sede_col = ? "; $types.='i'; $params[] = $sedeFiltro; }
     if ($buscar !== '') { $sql .= "AND (t.folio LIKE ?) "; $types.='s'; $params[] = "%$buscar%"; }
     $sql .= "ORDER BY ".($t_fecha ? "t.$t_fecha DESC, " : "")."t.folio DESC";
     $sql .= " LIMIT ? OFFSET ?";
@@ -170,6 +184,7 @@ try {
         $sqlC .= "AND t.$t_fecha >= ? AND t.$t_fecha < ? ";
         $typesC.='ss'; $paramsC[]=$desde; $paramsC[]=$hasta;
       }
+      if ($sedeFiltro > 0 && $t_sede_col) { $sqlC .= "AND t.$t_sede_col = ? "; $typesC.='i'; $paramsC[] = $sedeFiltro; }
       if ($buscar !== '') { $sqlC .= "AND (t.folio LIKE ?) "; $typesC.='s'; $paramsC[] = "%$buscar%"; }
       $stC = $db->prepare($sqlC);
       if ($typesC) { $stC->bind_param($typesC, ...$paramsC); }

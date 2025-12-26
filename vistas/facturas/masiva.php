@@ -90,6 +90,7 @@ ob_start();
       <table id="tabla-pendientes">
         <thead>
           <tr>
+            <th>Sede</th>
             <th>Folio Ticket</th>
             <th>Fecha</th>
             <th>Tipo pago</th>

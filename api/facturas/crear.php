@@ -50,6 +50,19 @@ if (!function_exists('unwrap_if_base64_or_json')) {
   }
 }
 
+if (!function_exists('normalize_xml_payload')) {
+  function normalize_xml_payload($input) {
+    if (!is_string($input) || $input === '') return $input;
+    $trimmed = ltrim($input);
+    if ($trimmed === '') return $input;
+    if (strncmp($trimmed, "\xEF\xBB\xBF", 3) === 0) {
+      $trimmed = substr($trimmed, 3);
+    }
+    if ($trimmed !== '' && $trimmed[0] === '<') return $trimmed;
+    return $input;
+  }
+}
+
 function json_response($ok, $payloadOrMsg) {
   echo json_encode($ok ? ['success'=>true,'resultado'=>$payloadOrMsg]
                        : ['success'=>false,'mensaje'=>(string)$payloadOrMsg],
@@ -738,6 +751,7 @@ try {
             try {
               [$xml, $ctXml] = facturama_download_issued('xml', $facturamaId);
               $xmlClean = unwrap_if_base64_or_json($xml);
+              $xmlClean = normalize_xml_payload($xmlClean);
               $xmlName = ($uuid !== '' ? $uuid : ('cfdi_' . $fid)) . '.xml';
               $xmlPath = $dir . '/' . $xmlName;
               @file_put_contents($xmlPath, $xmlClean);
@@ -884,6 +898,7 @@ try {
         try {
           [$xml, $ctXml] = facturama_download_issued('xml', $facturamaId);
           $xmlClean = unwrap_if_base64_or_json($xml);
+          $xmlClean = normalize_xml_payload($xmlClean);
           $xmlName = ($uuid !== '' ? $uuid : ('cfdi_' . $fid)) . '.xml';
           $xmlPath = $dir . '/' . $xmlName;
           @file_put_contents($xmlPath, $xmlClean);

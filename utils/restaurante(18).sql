@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 20-12-2025 a las 20:31:17
+-- Tiempo de generación: 26-12-2025 a las 19:43:23
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -470,8 +470,8 @@ CREATE TABLE `catalogo_folios` (
 --
 
 INSERT INTO `catalogo_folios` (`id`, `descripcion`, `folio_actual`) VALUES
-(1, 'Serie Madero', 1003),
-(2, 'Serie Forestal', 2062);
+(1, 'Serie Madero', 1004),
+(2, 'Serie Forestal', 2063);
 
 -- --------------------------------------------------------
 
@@ -14103,7 +14103,7 @@ CREATE TABLE `clientes_facturacion` (
 
 INSERT INTO `clientes_facturacion` (`id`, `rfc`, `razon_social`, `correo`, `telefono`, `calle`, `numero_ext`, `numero_int`, `colonia`, `municipio`, `estado`, `pais`, `cp`, `regimen`, `uso_cfdi`, `created_at`, `updated_at`) VALUES
 (1, 'marf9401109i5', 'fued majul', '', '', '', '', '', '', '', '', 'México', '34010', '605', 'g01', '2025-08-28 19:04:50', '2025-09-23 00:11:22'),
-(32, 'XAXX010101000', 'PUBLICO EN GENERAL', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'México', '34217', '601', 'G03', '2025-09-23 13:39:32', '2025-10-02 09:24:38'),
+(32, 'XAXX010101000', 'PUBLICO EN GENERAL', 'mpyd.fuedmajul@gmail.com', '', '', '', '', '', '', '', 'México', '34217', '601', 'G03', '2025-09-23 13:39:32', '2025-12-22 10:36:02'),
 (33, 'COC000315HY4', 'COCONAL', 'prisila.gonzalez.1417@gmail.com', NULL, NULL, '4249', NULL, 'jardines en la montaña', 'ciudad de mexico', 'mexico', 'México', '14210', '601', 'G03', '2025-11-22 18:43:09', '2025-11-25 16:33:35'),
 (34, 'HBA930609L84', 'HERMANOS BATTA', 'vales417@gmail.com', NULL, 'temistocles', '119', NULL, 'Polanco chapultepec', NULL, 'ciudad de mexico', 'México', '11560', '601', 'G03', '2025-11-22 19:05:11', '2025-11-22 19:40:30'),
 (35, 'INE0804164Z7', 'INSTITUTO NACIONAL DE ESTADISTICA Y GEOGRAFIA', 'andrea.ramos@inegi.org.mx', NULL, 'AVENIDA HEROE DE NACOZARI SUR', '2301', NULL, 'JARDINES DEL PARQUE', NULL, 'AGUASCALIENTES ', 'México', '20276', '603', 'G03', '2025-11-23 11:36:14', '2025-11-23 12:54:45'),
@@ -14919,6 +14919,67 @@ CREATE TABLE `conekta_payments` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `consumos_beneficios`
+--
+
+CREATE TABLE `consumos_beneficios` (
+  `id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `producto_id` int(11) NOT NULL,
+  `tipo_regla` enum('semana','fecha') NOT NULL DEFAULT 'semana',
+  `dia_semana` tinyint(3) UNSIGNED DEFAULT NULL COMMENT '1=Lun ... 7=Dom (si tipo_regla=semana)',
+  `fecha` date DEFAULT NULL COMMENT 'Fecha exacta (si tipo_regla=fecha)',
+  `cantidad_max` int(10) UNSIGNED NOT NULL DEFAULT 1 COMMENT 'Máximo gratis por día/regla',
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `consumos_empleado`
+--
+
+CREATE TABLE `consumos_empleado` (
+  `id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL COMMENT 'Empleado que consume',
+  `producto_id` int(11) NOT NULL,
+  `sede_id` int(11) DEFAULT NULL,
+  `fecha_consumo` datetime NOT NULL DEFAULT current_timestamp(),
+  `cantidad` int(10) UNSIGNED NOT NULL DEFAULT 1,
+  `precio_unitario` decimal(10,2) NOT NULL COMMENT 'Snapshot del precio al momento',
+  `subtotal` decimal(10,2) GENERATED ALWAYS AS (`cantidad` * `precio_unitario`) STORED,
+  `es_gratis` tinyint(1) NOT NULL DEFAULT 0,
+  `beneficio_id` int(11) DEFAULT NULL,
+  `motivo` enum('regla','manual','sin_regla','excedio_limite') NOT NULL DEFAULT 'sin_regla',
+  `monto_nomina` decimal(10,2) NOT NULL DEFAULT 0.00 COMMENT '0 si es gratis, subtotal si es cobrable',
+  `descuento_nomina` enum('pendiente','aplicado','exento') NOT NULL DEFAULT 'pendiente',
+  `registrado_por` int(11) NOT NULL COMMENT 'Admin que registró el consumo',
+  `observacion` text DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `consumos_empleado_insumos`
+--
+
+CREATE TABLE `consumos_empleado_insumos` (
+  `id` int(11) NOT NULL,
+  `consumo_id` int(11) NOT NULL,
+  `insumo_id` int(11) NOT NULL,
+  `cantidad_unitaria` decimal(10,2) NOT NULL COMMENT 'recetas.cantidad al momento',
+  `cantidad_total` decimal(10,2) NOT NULL COMMENT 'cantidad_unitaria * consumo.cantidad',
+  `unidad_snapshot` varchar(20) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `cortes_almacen`
 --
 
@@ -14972,9 +15033,8 @@ CREATE TABLE `corte_caja` (
 --
 
 INSERT INTO `corte_caja` (`id`, `usuario_id`, `fecha_inicio`, `folio_inicio`, `folio_fin`, `total_folios`, `fecha_fin`, `total`, `observaciones`, `fondo_inicial`) VALUES
-(133, 1, '2025-12-20 00:37:00', 2056, 2056, 0, '2025-12-19 17:37:31', 1000.00, '', 1000.00),
-(134, 1, '2025-12-20 00:38:04', 2056, NULL, 0, NULL, NULL, NULL, 500.00),
-(135, 46, '2025-12-20 05:04:38', 1003, NULL, 0, NULL, NULL, NULL, 1000.00);
+(136, 1, '2025-12-21 00:48:14', 2062, NULL, 0, NULL, NULL, NULL, 1000.00),
+(137, 46, '2025-12-21 04:08:04', 1003, NULL, 0, NULL, NULL, NULL, 1000.00);
 
 -- --------------------------------------------------------
 
@@ -15013,11 +15073,8 @@ CREATE TABLE `desglose_corte` (
 --
 
 INSERT INTO `desglose_corte` (`id`, `corte_id`, `denominacion`, `cantidad`, `tipo_pago`, `denominacion_id`, `orden`) VALUES
-(592, 133, 1000.00, 1, 'efectivo', 11, 'apertura'),
-(593, 133, 500.00, 2, 'efectivo', 10, 'cierre'),
-(594, 134, 500.00, 1, 'efectivo', 10, 'apertura'),
-(595, 134, 1.00, 900, 'cheque', 13, 'cierre'),
-(596, 135, 1000.00, 1, 'efectivo', 11, 'apertura');
+(597, 136, 1000.00, 1, 'efectivo', 11, 'apertura'),
+(598, 137, 1000.00, 1, 'efectivo', 11, 'apertura');
 
 -- --------------------------------------------------------
 
@@ -15080,12 +15137,7 @@ CREATE TABLE `facturas` (
 --
 
 INSERT INTO `facturas` (`id`, `facturama_id`, `ticket_id`, `cliente_id`, `folio`, `serie`, `uuid`, `subtotal`, `impuestos`, `total`, `metodo_pago`, `forma_pago`, `uso_cfdi`, `fecha_emision`, `estado`, `notas`, `xml_path`, `pdf_path`) VALUES
-(105, 'eMboqtraX8i0RH0LSrB-DQ2', 558, 32, '46', 'A', NULL, 129.31, 20.69, 150.00, 'PUE', '01', 'G03', '2025-12-19 20:47:35', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_105.xml', 'archivos/facturas/2025/12/cfdi_105.pdf'),
-(106, '1TycyDMXif0X0eCPM4jPRg2', 559, 32, '47', 'A', NULL, 12.93, 2.07, 15.00, 'PUE', '01', 'G03', '2025-12-19 20:54:15', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_106.xml', 'archivos/facturas/2025/12/cfdi_106.pdf'),
-(107, 'R5Afz6i1P7ntDmOiE4g8iw2', 560, 32, '48', 'A', NULL, 17.24, 2.76, 20.00, 'PUE', '01', 'G03', '2025-12-19 21:23:25', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_107.xml', 'archivos/facturas/2025/12/cfdi_107.pdf'),
-(108, 'ttytwTidW-YpUgqVKVo91A2', 561, 32, '49', 'A', NULL, 775.87, 124.13, 900.00, 'PUE', '03', 'G03', '2025-12-19 21:28:57', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_108.xml', 'archivos/facturas/2025/12/cfdi_108.pdf'),
-(109, 'nxMt8TRYjnezflgIK1qnlg2', 562, 32, '50', 'A', NULL, 38.62, 1.38, 40.00, 'PUE', '01', 'G03', '2025-12-19 21:51:41', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_109.xml', 'archivos/facturas/2025/12/cfdi_109.pdf'),
-(110, 'DcfPekGgRtdXdrTKDAZv_Q2', 563, 32, '51', 'A', NULL, 107.76, 17.24, 125.00, 'PUE', '01', 'G03', '2025-12-19 21:59:17', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_110.xml', 'archivos/facturas/2025/12/cfdi_110.pdf');
+(111, 'TZjm9o1ZnyuIScHYVdGvaQ2', 565, 32, '52', 'A', NULL, 61.90, 5.10, 67.00, 'PUE', '01', 'G03', '2025-12-22 10:39:52', 'generada', NULL, 'archivos/facturas/2025/12/cfdi_111.xml', 'archivos/facturas/2025/12/cfdi_111.pdf');
 
 -- --------------------------------------------------------
 
@@ -15109,16 +15161,8 @@ CREATE TABLE `factura_detalles` (
 --
 
 INSERT INTO `factura_detalles` (`id`, `factura_id`, `ticket_detalle_id`, `producto_id`, `descripcion`, `cantidad`, `precio_unitario`, `importe`) VALUES
-(305, 105, 1457, 15, 'Chiquilin Roll', 1, 150.00, 150.00),
-(306, 106, 1458, 77, 'Aderezo de Chipotle', 1, 15.00, 15.00),
-(307, 107, 1459, 78, 'Aderezo de Cilantro', 1, 20.00, 20.00),
-(308, 108, 1460, 15, 'Chiquilin Roll', 4, 125.00, 500.00),
-(309, 108, 1461, 66, 'Té de Jazmín (Litro)', 3, 40.00, 120.00),
-(310, 108, 1462, 141, 'Kushiages (Camarón)', 1, 120.00, 120.00),
-(311, 108, 1463, 9025, 'Alitas Búfalo', 1, 160.01, 160.01),
-(312, 109, 1464, 77, 'Aderezo de Chipotle', 1, 10.00, 10.00),
-(313, 109, 1465, 9001, 'ENVÍO – Repartidor casa', 1, 30.00, 30.00),
-(314, 110, 1466, 15, 'Chiquilin Roll', 1, 125.00, 125.00);
+(315, 111, 1469, 72, 'Consumo de bebidas en general', 1, 37.00, 37.00),
+(316, 111, 1470, 9001, 'ENVÍO – Repartidor casa', 1, 30.00, 30.00);
 
 -- --------------------------------------------------------
 
@@ -15136,12 +15180,7 @@ CREATE TABLE `factura_tickets` (
 --
 
 INSERT INTO `factura_tickets` (`factura_id`, `ticket_id`) VALUES
-(105, 558),
-(106, 559),
-(107, 560),
-(108, 561),
-(109, 562),
-(110, 563);
+(111, 565);
 
 -- --------------------------------------------------------
 
@@ -15159,7 +15198,7 @@ CREATE TABLE `fondo` (
 --
 
 INSERT INTO `fondo` (`usuario_id`, `monto`) VALUES
-(1, 500.00),
+(1, 1000.00),
 (46, 1000.00);
 
 -- --------------------------------------------------------
@@ -15209,8 +15248,8 @@ CREATE TABLE `impresoras` (
 
 INSERT INTO `impresoras` (`print_id`, `nombre_logico`, `lugar`, `ip`, `activo`, `sede`) VALUES
 (1, 'barra', 'pruebas', 'smb://FUED/pos58', 1, 1),
-(2, 'frio', 'pruebas2', 'smb://FUED/Microsoft Print to PDF', 1, 1),
-(3, 'caliente', 'pruebas3', 'smb://FUED/OneNote', 1, 1),
+(2, 'frio', 'pruebas2', 'smb://FUED/pos58', 1, 1),
+(3, 'caliente', 'pruebas3', 'smb://FUED/pos58', 1, 1),
 (4, 'ticket', 'prueba4', 'smb://FUED/pos58', 1, 1),
 (5, 'ticket', 'prueba5', 'smb://FUED/pos58', 1, 1);
 
@@ -15222,6 +15261,7 @@ INSERT INTO `impresoras` (`print_id`, `nombre_logico`, `lugar`, `ip`, `activo`, 
 
 CREATE TABLE `insumos` (
   `id` int(11) NOT NULL,
+  `sede_id` int(11) NOT NULL DEFAULT 1,
   `nombre` varchar(100) DEFAULT NULL,
   `unidad` varchar(20) DEFAULT NULL,
   `existencia` decimal(10,2) DEFAULT NULL,
@@ -15233,192 +15273,377 @@ CREATE TABLE `insumos` (
 -- Volcado de datos para la tabla `insumos`
 --
 
-INSERT INTO `insumos` (`id`, `nombre`, `unidad`, `existencia`, `tipo_control`, `imagen`) VALUES
-(1, 'Arroz', 'gramos', 78979.25, 'por_receta', 'ins_68717301313ad.jpg'),
-(2, 'Alga', 'piezas', 99946.50, 'por_receta', 'ins_6871716a72681.jpg'),
-(3, 'Salmón fresco', 'gramos', 100000.00, 'por_receta', 'ins_6871777fa2c56.png'),
-(4, 'Refresco en lata', 'piezas', 100000.00, 'unidad_completa', 'ins_6871731d075cb.webp'),
-(7, 'Surimi', 'gramos', 99740.00, 'uso_general', 'ins_688a521dcd583.jpg'),
-(8, 'Tocino', 'gramos', 99635.00, 'uso_general', 'ins_688a4dc84c002.jpg'),
-(9, 'Pollo', 'gramos', 99085.00, 'desempaquetado', 'ins_688a4e4bd5999.jpg'),
-(10, 'Camarón', 'gramos', 98425.00, 'desempaquetado', 'ins_688a4f5c873c6.jpg'),
-(11, 'Queso Chihuahua', 'gramos', 100000.00, 'unidad_completa', 'ins_688a4feca9865.jpg'),
-(12, 'Philadelphia', 'gramos', 97000.00, 'uso_general', 'ins_688a504f9cb40.jpg'),
-(13, 'Arroz blanco', 'gramos', 100000.00, 'por_receta', 'ins_689f82d674c65.jpg'),
-(14, 'Carne', 'gramos', 98180.00, 'uso_general', 'ins_688a528d1261a.jpg'),
-(15, 'Queso Amarillo', 'piezas', 100000.00, 'uso_general', 'ins_688a53246c1c2.jpg'),
-(16, 'Ajonjolí', 'gramos', 99952.00, 'uso_general', 'ins_689f824a23343.jpg'),
-(17, 'Panko', 'gramos', 100000.00, 'por_receta', 'ins_688a53da64b5f.jpg'),
-(18, 'Salsa tampico', 'mililitros', 100000.00, 'no_controlado', 'ins_688a54cf1872b.jpg'),
-(19, 'Anguila', 'oz', 99948.00, 'por_receta', 'ins_689f828638aa9.jpg'),
-(20, 'BBQ', 'oz', 100000.00, 'no_controlado', 'ins_688a557431fce.jpg'),
-(21, 'Serrano', 'gramos', 99960.00, 'uso_general', 'ins_688a55c66f09d.jpg'),
-(22, 'Chile Morrón', 'gramos', 99980.00, 'por_receta', 'ins_688a5616e8f25.jpg'),
-(23, 'Kanikama', 'gramos', 100000.00, 'por_receta', 'ins_688a5669e24a8.jpg'),
-(24, 'Aguacate', 'gramos', 97020.00, 'por_receta', 'ins_689f8254c2e71.jpg'),
-(25, 'Dedos de queso', 'pieza', 99998.00, 'unidad_completa', 'ins_688a56fda3221.jpg'),
-(26, 'Mango', 'gramos', 100000.00, 'por_receta', 'ins_688a573c762f4.jpg'),
-(27, 'Tostadas', 'pieza', 100000.00, 'uso_general', 'ins_688a57a499b35.jpg'),
-(28, 'Papa', 'gramos', 100000.00, 'por_receta', 'ins_688a580061ffd.jpg'),
-(29, 'Cebolla Morada', 'gramos', 100000.00, 'por_receta', 'ins_688a5858752a0.jpg'),
-(30, 'Salsa de soya', 'mililitros', 99940.00, 'no_controlado', 'ins_688a58cc6cb6c.jpg'),
-(31, 'Naranja', 'gramos', 100000.00, 'por_receta', 'ins_688a590bca275.jpg'),
-(32, 'Chile Caribe', 'gramos', 99990.00, 'por_receta', 'ins_688a59836c32e.jpg'),
-(33, 'Pulpo', 'gramos', 99920.00, 'por_receta', 'ins_688a59c9a1d0b.jpg'),
-(34, 'Zanahoria', 'gramos', 99835.00, 'por_receta', 'ins_688a5a0a3a959.jpg'),
-(35, 'Apio', 'gramos', 99970.00, 'por_receta', 'ins_688a5a52af990.jpg'),
-(36, 'Pepino', 'gramos', 96450.00, 'uso_general', 'ins_688a5aa0cbaf5.jpg'),
-(37, 'Masago', 'gramos', 100000.00, 'por_receta', 'ins_688a5b3f0dca6.jpg'),
-(38, 'Nuez de la india', 'gramos', 99990.00, 'por_receta', 'ins_688a5be531e11.jpg'),
-(39, 'Cátsup', 'mililitros', 100000.00, 'por_receta', 'ins_688a5c657eb83.jpg'),
-(40, 'Atún fresco', 'gramos', 100000.00, 'por_receta', 'ins_688a5ce18adc5.jpg'),
-(41, 'Callo almeja', 'gramos', 100000.00, 'por_receta', 'ins_688a5d28de8a5.jpg'),
-(42, 'Calabacin', 'gramos', 100000.00, 'por_receta', 'ins_688a5d6b2bca1.jpg'),
-(43, 'Fideo chino transparente', 'gramos', 100000.00, 'por_receta', 'ins_688a5dd3b406d.jpg'),
-(44, 'Brócoli', 'gramos', 99980.00, 'por_receta', 'ins_688a5e2736870.jpg'),
-(45, 'Chile de árbol', 'gramos', 99969.80, 'por_receta', 'ins_688a5e6f08ccd.jpg'),
-(46, 'Pasta udon', 'gramos', 100000.00, 'por_receta', 'ins_688a5eb627f38.jpg'),
-(47, 'Huevo', 'pieza', 99990.00, 'por_receta', 'ins_688a5ef9b575e.jpg'),
-(48, 'Cerdo', 'gramos', 99990.00, 'por_receta', 'ins_688a5f3915f5e.jpg'),
-(49, 'Masa para gyozas', 'pieza', 100000.00, 'por_receta', 'ins_688a5fae2e7f1.jpg'),
-(50, 'Naruto', 'gramos', 99990.00, 'por_receta', 'ins_688a5ff57f62d.jpg'),
-(51, 'Atún ahumado', 'gramos', 99860.00, 'por_receta', 'ins_68adcd62c5a19.jpg'),
-(52, 'Cacahuate con salsa (salado)', 'gramos', 100000.00, 'por_receta', 'ins_68adcf253bd1d.jpg'),
-(53, 'Calabaza', 'gramos', 99830.00, 'por_receta', 'ins_68add0ff781fb.jpg'),
-(54, 'Camarón gigante para pelar', 'pieza', 99992.00, 'por_receta', 'ins_68add3264c465.jpg'),
-(55, 'Cebolla', 'gramos', 99909.80, 'por_receta', 'ins_68add38beff59.jpg'),
-(56, 'Chile en polvo', 'gramos', 100000.00, 'por_receta', 'ins_68add4a750a0e.jpg'),
-(57, 'Coliflor', 'gramos', 99980.00, 'por_receta', 'ins_68add5291130e.jpg'),
-(59, 'Dedos de surimi', 'pieza', 99918.00, 'unidad_completa', 'ins_68add5c575fbb.jpg'),
-(60, 'Fideos', 'gramos', 99700.00, 'por_receta', 'ins_68add629d094b.jpg'),
-(61, 'Fondo de res', 'mililitros', 98490.00, 'no_controlado', 'ins_68add68d317d5.jpg'),
-(62, 'Gravy Naranja', 'oz', 100000.00, 'no_controlado', 'ins_68add7bb461b3.jpg'),
-(63, 'Salsa Aguachil', 'oz', 100000.00, 'no_controlado', 'ins_68ae000034b31.jpg'),
-(64, 'Julianas de zanahoria', 'gramos', 99940.00, 'por_receta', 'ins_68add82c9c245.jpg'),
-(65, 'Limón', 'gramos', 99935.00, 'por_receta', 'ins_68add890ee640.jpg'),
-(66, 'Queso Mix', 'gramos', 99240.00, 'uso_general', 'ins_68ade1625f489.jpg'),
-(67, 'Morrón', 'gramos', 100000.00, 'por_receta', 'ins_68addcbc6d15a.jpg'),
-(69, 'Pasta chukasoba', 'gramos', 99850.00, 'por_receta', 'ins_68addd277fde6.jpg'),
-(70, 'Pasta frita', 'gramos', 99990.00, 'por_receta', 'ins_68addd91a005e.jpg'),
-(71, 'Queso crema', 'gramos', 100000.00, 'uso_general', 'ins_68ade11cdadcb.jpg'),
-(72, 'Refresco embotellado', 'pieza', 100000.00, 'unidad_completa', 'ins_68adfdd53f04e.jpg'),
-(73, 'res', 'gramos', 99950.00, 'uso_general', 'ins_68adfe2e49580.jpg'),
-(74, 'Rodajas de naranja', 'gramos', 100000.00, 'por_receta', 'ins_68adfeccd68d8.jpg'),
-(75, 'Salmón', 'gramos', 100000.00, 'por_receta', 'ins_68adffa2a2db0.jpg'),
-(76, 'Salsa de anguila', 'mililitros', 99980.00, 'no_controlado', 'ins_68ae005f1b3cd.jpg'),
-(77, 'Salsa teriyaki (dulce)', 'mililitros', 99980.00, 'no_controlado', 'ins_68ae00c53121a.jpg'),
-(78, 'Salsas orientales', 'mililitros', 99970.00, 'no_controlado', 'ins_68ae01341e7b1.jpg'),
-(79, 'Shisimi', 'gramos', 100000.00, 'uso_general', 'ins_68ae018d22a63.jpg'),
-(80, 'Siracha', 'mililitros', 99895.00, 'no_controlado', 'ins_68ae03413da26.jpg'),
-(81, 'Tampico', 'mililitros', 98480.00, 'uso_general', 'ins_68ae03f65bd71.jpg'),
-(82, 'Tortilla de harina', 'pieza', 99990.00, 'unidad_completa', 'ins_68ae04b46d24a.jpg'),
-(83, 'Tostada', 'pieza', 100000.00, 'unidad_completa', 'ins_68ae05924a02a.jpg'),
-(85, 'Yakimeshi mini', 'gramos', 100000.00, 'por_receta', 'ins_68ae061b1175b.jpg'),
-(86, 'Sal con Ajo', 'pieza', 100000.00, 'por_receta', 'ins_68adff6dbf111.jpg'),
-(87, 'Aderezo Chipotle', 'mililitros', 97505.00, 'por_receta', 'ins_68adcabeb1ee9.jpg'),
-(88, 'Mezcla de Horneado', 'gramos', 99600.00, 'por_receta', 'ins_68addaa3e53f7.jpg'),
-(89, 'Aderezo', 'gramos', 99880.00, 'uso_general', 'ins_68adcc0771a3c.jpg'),
-(90, 'Camarón Empanizado', 'gramos', 95820.00, 'por_receta', 'ins_68add1de1aa0e.jpg'),
-(91, 'Pollo Empanizado', 'gramos', 99750.00, 'por_receta', 'ins_68adde81c6be3.jpg'),
-(92, 'Cebollín', 'gramos', 99935.00, 'por_receta', 'ins_68add3e38d04b.jpg'),
-(93, 'Aderezo Cebolla Dul.', 'oz', 100000.00, 'uso_general', 'ins_68adcb8fa562e.jpg'),
-(94, 'Camaron Enchiloso', 'gramos', 99920.00, 'por_receta', 'ins_68add2db69e2e.jpg'),
-(95, 'Pastel chocoflan', 'pieza', 100000.00, 'unidad_completa', 'ins_68adddfa22fe2.jpg'),
-(96, 'Pay de queso', 'pieza', 100000.00, 'unidad_completa', 'ins_68adde4fa8275.jpg'),
-(97, 'Helado tempura', 'pieza', 99999.00, 'unidad_completa', 'ins_68add7e53c6fe.jpg'),
-(98, 'Postre especial', 'pieza', 100000.00, 'unidad_completa', 'ins_68addee98fdf0.jpg'),
-(99, 'Búfalo', 'mililitros', 100000.00, 'no_controlado', 'ins_68adce63dd347.jpg'),
-(101, 'Corona 1/2', 'pieza', 100000.00, 'unidad_completa', 'ins_68add55a1e3b7.jpg'),
-(102, 'Golden Light 1/2', 'pieza', 100000.00, 'unidad_completa', 'ins_68add76481f22.jpg'),
-(103, 'Negra Modelo', 'pieza', 100000.00, 'unidad_completa', 'ins_68addc59c2ea9.jpg'),
-(104, 'Modelo Especial', 'pieza', 100000.00, 'unidad_completa', 'ins_68addb9d59000.jpg'),
-(105, 'Bud Light', 'pieza', 100000.00, 'unidad_completa', 'ins_68adcdf3295e8.jpg'),
-(106, 'Stella Artois', 'pieza', 100000.00, 'unidad_completa', 'ins_68ae0397afb2f.jpg'),
-(107, 'Ultra 1/2', 'pieza', 100000.00, 'unidad_completa', 'ins_68ae05466a8e2.jpg'),
-(108, 'Michelob 1/2', 'pieza', 100000.00, 'unidad_completa', 'ins_68addb2d00c85.jpg'),
-(109, 'Alitas de pollo', 'gramos', 98750.00, 'unidad_completa', 'ins_68adccf5a1147.jpg'),
-(110, 'Ranch', 'mililitros', 100000.00, 'no_controlado', 'ins_68adfcddef7e3.jpg'),
-(111, 'Buffalo', 'gramos', 100000.00, 'no_controlado', ''),
-(112, 'Chichimi', 'gramos', 99996.00, 'no_controlado', 'ins_68add45bdb306.jpg'),
-(113, 'Calpico', 'pieza', 100000.00, 'unidad_completa', 'ins_68add19570673.jpg'),
-(114, 'Vaina de soja', 'gramos', 99850.00, 'uso_general', 'ins_68ae05de869d1.jpg'),
-(115, 'Boneless', 'gramos', 99000.00, 'por_receta', 'ins_68adcdbb6b5b4.jpg'),
-(116, 'Agua members', 'pieza', 100000.00, 'unidad_completa', 'ins_68adcc5feaee1.jpg'),
-(117, 'Agua mineral', 'pieza', 100000.00, 'unidad_completa', 'ins_68adcca85ae2c.jpg'),
-(118, 'Cilantro', 'gramos', 100000.00, 'por_receta', 'ins_68add4edab118.jpg'),
-(119, 'Té de jazmin', 'mililitros', 55000.00, 'por_receta', 'ins_68ae0474dfc36.jpg'),
-(120, 'bolsa camiseta 35x60', 'kilo', 100000.00, 'unidad_completa', ''),
-(121, 'bolsa camiseta 25x50', 'kilo', 100000.00, 'unidad_completa', ''),
-(122, 'bolsa camiseta 25x40', 'kilo', 100000.00, 'unidad_completa', ''),
-(123, 'bolsa poliseda 15x25', 'rollo', 100000.00, 'unidad_completa', ''),
-(124, 'bolsa rollo 20x30', 'rollo', 100000.00, 'unidad_completa', ''),
-(125, 'bowls cpp1911-3', 'pieza', 100000.00, 'unidad_completa', ''),
-(126, 'bowls cpp20', 'pieza', 100000.00, 'unidad_completa', ''),
-(127, 'bowls cpp1911-3 tapa', 'pieza', 100000.00, 'unidad_completa', ''),
-(128, 'bowls cpp20 tapa', 'pieza', 100000.00, 'unidad_completa', ''),
-(129, 'baso termico 1l', 'piza', 100000.00, 'unidad_completa', ''),
-(130, 'bisagra 22x22', 'pieza', 100000.00, 'unidad_completa', ''),
-(131, 'servilleta', 'paquete', 100000.00, 'unidad_completa', ''),
-(132, 'Papel aluminio 400', 'pieza', 100000.00, 'unidad_completa', ''),
-(133, 'Vitafilim 14', 'rollo', 100000.00, 'unidad_completa', ''),
-(134, 'guante vinil', 'caja', 100000.00, 'unidad_completa', ''),
-(135, 'Popote 26cm', 'pieza', 100000.00, 'unidad_completa', ''),
-(136, 'Bolsa papel x 100pz', 'paquete', 100000.00, 'unidad_completa', ''),
-(137, 'rollo impresora mediano', 'rollo', 100000.00, 'unidad_completa', ''),
-(138, 'rollo impresora grande', 'rollo', 100000.00, 'unidad_completa', ''),
-(139, 'tenedor fantasy mediano 25pz', 'paquete', 100000.00, 'unidad_completa', ''),
-(140, 'Bolsa basura 90x120 negra', 'bulto', 100000.00, 'unidad_completa', ''),
-(141, 'Ts2', 'tira', 100000.00, 'unidad_completa', ''),
-(142, 'Ts1', 'tira', 100000.00, 'unidad_completa', ''),
-(143, 'TS200', 'tira', 100000.00, 'unidad_completa', ''),
-(144, 'S100', 'tira', 100000.00, 'unidad_completa', ''),
-(145, 'Pet 1l c/tapa', 'bulto', 100000.00, 'unidad_completa', ''),
-(146, 'Pet 1/2l c/tapa', 'pieza', 100000.00, 'unidad_completa', ''),
-(147, 'Cuchara mediana fantasy 50pz', 'paquete', 100000.00, 'unidad_completa', ''),
-(148, 'Charola 8x8', 'pieza', 100000.00, 'unidad_completa', ''),
-(149, 'Charola 6x6', 'pieza', 100000.00, 'unidad_completa', ''),
-(150, 'Charola 8x8 negra', 'pieza', 100000.00, 'unidad_completa', ''),
-(151, 'Charola 6x6 negra', 'pieza', 100000.00, 'unidad_completa', ''),
-(152, 'Polipapel', 'kilo', 100000.00, 'unidad_completa', ''),
-(153, 'Charola pastelera', 'pieza', 100000.00, 'unidad_completa', ''),
-(154, 'Papel secante', 'pieza', 100000.00, 'unidad_completa', ''),
-(155, 'Papel rollo higienico', 'pieza', 100000.00, 'unidad_completa', ''),
-(156, 'Fabuloso 20l', 'bidon', 100000.00, 'unidad_completa', ''),
-(157, 'Desengrasante 20l', 'bidon', 100000.00, 'unidad_completa', ''),
-(158, 'Cloro 20l', 'bidon', 100000.00, 'unidad_completa', ''),
-(159, 'Iorizante 20l', 'bidon', 100000.00, 'unidad_completa', ''),
-(160, 'Windex 20l', 'bidon', 100000.00, 'unidad_completa', ''),
-(161, 'quitacochambre 1l', 'litro', 100000.00, 'unidad_completa', ''),
-(162, 'Fibra metal', 'pieza', 100000.00, 'unidad_completa', ''),
-(163, 'Esponja', 'pieza', 100000.00, 'unidad_completa', ''),
-(164, 'Escoba', 'pieza', 100000.00, 'unidad_completa', ''),
-(165, 'Recogedor', 'pieza', 100000.00, 'unidad_completa', ''),
-(166, 'Trapeador', 'pieza', 100000.00, 'unidad_completa', ''),
-(167, 'Cubeta 16l', 'pieza', 100000.00, 'unidad_completa', ''),
-(168, 'Sanitas', 'paquete', 100000.00, 'unidad_completa', ''),
-(169, 'Jabon polvo 9k', 'bulto', 100000.00, 'unidad_completa', ''),
-(170, 'Shampoo trastes 20l', 'bidon', 100000.00, 'unidad_completa', ''),
-(171, 'Jaladores', 'pieza', 100000.00, 'unidad_completa', ''),
-(172, 'Cofia', 'pieza', 100000.00, 'unidad_completa', ''),
-(173, 'Trapo', 'pieza', 100000.00, 'unidad_completa', ''),
-(174, 'Sambal', 'mililitros', 99940.00, 'por_receta', ''),
-(175, 'Lemon pepper', 'gramos', 100000.00, 'por_receta', ''),
-(176, 'Consomé', 'gramos', 99990.00, 'por_receta', ''),
-(177, 'Ejote', 'gramos', 99940.00, 'por_receta', ''),
-(178, 'Chili bean', 'gramos', 100000.00, 'por_receta', ''),
-(179, 'Ajinomoto', 'gramos', 100000.00, 'por_receta', ''),
-(180, 'Salsa Yakimeshi', 'mililitros', 99880.00, 'no_controlado', ''),
-(181, 'Papas a la francesa (porción kid)', 'porción', 100000.00, 'unidad_completa', ''),
-(182, 'Cacahuate', 'gramos', 100000.00, 'por_receta', ''),
-(183, 'Boneless (porción)', 'porción', 100000.00, 'unidad_completa', ''),
-(184, 'Liner', 'pieza', 100000.00, 'unidad_completa', ''),
-(185, 'Capeador General', 'mililitros', 100000.00, 'no_controlado', ''),
-(186, 'Ajo', 'gramos', 100000.00, 'por_receta', ''),
-(187, 'Jengibre', 'gramos', 100000.00, 'por_receta', ''),
-(188, 'Hoisin', 'gramos', 100000.00, 'por_receta', ''),
-(189, 'Col morada', 'gramos', 99970.00, 'por_receta', ''),
-(190, 'Champiñon', 'kilo', 99940.00, 'uso_general', ''),
-(191, 'Rabano', 'kilo', 99999.94, 'por_receta', '');
+INSERT INTO `insumos` (`id`, `sede_id`, `nombre`, `unidad`, `existencia`, `tipo_control`, `imagen`) VALUES
+(1, 1, 'Arroz', 'gramos', 76129.25, 'por_receta', 'ins_68717301313ad.jpg'),
+(2, 1, 'Alga', 'piezas', 99939.00, 'por_receta', 'ins_6871716a72681.jpg'),
+(3, 1, 'Salmón fresco', 'gramos', 100000.00, 'por_receta', 'ins_6871777fa2c56.png'),
+(4, 1, 'Refresco en lata', 'piezas', 100000.00, 'unidad_completa', 'ins_6871731d075cb.webp'),
+(7, 1, 'Surimi', 'gramos', 99740.00, 'uso_general', 'ins_688a521dcd583.jpg'),
+(8, 1, 'Tocino', 'gramos', 99635.00, 'uso_general', 'ins_688a4dc84c002.jpg'),
+(9, 1, 'Pollo', 'gramos', 99085.00, 'desempaquetado', 'ins_688a4e4bd5999.jpg'),
+(10, 1, 'Camarón', 'gramos', 98425.00, 'desempaquetado', 'ins_688a4f5c873c6.jpg'),
+(11, 1, 'Queso Chihuahua', 'gramos', 100000.00, 'unidad_completa', 'ins_688a4feca9865.jpg'),
+(12, 1, 'Philadelphia', 'gramos', 96625.00, 'uso_general', 'ins_688a504f9cb40.jpg'),
+(13, 1, 'Arroz blanco', 'gramos', 100000.00, 'por_receta', 'ins_689f82d674c65.jpg'),
+(14, 1, 'Carne', 'gramos', 98180.00, 'uso_general', 'ins_688a528d1261a.jpg'),
+(15, 1, 'Queso Amarillo', 'piezas', 100000.00, 'uso_general', 'ins_688a53246c1c2.jpg'),
+(16, 1, 'Ajonjolí', 'gramos', 99952.00, 'uso_general', 'ins_689f824a23343.jpg'),
+(17, 1, 'Panko', 'gramos', 100000.00, 'por_receta', 'ins_688a53da64b5f.jpg'),
+(18, 1, 'Salsa tampico', 'mililitros', 100000.00, 'no_controlado', 'ins_688a54cf1872b.jpg'),
+(19, 1, 'Anguila', 'oz', 99948.00, 'por_receta', 'ins_689f828638aa9.jpg'),
+(20, 1, 'BBQ', 'oz', 100000.00, 'no_controlado', 'ins_688a557431fce.jpg'),
+(21, 1, 'Serrano', 'gramos', 99960.00, 'uso_general', 'ins_688a55c66f09d.jpg'),
+(22, 1, 'Chile Morrón', 'gramos', 99980.00, 'por_receta', 'ins_688a5616e8f25.jpg'),
+(23, 1, 'Kanikama', 'gramos', 100000.00, 'por_receta', 'ins_688a5669e24a8.jpg'),
+(24, 1, 'Aguacate', 'gramos', 96645.00, 'por_receta', 'ins_689f8254c2e71.jpg'),
+(25, 1, 'Dedos de queso', 'pieza', 99998.00, 'unidad_completa', 'ins_688a56fda3221.jpg'),
+(26, 1, 'Mango', 'gramos', 100000.00, 'por_receta', 'ins_688a573c762f4.jpg'),
+(27, 1, 'Tostadas', 'pieza', 100000.00, 'uso_general', 'ins_688a57a499b35.jpg'),
+(28, 1, 'Papa', 'gramos', 100000.00, 'por_receta', 'ins_688a580061ffd.jpg'),
+(29, 1, 'Cebolla Morada', 'gramos', 100000.00, 'por_receta', 'ins_688a5858752a0.jpg'),
+(30, 1, 'Salsa de soya', 'mililitros', 99940.00, 'no_controlado', 'ins_688a58cc6cb6c.jpg'),
+(31, 1, 'Naranja', 'gramos', 100000.00, 'por_receta', 'ins_688a590bca275.jpg'),
+(32, 1, 'Chile Caribe', 'gramos', 99990.00, 'por_receta', 'ins_688a59836c32e.jpg'),
+(33, 1, 'Pulpo', 'gramos', 99920.00, 'por_receta', 'ins_688a59c9a1d0b.jpg'),
+(34, 1, 'Zanahoria', 'gramos', 99835.00, 'por_receta', 'ins_688a5a0a3a959.jpg'),
+(35, 1, 'Apio', 'gramos', 99970.00, 'por_receta', 'ins_688a5a52af990.jpg'),
+(36, 1, 'Pepino', 'gramos', 95850.00, 'uso_general', 'ins_688a5aa0cbaf5.jpg'),
+(37, 1, 'Masago', 'gramos', 100000.00, 'por_receta', 'ins_688a5b3f0dca6.jpg'),
+(38, 1, 'Nuez de la india', 'gramos', 99990.00, 'por_receta', 'ins_688a5be531e11.jpg'),
+(39, 1, 'Cátsup', 'mililitros', 100000.00, 'por_receta', 'ins_688a5c657eb83.jpg'),
+(40, 1, 'Atún fresco', 'gramos', 100000.00, 'por_receta', 'ins_688a5ce18adc5.jpg'),
+(41, 1, 'Callo almeja', 'gramos', 100000.00, 'por_receta', 'ins_688a5d28de8a5.jpg'),
+(42, 1, 'Calabacin', 'gramos', 100000.00, 'por_receta', 'ins_688a5d6b2bca1.jpg'),
+(43, 1, 'Fideo chino transparente', 'gramos', 100000.00, 'por_receta', 'ins_688a5dd3b406d.jpg'),
+(44, 1, 'Brócoli', 'gramos', 99980.00, 'por_receta', 'ins_688a5e2736870.jpg'),
+(45, 1, 'Chile de árbol', 'gramos', 99969.80, 'por_receta', 'ins_688a5e6f08ccd.jpg'),
+(46, 1, 'Pasta udon', 'gramos', 100000.00, 'por_receta', 'ins_688a5eb627f38.jpg'),
+(47, 1, 'Huevo', 'pieza', 99990.00, 'por_receta', 'ins_688a5ef9b575e.jpg'),
+(48, 1, 'Cerdo', 'gramos', 99990.00, 'por_receta', 'ins_688a5f3915f5e.jpg'),
+(49, 1, 'Masa para gyozas', 'pieza', 100000.00, 'por_receta', 'ins_688a5fae2e7f1.jpg'),
+(50, 1, 'Naruto', 'gramos', 99990.00, 'por_receta', 'ins_688a5ff57f62d.jpg'),
+(51, 1, 'Atún ahumado', 'gramos', 99860.00, 'por_receta', 'ins_68adcd62c5a19.jpg'),
+(52, 1, 'Cacahuate con salsa (salado)', 'gramos', 100000.00, 'por_receta', 'ins_68adcf253bd1d.jpg'),
+(53, 1, 'Calabaza', 'gramos', 99830.00, 'por_receta', 'ins_68add0ff781fb.jpg'),
+(54, 1, 'Camarón gigante para pelar', 'pieza', 99992.00, 'por_receta', 'ins_68add3264c465.jpg'),
+(55, 1, 'Cebolla', 'gramos', 99909.80, 'por_receta', 'ins_68add38beff59.jpg'),
+(56, 1, 'Chile en polvo', 'gramos', 100000.00, 'por_receta', 'ins_68add4a750a0e.jpg'),
+(57, 1, 'Coliflor', 'gramos', 99980.00, 'por_receta', 'ins_68add5291130e.jpg'),
+(59, 1, 'Dedos de surimi', 'pieza', 99918.00, 'unidad_completa', 'ins_68add5c575fbb.jpg'),
+(60, 1, 'Fideos', 'gramos', 99700.00, 'por_receta', 'ins_68add629d094b.jpg'),
+(61, 1, 'Fondo de res', 'mililitros', 98490.00, 'no_controlado', 'ins_68add68d317d5.jpg'),
+(62, 1, 'Gravy Naranja', 'oz', 100000.00, 'no_controlado', 'ins_68add7bb461b3.jpg'),
+(63, 1, 'Salsa Aguachil', 'oz', 100000.00, 'no_controlado', 'ins_68ae000034b31.jpg'),
+(64, 1, 'Julianas de zanahoria', 'gramos', 99940.00, 'por_receta', 'ins_68add82c9c245.jpg'),
+(65, 1, 'Limón', 'gramos', 99935.00, 'por_receta', 'ins_68add890ee640.jpg'),
+(66, 1, 'Queso Mix', 'gramos', 99240.00, 'uso_general', 'ins_68ade1625f489.jpg'),
+(67, 1, 'Morrón', 'gramos', 100000.00, 'por_receta', 'ins_68addcbc6d15a.jpg'),
+(69, 1, 'Pasta chukasoba', 'gramos', 99850.00, 'por_receta', 'ins_68addd277fde6.jpg'),
+(70, 1, 'Pasta frita', 'gramos', 99990.00, 'por_receta', 'ins_68addd91a005e.jpg'),
+(71, 1, 'Queso crema', 'gramos', 100000.00, 'uso_general', 'ins_68ade11cdadcb.jpg'),
+(72, 1, 'Refresco embotellado', 'pieza', 100000.00, 'unidad_completa', 'ins_68adfdd53f04e.jpg'),
+(73, 1, 'res', 'gramos', 99950.00, 'uso_general', 'ins_68adfe2e49580.jpg'),
+(74, 1, 'Rodajas de naranja', 'gramos', 100000.00, 'por_receta', 'ins_68adfeccd68d8.jpg'),
+(75, 1, 'Salmón', 'gramos', 100000.00, 'por_receta', 'ins_68adffa2a2db0.jpg'),
+(76, 1, 'Salsa de anguila', 'mililitros', 99980.00, 'no_controlado', 'ins_68ae005f1b3cd.jpg'),
+(77, 1, 'Salsa teriyaki (dulce)', 'mililitros', 99980.00, 'no_controlado', 'ins_68ae00c53121a.jpg'),
+(78, 1, 'Salsas orientales', 'mililitros', 99970.00, 'no_controlado', 'ins_68ae01341e7b1.jpg'),
+(79, 1, 'Shisimi', 'gramos', 100000.00, 'uso_general', 'ins_68ae018d22a63.jpg'),
+(80, 1, 'Siracha', 'mililitros', 99895.00, 'no_controlado', 'ins_68ae03413da26.jpg'),
+(81, 1, 'Tampico', 'mililitros', 98480.00, 'uso_general', 'ins_68ae03f65bd71.jpg'),
+(82, 1, 'Tortilla de harina', 'pieza', 99990.00, 'unidad_completa', 'ins_68ae04b46d24a.jpg'),
+(83, 1, 'Tostada', 'pieza', 100000.00, 'unidad_completa', 'ins_68ae05924a02a.jpg'),
+(85, 1, 'Yakimeshi mini', 'gramos', 100000.00, 'por_receta', 'ins_68ae061b1175b.jpg'),
+(86, 1, 'Sal con Ajo', 'pieza', 100000.00, 'por_receta', 'ins_68adff6dbf111.jpg'),
+(87, 1, 'Aderezo Chipotle', 'mililitros', 96905.00, 'por_receta', 'ins_68adcabeb1ee9.jpg'),
+(88, 1, 'Mezcla de Horneado', 'gramos', 99600.00, 'por_receta', 'ins_68addaa3e53f7.jpg'),
+(89, 1, 'Aderezo', 'gramos', 99880.00, 'uso_general', 'ins_68adcc0771a3c.jpg'),
+(90, 1, 'Camarón Empanizado', 'gramos', 94620.00, 'por_receta', 'ins_68add1de1aa0e.jpg'),
+(91, 1, 'Pollo Empanizado', 'gramos', 99750.00, 'por_receta', 'ins_68adde81c6be3.jpg'),
+(92, 1, 'Cebollín', 'gramos', 99935.00, 'por_receta', 'ins_68add3e38d04b.jpg'),
+(93, 1, 'Aderezo Cebolla Dul.', 'oz', 100000.00, 'uso_general', 'ins_68adcb8fa562e.jpg'),
+(94, 1, 'Camaron Enchiloso', 'gramos', 99920.00, 'por_receta', 'ins_68add2db69e2e.jpg'),
+(95, 1, 'Pastel chocoflan', 'pieza', 100000.00, 'unidad_completa', 'ins_68adddfa22fe2.jpg'),
+(96, 1, 'Pay de queso', 'pieza', 100000.00, 'unidad_completa', 'ins_68adde4fa8275.jpg'),
+(97, 1, 'Helado tempura', 'pieza', 99999.00, 'unidad_completa', 'ins_68add7e53c6fe.jpg'),
+(98, 1, 'Postre especial', 'pieza', 100000.00, 'unidad_completa', 'ins_68addee98fdf0.jpg'),
+(99, 1, 'Búfalo', 'mililitros', 100000.00, 'no_controlado', 'ins_68adce63dd347.jpg'),
+(101, 1, 'Corona 1/2', 'pieza', 100000.00, 'unidad_completa', 'ins_68add55a1e3b7.jpg'),
+(102, 1, 'Golden Light 1/2', 'pieza', 100000.00, 'unidad_completa', 'ins_68add76481f22.jpg'),
+(103, 1, 'Negra Modelo', 'pieza', 100000.00, 'unidad_completa', 'ins_68addc59c2ea9.jpg'),
+(104, 1, 'Modelo Especial', 'pieza', 100000.00, 'unidad_completa', 'ins_68addb9d59000.jpg'),
+(105, 1, 'Bud Light', 'pieza', 100000.00, 'unidad_completa', 'ins_68adcdf3295e8.jpg'),
+(106, 1, 'Stella Artois', 'pieza', 100000.00, 'unidad_completa', 'ins_68ae0397afb2f.jpg'),
+(107, 1, 'Ultra 1/2', 'pieza', 100000.00, 'unidad_completa', 'ins_68ae05466a8e2.jpg'),
+(108, 1, 'Michelob 1/2', 'pieza', 100000.00, 'unidad_completa', 'ins_68addb2d00c85.jpg'),
+(109, 1, 'Alitas de pollo', 'gramos', 98750.00, 'unidad_completa', 'ins_68adccf5a1147.jpg'),
+(110, 1, 'Ranch', 'mililitros', 100000.00, 'no_controlado', 'ins_68adfcddef7e3.jpg'),
+(111, 1, 'Buffalo', 'gramos', 100000.00, 'no_controlado', ''),
+(112, 1, 'Chichimi', 'gramos', 99996.00, 'no_controlado', 'ins_68add45bdb306.jpg'),
+(113, 1, 'Calpico', 'pieza', 100000.00, 'unidad_completa', 'ins_68add19570673.jpg'),
+(114, 1, 'Vaina de soja', 'gramos', 99850.00, 'uso_general', 'ins_68ae05de869d1.jpg'),
+(115, 1, 'Boneless', 'gramos', 99000.00, 'por_receta', 'ins_68adcdbb6b5b4.jpg'),
+(116, 1, 'Agua members', 'pieza', 100000.00, 'unidad_completa', 'ins_68adcc5feaee1.jpg'),
+(117, 1, 'Agua mineral', 'pieza', 100000.00, 'unidad_completa', 'ins_68adcca85ae2c.jpg'),
+(118, 1, 'Cilantro', 'gramos', 100000.00, 'por_receta', 'ins_68add4edab118.jpg'),
+(119, 1, 'Té de jazmin', 'mililitros', 55000.00, 'por_receta', 'ins_68ae0474dfc36.jpg'),
+(120, 1, 'bolsa camiseta 35x60', 'kilo', 100000.00, 'unidad_completa', ''),
+(121, 1, 'bolsa camiseta 25x50', 'kilo', 100000.00, 'unidad_completa', ''),
+(122, 1, 'bolsa camiseta 25x40', 'kilo', 100000.00, 'unidad_completa', ''),
+(123, 1, 'bolsa poliseda 15x25', 'rollo', 100000.00, 'unidad_completa', ''),
+(124, 1, 'bolsa rollo 20x30', 'rollo', 100000.00, 'unidad_completa', ''),
+(125, 1, 'bowls cpp1911-3', 'pieza', 100000.00, 'unidad_completa', ''),
+(126, 1, 'bowls cpp20', 'pieza', 100000.00, 'unidad_completa', ''),
+(127, 1, 'bowls cpp1911-3 tapa', 'pieza', 100000.00, 'unidad_completa', ''),
+(128, 1, 'bowls cpp20 tapa', 'pieza', 100000.00, 'unidad_completa', ''),
+(129, 1, 'baso termico 1l', 'piza', 100000.00, 'unidad_completa', ''),
+(130, 1, 'bisagra 22x22', 'pieza', 100000.00, 'unidad_completa', ''),
+(131, 1, 'servilleta', 'paquete', 100000.00, 'unidad_completa', ''),
+(132, 1, 'Papel aluminio 400', 'pieza', 100000.00, 'unidad_completa', ''),
+(133, 1, 'Vitafilim 14', 'rollo', 100000.00, 'unidad_completa', ''),
+(134, 1, 'guante vinil', 'caja', 100000.00, 'unidad_completa', ''),
+(135, 1, 'Popote 26cm', 'pieza', 100000.00, 'unidad_completa', ''),
+(136, 1, 'Bolsa papel x 100pz', 'paquete', 100000.00, 'unidad_completa', ''),
+(137, 1, 'rollo impresora mediano', 'rollo', 100000.00, 'unidad_completa', ''),
+(138, 1, 'rollo impresora grande', 'rollo', 100000.00, 'unidad_completa', ''),
+(139, 1, 'tenedor fantasy mediano 25pz', 'paquete', 100000.00, 'unidad_completa', ''),
+(140, 1, 'Bolsa basura 90x120 negra', 'bulto', 100000.00, 'unidad_completa', ''),
+(141, 1, 'Ts2', 'tira', 100000.00, 'unidad_completa', ''),
+(142, 1, 'Ts1', 'tira', 100000.00, 'unidad_completa', ''),
+(143, 1, 'TS200', 'tira', 100000.00, 'unidad_completa', ''),
+(144, 1, 'S100', 'tira', 100000.00, 'unidad_completa', ''),
+(145, 1, 'Pet 1l c/tapa', 'bulto', 100000.00, 'unidad_completa', ''),
+(146, 1, 'Pet 1/2l c/tapa', 'pieza', 100000.00, 'unidad_completa', ''),
+(147, 1, 'Cuchara mediana fantasy 50pz', 'paquete', 100000.00, 'unidad_completa', ''),
+(148, 1, 'Charola 8x8', 'pieza', 100000.00, 'unidad_completa', ''),
+(149, 1, 'Charola 6x6', 'pieza', 100000.00, 'unidad_completa', ''),
+(150, 1, 'Charola 8x8 negra', 'pieza', 100000.00, 'unidad_completa', ''),
+(151, 1, 'Charola 6x6 negra', 'pieza', 100000.00, 'unidad_completa', ''),
+(152, 1, 'Polipapel', 'kilo', 100000.00, 'unidad_completa', ''),
+(153, 1, 'Charola pastelera', 'pieza', 100000.00, 'unidad_completa', ''),
+(154, 1, 'Papel secante', 'pieza', 100000.00, 'unidad_completa', ''),
+(155, 1, 'Papel rollo higienico', 'pieza', 100000.00, 'unidad_completa', ''),
+(156, 1, 'Fabuloso 20l', 'bidon', 100000.00, 'unidad_completa', ''),
+(157, 1, 'Desengrasante 20l', 'bidon', 100000.00, 'unidad_completa', ''),
+(158, 1, 'Cloro 20l', 'bidon', 100000.00, 'unidad_completa', ''),
+(159, 1, 'Iorizante 20l', 'bidon', 100000.00, 'unidad_completa', ''),
+(160, 1, 'Windex 20l', 'bidon', 100000.00, 'unidad_completa', ''),
+(161, 1, 'quitacochambre 1l', 'litro', 100000.00, 'unidad_completa', ''),
+(162, 1, 'Fibra metal', 'pieza', 100000.00, 'unidad_completa', ''),
+(163, 1, 'Esponja', 'pieza', 100000.00, 'unidad_completa', ''),
+(164, 1, 'Escoba', 'pieza', 100000.00, 'unidad_completa', ''),
+(165, 1, 'Recogedor', 'pieza', 100000.00, 'unidad_completa', ''),
+(166, 1, 'Trapeador', 'pieza', 100000.00, 'unidad_completa', ''),
+(167, 1, 'Cubeta 16l', 'pieza', 100000.00, 'unidad_completa', ''),
+(168, 1, 'Sanitas', 'paquete', 100000.00, 'unidad_completa', ''),
+(169, 1, 'Jabon polvo 9k', 'bulto', 100000.00, 'unidad_completa', ''),
+(170, 1, 'Shampoo trastes 20l', 'bidon', 100000.00, 'unidad_completa', ''),
+(171, 1, 'Jaladores', 'pieza', 100000.00, 'unidad_completa', ''),
+(172, 1, 'Cofia', 'pieza', 100000.00, 'unidad_completa', ''),
+(173, 1, 'Trapo', 'pieza', 100000.00, 'unidad_completa', ''),
+(174, 1, 'Sambal', 'mililitros', 99940.00, 'por_receta', ''),
+(175, 1, 'Lemon pepper', 'gramos', 100000.00, 'por_receta', ''),
+(176, 1, 'Consomé', 'gramos', 99990.00, 'por_receta', ''),
+(177, 1, 'Ejote', 'gramos', 99940.00, 'por_receta', ''),
+(178, 1, 'Chili bean', 'gramos', 100000.00, 'por_receta', ''),
+(179, 1, 'Ajinomoto', 'gramos', 100000.00, 'por_receta', ''),
+(180, 1, 'Salsa Yakimeshi', 'mililitros', 99880.00, 'no_controlado', ''),
+(181, 1, 'Papas a la francesa (porción kid)', 'porción', 100000.00, 'unidad_completa', ''),
+(182, 1, 'Cacahuate', 'gramos', 100000.00, 'por_receta', ''),
+(183, 1, 'Boneless (porción)', 'porción', 100000.00, 'unidad_completa', ''),
+(184, 1, 'Liner', 'pieza', 100000.00, 'unidad_completa', ''),
+(185, 1, 'Capeador General', 'mililitros', 100000.00, 'no_controlado', ''),
+(186, 1, 'Ajo', 'gramos', 100000.00, 'por_receta', ''),
+(187, 1, 'Jengibre', 'gramos', 100000.00, 'por_receta', ''),
+(188, 1, 'Hoisin', 'gramos', 100000.00, 'por_receta', ''),
+(189, 1, 'Col morada', 'gramos', 99970.00, 'por_receta', ''),
+(190, 1, 'Champiñon', 'kilo', 99940.00, 'uso_general', ''),
+(191, 1, 'Rabano', 'kilo', 99999.94, 'por_receta', ''),
+(192, 2, 'Arroz', 'gramos', 76129.25, 'por_receta', 'ins_68717301313ad.jpg'),
+(193, 2, 'Alga', 'piezas', 99939.00, 'por_receta', 'ins_6871716a72681.jpg'),
+(194, 2, 'Salmón fresco', 'gramos', 100000.00, 'por_receta', 'ins_6871777fa2c56.png'),
+(195, 2, 'Refresco en lata', 'piezas', 100000.00, 'unidad_completa', 'ins_6871731d075cb.webp'),
+(196, 2, 'Surimi', 'gramos', 99740.00, 'uso_general', 'ins_688a521dcd583.jpg'),
+(197, 2, 'Tocino', 'gramos', 99635.00, 'uso_general', 'ins_688a4dc84c002.jpg'),
+(198, 2, 'Pollo', 'gramos', 99085.00, 'desempaquetado', 'ins_688a4e4bd5999.jpg'),
+(199, 2, 'Camarón', 'gramos', 98425.00, 'desempaquetado', 'ins_688a4f5c873c6.jpg'),
+(200, 2, 'Queso Chihuahua', 'gramos', 100000.00, 'unidad_completa', 'ins_688a4feca9865.jpg'),
+(201, 2, 'Philadelphia', 'gramos', 96625.00, 'uso_general', 'ins_688a504f9cb40.jpg'),
+(202, 2, 'Arroz blanco', 'gramos', 100000.00, 'por_receta', 'ins_689f82d674c65.jpg'),
+(203, 2, 'Carne', 'gramos', 98180.00, 'uso_general', 'ins_688a528d1261a.jpg'),
+(204, 2, 'Queso Amarillo', 'piezas', 100000.00, 'uso_general', 'ins_688a53246c1c2.jpg'),
+(205, 2, 'Ajonjolí', 'gramos', 99952.00, 'uso_general', 'ins_689f824a23343.jpg'),
+(206, 2, 'Panko', 'gramos', 100000.00, 'por_receta', 'ins_688a53da64b5f.jpg'),
+(207, 2, 'Salsa tampico', 'mililitros', 100000.00, 'no_controlado', 'ins_688a54cf1872b.jpg'),
+(208, 2, 'Anguila', 'oz', 99948.00, 'por_receta', 'ins_689f828638aa9.jpg'),
+(209, 2, 'BBQ', 'oz', 100000.00, 'no_controlado', 'ins_688a557431fce.jpg'),
+(210, 2, 'Serrano', 'gramos', 99960.00, 'uso_general', 'ins_688a55c66f09d.jpg'),
+(211, 2, 'Chile Morrón', 'gramos', 99980.00, 'por_receta', 'ins_688a5616e8f25.jpg'),
+(212, 2, 'Kanikama', 'gramos', 100000.00, 'por_receta', 'ins_688a5669e24a8.jpg'),
+(213, 2, 'Aguacate', 'gramos', 96645.00, 'por_receta', 'ins_689f8254c2e71.jpg'),
+(214, 2, 'Dedos de queso', 'pieza', 99998.00, 'unidad_completa', 'ins_688a56fda3221.jpg'),
+(215, 2, 'Mango', 'gramos', 100000.00, 'por_receta', 'ins_688a573c762f4.jpg'),
+(216, 2, 'Tostadas', 'pieza', 100000.00, 'uso_general', 'ins_688a57a499b35.jpg'),
+(217, 2, 'Papa', 'gramos', 100000.00, 'por_receta', 'ins_688a580061ffd.jpg'),
+(218, 2, 'Cebolla Morada', 'gramos', 100000.00, 'por_receta', 'ins_688a5858752a0.jpg'),
+(219, 2, 'Salsa de soya', 'mililitros', 99940.00, 'no_controlado', 'ins_688a58cc6cb6c.jpg'),
+(220, 2, 'Naranja', 'gramos', 100000.00, 'por_receta', 'ins_688a590bca275.jpg'),
+(221, 2, 'Chile Caribe', 'gramos', 99990.00, 'por_receta', 'ins_688a59836c32e.jpg'),
+(222, 2, 'Pulpo', 'gramos', 99920.00, 'por_receta', 'ins_688a59c9a1d0b.jpg'),
+(223, 2, 'Zanahoria', 'gramos', 99835.00, 'por_receta', 'ins_688a5a0a3a959.jpg'),
+(224, 2, 'Apio', 'gramos', 99970.00, 'por_receta', 'ins_688a5a52af990.jpg'),
+(225, 2, 'Pepino', 'gramos', 95850.00, 'uso_general', 'ins_688a5aa0cbaf5.jpg'),
+(226, 2, 'Masago', 'gramos', 100000.00, 'por_receta', 'ins_688a5b3f0dca6.jpg'),
+(227, 2, 'Nuez de la india', 'gramos', 99990.00, 'por_receta', 'ins_688a5be531e11.jpg'),
+(228, 2, 'Cátsup', 'mililitros', 100000.00, 'por_receta', 'ins_688a5c657eb83.jpg'),
+(229, 2, 'Atún fresco', 'gramos', 100000.00, 'por_receta', 'ins_688a5ce18adc5.jpg'),
+(230, 2, 'Callo almeja', 'gramos', 100000.00, 'por_receta', 'ins_688a5d28de8a5.jpg'),
+(231, 2, 'Calabacin', 'gramos', 100000.00, 'por_receta', 'ins_688a5d6b2bca1.jpg'),
+(232, 2, 'Fideo chino transparente', 'gramos', 100000.00, 'por_receta', 'ins_688a5dd3b406d.jpg'),
+(233, 2, 'Brócoli', 'gramos', 99980.00, 'por_receta', 'ins_688a5e2736870.jpg'),
+(234, 2, 'Chile de árbol', 'gramos', 99969.80, 'por_receta', 'ins_688a5e6f08ccd.jpg'),
+(235, 2, 'Pasta udon', 'gramos', 100000.00, 'por_receta', 'ins_688a5eb627f38.jpg'),
+(236, 2, 'Huevo', 'pieza', 99990.00, 'por_receta', 'ins_688a5ef9b575e.jpg'),
+(237, 2, 'Cerdo', 'gramos', 99990.00, 'por_receta', 'ins_688a5f3915f5e.jpg'),
+(238, 2, 'Masa para gyozas', 'pieza', 100000.00, 'por_receta', 'ins_688a5fae2e7f1.jpg'),
+(239, 2, 'Naruto', 'gramos', 99990.00, 'por_receta', 'ins_688a5ff57f62d.jpg'),
+(240, 2, 'Atún ahumado', 'gramos', 99860.00, 'por_receta', 'ins_68adcd62c5a19.jpg'),
+(241, 2, 'Cacahuate con salsa (salado)', 'gramos', 100000.00, 'por_receta', 'ins_68adcf253bd1d.jpg'),
+(242, 2, 'Calabaza', 'gramos', 99830.00, 'por_receta', 'ins_68add0ff781fb.jpg'),
+(243, 2, 'Camarón gigante para pelar', 'pieza', 99992.00, 'por_receta', 'ins_68add3264c465.jpg'),
+(244, 2, 'Cebolla', 'gramos', 99909.80, 'por_receta', 'ins_68add38beff59.jpg'),
+(245, 2, 'Chile en polvo', 'gramos', 100000.00, 'por_receta', 'ins_68add4a750a0e.jpg'),
+(246, 2, 'Coliflor', 'gramos', 99980.00, 'por_receta', 'ins_68add5291130e.jpg'),
+(247, 2, 'Dedos de surimi', 'pieza', 99918.00, 'unidad_completa', 'ins_68add5c575fbb.jpg'),
+(248, 2, 'Fideos', 'gramos', 99700.00, 'por_receta', 'ins_68add629d094b.jpg'),
+(249, 2, 'Fondo de res', 'mililitros', 98490.00, 'no_controlado', 'ins_68add68d317d5.jpg'),
+(250, 2, 'Gravy Naranja', 'oz', 100000.00, 'no_controlado', 'ins_68add7bb461b3.jpg'),
+(251, 2, 'Salsa Aguachil', 'oz', 100000.00, 'no_controlado', 'ins_68ae000034b31.jpg'),
+(252, 2, 'Julianas de zanahoria', 'gramos', 99940.00, 'por_receta', 'ins_68add82c9c245.jpg'),
+(253, 2, 'Limón', 'gramos', 99935.00, 'por_receta', 'ins_68add890ee640.jpg'),
+(254, 2, 'Queso Mix', 'gramos', 99240.00, 'uso_general', 'ins_68ade1625f489.jpg'),
+(255, 2, 'Morrón', 'gramos', 100000.00, 'por_receta', 'ins_68addcbc6d15a.jpg'),
+(256, 2, 'Pasta chukasoba', 'gramos', 99850.00, 'por_receta', 'ins_68addd277fde6.jpg'),
+(257, 2, 'Pasta frita', 'gramos', 99990.00, 'por_receta', 'ins_68addd91a005e.jpg'),
+(258, 2, 'Queso crema', 'gramos', 100000.00, 'uso_general', 'ins_68ade11cdadcb.jpg'),
+(259, 2, 'Refresco embotellado', 'pieza', 100000.00, 'unidad_completa', 'ins_68adfdd53f04e.jpg'),
+(260, 2, 'res', 'gramos', 99950.00, 'uso_general', 'ins_68adfe2e49580.jpg'),
+(261, 2, 'Rodajas de naranja', 'gramos', 100000.00, 'por_receta', 'ins_68adfeccd68d8.jpg'),
+(262, 2, 'Salmón', 'gramos', 100000.00, 'por_receta', 'ins_68adffa2a2db0.jpg'),
+(263, 2, 'Salsa de anguila', 'mililitros', 99980.00, 'no_controlado', 'ins_68ae005f1b3cd.jpg'),
+(264, 2, 'Salsa teriyaki (dulce)', 'mililitros', 99980.00, 'no_controlado', 'ins_68ae00c53121a.jpg'),
+(265, 2, 'Salsas orientales', 'mililitros', 99970.00, 'no_controlado', 'ins_68ae01341e7b1.jpg'),
+(266, 2, 'Shisimi', 'gramos', 100000.00, 'uso_general', 'ins_68ae018d22a63.jpg'),
+(267, 2, 'Siracha', 'mililitros', 99895.00, 'no_controlado', 'ins_68ae03413da26.jpg'),
+(268, 2, 'Tampico', 'mililitros', 98480.00, 'uso_general', 'ins_68ae03f65bd71.jpg'),
+(269, 2, 'Tortilla de harina', 'pieza', 99990.00, 'unidad_completa', 'ins_68ae04b46d24a.jpg'),
+(270, 2, 'Tostada', 'pieza', 100000.00, 'unidad_completa', 'ins_68ae05924a02a.jpg'),
+(271, 2, 'Yakimeshi mini', 'gramos', 100000.00, 'por_receta', 'ins_68ae061b1175b.jpg'),
+(272, 2, 'Sal con Ajo', 'pieza', 100000.00, 'por_receta', 'ins_68adff6dbf111.jpg'),
+(273, 2, 'Aderezo Chipotle', 'mililitros', 96905.00, 'por_receta', 'ins_68adcabeb1ee9.jpg'),
+(274, 2, 'Mezcla de Horneado', 'gramos', 99600.00, 'por_receta', 'ins_68addaa3e53f7.jpg'),
+(275, 2, 'Aderezo', 'gramos', 99880.00, 'uso_general', 'ins_68adcc0771a3c.jpg'),
+(276, 2, 'Camarón Empanizado', 'gramos', 94620.00, 'por_receta', 'ins_68add1de1aa0e.jpg'),
+(277, 2, 'Pollo Empanizado', 'gramos', 99750.00, 'por_receta', 'ins_68adde81c6be3.jpg'),
+(278, 2, 'Cebollín', 'gramos', 99935.00, 'por_receta', 'ins_68add3e38d04b.jpg'),
+(279, 2, 'Aderezo Cebolla Dul.', 'oz', 100000.00, 'uso_general', 'ins_68adcb8fa562e.jpg'),
+(280, 2, 'Camaron Enchiloso', 'gramos', 99920.00, 'por_receta', 'ins_68add2db69e2e.jpg'),
+(281, 2, 'Pastel chocoflan', 'pieza', 100000.00, 'unidad_completa', 'ins_68adddfa22fe2.jpg'),
+(282, 2, 'Pay de queso', 'pieza', 100000.00, 'unidad_completa', 'ins_68adde4fa8275.jpg'),
+(283, 2, 'Helado tempura', 'pieza', 99999.00, 'unidad_completa', 'ins_68add7e53c6fe.jpg'),
+(284, 2, 'Postre especial', 'pieza', 100000.00, 'unidad_completa', 'ins_68addee98fdf0.jpg'),
+(285, 2, 'Búfalo', 'mililitros', 100000.00, 'no_controlado', 'ins_68adce63dd347.jpg'),
+(286, 2, 'Corona 1/2', 'pieza', 100000.00, 'unidad_completa', 'ins_68add55a1e3b7.jpg'),
+(287, 2, 'Golden Light 1/2', 'pieza', 100000.00, 'unidad_completa', 'ins_68add76481f22.jpg'),
+(288, 2, 'Negra Modelo', 'pieza', 100000.00, 'unidad_completa', 'ins_68addc59c2ea9.jpg'),
+(289, 2, 'Modelo Especial', 'pieza', 100000.00, 'unidad_completa', 'ins_68addb9d59000.jpg'),
+(290, 2, 'Bud Light', 'pieza', 100000.00, 'unidad_completa', 'ins_68adcdf3295e8.jpg'),
+(291, 2, 'Stella Artois', 'pieza', 100000.00, 'unidad_completa', 'ins_68ae0397afb2f.jpg'),
+(292, 2, 'Ultra 1/2', 'pieza', 100000.00, 'unidad_completa', 'ins_68ae05466a8e2.jpg'),
+(293, 2, 'Michelob 1/2', 'pieza', 100000.00, 'unidad_completa', 'ins_68addb2d00c85.jpg'),
+(294, 2, 'Alitas de pollo', 'gramos', 98750.00, 'unidad_completa', 'ins_68adccf5a1147.jpg'),
+(295, 2, 'Ranch', 'mililitros', 100000.00, 'no_controlado', 'ins_68adfcddef7e3.jpg'),
+(296, 2, 'Buffalo', 'gramos', 100000.00, 'no_controlado', ''),
+(297, 2, 'Chichimi', 'gramos', 99996.00, 'no_controlado', 'ins_68add45bdb306.jpg'),
+(298, 2, 'Calpico', 'pieza', 100000.00, 'unidad_completa', 'ins_68add19570673.jpg'),
+(299, 2, 'Vaina de soja', 'gramos', 99850.00, 'uso_general', 'ins_68ae05de869d1.jpg'),
+(300, 2, 'Boneless', 'gramos', 99000.00, 'por_receta', 'ins_68adcdbb6b5b4.jpg'),
+(301, 2, 'Agua members', 'pieza', 100000.00, 'unidad_completa', 'ins_68adcc5feaee1.jpg'),
+(302, 2, 'Agua mineral', 'pieza', 100000.00, 'unidad_completa', 'ins_68adcca85ae2c.jpg'),
+(303, 2, 'Cilantro', 'gramos', 100000.00, 'por_receta', 'ins_68add4edab118.jpg'),
+(304, 2, 'Té de jazmin', 'mililitros', 55000.00, 'por_receta', 'ins_68ae0474dfc36.jpg'),
+(305, 2, 'bolsa camiseta 35x60', 'kilo', 100000.00, 'unidad_completa', ''),
+(306, 2, 'bolsa camiseta 25x50', 'kilo', 100000.00, 'unidad_completa', ''),
+(307, 2, 'bolsa camiseta 25x40', 'kilo', 100000.00, 'unidad_completa', ''),
+(308, 2, 'bolsa poliseda 15x25', 'rollo', 100000.00, 'unidad_completa', ''),
+(309, 2, 'bolsa rollo 20x30', 'rollo', 100000.00, 'unidad_completa', ''),
+(310, 2, 'bowls cpp1911-3', 'pieza', 100000.00, 'unidad_completa', ''),
+(311, 2, 'bowls cpp20', 'pieza', 100000.00, 'unidad_completa', ''),
+(312, 2, 'bowls cpp1911-3 tapa', 'pieza', 100000.00, 'unidad_completa', ''),
+(313, 2, 'bowls cpp20 tapa', 'pieza', 100000.00, 'unidad_completa', ''),
+(314, 2, 'baso termico 1l', 'piza', 100000.00, 'unidad_completa', ''),
+(315, 2, 'bisagra 22x22', 'pieza', 100000.00, 'unidad_completa', ''),
+(316, 2, 'servilleta', 'paquete', 100000.00, 'unidad_completa', ''),
+(317, 2, 'Papel aluminio 400', 'pieza', 100000.00, 'unidad_completa', ''),
+(318, 2, 'Vitafilim 14', 'rollo', 100000.00, 'unidad_completa', ''),
+(319, 2, 'guante vinil', 'caja', 100000.00, 'unidad_completa', ''),
+(320, 2, 'Popote 26cm', 'pieza', 100000.00, 'unidad_completa', ''),
+(321, 2, 'Bolsa papel x 100pz', 'paquete', 100000.00, 'unidad_completa', ''),
+(322, 2, 'rollo impresora mediano', 'rollo', 100000.00, 'unidad_completa', ''),
+(323, 2, 'rollo impresora grande', 'rollo', 100000.00, 'unidad_completa', ''),
+(324, 2, 'tenedor fantasy mediano 25pz', 'paquete', 100000.00, 'unidad_completa', ''),
+(325, 2, 'Bolsa basura 90x120 negra', 'bulto', 100000.00, 'unidad_completa', ''),
+(326, 2, 'Ts2', 'tira', 100000.00, 'unidad_completa', ''),
+(327, 2, 'Ts1', 'tira', 100000.00, 'unidad_completa', ''),
+(328, 2, 'TS200', 'tira', 100000.00, 'unidad_completa', ''),
+(329, 2, 'S100', 'tira', 100000.00, 'unidad_completa', ''),
+(330, 2, 'Pet 1l c/tapa', 'bulto', 100000.00, 'unidad_completa', ''),
+(331, 2, 'Pet 1/2l c/tapa', 'pieza', 100000.00, 'unidad_completa', ''),
+(332, 2, 'Cuchara mediana fantasy 50pz', 'paquete', 100000.00, 'unidad_completa', ''),
+(333, 2, 'Charola 8x8', 'pieza', 100000.00, 'unidad_completa', ''),
+(334, 2, 'Charola 6x6', 'pieza', 100000.00, 'unidad_completa', ''),
+(335, 2, 'Charola 8x8 negra', 'pieza', 100000.00, 'unidad_completa', ''),
+(336, 2, 'Charola 6x6 negra', 'pieza', 100000.00, 'unidad_completa', ''),
+(337, 2, 'Polipapel', 'kilo', 100000.00, 'unidad_completa', ''),
+(338, 2, 'Charola pastelera', 'pieza', 100000.00, 'unidad_completa', ''),
+(339, 2, 'Papel secante', 'pieza', 100000.00, 'unidad_completa', ''),
+(340, 2, 'Papel rollo higienico', 'pieza', 100000.00, 'unidad_completa', ''),
+(341, 2, 'Fabuloso 20l', 'bidon', 100000.00, 'unidad_completa', ''),
+(342, 2, 'Desengrasante 20l', 'bidon', 100000.00, 'unidad_completa', ''),
+(343, 2, 'Cloro 20l', 'bidon', 100000.00, 'unidad_completa', ''),
+(344, 2, 'Iorizante 20l', 'bidon', 100000.00, 'unidad_completa', ''),
+(345, 2, 'Windex 20l', 'bidon', 100000.00, 'unidad_completa', ''),
+(346, 2, 'quitacochambre 1l', 'litro', 100000.00, 'unidad_completa', ''),
+(347, 2, 'Fibra metal', 'pieza', 100000.00, 'unidad_completa', ''),
+(348, 2, 'Esponja', 'pieza', 100000.00, 'unidad_completa', ''),
+(349, 2, 'Escoba', 'pieza', 100000.00, 'unidad_completa', ''),
+(350, 2, 'Recogedor', 'pieza', 100000.00, 'unidad_completa', ''),
+(351, 2, 'Trapeador', 'pieza', 100000.00, 'unidad_completa', ''),
+(352, 2, 'Cubeta 16l', 'pieza', 100000.00, 'unidad_completa', ''),
+(353, 2, 'Sanitas', 'paquete', 100000.00, 'unidad_completa', ''),
+(354, 2, 'Jabon polvo 9k', 'bulto', 100000.00, 'unidad_completa', ''),
+(355, 2, 'Shampoo trastes 20l', 'bidon', 100000.00, 'unidad_completa', ''),
+(356, 2, 'Jaladores', 'pieza', 100000.00, 'unidad_completa', ''),
+(357, 2, 'Cofia', 'pieza', 100000.00, 'unidad_completa', ''),
+(358, 2, 'Trapo', 'pieza', 100000.00, 'unidad_completa', ''),
+(359, 2, 'Sambal', 'mililitros', 99940.00, 'por_receta', ''),
+(360, 2, 'Lemon pepper', 'gramos', 100000.00, 'por_receta', ''),
+(361, 2, 'Consomé', 'gramos', 99990.00, 'por_receta', ''),
+(362, 2, 'Ejote', 'gramos', 99940.00, 'por_receta', ''),
+(363, 2, 'Chili bean', 'gramos', 100000.00, 'por_receta', ''),
+(364, 2, 'Ajinomoto', 'gramos', 100000.00, 'por_receta', ''),
+(365, 2, 'Salsa Yakimeshi', 'mililitros', 99880.00, 'no_controlado', ''),
+(366, 2, 'Papas a la francesa (porción kid)', 'porción', 100000.00, 'unidad_completa', ''),
+(367, 2, 'Cacahuate', 'gramos', 100000.00, 'por_receta', ''),
+(368, 2, 'Boneless (porción)', 'porción', 100000.00, 'unidad_completa', ''),
+(369, 2, 'Liner', 'pieza', 100000.00, 'unidad_completa', ''),
+(370, 2, 'Capeador General', 'mililitros', 100000.00, 'no_controlado', ''),
+(371, 2, 'Ajo', 'gramos', 100000.00, 'por_receta', ''),
+(372, 2, 'Jengibre', 'gramos', 100000.00, 'por_receta', ''),
+(373, 2, 'Hoisin', 'gramos', 100000.00, 'por_receta', ''),
+(374, 2, 'Col morada', 'gramos', 99970.00, 'por_receta', ''),
+(375, 2, 'Champiñon', 'kilo', 99940.00, 'uso_general', ''),
+(376, 2, 'Rabano', 'kilo', 99999.94, 'por_receta', '');
 
 --
 -- Disparadores `insumos`
@@ -15452,18 +15677,13 @@ CREATE TABLE `logs_accion` (
 --
 
 INSERT INTO `logs_accion` (`id`, `usuario_id`, `modulo`, `accion`, `fecha`, `referencia_id`) VALUES
-(2028, 1, 'corte_caja', 'Creación de corte', '2025-12-19 17:37:00', 133),
-(2029, 1, 'corte_caja', 'Cierre de corte', '2025-12-19 17:37:31', 133),
-(2030, 1, 'corte_caja', 'Creación de corte', '2025-12-19 17:38:04', 134),
-(2031, 1, 'ventas', 'Alta de venta', '2025-12-19 18:07:29', 875),
-(2032, 1, 'ventas', 'Alta de venta', '2025-12-19 20:36:56', 876),
-(2033, 1, 'ventas', 'Alta de venta', '2025-12-19 21:00:50', 877),
-(2034, 1, 'ventas', 'Alta de venta', '2025-12-19 21:27:15', 878),
-(2035, 1, 'ventas', 'Alta de venta', '2025-12-19 21:43:59', 879),
-(2036, 1, 'ventas', 'Alta de venta', '2025-12-19 21:58:52', 880),
-(2037, 46, 'corte_caja', 'Creación de corte', '2025-12-19 22:04:38', 135),
-(2038, 1, 'ventas', 'Alta de venta', '2025-12-20 13:27:04', 881),
-(2039, 1, 'ventas', 'Alta de venta', '2025-12-20 13:27:44', 882);
+(2041, 1, 'corte_caja', 'Creación de corte', '2025-12-20 17:48:14', 136),
+(2042, 46, 'corte_caja', 'Creación de corte', '2025-12-20 21:08:04', 137),
+(2043, 1, 'ventas', 'Alta de venta', '2025-12-20 21:11:07', 884),
+(2044, 46, 'ventas', 'Alta de venta', '2025-12-20 21:11:29', 885),
+(2045, 1, 'ventas', 'Alta de venta', '2025-12-26 09:46:16', 886),
+(2046, NULL, 'cocina', 'Producto iniciado', '2025-12-26 09:46:40', 3027),
+(2047, NULL, 'cocina', 'Producto marcado como listo', '2025-12-26 09:46:41', 3027);
 
 -- --------------------------------------------------------
 
@@ -15513,13 +15733,6 @@ CREATE TABLE `log_mesas` (
   `fecha_fin` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `log_mesas`
---
-
-INSERT INTO `log_mesas` (`id`, `mesa_id`, `venta_id`, `usuario_id`, `fecha_inicio`, `fecha_fin`) VALUES
-(196, 12, 880, 1, NULL, '2025-12-19 21:59:03');
-
 -- --------------------------------------------------------
 
 --
@@ -15549,14 +15762,14 @@ CREATE TABLE `mesas` (
 --
 
 INSERT INTO `mesas` (`id`, `nombre`, `estado`, `capacidad`, `mesa_principal_id`, `area`, `tiempo_ocupacion_inicio`, `estado_reserva`, `nombre_reserva`, `fecha_reserva`, `usuario_id`, `area_id`, `ticket_enviado`, `alineacion_id`, `sede`) VALUES
-(1, 'Mesa 1', 'libre', 4, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, NULL, 1, 0, NULL, 1),
-(2, 'Mesa 2', 'libre', 4, NULL, 'Ala derecha', NULL, 'ninguna', NULL, NULL, NULL, 2, 0, 3, 1),
-(3, 'Mesa 3', 'libre', 6, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, NULL, 1, 0, 4, 1),
-(4, 'Mesa 4', 'libre', 4, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, NULL, 1, 0, NULL, 1),
+(1, 'Mesa 1', 'libre', 4, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, 38, 1, 0, NULL, 1),
+(2, 'Mesa 2', 'libre', 4, NULL, 'Ala derecha', NULL, 'ninguna', NULL, NULL, 38, 2, 0, 3, 1),
+(3, 'Mesa 3', 'libre', 6, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, 38, 1, 0, 4, 1),
+(4, 'Mesa 4', 'libre', 4, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, 38, 1, 0, NULL, 1),
 (5, 'Mesa 5', 'libre', 4, NULL, 'Ala derecha', NULL, 'ninguna', NULL, NULL, NULL, 2, 0, NULL, 1),
-(6, 'Mesa 6', 'libre', 6, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, NULL, 1, 0, 3, 1),
-(7, 'Mesa 7', 'libre', 2, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, NULL, 1, 0, NULL, 1),
-(8, 'Mesa 8', 'libre', 4, NULL, 'Ala derecha', NULL, 'ninguna', NULL, NULL, NULL, 2, 0, NULL, 1),
+(6, 'Mesa 6', 'libre', 6, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, 38, 1, 0, 3, 1),
+(7, 'Mesa 7', 'libre', 2, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, 38, 1, 0, NULL, 1),
+(8, 'Mesa 8', 'libre', 4, NULL, 'Ala derecha', NULL, 'ninguna', NULL, NULL, 38, 2, 0, NULL, 1),
 (9, 'Mesa 9', 'libre', 4, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, NULL, 1, 0, 3, 1),
 (10, 'Mesa 10', 'libre', 6, NULL, 'Ala izquierda', NULL, 'ninguna', NULL, NULL, NULL, 1, 0, NULL, 1),
 (11, 'Mesa 11', 'libre', 4, NULL, 'Ala derecha', NULL, 'ninguna', NULL, NULL, NULL, 2, 0, NULL, 1),
@@ -15645,7 +15858,8 @@ CREATE TABLE `movimientos_insumos` (
   `cantidad` decimal(10,2) DEFAULT NULL,
   `observacion` text DEFAULT NULL,
   `fecha` datetime DEFAULT current_timestamp(),
-  `qr_token` varchar(64) DEFAULT NULL
+  `qr_token` varchar(64) DEFAULT NULL,
+  `consumo_empleado_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -15656,6 +15870,7 @@ CREATE TABLE `movimientos_insumos` (
 
 CREATE TABLE `productos` (
   `id` int(11) NOT NULL,
+  `sede_id` int(11) NOT NULL DEFAULT 1,
   `nombre` varchar(100) NOT NULL,
   `precio` decimal(10,2) NOT NULL,
   `descripcion` text DEFAULT NULL,
@@ -15669,177 +15884,518 @@ CREATE TABLE `productos` (
 -- Volcado de datos para la tabla `productos`
 --
 
-INSERT INTO `productos` (`id`, `nombre`, `precio`, `descripcion`, `existencia`, `activo`, `imagen`, `categoria_id`) VALUES
-(4, 'Coca Cola', 29.00, 'Refresco embotellado', 1000000, 1, 'prod_693f4bf94664d.jpg', 1),
-(5, 'Rollo California', 125.00, 'Salmón, arroz, alga nori', 415, 1, NULL, 3),
-(6, 'Guamuchilito', 119.00, 'Surimi, camarón empanizado, salsa de anguila', 415, 1, 'prod_693ee94bc3fdb.jpg', 8),
-(7, 'Guerra', 135.00, 'Camarón, ajonjolí, aguacate, salsa de anguila', 415, 1, 'prod_693f50e421e60.jpg', 8),
-(8, 'Triton Roll', 135.00, 'Philadelphia, pepino, aguacate, surimi, atún ahumado, anguila, siracha', 415, 1, 'prod_68add2ff11cc1.jpg', 8),
-(9, 'Mechas', 149.00, 'Philadelphia, pepino, aguacate, camarón, ajonjolí, kanikama, camarón empanizado,limón, sirracha, anguila, shisimi', 415, 1, NULL, 8),
-(10, 'Supremo', 145.00, 'Surimi, philadelphia, ajonjolí, tampico,  pollo capeado, salsa de anguila', 415, 1, NULL, 8),
-(11, 'Roka Crunch Roll', 129.00, 'Philadelphia, pepino, aguacate, camarón, surimi empanizado, zanahoria rallada, salsa de anguila', 415, 1, NULL, 8),
-(12, 'Mar y Tierra', 115.00, 'Rollo relleno de carne y camarón.', 415, 1, NULL, 9),
-(13, 'Cielo, Mar y Tierra', 119.00, 'Pollo, carne, camarón', 415, 1, NULL, 9),
-(14, '3 Quesos', 125.00, 'Rollo de camarón, carne, base, queso americano\n y gratinado con queso chihuahua.', 415, 1, 'prod_68adcf8c73757.jpg', 9),
-(15, 'Chiquilin Roll', 125.00, 'Relleno de base (philadelphia, pepino y\n aguacate) Por fuera topping de camarón\n empanizado especial, bañado en salsa de anguila\n y ajonjolí.', 415, 1, 'prod_693ed139b7718.jpg', 9),
-(16, 'Maki roll res', 115.00, 'Rollo de 1 ingrediente a elegir (carne, tampico,\n pollo y camarón)', 415, 1, NULL, 9),
-(17, 'Beef cheese', 129.00, 'Rollo de carne gratinado con queso spicy y\n ajonjolí.', 415, 1, 'prod_693f504abbc6a.jpg', 9),
-(18, 'Cordon Blue', 125.00, 'Rollo relleno de carne y tocino forrado con\n philadelphia y gratinado con queso.', 415, 1, 'prod_693f58287142b.jpg', 9),
-(19, 'Culichi Roll', 135.00, 'Rollo de carne con topping especial de tampico\n Tokyo empanizado coronado con camarón.', 415, 1, 'prod_693ed995f1042.jpg', 9),
-(20, 'Bacon Cheese', 135.00, 'Rollo de pollo por fuera gratinado con tocino.', 415, 1, 'prod_68add11ce2483.jpg', 9),
-(21, 'Crunch Chicken', 135.00, 'Pollo empanizado, tocino, chile serrano, salsa bbq, salsa de anguila', 415, 1, 'prod_693f5876d1bad.jpg', 9),
-(22, 'Kito', 129.00, 'Carne, tocino, queso, tampico', 415, 1, 'prod_68add69fe703c.jpg', 9),
-(23, 'Norteño', 125.00, 'Camarón, tampico, queso, tocino, chile serrano', 415, 1, 'prod_693f546312f41.jpg', 9),
-(24, 'Goloso Roll', 145.00, 'Res, pollo, tocino, queso o tampico', 415, 1, 'prod_68add37a08889.jpg', 9),
-(25, 'Demon roll', 145.00, 'Res, tocino, toping demon (camarón enchiloso)', 415, 1, 'prod_68add435d40b1.jpg', 9),
-(26, 'Nano Max', 265.00, 'Dedos de queso, dedos de surimi, carne, pollo, tocino, tampico, empanizado', 615, 1, NULL, 12),
-(27, 'Nano XL', 345.00, 'Dedos de queso, dedosde surimi, carne pollo, tocino, queso, tampico, 1.5 kg', 356, 1, 'prod_68add3af36463.jpg', 12),
-(28, 'Nano T-plus', 395.00, 'Dedos de queso, dedosde surimi, carne pollo, tocino, queso, tampico, 2 kg', 68, 1, NULL, 12),
-(29, 'Chile Volcán', 89.00, 'Chile, 1 ingrediente a elegir, arroz, queso chihuahua,philadelphia', 1422, 1, 'prod_693ee33d645cc.jpg', 10),
-(30, 'Kushiagues', 79.00, 'Par de brochetas (camarón, pollo o surimi)', 9842, 1, NULL, 10),
-(31, 'Dedos de Queso', 69.00, 'Queso, empanizado (5 piezas)', 1000000, 1, NULL, 10),
-(32, 'Tostada Culichi', 85.00, 'Tostada, camarón, pulpo, callo, pepino, cebolla morada, masago, chile serrano, chile en polvo, jugo de aguachile', 4822, 1, 'prod_68add491b6f90.jpg', 10),
-(33, 'Tostada tropical', 85.00, 'Tostada, atún, mango, camarón, callo, cebolla morada, chile en polvo, jugo de aguachile', 1625, 1, 'prod_693eda396258c.jpg', 10),
-(34, 'Empanada Horneada', 119.00, 'Tortilla de harina, carne, pollo, camarón,  mezcla de quesos, tampico, anguila y sirracha', 812, 1, NULL, 10),
-(35, 'Rollitos', 79.00, 'Orden de 2 piezas, rellenos de philadelphia,\n queso chihuahua e ingrediente a elegir (res, pollo\n o camarón).', 9700, 1, 'prod_68add227e7037.jpg', 10),
-(36, 'Gyozas Res', 99.00, 'Orden con 6 piezas pequeñas (Pueden ser de\n philadelphia y camarón o de pollo y verduras)', 9700, 1, 'prod_693ee32ed623c.jpg', 10),
-(37, 'Papas a la francesa', 69.00, 'Papas a la francesa y cátsup ó aderezo especial', 1000000, 1, NULL, 10),
-(38, 'Papas gajo', 79.00, 'Papas gajo y cátsup ó aderezo especial', 1000000, 1, NULL, 10),
-(39, 'Ceviche Tokyo', 175.00, 'Cama de pepino, kanikama, camarón, aguacate, pulpo, jugo de aguachile', 482, 1, 'prod_68add2c342bb0.jpg', 3),
-(40, 'Teriyaki krispy', 145.00, 'pollo empanizado, chile morrón, chile de arból, zanahoria, cebolla morada, cacahuate con salsa (salado)', 9983, 1, NULL, 3),
-(41, 'Teriyaki', 149.00, 'Ingrediente a elegir, salteado de cebolla, zanahoria, calabaza, brócoli y coliflor, salsa teriyaki (dulce)', 9983, 1, NULL, 3),
-(42, 'Pollo Mongol', 145.00, 'Pollo capeado, cebolla, zanahoria, apio, chile serrano, chile morrón, chile de arból, salsas orientales, montado en arroz blanco', 9983, 1, 'prod_68add8fa7fb9e.jpg', 3),
-(43, 'Chow Mein Especial', 165.00, 'Pasta frita, camarón, carne, pollo, vegetales, salsas orientales', 9842, 1, 'prod_68adcfaa08c5a.jpg', 4),
-(44, 'Chukasoba', 159.00, 'Camarón, pulpo, vegetales, pasta chukasoba', 9842, 1, NULL, 4),
-(45, 'Fideo Yurey', 175.00, 'Fideo chino transparente, julianas de zanahoria y apio, cebolla, chile caribe y morrón y la proteína de tu elección', 9990, 1, NULL, 4),
-(46, 'Udon spicy', 189.00, 'Julianas de zanahoria y cebolla, chile caribe, apio, chile de árbol, nuez de la india, ajonjolí, camarones capeados', 9990, 1, 'prod_68add7d1cd5d9.jpg', 4),
-(47, 'Orange Chiken Tokyo', 159.00, 'Pollo capeado (300gr), graby de naranja, pepino, zanahoria, rodajas de naranja, ajonjolíPollo capeando (300gr) rebosado con graby de\n naranja con zanahoria, pepino y rodajas de naranja\n y ajonjolí', 9645, 1, 'prod_693f51734c1a6.jpg', 3),
-(48, 'Udon Muchi', 135.00, 'Pasta udon, vegetales, camarón y pollo', 196, 1, NULL, 4),
-(49, 'Tokyo ramen', 135.00, 'Pasta, vegetales, naruto, huevo, carne, camarón, fondo de res y cerdo', 196, 1, NULL, 4),
-(50, 'Ramen Gran Meat', 135.00, 'Pasta, vegetales, trozos de carne sazonada con salsas orientales', 196, 1, NULL, 4),
-(51, 'Ramen yasai', 125.00, 'Pasta, vegetales, fondo de res y cerdo', 196, 1, NULL, 4),
-(52, 'Baby Ramen', 129.00, 'Pasta, vegetales, pollo a la plancha, salsas orientales, fondo de res y cerdo', 196, 1, NULL, 4),
-(53, 'Cajun Ramen', 165.00, 'Fideos, vegetales, camarón gigante para pelar, fondo de res y cerdo, ajonjolí', 196, 1, 'prod_693f4f7f390e6.jpg', 4),
-(54, 'Gohan', 135.00, 'Arroz blanco, res y pollo, base de philadelphia y tampico con rodajas de aguacate, camarones empanizados, ajonjolí', 292, 1, 'prod_693ed94fb6a93.jpg', 5),
-(55, 'Gohan Krispy', 125.00, 'Arroz blanco, base de philadelphia, tampico y cubitos de aguacate, pollo y cebolla capeados, salsa de anguila, ajonjolí', 292, 1, 'prod_68add4bf039d2.jpg', 5),
-(56, 'Yakimeshi', 125.00, 'Arroz frito, vegetales, carne, pollo y tocino, philadelphia, tampico, aguacate, ajonjolí', 197, 1, 'prod_68add0ace9c67.jpg', 5),
-(57, 'Rollo Aguachile Especial', 125.00, 'Arroz frito, pollo empanizado, philadelphia, aguacate y tampico', 9700, 1, 'prod_68add7b73652c.jpg', 5),
-(58, 'Bomba', 125.00, 'Bola de arroz, res, pollo, philadelphia, queso chihuahua, tampico , empanizada y cubierta de salsa de anguila', 9700, 1, 'prod_68add5bb666f3.jpg', 5),
-(59, 'Rollo kids', 79.00, '1/2 Rollo de pollo (6 piezas) y papas a la francesa', 1000000, 1, NULL, 3),
-(60, 'Kid mini Yakimeshi', 105.00, 'Yakimeshi mini y papas a la francesa', 292, 1, NULL, 3),
-(61, 'kids dedi', 99.00, 'Dedos de queso (3 piezas) y papas a la francesa', 999999, 1, NULL, 3),
-(62, 'Chocoflan', 79.00, 'Porción de chocoflan', 1000000, 1, NULL, 2),
-(63, 'Pay de Queso', 69.00, 'Porción de pay de queso', 1000000, 1, 'prod_68ae01fd0820f.jpg', 2),
-(64, 'Helado Tempura', 99.00, 'Helado tempura', 99998, 1, NULL, 2),
-(65, 'Postre Especial', 79.00, NULL, 1000000, 1, 'prod_68ae00d2cd4af.jpg', 2),
-(66, 'Té de Jazmín (Litro)', 35.00, 'Té verde con aroma a jazmín, servido en litro.', 53, 1, 'prod_693edbd1cde27.jpg', 1),
-(67, 'Té de Jazmín (Refil)', 37.00, 'Té verde aromatizado con flores de jazmín.', 55, 1, 'prod_693edbe03ad62.jpg', 1),
-(68, 'Limonada Natural', 37.00, 'Bebida de limón exprimido con agua y azúcar.', 1665, 1, NULL, 1),
-(69, 'Limonada Mineral', 39.00, 'Bebida de limón con agua mineral y azúcar.', 500, 1, NULL, 1),
-(70, 'Naranjada Natural', 37.00, 'Bebida de jugo de naranja con agua y azúcar.', 1000000, 1, NULL, 1),
-(71, 'Naranjada Mineral', 39.00, 'Refresco de naranja con agua mineral.', 1000000, 1, NULL, 1),
-(72, 'Agua de Tamarindo', 37.00, 'Bebida dulce y ácida de tamarindo.', 999999, 1, NULL, 1),
-(73, 'Agua Mineral (355ml)', 37.00, 'Agua con gas en envase pequeño.', 1000000, 1, 'prod_68ae05aa8d01f.jpg', 1),
-(74, 'Calpico', 37.00, 'Bebida japonesa dulce y láctea de yogur.', 1000000, 1, 'prod_68ae01959fac5.jpg', 1),
-(75, 'Calpitamarindo', 39.00, NULL, 1000000, 1, NULL, 1),
-(76, 'Refresco (335ml)', 35.00, 'Refresco embotellado', 1000000, 1, 'prod_68ae07bd9ef3c.jpg', 1),
-(77, 'Aderezo de Chipotle', 10.00, 'Salsa cremosa picante de chipotle.', 9750, 1, 'prod_68ae00b788642.jpg', 6),
-(78, 'Aderezo de Cilantro', 15.00, 'Salsa cremosa con cilantro fresco.', 9988, 1, 'prod_693ecf6fab68f.jpg', 6),
-(79, 'Salsa Sriracha', 10.00, 'Alsa picante de chile, ajo y vinagre.', 6659, 1, 'prod_68ae083f538d5.jpg', 6),
-(80, 'Jugo de Aguachile', 15.00, 'Salsa líquida de limón, chile y especias usada para marinar mariscos.', 1000000, 1, NULL, 6),
-(81, 'Ranch', 15.00, 'Aderezo cremoso de hierbas y especias.', 1000000, 1, 'prod_68ae011cd828d.jpg', 6),
-(82, 'Búfalo', 15.00, 'Salsa picante de chile y mantequilla.', 1000000, 1, 'prod_68ae0164e5f57.jpg', 6),
-(83, 'BBQ', 15.00, 'Salsa dulce y ahumada para carnes.', 1000000, 1, NULL, 6),
-(84, 'Soya Extra', 10.00, 'Salsa de soja concentrada o adicional', 6662, 1, NULL, 6),
-(85, 'Salsa de Anguila', 10.00, 'Salsa dulce y salada hecha con anguila y soja.', 6663, 1, NULL, 6),
-(86, 'Cebollitas o Chiles', 10.00, NULL, 999098, 1, NULL, 6),
-(87, 'Topping Horneado Especial', 25.00, 'Aderezo de chipotle, anguila y sriracha', 6500, 1, NULL, 7),
-(88, 'Topping Kanikama', 40.00, '(Ensalada de cangrejo)', 3329, 1, NULL, 7),
-(89, 'Topping Tampico', 20.00, '(Ensalada de surimi)', 3324, 1, NULL, 7),
-(90, 'Topping Demon', 40.00, 'Camarón, tocino, quesos, serrano y chichimi', 1640, 1, NULL, 7),
-(91, 'Topping Chiquilín', 35.00, 'Camarón empanizado, anguila y ajonjolí', 1597, 1, NULL, 7),
-(92, 'Gladiador Roll', 149.00, 'Por dentro philadelphia, pepino y aguacate. Por fuera trozos de pulpo, queso spicy, shishimi y cebolla, bañado en salsa de anguila y ajonjolí. Rollo natural.', 415, 1, NULL, 13),
-(93, 'Güerito Roll', 155.00, 'Por dentro camarón. Forrado con philadelphia y manchego, bañado en aderezo de chipotle, coronado con tocino, caribe y bañado en salsa sriracha. Empanizado.', 415, 1, 'prod_68add1fe92388.jpg', 13),
-(94, 'Ebby Especial Roll', 155.00, 'Por dentro base, forrado con tampico cheese, bañado en aderezo de chipotle y coronado con camarón mariposa, aguacate, anguila y ajonjolí. Empanizado.', 415, 1, NULL, 13),
-(95, 'Pakun Roll', 145.00, 'Relleno de tocino, por fuera topping de pollo y queso spicy, zanahoria. Acompañado de salsa anguila. Rollo natural.', 415, 1, 'prod_693f53f105917.jpg', 13),
-(96, 'Rorris Roll', 145.00, 'Camarón y caribe por dentro, topping de tampico cheese, aguacate y bañados en salsa de anguila y ajonjolí. Empanizado.', 415, 1, NULL, 13),
-(97, 'Royal Roll', 139.00, 'Carne y tocino por dentro, con topping de pollo. Empanizado, bañado con aderezo de chipotle, salsa de anguila y ajonjolí.', 415, 1, 'prod_68adcf0749621.jpg', 13),
-(98, 'Larry Roll', 165.00, 'Rollo relleno de camarón, forrado con salmón. Topping de surimi finamente picado, spicy, coronado con atún fresco y bañado en salsa de anguila y ajonjolí.', 415, 1, 'prod_68add883e8ce7.jpg', 11),
-(99, 'Aguachile Especial Roll', 165.00, 'Rollo relleno de philadelphia, pepino y aguacate. Forrado de chile serrano finamente picado, coronado con un aguachile especial de camarón, pulpo, callo y aguacate.', 415, 1, 'prod_693edd65dfa55.jpg', 11),
-(100, 'Mordick Roll', 155.00, 'Rollo relleno de tocino, montado doble con queso gratinado, mezcla de quesos spicy, coronado con camarones empanizados y bañado en salsa de anguila y ajonjolí.', 415, 1, 'prod_68add0ea0033c.jpg', 11),
-(101, 'Maney Roll', 175.00, 'Relleno de philadelphia, pepino y aguacate. Forrado de aguacate fresco y topping con camarón, medallón de atún, callo, mango y cebolla morada. Acompañado de salsa aguachile. Rollo natural.', 415, 1, 'prod_68add31666451.jpg', 11),
-(102, 'Onigiri', 69.00, '1 Pieza de triángulo de arroz blanco, con un toque ligero de philadelphia, forrado de alga, cubierto de ajonjolí y relleno opcional de pollo con verduras (col morada y zanahoria) o atún con aderezo especial de mayonesa y cebollín.', 658, 1, 'prod_68add35c53114.jpg', 3),
-(103, 'Dumplings', 99.00, 'Orden de 6 piezas de dumplings, rellenos de carne molida de cerdo. Sazonados orientalmente y acompañado con salsa macha.', 9991, 1, 'prod_68add5b64497c.jpg', 3),
-(104, 'Boneless', 139.00, '250gr. De boneless con salsa a elegir (búfalo, bbq, mango habanero, mostaza miel o mermelada de chipotle).', 394, 1, 'prod_68ae02330ae4d.jpg', 3),
-(105, 'Alitas', 139.00, '250gr. De alitas con salsa a elegir (búfalo, bbq, mango habanero, mostaza miel ó mermelada de chipotle).', 393, 1, 'prod_68add564480c8.jpg', 3),
-(106, 'Sopa Pho', 159.00, 'Rico fondo de pollo con vegetales, pechuga de pollo, fideos chinos y chile de árbol. Coronado con 4 piezas de dumplings.', 1665, 1, 'prod_68adce4f32265.jpg', 3),
-(107, 'Yummy Roll', 169.00, 'Alga por fuera, relleno de camarón, philadelphia, pepino y aguacate. Gratinado con queso spicy de la casa. Coronado con camarón, aguacate y bañado en salsa de anguila y ajonjolí.', 415, 1, 'prod_68add0c25fd53.jpg', 3),
-(108, 'Cebolla Caramelizada', 10.00, 'Cebolla Caramelizada', 499549, 1, NULL, 6),
-(109, 'Kintaro', 102.00, 'Plato de sushi con atún graso picado toro y cebollín', 415, 1, NULL, 3),
-(110, 'Guamuchilito Especial', 129.00, 'Bebida preparada con jugo de guamúchil, combinada con alcohol, salsas y especias.', 414, 1, 'prod_68add0071ee2a.jpg', 11),
-(111, 'Juny', 333.00, 'Juny', 415, 1, 'prod_693f59cf505a7.jpg', NULL),
-(112, 'Pork Spicy', 122.00, 'Platillo de cerdo picante.', 438, 1, 'prod_68adcf27bc6a4.jpg', 8),
-(120, 'Corona 1/2', 35.00, 'Cerveza helada', 1000000, 1, 'prod_693f59ab2044d.jpg', 14),
-(121, 'Corona Golden Light 1/2', 35.00, 'Cerveza Golden helada', 1000000, 1, 'prod_68adff1b2eb67.jpg', 1),
-(122, 'Negra Modelo', 40.00, 'Cerveza negra helada', 1000000, 1, 'prod_68adffa389931.jpg', 1),
-(123, 'Modelo Especial', 40.00, 'Cerveza helada', 1000000, 1, 'prod_68adfeeac5c57.jpg', 1),
-(124, 'Bud Light', 35.00, 'Cerveza helada', 1000000, 1, 'prod_68ae0111e5f9d.jpg', 14),
-(125, 'Stella Artois', 45.00, 'Cerveza Helada', 1000000, 1, 'prod_68ae081b893ed.jpg', 1),
-(126, 'Ultra 1/2', 45.00, 'Cerveza helada', 1000000, 1, 'prod_68ae015b16f22.jpg', 1),
-(127, 'Michelob 1/2', 45.00, 'Cerveza helada', 1000000, 1, 'prod_693ecfd6d5820.jpg', 1),
-(128, 'Vaso Chelado', 10.00, 'Vaso chelado', 1000000, 1, NULL, 6),
-(129, 'Vaso Michelado', 15.00, 'Vaso michelado', 1000000, 1, NULL, 6),
-(130, 'Vaso Clamato', 25.00, 'Vaso michelado', 1000000, 1, NULL, 6),
-(131, 'Cheese fresse', 119.00, 'Concha de papa gajo sazonada, bañada en delicioso queso y tozos de tocino; al horno', 400, 1, 'prod_68add54669456.jpg', 3),
-(132, 'Charola Kyoyu Suru', 199.00, 'Camaron capeado, aros de cebolla y gyosas de carne de cerdo, acompañado de delicioso dip especial de la casa y salsa oriental', 500, 1, 'prod_68add217dc164.jpg', 3),
-(133, 'Alitas Nudz', 159.00, 'Deliciosos 300grs De alitas, bañadas en salsa dulce con chile, sabor cacahuate y ajonjolí', 329, 1, NULL, 3),
-(134, 'Edamames', 89.00, 'Vaina de frijol de soja preparado con picante, soya,sal y limon en una cama de zanahoria', 665, 1, 'prod_68add3a313461.jpg', 3),
-(135, 'Crispy Chesse', 99.00, 'Rollo de 6 a 7 pz relleno de carne, philadelphia, pepino y aguacate, empanizado, gratinado spicy y trozos de tocino frito.', 526, 1, NULL, 9),
-(136, 'Chummy Roll', 99.00, 'Rollo de 6 a 7 pz relleno de philadelphia, pepino y aguacate, coronado con tampico y camarón Empanizado, bando en salsa de Anguila y ajonjoli.', 526, 1, NULL, 9),
-(137, 'Pollo kai', 0.00, 'Pollo capeado con ejote, fécula, chili bean y sazón oriental', 660, 1, NULL, 3),
-(138, 'Yakimeshi roka', 135.00, 'Arroz con tampico, philadelphia, verduras, boneless y aguacate', 292, 1, NULL, 5),
-(139, 'Kushiages (Pollo)', 79.00, 'Par de brochetas de pollo', 1651, 1, NULL, 10),
-(140, 'Kushiages (Surimi)', 79.00, 'Par de brochetas de surimi', 712, 1, NULL, 10),
-(141, 'Kushiages (Camarón)', 79.00, 'Par de brochetas de camarón con philadelphia', 1616, 1, NULL, 10),
-(142, 'Rollitos (Pollo)', 79.00, 'Orden de 2 pz con pollo', 2425, 1, 'prod_693ee030306cb.jpg', 10),
-(143, 'Rollitos (Res)', 79.00, 'Orden de 2 pz con res', 2425, 1, 'prod_693ee04b95cac.jpg', 10),
-(144, 'Rollitos (Camarón)', 79.00, 'Orden de 2 pz con camarón', 2425, 1, 'prod_693ee0187a5f1.jpg', 10),
-(9000, 'Cargo por plataforma:', 30.00, 'Cargo por uso de plataforma web para pedidos', 1000000, 1, NULL, 6),
-(9001, 'ENVÍO – Repartidor casa', 30.00, 'Cargo por envío a domicilio (repartidor casa)', 1000000, 1, NULL, 6),
-(9004, 'Gyozas Pollo', 99.00, 'Orden de 6 pzas rellenas de pollo, zanahoria, jengibre y ajo', 9908, 1, NULL, 10),
-(9005, 'Gyozas Camarón', 99.00, 'Orden de 6 pzas rellenas de camarón y philadelphia', 3280, 1, NULL, 10),
-(9006, 'volt', 25.00, '', 1000000, 1, NULL, 1),
-(9007, 'charola oro', 469.00, '', 1000000, 1, 'prod_693f51f2e9b0d.jpg', 3),
-(9008, 'charola plata', 359.00, '', 1000000, 1, 'prod_693f52556c5ae.jpg', 3),
-(9009, 'charola tokyo', 499.00, '', 999999, 1, 'prod_693f51bc61668.jpg', 3),
-(9010, 'agua natural', 20.00, '', 1000000, 1, 'prod_693ecf471c9e3.jpg', 1),
-(9011, 'Ingrediente extra', 10.00, '', 999992, 1, NULL, 6),
-(9016, 'Refresco Manzanita', 35.00, 'Refresco sabor manzana embotellado (335ml)', 1000000, 1, NULL, 1),
-(9017, 'Refresco Sprite', 35.00, 'Refresco sabor lima-limón embotellado (335ml)', 1000000, 1, NULL, 1),
-(9018, 'Refresco Fanta', 35.00, 'Refresco sabor naranja embotellado (335ml)', 1000000, 1, NULL, 1),
-(9019, 'Refresco Coca-Cola Zero', 35.00, 'Refresco de cola sin azúcar embotellado (335ml)', 1000000, 1, NULL, 1),
-(9020, 'Maki de Pollo', 115.00, 'Rollo de pollo estilo maki .', 1000000, 1, NULL, 9),
-(9021, 'Maki de camaron', 115.00, 'Rollo de carne estilo maki.', 1000000, 1, NULL, 9),
-(9022, 'Boneless Búfalo', 139.00, '250gr de boneless bañados en salsa búfalo.', 1000000, 1, NULL, 3),
-(9023, 'Boneless Chipotle', 139.00, '250gr de boneless bañados en salsa de chipotle.', 1000000, 1, NULL, 3),
-(9024, 'Boneless BBQ', 139.00, '250gr de boneless bañados en salsa BBQ.', 1000000, 1, NULL, 3),
-(9025, 'Alitas Búfalo', 139.00, '250gr de alitas bañadas en salsa búfalo.', 1000000, 1, NULL, 3),
-(9026, 'Alitas Chipotle', 139.00, '250gr de alitas bañadas en salsa de chipotle.', 1000000, 1, NULL, 3),
-(9027, 'Alitas BBQ', 139.00, '250gr de alitas bañadas en salsa BBQ.', 1000000, 1, NULL, 3),
-(9028, 'Empanada Tokyo', 95.00, '', 1000000, 1, NULL, 10),
-(9029, 'Banana Crunch', 109.00, 'Banana Crunch', 1000000, 1, NULL, 2),
-(9030, 'Taiyaki', 99.00, 'Taiyaki relleno de mermelada de fresa o queso crema.', 10000, 1, 'prod_693eeb8b17964.jpg', 2),
-(9031, 'Mojito', 79.00, 'Fresa ó Frutos Rojos', 100000, 1, NULL, 1),
-(9032, 'Limonada fresa / frutos rojos', 59.00, 'Fresa ó Frutos Rojos', 100000, 1, NULL, 1),
-(9033, 'Piñada/ Piña colada', 79.00, '', 10000000, 1, NULL, 1),
-(9034, 'Fresada / fresa colada', 79.00, '', 100000, 1, NULL, 1),
-(9035, 'Clericot vaso', 79.00, '', 1000000, 1, NULL, 1),
-(9036, 'Clericot jarra', 289.00, '', 10000, 1, NULL, 1),
-(9037, 'Gin Tonic', 89.00, '', 100000, 1, NULL, 1),
-(9038, 'Doggy Salty', 89.00, '', 100000, 1, NULL, 1),
-(9039, 'Cantaritos', 69.00, '', 1000000, 1, NULL, 1),
-(9040, 'Golden Roll', 299.00, 'El Golden Roll es un rollo con láminas de oro y este mes de diciembre esta con un precio especial de $299 pesos.', 10000, 1, 'prod_693f5375b1d8e.jpg', 8),
-(9041, 'Pollo kunfu', 119.00, '', 1000000, 1, 'prod_693f54493fa71.jpg', 3);
+INSERT INTO `productos` (`id`, `sede_id`, `nombre`, `precio`, `descripcion`, `existencia`, `activo`, `imagen`, `categoria_id`) VALUES
+(4, 1, 'Coca Cola', 29.00, 'Refresco embotellado', 1000000, 1, 'prod_693f4bf94664d.jpg', 1),
+(5, 1, 'Rollo California', 125.00, 'Salmón, arroz, alga nori', 400, 1, NULL, 3),
+(6, 1, 'Guamuchilito', 119.00, 'Surimi, camarón empanizado, salsa de anguila', 400, 1, 'prod_693ee94bc3fdb.jpg', 8),
+(7, 1, 'Guerra', 135.00, 'Camarón, ajonjolí, aguacate, salsa de anguila', 400, 1, 'prod_693f50e421e60.jpg', 8),
+(8, 1, 'Triton Roll', 135.00, 'Philadelphia, pepino, aguacate, surimi, atún ahumado, anguila, siracha', 400, 1, 'prod_68add2ff11cc1.jpg', 8),
+(9, 1, 'Mechas', 149.00, 'Philadelphia, pepino, aguacate, camarón, ajonjolí, kanikama, camarón empanizado,limón, sirracha, anguila, shisimi', 400, 1, NULL, 8),
+(10, 1, 'Supremo', 145.00, 'Surimi, philadelphia, ajonjolí, tampico,  pollo capeado, salsa de anguila', 400, 1, NULL, 8),
+(11, 1, 'Roka Crunch Roll', 129.00, 'Philadelphia, pepino, aguacate, camarón, surimi empanizado, zanahoria rallada, salsa de anguila', 400, 1, NULL, 8),
+(12, 1, 'Mar y Tierra', 115.00, 'Rollo relleno de carne y camarón.', 400, 1, NULL, 9),
+(13, 1, 'Cielo, Mar y Tierra', 119.00, 'Pollo, carne, camarón', 400, 1, NULL, 9),
+(14, 1, '3 Quesos', 125.00, 'Rollo de camarón, carne, base, queso americano\n y gratinado con queso chihuahua.', 400, 1, 'prod_68adcf8c73757.jpg', 9),
+(15, 1, 'Chiquilin Roll', 125.00, 'Relleno de base (philadelphia, pepino y\n aguacate) Por fuera topping de camarón\n empanizado especial, bañado en salsa de anguila\n y ajonjolí.', 385, 1, 'prod_693ed139b7718.jpg', 9),
+(16, 1, 'Maki roll res', 115.00, 'Rollo de 1 ingrediente a elegir (carne, tampico,\n pollo y camarón)', 400, 1, NULL, 9),
+(17, 1, 'Beef cheese', 129.00, 'Rollo de carne gratinado con queso spicy y\n ajonjolí.', 400, 1, 'prod_693f504abbc6a.jpg', 9),
+(18, 1, 'Cordon Blue', 125.00, 'Rollo relleno de carne y tocino forrado con\n philadelphia y gratinado con queso.', 400, 1, 'prod_693f58287142b.jpg', 9),
+(19, 1, 'Culichi Roll', 135.00, 'Rollo de carne con topping especial de tampico\n Tokyo empanizado coronado con camarón.', 400, 1, 'prod_693ed995f1042.jpg', 9),
+(20, 1, 'Bacon Cheese', 135.00, 'Rollo de pollo por fuera gratinado con tocino.', 400, 1, 'prod_68add11ce2483.jpg', 9),
+(21, 1, 'Crunch Chicken', 135.00, 'Pollo empanizado, tocino, chile serrano, salsa bbq, salsa de anguila', 400, 1, 'prod_693f5876d1bad.jpg', 9),
+(22, 1, 'Kito', 129.00, 'Carne, tocino, queso, tampico', 400, 1, 'prod_68add69fe703c.jpg', 9),
+(23, 1, 'Norteño', 125.00, 'Camarón, tampico, queso, tocino, chile serrano', 400, 1, 'prod_693f546312f41.jpg', 9),
+(24, 1, 'Goloso Roll', 145.00, 'Res, pollo, tocino, queso o tampico', 400, 1, 'prod_68add37a08889.jpg', 9),
+(25, 1, 'Demon roll', 145.00, 'Res, tocino, toping demon (camarón enchiloso)', 400, 1, 'prod_68add435d40b1.jpg', 9),
+(26, 1, 'Nano Max', 265.00, 'Dedos de queso, dedos de surimi, carne, pollo, tocino, tampico, empanizado', 615, 1, NULL, 12),
+(27, 1, 'Nano XL', 345.00, 'Dedos de queso, dedosde surimi, carne pollo, tocino, queso, tampico, 1.5 kg', 356, 1, 'prod_68add3af36463.jpg', 12),
+(28, 1, 'Nano T-plus', 395.00, 'Dedos de queso, dedosde surimi, carne pollo, tocino, queso, tampico, 2 kg', 66, 1, NULL, 12),
+(29, 1, 'Chile Volcán', 89.00, 'Chile, 1 ingrediente a elegir, arroz, queso chihuahua,philadelphia', 1422, 1, 'prod_693ee33d645cc.jpg', 10),
+(30, 1, 'Kushiagues', 79.00, 'Par de brochetas (camarón, pollo o surimi)', 9842, 1, NULL, 10),
+(31, 1, 'Dedos de Queso', 69.00, 'Queso, empanizado (5 piezas)', 1000000, 1, NULL, 10),
+(32, 1, 'Tostada Culichi', 85.00, 'Tostada, camarón, pulpo, callo, pepino, cebolla morada, masago, chile serrano, chile en polvo, jugo de aguachile', 4792, 1, 'prod_68add491b6f90.jpg', 10),
+(33, 1, 'Tostada tropical', 85.00, 'Tostada, atún, mango, camarón, callo, cebolla morada, chile en polvo, jugo de aguachile', 1615, 1, 'prod_693eda396258c.jpg', 10),
+(34, 1, 'Empanada Horneada', 119.00, 'Tortilla de harina, carne, pollo, camarón,  mezcla de quesos, tampico, anguila y sirracha', 807, 1, NULL, 10),
+(35, 1, 'Rollitos', 79.00, 'Orden de 2 piezas, rellenos de philadelphia,\n queso chihuahua e ingrediente a elegir (res, pollo\n o camarón).', 9662, 1, 'prod_68add227e7037.jpg', 10),
+(36, 1, 'Gyozas Res', 99.00, 'Orden con 6 piezas pequeñas (Pueden ser de\n philadelphia y camarón o de pollo y verduras)', 9662, 1, 'prod_693ee32ed623c.jpg', 10),
+(37, 1, 'Papas a la francesa', 69.00, 'Papas a la francesa y cátsup ó aderezo especial', 1000000, 1, NULL, 10),
+(38, 1, 'Papas gajo', 79.00, 'Papas gajo y cátsup ó aderezo especial', 1000000, 1, NULL, 10),
+(39, 1, 'Ceviche Tokyo', 175.00, 'Cama de pepino, kanikama, camarón, aguacate, pulpo, jugo de aguachile', 479, 1, 'prod_68add2c342bb0.jpg', 3),
+(40, 1, 'Teriyaki krispy', 145.00, 'pollo empanizado, chile morrón, chile de arból, zanahoria, cebolla morada, cacahuate con salsa (salado)', 9983, 1, NULL, 3),
+(41, 1, 'Teriyaki', 149.00, 'Ingrediente a elegir, salteado de cebolla, zanahoria, calabaza, brócoli y coliflor, salsa teriyaki (dulce)', 9983, 1, NULL, 3),
+(42, 1, 'Pollo Mongol', 145.00, 'Pollo capeado, cebolla, zanahoria, apio, chile serrano, chile morrón, chile de arból, salsas orientales, montado en arroz blanco', 9983, 1, 'prod_68add8fa7fb9e.jpg', 3),
+(43, 1, 'Chow Mein Especial', 165.00, 'Pasta frita, camarón, carne, pollo, vegetales, salsas orientales', 9842, 1, 'prod_68adcfaa08c5a.jpg', 4),
+(44, 1, 'Chukasoba', 159.00, 'Camarón, pulpo, vegetales, pasta chukasoba', 9842, 1, NULL, 4),
+(45, 1, 'Fideo Yurey', 175.00, 'Fideo chino transparente, julianas de zanahoria y apio, cebolla, chile caribe y morrón y la proteína de tu elección', 9990, 1, NULL, 4),
+(46, 1, 'Udon spicy', 189.00, 'Julianas de zanahoria y cebolla, chile caribe, apio, chile de árbol, nuez de la india, ajonjolí, camarones capeados', 9990, 1, 'prod_68add7d1cd5d9.jpg', 4),
+(47, 1, 'Orange Chiken Tokyo', 159.00, 'Pollo capeado (300gr), graby de naranja, pepino, zanahoria, rodajas de naranja, ajonjolíPollo capeando (300gr) rebosado con graby de\n naranja con zanahoria, pepino y rodajas de naranja\n y ajonjolí', 9585, 1, 'prod_693f51734c1a6.jpg', 3),
+(48, 1, 'Udon Muchi', 135.00, 'Pasta udon, vegetales, camarón y pollo', 196, 1, NULL, 4),
+(49, 1, 'Tokyo ramen', 135.00, 'Pasta, vegetales, naruto, huevo, carne, camarón, fondo de res y cerdo', 196, 1, NULL, 4),
+(50, 1, 'Ramen Gran Meat', 135.00, 'Pasta, vegetales, trozos de carne sazonada con salsas orientales', 196, 1, NULL, 4),
+(51, 1, 'Ramen yasai', 125.00, 'Pasta, vegetales, fondo de res y cerdo', 196, 1, NULL, 4),
+(52, 1, 'Baby Ramen', 129.00, 'Pasta, vegetales, pollo a la plancha, salsas orientales, fondo de res y cerdo', 196, 1, NULL, 4),
+(53, 1, 'Cajun Ramen', 165.00, 'Fideos, vegetales, camarón gigante para pelar, fondo de res y cerdo, ajonjolí', 196, 1, 'prod_693f4f7f390e6.jpg', 4),
+(54, 1, 'Gohan', 135.00, 'Arroz blanco, res y pollo, base de philadelphia y tampico con rodajas de aguacate, camarones empanizados, ajonjolí', 281, 1, 'prod_693ed94fb6a93.jpg', 5),
+(55, 1, 'Gohan Krispy', 125.00, 'Arroz blanco, base de philadelphia, tampico y cubitos de aguacate, pollo y cebolla capeados, salsa de anguila, ajonjolí', 281, 1, 'prod_68add4bf039d2.jpg', 5),
+(56, 1, 'Yakimeshi', 125.00, 'Arroz frito, vegetales, carne, pollo y tocino, philadelphia, tampico, aguacate, ajonjolí', 190, 1, 'prod_68add0ace9c67.jpg', 5),
+(57, 1, 'Rollo Aguachile Especial', 125.00, 'Arroz frito, pollo empanizado, philadelphia, aguacate y tampico', 9662, 1, 'prod_68add7b73652c.jpg', 5),
+(58, 1, 'Bomba', 125.00, 'Bola de arroz, res, pollo, philadelphia, queso chihuahua, tampico , empanizada y cubierta de salsa de anguila', 9662, 1, 'prod_68add5bb666f3.jpg', 5),
+(59, 1, 'Rollo kids', 79.00, '1/2 Rollo de pollo (6 piezas) y papas a la francesa', 1000000, 1, NULL, 3),
+(60, 1, 'Kid mini Yakimeshi', 105.00, 'Yakimeshi mini y papas a la francesa', 281, 1, NULL, 3),
+(61, 1, 'kids dedi', 99.00, 'Dedos de queso (3 piezas) y papas a la francesa', 999999, 1, NULL, 3),
+(62, 1, 'Chocoflan', 79.00, 'Porción de chocoflan', 1000000, 1, NULL, 2),
+(63, 1, 'Pay de Queso', 69.00, 'Porción de pay de queso', 1000000, 1, 'prod_68ae01fd0820f.jpg', 2),
+(64, 1, 'Helado Tempura', 99.00, 'Helado tempura', 99998, 1, NULL, 2),
+(65, 1, 'Postre Especial', 79.00, NULL, 1000000, 1, 'prod_68ae00d2cd4af.jpg', 2),
+(66, 1, 'Té de Jazmín (Litro)', 35.00, 'Té verde con aroma a jazmín, servido en litro.', 53, 1, 'prod_693edbd1cde27.jpg', 1),
+(67, 1, 'Té de Jazmín (Refil)', 37.00, 'Té verde aromatizado con flores de jazmín.', 55, 1, 'prod_693edbe03ad62.jpg', 1),
+(68, 1, 'Limonada Natural', 37.00, 'Bebida de limón exprimido con agua y azúcar.', 1665, 1, NULL, 1),
+(69, 1, 'Limonada Mineral', 39.00, 'Bebida de limón con agua mineral y azúcar.', 500, 1, NULL, 1),
+(70, 1, 'Naranjada Natural', 37.00, 'Bebida de jugo de naranja con agua y azúcar.', 1000000, 1, NULL, 1),
+(71, 1, 'Naranjada Mineral', 39.00, 'Refresco de naranja con agua mineral.', 1000000, 1, NULL, 1),
+(72, 1, 'Agua de Tamarindo', 37.00, 'Bebida dulce y ácida de tamarindo.', 999999, 1, NULL, 1),
+(73, 1, 'Agua Mineral (355ml)', 37.00, 'Agua con gas en envase pequeño.', 1000000, 1, 'prod_68ae05aa8d01f.jpg', 1),
+(74, 1, 'Calpico', 37.00, 'Bebida japonesa dulce y láctea de yogur.', 1000000, 1, 'prod_68ae01959fac5.jpg', 1),
+(75, 1, 'Calpitamarindo', 39.00, NULL, 1000000, 1, NULL, 1),
+(76, 1, 'Refresco (335ml)', 35.00, 'Refresco embotellado', 1000000, 1, 'prod_68ae07bd9ef3c.jpg', 1),
+(77, 1, 'Aderezo de Chipotle', 10.00, 'Salsa cremosa picante de chipotle.', 9690, 1, 'prod_68ae00b788642.jpg', 6),
+(78, 1, 'Aderezo de Cilantro', 15.00, 'Salsa cremosa con cilantro fresco.', 9988, 1, 'prod_693ecf6fab68f.jpg', 6),
+(79, 1, 'Salsa Sriracha', 10.00, 'Alsa picante de chile, ajo y vinagre.', 6659, 1, 'prod_68ae083f538d5.jpg', 6),
+(80, 1, 'Jugo de Aguachile', 15.00, 'Salsa líquida de limón, chile y especias usada para marinar mariscos.', 1000000, 1, NULL, 6),
+(81, 1, 'Ranch', 15.00, 'Aderezo cremoso de hierbas y especias.', 1000000, 1, 'prod_68ae011cd828d.jpg', 6),
+(82, 1, 'Búfalo', 15.00, 'Salsa picante de chile y mantequilla.', 1000000, 1, 'prod_68ae0164e5f57.jpg', 6),
+(83, 1, 'BBQ', 15.00, 'Salsa dulce y ahumada para carnes.', 1000000, 1, NULL, 6),
+(84, 1, 'Soya Extra', 10.00, 'Salsa de soja concentrada o adicional', 6662, 1, NULL, 6),
+(85, 1, 'Salsa de Anguila', 10.00, 'Salsa dulce y salada hecha con anguila y soja.', 6663, 1, NULL, 6),
+(86, 1, 'Cebollitas o Chiles', 10.00, NULL, 999098, 1, NULL, 6),
+(87, 1, 'Topping Horneado Especial', 25.00, 'Aderezo de chipotle, anguila y sriracha', 6460, 1, NULL, 7),
+(88, 1, 'Topping Kanikama', 40.00, '(Ensalada de cangrejo)', 3329, 1, NULL, 7),
+(89, 1, 'Topping Tampico', 20.00, '(Ensalada de surimi)', 3324, 1, NULL, 7),
+(90, 1, 'Topping Demon', 40.00, 'Camarón, tocino, quesos, serrano y chichimi', 1640, 1, NULL, 7),
+(91, 1, 'Topping Chiquilín', 35.00, 'Camarón empanizado, anguila y ajonjolí', 1577, 1, NULL, 7),
+(92, 1, 'Gladiador Roll', 149.00, 'Por dentro philadelphia, pepino y aguacate. Por fuera trozos de pulpo, queso spicy, shishimi y cebolla, bañado en salsa de anguila y ajonjolí. Rollo natural.', 400, 1, NULL, 13),
+(93, 1, 'Güerito Roll', 155.00, 'Por dentro camarón. Forrado con philadelphia y manchego, bañado en aderezo de chipotle, coronado con tocino, caribe y bañado en salsa sriracha. Empanizado.', 400, 1, 'prod_68add1fe92388.jpg', 13),
+(94, 1, 'Ebby Especial Roll', 155.00, 'Por dentro base, forrado con tampico cheese, bañado en aderezo de chipotle y coronado con camarón mariposa, aguacate, anguila y ajonjolí. Empanizado.', 400, 1, NULL, 13),
+(95, 1, 'Pakun Roll', 145.00, 'Relleno de tocino, por fuera topping de pollo y queso spicy, zanahoria. Acompañado de salsa anguila. Rollo natural.', 400, 1, 'prod_693f53f105917.jpg', 13),
+(96, 1, 'Rorris Roll', 145.00, 'Camarón y caribe por dentro, topping de tampico cheese, aguacate y bañados en salsa de anguila y ajonjolí. Empanizado.', 400, 1, NULL, 13),
+(97, 1, 'Royal Roll', 139.00, 'Carne y tocino por dentro, con topping de pollo. Empanizado, bañado con aderezo de chipotle, salsa de anguila y ajonjolí.', 400, 1, 'prod_68adcf0749621.jpg', 13),
+(98, 1, 'Larry Roll', 165.00, 'Rollo relleno de camarón, forrado con salmón. Topping de surimi finamente picado, spicy, coronado con atún fresco y bañado en salsa de anguila y ajonjolí.', 400, 1, 'prod_68add883e8ce7.jpg', 11),
+(99, 1, 'Aguachile Especial Roll', 165.00, 'Rollo relleno de philadelphia, pepino y aguacate. Forrado de chile serrano finamente picado, coronado con un aguachile especial de camarón, pulpo, callo y aguacate.', 400, 1, 'prod_693edd65dfa55.jpg', 11),
+(100, 1, 'Mordick Roll', 155.00, 'Rollo relleno de tocino, montado doble con queso gratinado, mezcla de quesos spicy, coronado con camarones empanizados y bañado en salsa de anguila y ajonjolí.', 400, 1, 'prod_68add0ea0033c.jpg', 11),
+(101, 1, 'Maney Roll', 175.00, 'Relleno de philadelphia, pepino y aguacate. Forrado de aguacate fresco y topping con camarón, medallón de atún, callo, mango y cebolla morada. Acompañado de salsa aguachile. Rollo natural.', 400, 1, 'prod_68add31666451.jpg', 11),
+(102, 1, 'Onigiri', 69.00, '1 Pieza de triángulo de arroz blanco, con un toque ligero de philadelphia, forrado de alga, cubierto de ajonjolí y relleno opcional de pollo con verduras (col morada y zanahoria) o atún con aderezo especial de mayonesa y cebollín.', 634, 1, 'prod_68add35c53114.jpg', 3),
+(103, 1, 'Dumplings', 99.00, 'Orden de 6 piezas de dumplings, rellenos de carne molida de cerdo. Sazonados orientalmente y acompañado con salsa macha.', 9991, 1, 'prod_68add5b64497c.jpg', 3),
+(104, 1, 'Boneless', 139.00, '250gr. De boneless con salsa a elegir (búfalo, bbq, mango habanero, mostaza miel o mermelada de chipotle).', 394, 1, 'prod_68ae02330ae4d.jpg', 3),
+(105, 1, 'Alitas', 139.00, '250gr. De alitas con salsa a elegir (búfalo, bbq, mango habanero, mostaza miel ó mermelada de chipotle).', 393, 1, 'prod_68add564480c8.jpg', 3),
+(106, 1, 'Sopa Pho', 159.00, 'Rico fondo de pollo con vegetales, pechuga de pollo, fideos chinos y chile de árbol. Coronado con 4 piezas de dumplings.', 1665, 1, 'prod_68adce4f32265.jpg', 3),
+(107, 1, 'Yummy Roll', 169.00, 'Alga por fuera, relleno de camarón, philadelphia, pepino y aguacate. Gratinado con queso spicy de la casa. Coronado con camarón, aguacate y bañado en salsa de anguila y ajonjolí.', 400, 1, 'prod_68add0c25fd53.jpg', 3),
+(108, 1, 'Cebolla Caramelizada', 10.00, 'Cebolla Caramelizada', 499549, 1, NULL, 6),
+(109, 1, 'Kintaro', 102.00, 'Plato de sushi con atún graso picado toro y cebollín', 400, 1, NULL, 3),
+(110, 1, 'Guamuchilito Especial', 129.00, 'Bebida preparada con jugo de guamúchil, combinada con alcohol, salsas y especias.', 400, 1, 'prod_68add0071ee2a.jpg', 11),
+(111, 1, 'Juny', 333.00, 'Juny', 400, 1, 'prod_693f59cf505a7.jpg', NULL),
+(112, 1, 'Pork Spicy', 122.00, 'Platillo de cerdo picante.', 422, 1, 'prod_68adcf27bc6a4.jpg', 8),
+(120, 1, 'Corona 1/2', 35.00, 'Cerveza helada', 1000000, 1, 'prod_693f59ab2044d.jpg', 14),
+(121, 1, 'Corona Golden Light 1/2', 35.00, 'Cerveza Golden helada', 1000000, 1, 'prod_68adff1b2eb67.jpg', 1),
+(122, 1, 'Negra Modelo', 40.00, 'Cerveza negra helada', 1000000, 1, 'prod_68adffa389931.jpg', 1),
+(123, 1, 'Modelo Especial', 40.00, 'Cerveza helada', 1000000, 1, 'prod_68adfeeac5c57.jpg', 1),
+(124, 1, 'Bud Light', 35.00, 'Cerveza helada', 1000000, 1, 'prod_68ae0111e5f9d.jpg', 14),
+(125, 1, 'Stella Artois', 45.00, 'Cerveza Helada', 1000000, 1, 'prod_68ae081b893ed.jpg', 1),
+(126, 1, 'Ultra 1/2', 45.00, 'Cerveza helada', 1000000, 1, 'prod_68ae015b16f22.jpg', 1),
+(127, 1, 'Michelob 1/2', 45.00, 'Cerveza helada', 1000000, 1, 'prod_693ecfd6d5820.jpg', 1),
+(128, 1, 'Vaso Chelado', 10.00, 'Vaso chelado', 1000000, 1, NULL, 6),
+(129, 1, 'Vaso Michelado', 15.00, 'Vaso michelado', 1000000, 1, NULL, 6),
+(130, 1, 'Vaso Clamato', 25.00, 'Vaso michelado', 1000000, 1, NULL, 6),
+(131, 1, 'Cheese fresse', 119.00, 'Concha de papa gajo sazonada, bañada en delicioso queso y tozos de tocino; al horno', 400, 1, 'prod_68add54669456.jpg', 3),
+(132, 1, 'Charola Kyoyu Suru', 199.00, 'Camaron capeado, aros de cebolla y gyosas de carne de cerdo, acompañado de delicioso dip especial de la casa y salsa oriental', 500, 1, 'prod_68add217dc164.jpg', 3),
+(133, 1, 'Alitas Nudz', 159.00, 'Deliciosos 300grs De alitas, bañadas en salsa dulce con chile, sabor cacahuate y ajonjolí', 329, 1, NULL, 3),
+(134, 1, 'Edamames', 89.00, 'Vaina de frijol de soja preparado con picante, soya,sal y limon en una cama de zanahoria', 665, 1, 'prod_68add3a313461.jpg', 3),
+(135, 1, 'Crispy Chesse', 99.00, 'Rollo de 6 a 7 pz relleno de carne, philadelphia, pepino y aguacate, empanizado, gratinado spicy y trozos de tocino frito.', 507, 1, NULL, 9),
+(136, 1, 'Chummy Roll', 99.00, 'Rollo de 6 a 7 pz relleno de philadelphia, pepino y aguacate, coronado con tampico y camarón Empanizado, bando en salsa de Anguila y ajonjoli.', 507, 1, NULL, 9),
+(137, 1, 'Pollo kai', 0.00, 'Pollo capeado con ejote, fécula, chili bean y sazón oriental', 660, 1, NULL, 3),
+(138, 1, 'Yakimeshi roka', 135.00, 'Arroz con tampico, philadelphia, verduras, boneless y aguacate', 281, 1, NULL, 5),
+(139, 1, 'Kushiages (Pollo)', 79.00, 'Par de brochetas de pollo', 1651, 1, NULL, 10),
+(140, 1, 'Kushiages (Surimi)', 79.00, 'Par de brochetas de surimi', 712, 1, NULL, 10),
+(141, 1, 'Kushiages (Camarón)', 79.00, 'Par de brochetas de camarón con philadelphia', 1610, 1, NULL, 10),
+(142, 1, 'Rollitos (Pollo)', 79.00, 'Orden de 2 pz con pollo', 2415, 1, 'prod_693ee030306cb.jpg', 10),
+(143, 1, 'Rollitos (Res)', 79.00, 'Orden de 2 pz con res', 2415, 1, 'prod_693ee04b95cac.jpg', 10),
+(144, 1, 'Rollitos (Camarón)', 79.00, 'Orden de 2 pz con camarón', 2415, 1, 'prod_693ee0187a5f1.jpg', 10),
+(9000, 1, 'Cargo por plataforma:', 30.00, 'Cargo por uso de plataforma web para pedidos', 1000000, 1, NULL, 6),
+(9001, 1, 'ENVÍO – Repartidor casa', 30.00, 'Cargo por envío a domicilio (repartidor casa)', 1000000, 1, NULL, 6),
+(9004, 1, 'Gyozas Pollo', 99.00, 'Orden de 6 pzas rellenas de pollo, zanahoria, jengibre y ajo', 9908, 1, NULL, 10),
+(9005, 1, 'Gyozas Camarón', 99.00, 'Orden de 6 pzas rellenas de camarón y philadelphia', 3280, 1, NULL, 10),
+(9006, 1, 'volt', 25.00, '', 1000000, 1, NULL, 1),
+(9007, 1, 'charola oro', 469.00, '', 1000000, 1, 'prod_693f51f2e9b0d.jpg', 3),
+(9008, 1, 'charola plata', 359.00, '', 1000000, 1, 'prod_693f52556c5ae.jpg', 3),
+(9009, 1, 'charola tokyo', 499.00, '', 999999, 1, 'prod_693f51bc61668.jpg', 3),
+(9010, 1, 'agua natural', 20.00, '', 1000000, 1, 'prod_693ecf471c9e3.jpg', 1),
+(9011, 1, 'Ingrediente extra', 10.00, '', 999992, 1, NULL, 6),
+(9016, 1, 'Refresco Manzanita', 35.00, 'Refresco sabor manzana embotellado (335ml)', 1000000, 1, NULL, 1),
+(9017, 1, 'Refresco Sprite', 35.00, 'Refresco sabor lima-limón embotellado (335ml)', 1000000, 1, NULL, 1),
+(9018, 1, 'Refresco Fanta', 35.00, 'Refresco sabor naranja embotellado (335ml)', 1000000, 1, NULL, 1),
+(9019, 1, 'Refresco Coca-Cola Zero', 35.00, 'Refresco de cola sin azúcar embotellado (335ml)', 1000000, 1, NULL, 1),
+(9020, 1, 'Maki de Pollo', 115.00, 'Rollo de pollo estilo maki .', 1000000, 1, NULL, 9),
+(9021, 1, 'Maki de camaron', 115.00, 'Rollo de carne estilo maki.', 1000000, 1, NULL, 9),
+(9022, 1, 'Boneless Búfalo', 139.00, '250gr de boneless bañados en salsa búfalo.', 1000000, 1, NULL, 3),
+(9023, 1, 'Boneless Chipotle', 139.00, '250gr de boneless bañados en salsa de chipotle.', 1000000, 1, NULL, 3),
+(9024, 1, 'Boneless BBQ', 139.00, '250gr de boneless bañados en salsa BBQ.', 1000000, 1, NULL, 3),
+(9025, 1, 'Alitas Búfalo', 139.00, '250gr de alitas bañadas en salsa búfalo.', 1000000, 1, NULL, 3),
+(9026, 1, 'Alitas Chipotle', 139.00, '250gr de alitas bañadas en salsa de chipotle.', 1000000, 1, NULL, 3),
+(9027, 1, 'Alitas BBQ', 139.00, '250gr de alitas bañadas en salsa BBQ.', 1000000, 1, NULL, 3),
+(9028, 1, 'Empanada Tokyo', 95.00, '', 1000000, 1, NULL, 10),
+(9029, 1, 'Banana Crunch', 109.00, 'Banana Crunch', 1000000, 1, NULL, 2),
+(9030, 1, 'Taiyaki', 99.00, 'Taiyaki relleno de mermelada de fresa o queso crema.', 10000, 1, 'prod_693eeb8b17964.jpg', 2),
+(9031, 1, 'Mojito', 79.00, 'Fresa ó Frutos Rojos', 100000, 1, NULL, 1),
+(9032, 1, 'Limonada fresa / frutos rojos', 59.00, 'Fresa ó Frutos Rojos', 100000, 1, NULL, 1),
+(9033, 1, 'Piñada/ Piña colada', 79.00, '', 10000000, 1, NULL, 1),
+(9034, 1, 'Fresada / fresa colada', 79.00, '', 100000, 1, NULL, 1),
+(9035, 1, 'Clericot vaso', 79.00, '', 1000000, 1, NULL, 1),
+(9036, 1, 'Clericot jarra', 289.00, '', 10000, 1, NULL, 1),
+(9037, 1, 'Gin Tonic', 89.00, '', 100000, 1, NULL, 1),
+(9038, 1, 'Doggy Salty', 89.00, '', 100000, 1, NULL, 1),
+(9039, 1, 'Cantaritos', 69.00, '', 1000000, 1, NULL, 1),
+(9040, 1, 'Golden Roll', 299.00, 'El Golden Roll es un rollo con láminas de oro y este mes de diciembre esta con un precio especial de $299 pesos.', 10000, 1, 'prod_693f5375b1d8e.jpg', 8),
+(9041, 1, 'Pollo kunfu', 119.00, '', 1000000, 1, 'prod_693f54493fa71.jpg', 3),
+(9042, 2, 'Coca Cola', 29.00, 'Refresco embotellado', 1000000, 1, 'prod_693f4bf94664d.jpg', 1),
+(9043, 2, 'Rollo California', 125.00, 'Salmón, arroz, alga nori', 400, 1, NULL, 3),
+(9044, 2, 'Guamuchilito', 119.00, 'Surimi, camarón empanizado, salsa de anguila', 400, 1, 'prod_693ee94bc3fdb.jpg', 8),
+(9045, 2, 'Guerra', 135.00, 'Camarón, ajonjolí, aguacate, salsa de anguila', 400, 1, 'prod_693f50e421e60.jpg', 8),
+(9046, 2, 'Triton Roll', 135.00, 'Philadelphia, pepino, aguacate, surimi, atún ahumado, anguila, siracha', 400, 1, 'prod_68add2ff11cc1.jpg', 8),
+(9047, 2, 'Mechas', 149.00, 'Philadelphia, pepino, aguacate, camarón, ajonjolí, kanikama, camarón empanizado,limón, sirracha, anguila, shisimi', 400, 1, NULL, 8),
+(9048, 2, 'Supremo', 145.00, 'Surimi, philadelphia, ajonjolí, tampico,  pollo capeado, salsa de anguila', 400, 1, NULL, 8),
+(9049, 2, 'Roka Crunch Roll', 129.00, 'Philadelphia, pepino, aguacate, camarón, surimi empanizado, zanahoria rallada, salsa de anguila', 400, 1, NULL, 8),
+(9050, 2, 'Mar y Tierra', 115.00, 'Rollo relleno de carne y camarón.', 400, 1, NULL, 9),
+(9051, 2, 'Cielo, Mar y Tierra', 119.00, 'Pollo, carne, camarón', 400, 1, NULL, 9),
+(9052, 2, '3 Quesos', 125.00, 'Rollo de camarón, carne, base, queso americano\n y gratinado con queso chihuahua.', 400, 1, 'prod_68adcf8c73757.jpg', 9),
+(9053, 2, 'Chiquilin Roll', 125.00, 'Relleno de base (philadelphia, pepino y\n aguacate) Por fuera topping de camarón\n empanizado especial, bañado en salsa de anguila\n y ajonjolí.', 385, 1, 'prod_693ed139b7718.jpg', 9),
+(9054, 2, 'Maki roll res', 115.00, 'Rollo de 1 ingrediente a elegir (carne, tampico,\n pollo y camarón)', 400, 1, NULL, 9),
+(9055, 2, 'Beef cheese', 129.00, 'Rollo de carne gratinado con queso spicy y\n ajonjolí.', 400, 1, 'prod_693f504abbc6a.jpg', 9),
+(9056, 2, 'Cordon Blue', 125.00, 'Rollo relleno de carne y tocino forrado con\n philadelphia y gratinado con queso.', 400, 1, 'prod_693f58287142b.jpg', 9),
+(9057, 2, 'Culichi Roll', 135.00, 'Rollo de carne con topping especial de tampico\n Tokyo empanizado coronado con camarón.', 400, 1, 'prod_693ed995f1042.jpg', 9),
+(9058, 2, 'Bacon Cheese', 135.00, 'Rollo de pollo por fuera gratinado con tocino.', 400, 1, 'prod_68add11ce2483.jpg', 9),
+(9059, 2, 'Crunch Chicken', 135.00, 'Pollo empanizado, tocino, chile serrano, salsa bbq, salsa de anguila', 400, 1, 'prod_693f5876d1bad.jpg', 9),
+(9060, 2, 'Kito', 129.00, 'Carne, tocino, queso, tampico', 400, 1, 'prod_68add69fe703c.jpg', 9),
+(9061, 2, 'Norteño', 125.00, 'Camarón, tampico, queso, tocino, chile serrano', 400, 1, 'prod_693f546312f41.jpg', 9),
+(9062, 2, 'Goloso Roll', 145.00, 'Res, pollo, tocino, queso o tampico', 400, 1, 'prod_68add37a08889.jpg', 9),
+(9063, 2, 'Demon roll', 145.00, 'Res, tocino, toping demon (camarón enchiloso)', 400, 1, 'prod_68add435d40b1.jpg', 9),
+(9064, 2, 'Nano Max', 265.00, 'Dedos de queso, dedos de surimi, carne, pollo, tocino, tampico, empanizado', 615, 1, NULL, 12),
+(9065, 2, 'Nano XL', 345.00, 'Dedos de queso, dedosde surimi, carne pollo, tocino, queso, tampico, 1.5 kg', 356, 1, 'prod_68add3af36463.jpg', 12),
+(9066, 2, 'Nano T-plus', 395.00, 'Dedos de queso, dedosde surimi, carne pollo, tocino, queso, tampico, 2 kg', 66, 1, NULL, 12),
+(9067, 2, 'Chile Volcán', 89.00, 'Chile, 1 ingrediente a elegir, arroz, queso chihuahua,philadelphia', 1422, 1, 'prod_693ee33d645cc.jpg', 10),
+(9068, 2, 'Kushiagues', 79.00, 'Par de brochetas (camarón, pollo o surimi)', 9842, 1, NULL, 10),
+(9069, 2, 'Dedos de Queso', 69.00, 'Queso, empanizado (5 piezas)', 1000000, 1, NULL, 10),
+(9070, 2, 'Tostada Culichi', 85.00, 'Tostada, camarón, pulpo, callo, pepino, cebolla morada, masago, chile serrano, chile en polvo, jugo de aguachile', 4792, 1, 'prod_68add491b6f90.jpg', 10),
+(9071, 2, 'Tostada tropical', 85.00, 'Tostada, atún, mango, camarón, callo, cebolla morada, chile en polvo, jugo de aguachile', 1615, 1, 'prod_693eda396258c.jpg', 10),
+(9072, 2, 'Empanada Horneada', 119.00, 'Tortilla de harina, carne, pollo, camarón,  mezcla de quesos, tampico, anguila y sirracha', 807, 1, NULL, 10),
+(9073, 2, 'Rollitos', 79.00, 'Orden de 2 piezas, rellenos de philadelphia,\n queso chihuahua e ingrediente a elegir (res, pollo\n o camarón).', 9662, 1, 'prod_68add227e7037.jpg', 10),
+(9074, 2, 'Gyozas Res', 99.00, 'Orden con 6 piezas pequeñas (Pueden ser de\n philadelphia y camarón o de pollo y verduras)', 9662, 1, 'prod_693ee32ed623c.jpg', 10),
+(9075, 2, 'Papas a la francesa', 69.00, 'Papas a la francesa y cátsup ó aderezo especial', 1000000, 1, NULL, 10),
+(9076, 2, 'Papas gajo', 79.00, 'Papas gajo y cátsup ó aderezo especial', 1000000, 1, NULL, 10),
+(9077, 2, 'Ceviche Tokyo', 175.00, 'Cama de pepino, kanikama, camarón, aguacate, pulpo, jugo de aguachile', 479, 1, 'prod_68add2c342bb0.jpg', 3),
+(9078, 2, 'Teriyaki krispy', 145.00, 'pollo empanizado, chile morrón, chile de arból, zanahoria, cebolla morada, cacahuate con salsa (salado)', 9983, 1, NULL, 3),
+(9079, 2, 'Teriyaki', 149.00, 'Ingrediente a elegir, salteado de cebolla, zanahoria, calabaza, brócoli y coliflor, salsa teriyaki (dulce)', 9983, 1, NULL, 3),
+(9080, 2, 'Pollo Mongol', 145.00, 'Pollo capeado, cebolla, zanahoria, apio, chile serrano, chile morrón, chile de arból, salsas orientales, montado en arroz blanco', 9983, 1, 'prod_68add8fa7fb9e.jpg', 3),
+(9081, 2, 'Chow Mein Especial', 165.00, 'Pasta frita, camarón, carne, pollo, vegetales, salsas orientales', 9842, 1, 'prod_68adcfaa08c5a.jpg', 4),
+(9082, 2, 'Chukasoba', 159.00, 'Camarón, pulpo, vegetales, pasta chukasoba', 9842, 1, NULL, 4),
+(9083, 2, 'Fideo Yurey', 175.00, 'Fideo chino transparente, julianas de zanahoria y apio, cebolla, chile caribe y morrón y la proteína de tu elección', 9990, 1, NULL, 4),
+(9084, 2, 'Udon spicy', 189.00, 'Julianas de zanahoria y cebolla, chile caribe, apio, chile de árbol, nuez de la india, ajonjolí, camarones capeados', 9990, 1, 'prod_68add7d1cd5d9.jpg', 4),
+(9085, 2, 'Orange Chiken Tokyo', 159.00, 'Pollo capeado (300gr), graby de naranja, pepino, zanahoria, rodajas de naranja, ajonjolíPollo capeando (300gr) rebosado con graby de\n naranja con zanahoria, pepino y rodajas de naranja\n y ajonjolí', 9585, 1, 'prod_693f51734c1a6.jpg', 3),
+(9086, 2, 'Udon Muchi', 135.00, 'Pasta udon, vegetales, camarón y pollo', 196, 1, NULL, 4),
+(9087, 2, 'Tokyo ramen', 135.00, 'Pasta, vegetales, naruto, huevo, carne, camarón, fondo de res y cerdo', 196, 1, NULL, 4),
+(9088, 2, 'Ramen Gran Meat', 135.00, 'Pasta, vegetales, trozos de carne sazonada con salsas orientales', 196, 1, NULL, 4),
+(9089, 2, 'Ramen yasai', 125.00, 'Pasta, vegetales, fondo de res y cerdo', 196, 1, NULL, 4),
+(9090, 2, 'Baby Ramen', 129.00, 'Pasta, vegetales, pollo a la plancha, salsas orientales, fondo de res y cerdo', 196, 1, NULL, 4),
+(9091, 2, 'Cajun Ramen', 165.00, 'Fideos, vegetales, camarón gigante para pelar, fondo de res y cerdo, ajonjolí', 196, 1, 'prod_693f4f7f390e6.jpg', 4),
+(9092, 2, 'Gohan', 135.00, 'Arroz blanco, res y pollo, base de philadelphia y tampico con rodajas de aguacate, camarones empanizados, ajonjolí', 281, 1, 'prod_693ed94fb6a93.jpg', 5),
+(9093, 2, 'Gohan Krispy', 125.00, 'Arroz blanco, base de philadelphia, tampico y cubitos de aguacate, pollo y cebolla capeados, salsa de anguila, ajonjolí', 281, 1, 'prod_68add4bf039d2.jpg', 5),
+(9094, 2, 'Yakimeshi', 125.00, 'Arroz frito, vegetales, carne, pollo y tocino, philadelphia, tampico, aguacate, ajonjolí', 190, 1, 'prod_68add0ace9c67.jpg', 5),
+(9095, 2, 'Rollo Aguachile Especial', 125.00, 'Arroz frito, pollo empanizado, philadelphia, aguacate y tampico', 9662, 1, 'prod_68add7b73652c.jpg', 5),
+(9096, 2, 'Bomba', 125.00, 'Bola de arroz, res, pollo, philadelphia, queso chihuahua, tampico , empanizada y cubierta de salsa de anguila', 9662, 1, 'prod_68add5bb666f3.jpg', 5),
+(9097, 2, 'Rollo kids', 79.00, '1/2 Rollo de pollo (6 piezas) y papas a la francesa', 1000000, 1, NULL, 3),
+(9098, 2, 'Kid mini Yakimeshi', 105.00, 'Yakimeshi mini y papas a la francesa', 281, 1, NULL, 3),
+(9099, 2, 'kids dedi', 99.00, 'Dedos de queso (3 piezas) y papas a la francesa', 999999, 1, NULL, 3),
+(9100, 2, 'Chocoflan', 79.00, 'Porción de chocoflan', 1000000, 1, NULL, 2),
+(9101, 2, 'Pay de Queso', 69.00, 'Porción de pay de queso', 1000000, 1, 'prod_68ae01fd0820f.jpg', 2),
+(9102, 2, 'Helado Tempura', 99.00, 'Helado tempura', 99998, 1, NULL, 2),
+(9103, 2, 'Postre Especial', 79.00, NULL, 1000000, 1, 'prod_68ae00d2cd4af.jpg', 2),
+(9104, 2, 'Té de Jazmín (Litro)', 35.00, 'Té verde con aroma a jazmín, servido en litro.', 53, 1, 'prod_693edbd1cde27.jpg', 1),
+(9105, 2, 'Té de Jazmín (Refil)', 37.00, 'Té verde aromatizado con flores de jazmín.', 55, 1, 'prod_693edbe03ad62.jpg', 1),
+(9106, 2, 'Limonada Natural', 37.00, 'Bebida de limón exprimido con agua y azúcar.', 1665, 1, NULL, 1),
+(9107, 2, 'Limonada Mineral', 39.00, 'Bebida de limón con agua mineral y azúcar.', 500, 1, NULL, 1),
+(9108, 2, 'Naranjada Natural', 37.00, 'Bebida de jugo de naranja con agua y azúcar.', 1000000, 1, NULL, 1),
+(9109, 2, 'Naranjada Mineral', 39.00, 'Refresco de naranja con agua mineral.', 1000000, 1, NULL, 1),
+(9110, 2, 'Agua de Tamarindo', 37.00, 'Bebida dulce y ácida de tamarindo.', 999999, 1, NULL, 1),
+(9111, 2, 'Agua Mineral (355ml)', 37.00, 'Agua con gas en envase pequeño.', 1000000, 1, 'prod_68ae05aa8d01f.jpg', 1),
+(9112, 2, 'Calpico', 37.00, 'Bebida japonesa dulce y láctea de yogur.', 1000000, 1, 'prod_68ae01959fac5.jpg', 1),
+(9113, 2, 'Calpitamarindo', 39.00, NULL, 1000000, 1, NULL, 1),
+(9114, 2, 'Refresco (335ml)', 35.00, 'Refresco embotellado', 1000000, 1, 'prod_68ae07bd9ef3c.jpg', 1),
+(9115, 2, 'Aderezo de Chipotle', 10.00, 'Salsa cremosa picante de chipotle.', 9690, 1, 'prod_68ae00b788642.jpg', 6),
+(9116, 2, 'Aderezo de Cilantro', 15.00, 'Salsa cremosa con cilantro fresco.', 9988, 1, 'prod_693ecf6fab68f.jpg', 6),
+(9117, 2, 'Salsa Sriracha', 10.00, 'Alsa picante de chile, ajo y vinagre.', 6659, 1, 'prod_68ae083f538d5.jpg', 6),
+(9118, 2, 'Jugo de Aguachile', 15.00, 'Salsa líquida de limón, chile y especias usada para marinar mariscos.', 1000000, 1, NULL, 6),
+(9119, 2, 'Ranch', 15.00, 'Aderezo cremoso de hierbas y especias.', 1000000, 1, 'prod_68ae011cd828d.jpg', 6),
+(9120, 2, 'Búfalo', 15.00, 'Salsa picante de chile y mantequilla.', 1000000, 1, 'prod_68ae0164e5f57.jpg', 6),
+(9121, 2, 'BBQ', 15.00, 'Salsa dulce y ahumada para carnes.', 1000000, 1, NULL, 6),
+(9122, 2, 'Soya Extra', 10.00, 'Salsa de soja concentrada o adicional', 6662, 1, NULL, 6),
+(9123, 2, 'Salsa de Anguila', 10.00, 'Salsa dulce y salada hecha con anguila y soja.', 6663, 1, NULL, 6),
+(9124, 2, 'Cebollitas o Chiles', 10.00, NULL, 999098, 1, NULL, 6),
+(9125, 2, 'Topping Horneado Especial', 25.00, 'Aderezo de chipotle, anguila y sriracha', 6460, 1, NULL, 7),
+(9126, 2, 'Topping Kanikama', 40.00, '(Ensalada de cangrejo)', 3329, 1, NULL, 7),
+(9127, 2, 'Topping Tampico', 20.00, '(Ensalada de surimi)', 3324, 1, NULL, 7),
+(9128, 2, 'Topping Demon', 40.00, 'Camarón, tocino, quesos, serrano y chichimi', 1640, 1, NULL, 7),
+(9129, 2, 'Topping Chiquilín', 35.00, 'Camarón empanizado, anguila y ajonjolí', 1577, 1, NULL, 7),
+(9130, 2, 'Gladiador Roll', 149.00, 'Por dentro philadelphia, pepino y aguacate. Por fuera trozos de pulpo, queso spicy, shishimi y cebolla, bañado en salsa de anguila y ajonjolí. Rollo natural.', 400, 1, NULL, 13),
+(9131, 2, 'Güerito Roll', 155.00, 'Por dentro camarón. Forrado con philadelphia y manchego, bañado en aderezo de chipotle, coronado con tocino, caribe y bañado en salsa sriracha. Empanizado.', 400, 1, 'prod_68add1fe92388.jpg', 13),
+(9132, 2, 'Ebby Especial Roll', 155.00, 'Por dentro base, forrado con tampico cheese, bañado en aderezo de chipotle y coronado con camarón mariposa, aguacate, anguila y ajonjolí. Empanizado.', 400, 1, NULL, 13),
+(9133, 2, 'Pakun Roll', 145.00, 'Relleno de tocino, por fuera topping de pollo y queso spicy, zanahoria. Acompañado de salsa anguila. Rollo natural.', 400, 1, 'prod_693f53f105917.jpg', 13),
+(9134, 2, 'Rorris Roll', 145.00, 'Camarón y caribe por dentro, topping de tampico cheese, aguacate y bañados en salsa de anguila y ajonjolí. Empanizado.', 400, 1, NULL, 13),
+(9135, 2, 'Royal Roll', 139.00, 'Carne y tocino por dentro, con topping de pollo. Empanizado, bañado con aderezo de chipotle, salsa de anguila y ajonjolí.', 400, 1, 'prod_68adcf0749621.jpg', 13),
+(9136, 2, 'Larry Roll', 165.00, 'Rollo relleno de camarón, forrado con salmón. Topping de surimi finamente picado, spicy, coronado con atún fresco y bañado en salsa de anguila y ajonjolí.', 400, 1, 'prod_68add883e8ce7.jpg', 11),
+(9137, 2, 'Aguachile Especial Roll', 165.00, 'Rollo relleno de philadelphia, pepino y aguacate. Forrado de chile serrano finamente picado, coronado con un aguachile especial de camarón, pulpo, callo y aguacate.', 400, 1, 'prod_693edd65dfa55.jpg', 11),
+(9138, 2, 'Mordick Roll', 155.00, 'Rollo relleno de tocino, montado doble con queso gratinado, mezcla de quesos spicy, coronado con camarones empanizados y bañado en salsa de anguila y ajonjolí.', 400, 1, 'prod_68add0ea0033c.jpg', 11),
+(9139, 2, 'Maney Roll', 175.00, 'Relleno de philadelphia, pepino y aguacate. Forrado de aguacate fresco y topping con camarón, medallón de atún, callo, mango y cebolla morada. Acompañado de salsa aguachile. Rollo natural.', 400, 1, 'prod_68add31666451.jpg', 11),
+(9140, 2, 'Onigiri', 69.00, '1 Pieza de triángulo de arroz blanco, con un toque ligero de philadelphia, forrado de alga, cubierto de ajonjolí y relleno opcional de pollo con verduras (col morada y zanahoria) o atún con aderezo especial de mayonesa y cebollín.', 634, 1, 'prod_68add35c53114.jpg', 3),
+(9141, 2, 'Dumplings', 99.00, 'Orden de 6 piezas de dumplings, rellenos de carne molida de cerdo. Sazonados orientalmente y acompañado con salsa macha.', 9991, 1, 'prod_68add5b64497c.jpg', 3),
+(9142, 2, 'Boneless', 139.00, '250gr. De boneless con salsa a elegir (búfalo, bbq, mango habanero, mostaza miel o mermelada de chipotle).', 394, 1, 'prod_68ae02330ae4d.jpg', 3),
+(9143, 2, 'Alitas', 139.00, '250gr. De alitas con salsa a elegir (búfalo, bbq, mango habanero, mostaza miel ó mermelada de chipotle).', 393, 1, 'prod_68add564480c8.jpg', 3),
+(9144, 2, 'Sopa Pho', 159.00, 'Rico fondo de pollo con vegetales, pechuga de pollo, fideos chinos y chile de árbol. Coronado con 4 piezas de dumplings.', 1665, 1, 'prod_68adce4f32265.jpg', 3),
+(9145, 2, 'Yummy Roll', 169.00, 'Alga por fuera, relleno de camarón, philadelphia, pepino y aguacate. Gratinado con queso spicy de la casa. Coronado con camarón, aguacate y bañado en salsa de anguila y ajonjolí.', 400, 1, 'prod_68add0c25fd53.jpg', 3),
+(9146, 2, 'Cebolla Caramelizada', 10.00, 'Cebolla Caramelizada', 499549, 1, NULL, 6),
+(9147, 2, 'Kintaro', 102.00, 'Plato de sushi con atún graso picado toro y cebollín', 400, 1, NULL, 3),
+(9148, 2, 'Guamuchilito Especial', 129.00, 'Bebida preparada con jugo de guamúchil, combinada con alcohol, salsas y especias.', 400, 1, 'prod_68add0071ee2a.jpg', 11),
+(9149, 2, 'Juny', 333.00, 'Juny', 400, 1, 'prod_693f59cf505a7.jpg', NULL),
+(9150, 2, 'Pork Spicy', 122.00, 'Platillo de cerdo picante.', 422, 1, 'prod_68adcf27bc6a4.jpg', 8),
+(9151, 2, 'Corona 1/2', 35.00, 'Cerveza helada', 1000000, 1, 'prod_693f59ab2044d.jpg', 14),
+(9152, 2, 'Corona Golden Light 1/2', 35.00, 'Cerveza Golden helada', 1000000, 1, 'prod_68adff1b2eb67.jpg', 1),
+(9153, 2, 'Negra Modelo', 40.00, 'Cerveza negra helada', 1000000, 1, 'prod_68adffa389931.jpg', 1),
+(9154, 2, 'Modelo Especial', 40.00, 'Cerveza helada', 1000000, 1, 'prod_68adfeeac5c57.jpg', 1),
+(9155, 2, 'Bud Light', 35.00, 'Cerveza helada', 1000000, 1, 'prod_68ae0111e5f9d.jpg', 14),
+(9156, 2, 'Stella Artois', 45.00, 'Cerveza Helada', 1000000, 1, 'prod_68ae081b893ed.jpg', 1),
+(9157, 2, 'Ultra 1/2', 45.00, 'Cerveza helada', 1000000, 1, 'prod_68ae015b16f22.jpg', 1),
+(9158, 2, 'Michelob 1/2', 45.00, 'Cerveza helada', 1000000, 1, 'prod_693ecfd6d5820.jpg', 1),
+(9159, 2, 'Vaso Chelado', 10.00, 'Vaso chelado', 1000000, 1, NULL, 6),
+(9160, 2, 'Vaso Michelado', 15.00, 'Vaso michelado', 1000000, 1, NULL, 6),
+(9161, 2, 'Vaso Clamato', 25.00, 'Vaso michelado', 1000000, 1, NULL, 6),
+(9162, 2, 'Cheese fresse', 119.00, 'Concha de papa gajo sazonada, bañada en delicioso queso y tozos de tocino; al horno', 400, 1, 'prod_68add54669456.jpg', 3),
+(9163, 2, 'Charola Kyoyu Suru', 199.00, 'Camaron capeado, aros de cebolla y gyosas de carne de cerdo, acompañado de delicioso dip especial de la casa y salsa oriental', 500, 1, 'prod_68add217dc164.jpg', 3),
+(9164, 2, 'Alitas Nudz', 159.00, 'Deliciosos 300grs De alitas, bañadas en salsa dulce con chile, sabor cacahuate y ajonjolí', 329, 1, NULL, 3),
+(9165, 2, 'Edamames', 89.00, 'Vaina de frijol de soja preparado con picante, soya,sal y limon en una cama de zanahoria', 665, 1, 'prod_68add3a313461.jpg', 3),
+(9166, 2, 'Crispy Chesse', 99.00, 'Rollo de 6 a 7 pz relleno de carne, philadelphia, pepino y aguacate, empanizado, gratinado spicy y trozos de tocino frito.', 507, 1, NULL, 9),
+(9167, 2, 'Chummy Roll', 99.00, 'Rollo de 6 a 7 pz relleno de philadelphia, pepino y aguacate, coronado con tampico y camarón Empanizado, bando en salsa de Anguila y ajonjoli.', 507, 1, NULL, 9),
+(9168, 2, 'Pollo kai', 0.00, 'Pollo capeado con ejote, fécula, chili bean y sazón oriental', 660, 1, NULL, 3),
+(9169, 2, 'Yakimeshi roka', 135.00, 'Arroz con tampico, philadelphia, verduras, boneless y aguacate', 281, 1, NULL, 5),
+(9170, 2, 'Kushiages (Pollo)', 79.00, 'Par de brochetas de pollo', 1651, 1, NULL, 10),
+(9171, 2, 'Kushiages (Surimi)', 79.00, 'Par de brochetas de surimi', 712, 1, NULL, 10),
+(9172, 2, 'Kushiages (Camarón)', 79.00, 'Par de brochetas de camarón con philadelphia', 1610, 1, NULL, 10),
+(9173, 2, 'Rollitos (Pollo)', 79.00, 'Orden de 2 pz con pollo', 2415, 1, 'prod_693ee030306cb.jpg', 10),
+(9174, 2, 'Rollitos (Res)', 79.00, 'Orden de 2 pz con res', 2415, 1, 'prod_693ee04b95cac.jpg', 10),
+(9175, 2, 'Rollitos (Camarón)', 79.00, 'Orden de 2 pz con camarón', 2415, 1, 'prod_693ee0187a5f1.jpg', 10),
+(9176, 2, 'Cargo por plataforma:', 30.00, 'Cargo por uso de plataforma web para pedidos', 1000000, 1, NULL, 6),
+(9177, 2, 'ENVÍO – Repartidor casa', 30.00, 'Cargo por envío a domicilio (repartidor casa)', 1000000, 1, NULL, 6),
+(9178, 2, 'Gyozas Pollo', 99.00, 'Orden de 6 pzas rellenas de pollo, zanahoria, jengibre y ajo', 9908, 1, NULL, 10),
+(9179, 2, 'Gyozas Camarón', 99.00, 'Orden de 6 pzas rellenas de camarón y philadelphia', 3280, 1, NULL, 10),
+(9180, 2, 'volt', 25.00, '', 1000000, 1, NULL, 1),
+(9181, 2, 'charola oro', 469.00, '', 1000000, 1, 'prod_693f51f2e9b0d.jpg', 3),
+(9182, 2, 'charola plata', 359.00, '', 1000000, 1, 'prod_693f52556c5ae.jpg', 3),
+(9183, 2, 'charola tokyo', 499.00, '', 999999, 1, 'prod_693f51bc61668.jpg', 3),
+(9184, 2, 'agua natural', 20.00, '', 1000000, 1, 'prod_693ecf471c9e3.jpg', 1),
+(9185, 2, 'Ingrediente extra', 10.00, '', 999992, 1, NULL, 6),
+(9186, 2, 'Refresco Manzanita', 35.00, 'Refresco sabor manzana embotellado (335ml)', 1000000, 1, NULL, 1),
+(9187, 2, 'Refresco Sprite', 35.00, 'Refresco sabor lima-limón embotellado (335ml)', 1000000, 1, NULL, 1),
+(9188, 2, 'Refresco Fanta', 35.00, 'Refresco sabor naranja embotellado (335ml)', 1000000, 1, NULL, 1),
+(9189, 2, 'Refresco Coca-Cola Zero', 35.00, 'Refresco de cola sin azúcar embotellado (335ml)', 1000000, 1, NULL, 1),
+(9190, 2, 'Maki de Pollo', 115.00, 'Rollo de pollo estilo maki .', 1000000, 1, NULL, 9),
+(9191, 2, 'Maki de camaron', 115.00, 'Rollo de carne estilo maki.', 1000000, 1, NULL, 9),
+(9192, 2, 'Boneless Búfalo', 139.00, '250gr de boneless bañados en salsa búfalo.', 1000000, 1, NULL, 3),
+(9193, 2, 'Boneless Chipotle', 139.00, '250gr de boneless bañados en salsa de chipotle.', 1000000, 1, NULL, 3),
+(9194, 2, 'Boneless BBQ', 139.00, '250gr de boneless bañados en salsa BBQ.', 1000000, 1, NULL, 3),
+(9195, 2, 'Alitas Búfalo', 139.00, '250gr de alitas bañadas en salsa búfalo.', 1000000, 1, NULL, 3),
+(9196, 2, 'Alitas Chipotle', 139.00, '250gr de alitas bañadas en salsa de chipotle.', 1000000, 1, NULL, 3),
+(9197, 2, 'Alitas BBQ', 139.00, '250gr de alitas bañadas en salsa BBQ.', 1000000, 1, NULL, 3),
+(9198, 2, 'Empanada Tokyo', 95.00, '', 1000000, 1, NULL, 10),
+(9199, 2, 'Banana Crunch', 109.00, 'Banana Crunch', 1000000, 1, NULL, 2),
+(9200, 2, 'Taiyaki', 99.00, 'Taiyaki relleno de mermelada de fresa o queso crema.', 10000, 1, 'prod_693eeb8b17964.jpg', 2),
+(9201, 2, 'Mojito', 79.00, 'Fresa ó Frutos Rojos', 100000, 1, NULL, 1),
+(9202, 2, 'Limonada fresa / frutos rojos', 59.00, 'Fresa ó Frutos Rojos', 100000, 1, NULL, 1),
+(9203, 2, 'Piñada/ Piña colada', 79.00, '', 10000000, 1, NULL, 1),
+(9204, 2, 'Fresada / fresa colada', 79.00, '', 100000, 1, NULL, 1),
+(9205, 2, 'Clericot vaso', 79.00, '', 1000000, 1, NULL, 1),
+(9206, 2, 'Clericot jarra', 289.00, '', 10000, 1, NULL, 1),
+(9207, 2, 'Gin Tonic', 89.00, '', 100000, 1, NULL, 1),
+(9208, 2, 'Doggy Salty', 89.00, '', 100000, 1, NULL, 1),
+(9209, 2, 'Cantaritos', 69.00, '', 1000000, 1, NULL, 1),
+(9210, 2, 'Golden Roll', 299.00, 'El Golden Roll es un rollo con láminas de oro y este mes de diciembre esta con un precio especial de $299 pesos.', 10000, 1, 'prod_693f5375b1d8e.jpg', 8),
+(9211, 2, 'Pollo kunfu', 119.00, '', 1000000, 1, 'prod_693f54493fa71.jpg', 3),
+(9212, 2, 'Coca Cola', 29.00, 'Refresco embotellado', 1000000, 1, 'prod_693f4bf94664d.jpg', 1),
+(9213, 2, 'Rollo California', 125.00, 'Salmón, arroz, alga nori', 400, 1, NULL, 3),
+(9214, 2, 'Guamuchilito', 119.00, 'Surimi, camarón empanizado, salsa de anguila', 400, 1, 'prod_693ee94bc3fdb.jpg', 8),
+(9215, 2, 'Guerra', 135.00, 'Camarón, ajonjolí, aguacate, salsa de anguila', 400, 1, 'prod_693f50e421e60.jpg', 8),
+(9216, 2, 'Triton Roll', 135.00, 'Philadelphia, pepino, aguacate, surimi, atún ahumado, anguila, siracha', 400, 1, 'prod_68add2ff11cc1.jpg', 8),
+(9217, 2, 'Mechas', 149.00, 'Philadelphia, pepino, aguacate, camarón, ajonjolí, kanikama, camarón empanizado,limón, sirracha, anguila, shisimi', 400, 1, NULL, 8),
+(9218, 2, 'Supremo', 145.00, 'Surimi, philadelphia, ajonjolí, tampico,  pollo capeado, salsa de anguila', 400, 1, NULL, 8),
+(9219, 2, 'Roka Crunch Roll', 129.00, 'Philadelphia, pepino, aguacate, camarón, surimi empanizado, zanahoria rallada, salsa de anguila', 400, 1, NULL, 8),
+(9220, 2, 'Mar y Tierra', 115.00, 'Rollo relleno de carne y camarón.', 400, 1, NULL, 9),
+(9221, 2, 'Cielo, Mar y Tierra', 119.00, 'Pollo, carne, camarón', 400, 1, NULL, 9),
+(9222, 2, '3 Quesos', 125.00, 'Rollo de camarón, carne, base, queso americano\n y gratinado con queso chihuahua.', 400, 1, 'prod_68adcf8c73757.jpg', 9),
+(9223, 2, 'Chiquilin Roll', 125.00, 'Relleno de base (philadelphia, pepino y\n aguacate) Por fuera topping de camarón\n empanizado especial, bañado en salsa de anguila\n y ajonjolí.', 385, 1, 'prod_693ed139b7718.jpg', 9),
+(9224, 2, 'Maki roll res', 115.00, 'Rollo de 1 ingrediente a elegir (carne, tampico,\n pollo y camarón)', 400, 1, NULL, 9),
+(9225, 2, 'Beef cheese', 129.00, 'Rollo de carne gratinado con queso spicy y\n ajonjolí.', 400, 1, 'prod_693f504abbc6a.jpg', 9),
+(9226, 2, 'Cordon Blue', 125.00, 'Rollo relleno de carne y tocino forrado con\n philadelphia y gratinado con queso.', 400, 1, 'prod_693f58287142b.jpg', 9),
+(9227, 2, 'Culichi Roll', 135.00, 'Rollo de carne con topping especial de tampico\n Tokyo empanizado coronado con camarón.', 400, 1, 'prod_693ed995f1042.jpg', 9),
+(9228, 2, 'Bacon Cheese', 135.00, 'Rollo de pollo por fuera gratinado con tocino.', 400, 1, 'prod_68add11ce2483.jpg', 9),
+(9229, 2, 'Crunch Chicken', 135.00, 'Pollo empanizado, tocino, chile serrano, salsa bbq, salsa de anguila', 400, 1, 'prod_693f5876d1bad.jpg', 9),
+(9230, 2, 'Kito', 129.00, 'Carne, tocino, queso, tampico', 400, 1, 'prod_68add69fe703c.jpg', 9),
+(9231, 2, 'Norteño', 125.00, 'Camarón, tampico, queso, tocino, chile serrano', 400, 1, 'prod_693f546312f41.jpg', 9),
+(9232, 2, 'Goloso Roll', 145.00, 'Res, pollo, tocino, queso o tampico', 400, 1, 'prod_68add37a08889.jpg', 9),
+(9233, 2, 'Demon roll', 145.00, 'Res, tocino, toping demon (camarón enchiloso)', 400, 1, 'prod_68add435d40b1.jpg', 9),
+(9234, 2, 'Nano Max', 265.00, 'Dedos de queso, dedos de surimi, carne, pollo, tocino, tampico, empanizado', 615, 1, NULL, 12),
+(9235, 2, 'Nano XL', 345.00, 'Dedos de queso, dedosde surimi, carne pollo, tocino, queso, tampico, 1.5 kg', 356, 1, 'prod_68add3af36463.jpg', 12),
+(9236, 2, 'Nano T-plus', 395.00, 'Dedos de queso, dedosde surimi, carne pollo, tocino, queso, tampico, 2 kg', 66, 1, NULL, 12),
+(9237, 2, 'Chile Volcán', 89.00, 'Chile, 1 ingrediente a elegir, arroz, queso chihuahua,philadelphia', 1422, 1, 'prod_693ee33d645cc.jpg', 10),
+(9238, 2, 'Kushiagues', 79.00, 'Par de brochetas (camarón, pollo o surimi)', 9842, 1, NULL, 10),
+(9239, 2, 'Dedos de Queso', 69.00, 'Queso, empanizado (5 piezas)', 1000000, 1, NULL, 10),
+(9240, 2, 'Tostada Culichi', 85.00, 'Tostada, camarón, pulpo, callo, pepino, cebolla morada, masago, chile serrano, chile en polvo, jugo de aguachile', 4792, 1, 'prod_68add491b6f90.jpg', 10),
+(9241, 2, 'Tostada tropical', 85.00, 'Tostada, atún, mango, camarón, callo, cebolla morada, chile en polvo, jugo de aguachile', 1615, 1, 'prod_693eda396258c.jpg', 10),
+(9242, 2, 'Empanada Horneada', 119.00, 'Tortilla de harina, carne, pollo, camarón,  mezcla de quesos, tampico, anguila y sirracha', 807, 1, NULL, 10),
+(9243, 2, 'Rollitos', 79.00, 'Orden de 2 piezas, rellenos de philadelphia,\n queso chihuahua e ingrediente a elegir (res, pollo\n o camarón).', 9662, 1, 'prod_68add227e7037.jpg', 10),
+(9244, 2, 'Gyozas Res', 99.00, 'Orden con 6 piezas pequeñas (Pueden ser de\n philadelphia y camarón o de pollo y verduras)', 9662, 1, 'prod_693ee32ed623c.jpg', 10),
+(9245, 2, 'Papas a la francesa', 69.00, 'Papas a la francesa y cátsup ó aderezo especial', 1000000, 1, NULL, 10),
+(9246, 2, 'Papas gajo', 79.00, 'Papas gajo y cátsup ó aderezo especial', 1000000, 1, NULL, 10),
+(9247, 2, 'Ceviche Tokyo', 175.00, 'Cama de pepino, kanikama, camarón, aguacate, pulpo, jugo de aguachile', 479, 1, 'prod_68add2c342bb0.jpg', 3),
+(9248, 2, 'Teriyaki krispy', 145.00, 'pollo empanizado, chile morrón, chile de arból, zanahoria, cebolla morada, cacahuate con salsa (salado)', 9983, 1, NULL, 3),
+(9249, 2, 'Teriyaki', 149.00, 'Ingrediente a elegir, salteado de cebolla, zanahoria, calabaza, brócoli y coliflor, salsa teriyaki (dulce)', 9983, 1, NULL, 3),
+(9250, 2, 'Pollo Mongol', 145.00, 'Pollo capeado, cebolla, zanahoria, apio, chile serrano, chile morrón, chile de arból, salsas orientales, montado en arroz blanco', 9983, 1, 'prod_68add8fa7fb9e.jpg', 3),
+(9251, 2, 'Chow Mein Especial', 165.00, 'Pasta frita, camarón, carne, pollo, vegetales, salsas orientales', 9842, 1, 'prod_68adcfaa08c5a.jpg', 4),
+(9252, 2, 'Chukasoba', 159.00, 'Camarón, pulpo, vegetales, pasta chukasoba', 9842, 1, NULL, 4),
+(9253, 2, 'Fideo Yurey', 175.00, 'Fideo chino transparente, julianas de zanahoria y apio, cebolla, chile caribe y morrón y la proteína de tu elección', 9990, 1, NULL, 4),
+(9254, 2, 'Udon spicy', 189.00, 'Julianas de zanahoria y cebolla, chile caribe, apio, chile de árbol, nuez de la india, ajonjolí, camarones capeados', 9990, 1, 'prod_68add7d1cd5d9.jpg', 4),
+(9255, 2, 'Orange Chiken Tokyo', 159.00, 'Pollo capeado (300gr), graby de naranja, pepino, zanahoria, rodajas de naranja, ajonjolíPollo capeando (300gr) rebosado con graby de\n naranja con zanahoria, pepino y rodajas de naranja\n y ajonjolí', 9585, 1, 'prod_693f51734c1a6.jpg', 3),
+(9256, 2, 'Udon Muchi', 135.00, 'Pasta udon, vegetales, camarón y pollo', 196, 1, NULL, 4),
+(9257, 2, 'Tokyo ramen', 135.00, 'Pasta, vegetales, naruto, huevo, carne, camarón, fondo de res y cerdo', 196, 1, NULL, 4),
+(9258, 2, 'Ramen Gran Meat', 135.00, 'Pasta, vegetales, trozos de carne sazonada con salsas orientales', 196, 1, NULL, 4),
+(9259, 2, 'Ramen yasai', 125.00, 'Pasta, vegetales, fondo de res y cerdo', 196, 1, NULL, 4),
+(9260, 2, 'Baby Ramen', 129.00, 'Pasta, vegetales, pollo a la plancha, salsas orientales, fondo de res y cerdo', 196, 1, NULL, 4),
+(9261, 2, 'Cajun Ramen', 165.00, 'Fideos, vegetales, camarón gigante para pelar, fondo de res y cerdo, ajonjolí', 196, 1, 'prod_693f4f7f390e6.jpg', 4),
+(9262, 2, 'Gohan', 135.00, 'Arroz blanco, res y pollo, base de philadelphia y tampico con rodajas de aguacate, camarones empanizados, ajonjolí', 281, 1, 'prod_693ed94fb6a93.jpg', 5),
+(9263, 2, 'Gohan Krispy', 125.00, 'Arroz blanco, base de philadelphia, tampico y cubitos de aguacate, pollo y cebolla capeados, salsa de anguila, ajonjolí', 281, 1, 'prod_68add4bf039d2.jpg', 5),
+(9264, 2, 'Yakimeshi', 125.00, 'Arroz frito, vegetales, carne, pollo y tocino, philadelphia, tampico, aguacate, ajonjolí', 190, 1, 'prod_68add0ace9c67.jpg', 5),
+(9265, 2, 'Rollo Aguachile Especial', 125.00, 'Arroz frito, pollo empanizado, philadelphia, aguacate y tampico', 9662, 1, 'prod_68add7b73652c.jpg', 5),
+(9266, 2, 'Bomba', 125.00, 'Bola de arroz, res, pollo, philadelphia, queso chihuahua, tampico , empanizada y cubierta de salsa de anguila', 9662, 1, 'prod_68add5bb666f3.jpg', 5),
+(9267, 2, 'Rollo kids', 79.00, '1/2 Rollo de pollo (6 piezas) y papas a la francesa', 1000000, 1, NULL, 3),
+(9268, 2, 'Kid mini Yakimeshi', 105.00, 'Yakimeshi mini y papas a la francesa', 281, 1, NULL, 3),
+(9269, 2, 'kids dedi', 99.00, 'Dedos de queso (3 piezas) y papas a la francesa', 999999, 1, NULL, 3),
+(9270, 2, 'Chocoflan', 79.00, 'Porción de chocoflan', 1000000, 1, NULL, 2),
+(9271, 2, 'Pay de Queso', 69.00, 'Porción de pay de queso', 1000000, 1, 'prod_68ae01fd0820f.jpg', 2),
+(9272, 2, 'Helado Tempura', 99.00, 'Helado tempura', 99998, 1, NULL, 2),
+(9273, 2, 'Postre Especial', 79.00, NULL, 1000000, 1, 'prod_68ae00d2cd4af.jpg', 2);
+INSERT INTO `productos` (`id`, `sede_id`, `nombre`, `precio`, `descripcion`, `existencia`, `activo`, `imagen`, `categoria_id`) VALUES
+(9274, 2, 'Té de Jazmín (Litro)', 35.00, 'Té verde con aroma a jazmín, servido en litro.', 53, 1, 'prod_693edbd1cde27.jpg', 1),
+(9275, 2, 'Té de Jazmín (Refil)', 37.00, 'Té verde aromatizado con flores de jazmín.', 55, 1, 'prod_693edbe03ad62.jpg', 1),
+(9276, 2, 'Limonada Natural', 37.00, 'Bebida de limón exprimido con agua y azúcar.', 1665, 1, NULL, 1),
+(9277, 2, 'Limonada Mineral', 39.00, 'Bebida de limón con agua mineral y azúcar.', 500, 1, NULL, 1),
+(9278, 2, 'Naranjada Natural', 37.00, 'Bebida de jugo de naranja con agua y azúcar.', 1000000, 1, NULL, 1),
+(9279, 2, 'Naranjada Mineral', 39.00, 'Refresco de naranja con agua mineral.', 1000000, 1, NULL, 1),
+(9280, 2, 'Agua de Tamarindo', 37.00, 'Bebida dulce y ácida de tamarindo.', 999999, 1, NULL, 1),
+(9281, 2, 'Agua Mineral (355ml)', 37.00, 'Agua con gas en envase pequeño.', 1000000, 1, 'prod_68ae05aa8d01f.jpg', 1),
+(9282, 2, 'Calpico', 37.00, 'Bebida japonesa dulce y láctea de yogur.', 1000000, 1, 'prod_68ae01959fac5.jpg', 1),
+(9283, 2, 'Calpitamarindo', 39.00, NULL, 1000000, 1, NULL, 1),
+(9284, 2, 'Refresco (335ml)', 35.00, 'Refresco embotellado', 1000000, 1, 'prod_68ae07bd9ef3c.jpg', 1),
+(9285, 2, 'Aderezo de Chipotle', 10.00, 'Salsa cremosa picante de chipotle.', 9690, 1, 'prod_68ae00b788642.jpg', 6),
+(9286, 2, 'Aderezo de Cilantro', 15.00, 'Salsa cremosa con cilantro fresco.', 9988, 1, 'prod_693ecf6fab68f.jpg', 6),
+(9287, 2, 'Salsa Sriracha', 10.00, 'Alsa picante de chile, ajo y vinagre.', 6659, 1, 'prod_68ae083f538d5.jpg', 6),
+(9288, 2, 'Jugo de Aguachile', 15.00, 'Salsa líquida de limón, chile y especias usada para marinar mariscos.', 1000000, 1, NULL, 6),
+(9289, 2, 'Ranch', 15.00, 'Aderezo cremoso de hierbas y especias.', 1000000, 1, 'prod_68ae011cd828d.jpg', 6),
+(9290, 2, 'Búfalo', 15.00, 'Salsa picante de chile y mantequilla.', 1000000, 1, 'prod_68ae0164e5f57.jpg', 6),
+(9291, 2, 'BBQ', 15.00, 'Salsa dulce y ahumada para carnes.', 1000000, 1, NULL, 6),
+(9292, 2, 'Soya Extra', 10.00, 'Salsa de soja concentrada o adicional', 6662, 1, NULL, 6),
+(9293, 2, 'Salsa de Anguila', 10.00, 'Salsa dulce y salada hecha con anguila y soja.', 6663, 1, NULL, 6),
+(9294, 2, 'Cebollitas o Chiles', 10.00, NULL, 999098, 1, NULL, 6),
+(9295, 2, 'Topping Horneado Especial', 25.00, 'Aderezo de chipotle, anguila y sriracha', 6460, 1, NULL, 7),
+(9296, 2, 'Topping Kanikama', 40.00, '(Ensalada de cangrejo)', 3329, 1, NULL, 7),
+(9297, 2, 'Topping Tampico', 20.00, '(Ensalada de surimi)', 3324, 1, NULL, 7),
+(9298, 2, 'Topping Demon', 40.00, 'Camarón, tocino, quesos, serrano y chichimi', 1640, 1, NULL, 7),
+(9299, 2, 'Topping Chiquilín', 35.00, 'Camarón empanizado, anguila y ajonjolí', 1577, 1, NULL, 7),
+(9300, 2, 'Gladiador Roll', 149.00, 'Por dentro philadelphia, pepino y aguacate. Por fuera trozos de pulpo, queso spicy, shishimi y cebolla, bañado en salsa de anguila y ajonjolí. Rollo natural.', 400, 1, NULL, 13),
+(9301, 2, 'Güerito Roll', 155.00, 'Por dentro camarón. Forrado con philadelphia y manchego, bañado en aderezo de chipotle, coronado con tocino, caribe y bañado en salsa sriracha. Empanizado.', 400, 1, 'prod_68add1fe92388.jpg', 13),
+(9302, 2, 'Ebby Especial Roll', 155.00, 'Por dentro base, forrado con tampico cheese, bañado en aderezo de chipotle y coronado con camarón mariposa, aguacate, anguila y ajonjolí. Empanizado.', 400, 1, NULL, 13),
+(9303, 2, 'Pakun Roll', 145.00, 'Relleno de tocino, por fuera topping de pollo y queso spicy, zanahoria. Acompañado de salsa anguila. Rollo natural.', 400, 1, 'prod_693f53f105917.jpg', 13),
+(9304, 2, 'Rorris Roll', 145.00, 'Camarón y caribe por dentro, topping de tampico cheese, aguacate y bañados en salsa de anguila y ajonjolí. Empanizado.', 400, 1, NULL, 13),
+(9305, 2, 'Royal Roll', 139.00, 'Carne y tocino por dentro, con topping de pollo. Empanizado, bañado con aderezo de chipotle, salsa de anguila y ajonjolí.', 400, 1, 'prod_68adcf0749621.jpg', 13),
+(9306, 2, 'Larry Roll', 165.00, 'Rollo relleno de camarón, forrado con salmón. Topping de surimi finamente picado, spicy, coronado con atún fresco y bañado en salsa de anguila y ajonjolí.', 400, 1, 'prod_68add883e8ce7.jpg', 11),
+(9307, 2, 'Aguachile Especial Roll', 165.00, 'Rollo relleno de philadelphia, pepino y aguacate. Forrado de chile serrano finamente picado, coronado con un aguachile especial de camarón, pulpo, callo y aguacate.', 400, 1, 'prod_693edd65dfa55.jpg', 11),
+(9308, 2, 'Mordick Roll', 155.00, 'Rollo relleno de tocino, montado doble con queso gratinado, mezcla de quesos spicy, coronado con camarones empanizados y bañado en salsa de anguila y ajonjolí.', 400, 1, 'prod_68add0ea0033c.jpg', 11),
+(9309, 2, 'Maney Roll', 175.00, 'Relleno de philadelphia, pepino y aguacate. Forrado de aguacate fresco y topping con camarón, medallón de atún, callo, mango y cebolla morada. Acompañado de salsa aguachile. Rollo natural.', 400, 1, 'prod_68add31666451.jpg', 11),
+(9310, 2, 'Onigiri', 69.00, '1 Pieza de triángulo de arroz blanco, con un toque ligero de philadelphia, forrado de alga, cubierto de ajonjolí y relleno opcional de pollo con verduras (col morada y zanahoria) o atún con aderezo especial de mayonesa y cebollín.', 634, 1, 'prod_68add35c53114.jpg', 3),
+(9311, 2, 'Dumplings', 99.00, 'Orden de 6 piezas de dumplings, rellenos de carne molida de cerdo. Sazonados orientalmente y acompañado con salsa macha.', 9991, 1, 'prod_68add5b64497c.jpg', 3),
+(9312, 2, 'Boneless', 139.00, '250gr. De boneless con salsa a elegir (búfalo, bbq, mango habanero, mostaza miel o mermelada de chipotle).', 394, 1, 'prod_68ae02330ae4d.jpg', 3),
+(9313, 2, 'Alitas', 139.00, '250gr. De alitas con salsa a elegir (búfalo, bbq, mango habanero, mostaza miel ó mermelada de chipotle).', 393, 1, 'prod_68add564480c8.jpg', 3),
+(9314, 2, 'Sopa Pho', 159.00, 'Rico fondo de pollo con vegetales, pechuga de pollo, fideos chinos y chile de árbol. Coronado con 4 piezas de dumplings.', 1665, 1, 'prod_68adce4f32265.jpg', 3),
+(9315, 2, 'Yummy Roll', 169.00, 'Alga por fuera, relleno de camarón, philadelphia, pepino y aguacate. Gratinado con queso spicy de la casa. Coronado con camarón, aguacate y bañado en salsa de anguila y ajonjolí.', 400, 1, 'prod_68add0c25fd53.jpg', 3),
+(9316, 2, 'Cebolla Caramelizada', 10.00, 'Cebolla Caramelizada', 499549, 1, NULL, 6),
+(9317, 2, 'Kintaro', 102.00, 'Plato de sushi con atún graso picado toro y cebollín', 400, 1, NULL, 3),
+(9318, 2, 'Guamuchilito Especial', 129.00, 'Bebida preparada con jugo de guamúchil, combinada con alcohol, salsas y especias.', 400, 1, 'prod_68add0071ee2a.jpg', 11),
+(9319, 2, 'Juny', 333.00, 'Juny', 400, 1, 'prod_693f59cf505a7.jpg', NULL),
+(9320, 2, 'Pork Spicy', 122.00, 'Platillo de cerdo picante.', 422, 1, 'prod_68adcf27bc6a4.jpg', 8),
+(9321, 2, 'Corona 1/2', 35.00, 'Cerveza helada', 1000000, 1, 'prod_693f59ab2044d.jpg', 14),
+(9322, 2, 'Corona Golden Light 1/2', 35.00, 'Cerveza Golden helada', 1000000, 1, 'prod_68adff1b2eb67.jpg', 1),
+(9323, 2, 'Negra Modelo', 40.00, 'Cerveza negra helada', 1000000, 1, 'prod_68adffa389931.jpg', 1),
+(9324, 2, 'Modelo Especial', 40.00, 'Cerveza helada', 1000000, 1, 'prod_68adfeeac5c57.jpg', 1),
+(9325, 2, 'Bud Light', 35.00, 'Cerveza helada', 1000000, 1, 'prod_68ae0111e5f9d.jpg', 14),
+(9326, 2, 'Stella Artois', 45.00, 'Cerveza Helada', 1000000, 1, 'prod_68ae081b893ed.jpg', 1),
+(9327, 2, 'Ultra 1/2', 45.00, 'Cerveza helada', 1000000, 1, 'prod_68ae015b16f22.jpg', 1),
+(9328, 2, 'Michelob 1/2', 45.00, 'Cerveza helada', 1000000, 1, 'prod_693ecfd6d5820.jpg', 1),
+(9329, 2, 'Vaso Chelado', 10.00, 'Vaso chelado', 1000000, 1, NULL, 6),
+(9330, 2, 'Vaso Michelado', 15.00, 'Vaso michelado', 1000000, 1, NULL, 6),
+(9331, 2, 'Vaso Clamato', 25.00, 'Vaso michelado', 1000000, 1, NULL, 6),
+(9332, 2, 'Cheese fresse', 119.00, 'Concha de papa gajo sazonada, bañada en delicioso queso y tozos de tocino; al horno', 400, 1, 'prod_68add54669456.jpg', 3),
+(9333, 2, 'Charola Kyoyu Suru', 199.00, 'Camaron capeado, aros de cebolla y gyosas de carne de cerdo, acompañado de delicioso dip especial de la casa y salsa oriental', 500, 1, 'prod_68add217dc164.jpg', 3),
+(9334, 2, 'Alitas Nudz', 159.00, 'Deliciosos 300grs De alitas, bañadas en salsa dulce con chile, sabor cacahuate y ajonjolí', 329, 1, NULL, 3),
+(9335, 2, 'Edamames', 89.00, 'Vaina de frijol de soja preparado con picante, soya,sal y limon en una cama de zanahoria', 665, 1, 'prod_68add3a313461.jpg', 3),
+(9336, 2, 'Crispy Chesse', 99.00, 'Rollo de 6 a 7 pz relleno de carne, philadelphia, pepino y aguacate, empanizado, gratinado spicy y trozos de tocino frito.', 507, 1, NULL, 9),
+(9337, 2, 'Chummy Roll', 99.00, 'Rollo de 6 a 7 pz relleno de philadelphia, pepino y aguacate, coronado con tampico y camarón Empanizado, bando en salsa de Anguila y ajonjoli.', 507, 1, NULL, 9),
+(9338, 2, 'Pollo kai', 0.00, 'Pollo capeado con ejote, fécula, chili bean y sazón oriental', 660, 1, NULL, 3),
+(9339, 2, 'Yakimeshi roka', 135.00, 'Arroz con tampico, philadelphia, verduras, boneless y aguacate', 281, 1, NULL, 5),
+(9340, 2, 'Kushiages (Pollo)', 79.00, 'Par de brochetas de pollo', 1651, 1, NULL, 10),
+(9341, 2, 'Kushiages (Surimi)', 79.00, 'Par de brochetas de surimi', 712, 1, NULL, 10),
+(9342, 2, 'Kushiages (Camarón)', 79.00, 'Par de brochetas de camarón con philadelphia', 1610, 1, NULL, 10),
+(9343, 2, 'Rollitos (Pollo)', 79.00, 'Orden de 2 pz con pollo', 2415, 1, 'prod_693ee030306cb.jpg', 10),
+(9344, 2, 'Rollitos (Res)', 79.00, 'Orden de 2 pz con res', 2415, 1, 'prod_693ee04b95cac.jpg', 10),
+(9345, 2, 'Rollitos (Camarón)', 79.00, 'Orden de 2 pz con camarón', 2415, 1, 'prod_693ee0187a5f1.jpg', 10),
+(9346, 2, 'Cargo por plataforma:', 30.00, 'Cargo por uso de plataforma web para pedidos', 1000000, 1, NULL, 6),
+(9347, 2, 'ENVÍO – Repartidor casa', 30.00, 'Cargo por envío a domicilio (repartidor casa)', 1000000, 1, NULL, 6),
+(9348, 2, 'Gyozas Pollo', 99.00, 'Orden de 6 pzas rellenas de pollo, zanahoria, jengibre y ajo', 9908, 1, NULL, 10),
+(9349, 2, 'Gyozas Camarón', 99.00, 'Orden de 6 pzas rellenas de camarón y philadelphia', 3280, 1, NULL, 10),
+(9350, 2, 'volt', 25.00, '', 1000000, 1, NULL, 1),
+(9351, 2, 'charola oro', 469.00, '', 1000000, 1, 'prod_693f51f2e9b0d.jpg', 3),
+(9352, 2, 'charola plata', 359.00, '', 1000000, 1, 'prod_693f52556c5ae.jpg', 3),
+(9353, 2, 'charola tokyo', 499.00, '', 999999, 1, 'prod_693f51bc61668.jpg', 3),
+(9354, 2, 'agua natural', 20.00, '', 1000000, 1, 'prod_693ecf471c9e3.jpg', 1),
+(9355, 2, 'Ingrediente extra', 10.00, '', 999992, 1, NULL, 6),
+(9356, 2, 'Refresco Manzanita', 35.00, 'Refresco sabor manzana embotellado (335ml)', 1000000, 1, NULL, 1),
+(9357, 2, 'Refresco Sprite', 35.00, 'Refresco sabor lima-limón embotellado (335ml)', 1000000, 1, NULL, 1),
+(9358, 2, 'Refresco Fanta', 35.00, 'Refresco sabor naranja embotellado (335ml)', 1000000, 1, NULL, 1),
+(9359, 2, 'Refresco Coca-Cola Zero', 35.00, 'Refresco de cola sin azúcar embotellado (335ml)', 1000000, 1, NULL, 1),
+(9360, 2, 'Maki de Pollo', 115.00, 'Rollo de pollo estilo maki .', 1000000, 1, NULL, 9),
+(9361, 2, 'Maki de camaron', 115.00, 'Rollo de carne estilo maki.', 1000000, 1, NULL, 9),
+(9362, 2, 'Boneless Búfalo', 139.00, '250gr de boneless bañados en salsa búfalo.', 1000000, 1, NULL, 3),
+(9363, 2, 'Boneless Chipotle', 139.00, '250gr de boneless bañados en salsa de chipotle.', 1000000, 1, NULL, 3),
+(9364, 2, 'Boneless BBQ', 139.00, '250gr de boneless bañados en salsa BBQ.', 1000000, 1, NULL, 3),
+(9365, 2, 'Alitas Búfalo', 139.00, '250gr de alitas bañadas en salsa búfalo.', 1000000, 1, NULL, 3),
+(9366, 2, 'Alitas Chipotle', 139.00, '250gr de alitas bañadas en salsa de chipotle.', 1000000, 1, NULL, 3),
+(9367, 2, 'Alitas BBQ', 139.00, '250gr de alitas bañadas en salsa BBQ.', 1000000, 1, NULL, 3),
+(9368, 2, 'Empanada Tokyo', 95.00, '', 1000000, 1, NULL, 10),
+(9369, 2, 'Banana Crunch', 109.00, 'Banana Crunch', 1000000, 1, NULL, 2),
+(9370, 2, 'Taiyaki', 99.00, 'Taiyaki relleno de mermelada de fresa o queso crema.', 10000, 1, 'prod_693eeb8b17964.jpg', 2),
+(9371, 2, 'Mojito', 79.00, 'Fresa ó Frutos Rojos', 100000, 1, NULL, 1),
+(9372, 2, 'Limonada fresa / frutos rojos', 59.00, 'Fresa ó Frutos Rojos', 100000, 1, NULL, 1),
+(9373, 2, 'Piñada/ Piña colada', 79.00, '', 10000000, 1, NULL, 1),
+(9374, 2, 'Fresada / fresa colada', 79.00, '', 100000, 1, NULL, 1),
+(9375, 2, 'Clericot vaso', 79.00, '', 1000000, 1, NULL, 1),
+(9376, 2, 'Clericot jarra', 289.00, '', 10000, 1, NULL, 1),
+(9377, 2, 'Gin Tonic', 89.00, '', 100000, 1, NULL, 1),
+(9378, 2, 'Doggy Salty', 89.00, '', 100000, 1, NULL, 1),
+(9379, 2, 'Cantaritos', 69.00, '', 1000000, 1, NULL, 1),
+(9380, 2, 'Golden Roll', 299.00, 'El Golden Roll es un rollo con láminas de oro y este mes de diciembre esta con un precio especial de $299 pesos.', 10000, 1, 'prod_693f5375b1d8e.jpg', 8),
+(9381, 2, 'Pollo kunfu', 119.00, '', 1000000, 1, 'prod_693f54493fa71.jpg', 3);
 
 -- --------------------------------------------------------
 
@@ -16749,16 +17305,16 @@ INSERT INTO `rutas` (`id`, `nombre`, `path`, `tipo`, `grupo`, `orden`) VALUES
 (11, 'Más', '#', 'dropdown', 'Más', 9),
 (12, 'Horarios', '/vistas/horarios/horarios.php', 'dropdown-item', 'Más', 1),
 (13, 'Ticket', '/vistas/ventas/ticket.php', 'dropdown-item', 'Más', 2),
-(14, 'Reportes', '/vistas/reportes/reportes.php', 'dropdown-item', 'Más', 3),
+(14, 'Reportes', '/vistas/reportes/reportes.php', 'dropdown-item', 'Reportes', 3),
 (15, 'Ayuda', '/vistas/ayuda.php', 'link', NULL, 10),
-(18, 'Generar QR', '/vistas/bodega/generar_qr.php', 'dropdown-item', 'Más', 4),
-(19, 'Recibir QR', '/vistas/bodega/recepcion_qr.php', 'dropdown-item', 'Más', 5),
-(20, 'Meseros', '/vistas/mesas/asignar.php', 'link', NULL, 11),
-(21, 'Reporteria', '/vistas/reportes/vistas_db.php', 'dropdown-item', 'Más', 13),
+(18, 'Requisicion', '/vistas/bodega/generar_qr.php', 'dropdown-item', 'Reportes', 4),
+(19, 'Surtir reque', '/vistas/bodega/recepcion_qr.php', 'dropdown-item', 'Reportes', 5),
+(20, 'Meseros', '/vistas/mesas/asignar.php', 'dropdown-item', 'Más', 11),
+(21, 'Impresoras', '/vistas/rutas/impresoras.php', 'dropdown-item', 'Más', 13),
 (22, 'Usuarios', '/vistas/usuarios/usuarios.php', 'dropdown-item', 'Más', 6),
 (23, 'Rutas', '/vistas/rutas/rutas.php', 'dropdown-item', 'Más', 7),
 (24, 'Permisos', '/vistas/rutas/urutas.php', 'dropdown-item', 'Más', 8),
-(25, 'CorteC', '/vistas/insumos/cortes.php', 'dropdown-item', 'Más', 9),
+(25, 'CorteC', '/vistas/insumos/cortes.php', 'dropdown-item', 'Reportes', 9),
 (26, 'Proveedores', '/vistas/insumos/proveedores.php', 'dropdown-item', 'Más', 10),
 (27, 'Promos', '/vistas/promociones/promociones.php', 'dropdown-item', 'Más', 11),
 (28, 'Facturas', '/vistas/facturas/masiva.php', 'dropdown-item', 'Más', 12),
@@ -16767,7 +17323,10 @@ INSERT INTO `rutas` (`id`, `nombre`, `path`, `tipo`, `grupo`, `orden`) VALUES
 (31, 'Sedes', '/vistas/dashboard/sedes.php', 'dropdown-item', 'Más', 16),
 (32, 'Tarjetas', '/vistas/dashboard/tarjetas.php', 'dropdown-item', 'Más', 17),
 (33, 'Pagos', '/vistas/ventas/historial.php', 'dropdown-item', 'Más', 18),
-(34, 'Hostless', '/vistas/mesas/host.php', 'dropdown-item', 'Más', 20);
+(34, 'Hostless', '/vistas/mesas/host.php', 'link', '', 11),
+(35, 'Mis datos', '/vistas/dashboard/usuario.php', '', 'Más', 19),
+(36, 'Consumos', '/vistas/consumos/consumos.php', 'dropdown-item', 'Reportes', 21),
+(37, 'Reportes', '/vistas/reportes/reportes.php', 'dropdown-item', 'Reportes', 3);
 
 -- --------------------------------------------------------
 
@@ -16838,12 +17397,8 @@ CREATE TABLE `tickets` (
 --
 
 INSERT INTO `tickets` (`id`, `venta_id`, `folio`, `serie_id`, `total`, `descuento`, `desc_des`, `fecha`, `usuario_id`, `monto_recibido`, `tipo_pago`, `sede_id`, `mesa_nombre`, `mesero_nombre`, `fecha_inicio`, `fecha_fin`, `tiempo_servicio`, `nombre_negocio`, `direccion_negocio`, `rfc_negocio`, `telefono_negocio`, `tipo_entrega`, `tarjeta_marca_id`, `tarjeta_banco_id`, `boucher`, `cheque_numero`, `cheque_banco_id`) VALUES
-(558, 876, 2056, 2, 150.00, 0.00, NULL, '2025-12-19 20:37:36', 1, 150.00, 'efectivo', 1, 'N/A', 'Administrador', '2025-12-19 20:36:56', '2025-12-19 20:37:36', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, NULL, NULL),
-(559, 875, 2057, 2, 15.00, 0.00, NULL, '2025-12-19 20:48:51', 1, 15.00, 'efectivo', 1, 'N/A', 'Administrador', '2025-12-19 18:07:29', '2025-12-19 20:48:51', 161, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, NULL, NULL),
-(560, 877, 2058, 2, 15.00, 0.00, NULL, '2025-12-19 21:01:01', 1, 15.00, 'efectivo', 1, 'N/A', 'Administrador', '2025-12-19 21:00:50', '2025-12-19 21:01:01', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, NULL, NULL),
-(561, 878, 2059, 2, 900.00, 0.00, NULL, '2025-12-19 21:27:40', 1, 900.00, 'cheque', 1, 'N/A', 'Administrador', '2025-12-19 21:27:15', '2025-12-19 21:27:40', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, 'didi', 11),
-(562, 879, 2060, 2, 40.00, 0.00, NULL, '2025-12-19 21:44:15', 1, 40.00, 'efectivo', 1, 'N/A', 'Administrador', '2025-12-19 21:43:59', '2025-12-19 21:44:15', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, NULL, NULL),
-(563, 880, 2061, 2, 125.00, 0.00, NULL, '2025-12-19 21:59:02', 1, 125.00, 'efectivo', 1, 'Mesa 12', 'Administrador', '2025-12-19 21:58:52', '2025-12-19 21:59:02', 0, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'mesa', NULL, NULL, NULL, NULL, NULL);
+(564, 884, 2062, 2, 155.00, 0.00, NULL, '2025-12-22 09:42:09', 1, 155.00, 'efectivo', 1, 'N/A', 'Administrador', '2025-12-20 21:11:07', '2025-12-22 09:42:09', 2191, 'Forestal', 'Blvd. Luis Donaldo Colosio #317, Fracc. La Forestal ', 'VEAJ9408188U9', '6183222352', 'domicilio', NULL, NULL, NULL, NULL, NULL),
+(565, 885, 1003, 1, 67.00, 0.00, NULL, '2025-12-22 09:42:46', 46, 67.00, 'efectivo', 2, 'N/A', 'Alexia', '2025-12-20 21:11:29', '2025-12-22 09:42:46', 2191, 'Domingo Arrieta', 'Chabacanos SN-5, El Naranjal, 34190 Durango, Dgo.', 'VEAJ9408188U9', '6181690319', 'domicilio', NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -16884,16 +17439,10 @@ CREATE TABLE `ticket_detalles` (
 --
 
 INSERT INTO `ticket_detalles` (`id`, `ticket_id`, `producto_id`, `cantidad`, `precio_unitario`) VALUES
-(1457, 558, 15, 1, 125.00),
-(1458, 559, 77, 1, 10.00),
-(1459, 560, 78, 1, 15.00),
-(1460, 561, 15, 4, 125.00),
-(1461, 561, 66, 3, 35.00),
-(1462, 561, 141, 1, 79.00),
-(1463, 561, 9025, 1, 139.00),
-(1464, 562, 77, 1, 10.00),
-(1465, 562, 9001, 1, 30.00),
-(1466, 563, 15, 1, 125.00);
+(1467, 564, 15, 1, 125.00),
+(1468, 564, 9001, 1, 30.00),
+(1469, 565, 72, 1, 37.00),
+(1470, 565, 9001, 1, 30.00);
 
 -- --------------------------------------------------------
 
@@ -16974,88 +17523,370 @@ CREATE TABLE `usuario_ruta` (
 --
 
 INSERT INTO `usuario_ruta` (`id`, `usuario_id`, `ruta_id`) VALUES
-(216, 1, 1),
-(221, 1, 2),
-(217, 1, 3),
-(219, 1, 4),
-(222, 1, 5),
-(224, 1, 6),
-(226, 1, 7),
-(241, 1, 8),
-(229, 1, 9),
-(231, 1, 10),
-(233, 1, 11),
-(218, 1, 12),
-(220, 1, 13),
-(223, 1, 14),
-(235, 1, 15),
-(225, 1, 18),
-(227, 1, 19),
-(237, 1, 20),
-(240, 1, 21),
-(228, 1, 22),
-(230, 1, 23),
-(232, 1, 24),
-(234, 1, 25),
-(236, 1, 26),
-(238, 1, 27),
-(239, 1, 28),
-(242, 1, 29),
-(243, 1, 30),
-(244, 1, 31),
-(245, 1, 32),
-(246, 1, 33),
-(247, 1, 34),
+(623, 1, 1),
+(628, 1, 2),
+(624, 1, 3),
+(626, 1, 4),
+(629, 1, 5),
+(633, 1, 6),
+(635, 1, 7),
+(650, 1, 8),
+(638, 1, 9),
+(640, 1, 10),
+(642, 1, 11),
+(625, 1, 12),
+(627, 1, 13),
+(630, 1, 14),
+(644, 1, 15),
+(634, 1, 18),
+(636, 1, 19),
+(646, 1, 20),
+(649, 1, 21),
+(637, 1, 22),
+(639, 1, 23),
+(641, 1, 24),
+(643, 1, 25),
+(645, 1, 26),
+(647, 1, 27),
+(648, 1, 28),
+(651, 1, 29),
+(652, 1, 30),
+(653, 1, 31),
+(654, 1, 32),
+(655, 1, 33),
+(657, 1, 34),
+(656, 1, 35),
+(658, 1, 36),
+(631, 1, 37),
 (62, 2, 1),
 (32, 2, 6),
 (52, 2, 7),
 (56, 2, 9),
 (33, 2, 10),
+(290, 2, 11),
 (48, 2, 13),
+(291, 2, 15),
 (51, 2, 18),
 (50, 2, 19),
 (54, 2, 20),
+(292, 2, 34),
+(293, 2, 35),
+(294, 3, 1),
+(545, 3, 2),
+(546, 3, 4),
 (38, 3, 6),
 (36, 3, 7),
 (37, 3, 8),
 (57, 3, 9),
+(295, 3, 11),
+(296, 3, 13),
+(547, 3, 14),
+(297, 3, 15),
+(548, 3, 28),
+(549, 3, 30),
+(550, 3, 33),
+(298, 3, 34),
+(299, 3, 35),
 (47, 4, 1),
 (34, 4, 6),
 (42, 4, 9),
 (35, 4, 10),
+(300, 4, 11),
+(301, 4, 13),
+(302, 4, 15),
+(303, 4, 34),
+(304, 4, 35),
 (49, 5, 1),
 (39, 5, 3),
 (40, 5, 5),
 (41, 5, 6),
+(608, 5, 10),
+(305, 5, 11),
+(306, 5, 13),
+(307, 5, 15),
+(308, 5, 34),
+(309, 5, 35),
 (130, 6, 1),
 (131, 6, 10),
+(310, 6, 11),
+(311, 6, 13),
+(312, 6, 15),
+(313, 6, 34),
+(314, 6, 35),
+(315, 7, 1),
+(609, 7, 10),
+(316, 7, 11),
+(317, 7, 13),
+(318, 7, 15),
+(319, 7, 34),
+(320, 7, 35),
+(321, 8, 1),
+(551, 8, 2),
+(552, 8, 4),
+(553, 8, 6),
+(554, 8, 7),
+(322, 8, 11),
+(323, 8, 13),
+(555, 8, 14),
+(324, 8, 15),
+(556, 8, 28),
+(557, 8, 30),
+(558, 8, 33),
+(325, 8, 34),
+(326, 8, 35),
+(327, 9, 1),
+(328, 9, 11),
+(329, 9, 13),
+(330, 9, 15),
+(331, 9, 34),
+(332, 9, 35),
+(333, 10, 1),
+(334, 10, 11),
+(335, 10, 13),
+(336, 10, 15),
+(337, 10, 34),
+(338, 10, 35),
+(339, 11, 1),
+(340, 11, 11),
+(341, 11, 13),
+(342, 11, 15),
+(343, 11, 34),
+(344, 11, 35),
+(345, 12, 1),
+(346, 12, 11),
+(347, 12, 13),
+(348, 12, 15),
+(349, 12, 34),
+(350, 12, 35),
+(351, 13, 1),
+(352, 13, 11),
+(353, 13, 13),
+(354, 13, 15),
+(355, 13, 34),
+(356, 13, 35),
+(357, 14, 1),
+(358, 14, 11),
+(359, 14, 13),
+(360, 14, 15),
+(361, 14, 34),
+(362, 14, 35),
+(363, 15, 1),
+(364, 15, 11),
+(365, 15, 13),
+(366, 15, 15),
+(367, 15, 34),
+(368, 15, 35),
+(369, 16, 1),
+(370, 16, 11),
+(371, 16, 13),
+(372, 16, 15),
+(373, 16, 34),
+(374, 16, 35),
+(375, 17, 1),
+(610, 17, 10),
+(376, 17, 11),
+(377, 17, 13),
+(378, 17, 15),
+(379, 17, 34),
+(380, 17, 35),
 (176, 18, 1),
+(559, 18, 2),
+(560, 18, 4),
 (178, 18, 6),
 (179, 18, 7),
 (180, 18, 10),
 (181, 18, 11),
 (177, 18, 13),
+(561, 18, 14),
+(381, 18, 15),
 (182, 18, 28),
+(562, 18, 30),
 (183, 18, 33),
+(382, 18, 34),
+(383, 18, 35),
+(384, 31, 1),
+(563, 31, 2),
+(564, 31, 4),
+(565, 31, 6),
+(566, 31, 7),
+(385, 31, 11),
+(386, 31, 13),
+(567, 31, 14),
+(387, 31, 15),
+(568, 31, 28),
+(569, 31, 30),
+(570, 31, 33),
+(388, 31, 34),
+(389, 31, 35),
 (71, 32, 1),
+(571, 32, 2),
+(572, 32, 4),
 (72, 32, 6),
 (73, 32, 7),
+(390, 32, 11),
+(391, 32, 13),
+(573, 32, 14),
 (74, 32, 15),
+(574, 32, 28),
+(575, 32, 30),
+(576, 32, 33),
+(392, 32, 34),
+(393, 32, 35),
 (65, 33, 1),
 (66, 33, 6),
+(394, 33, 11),
+(395, 33, 13),
 (67, 33, 15),
+(396, 33, 34),
+(397, 33, 35),
 (68, 34, 1),
 (69, 34, 6),
+(398, 34, 11),
+(399, 34, 13),
 (70, 34, 15),
+(400, 34, 34),
+(401, 34, 35),
+(402, 35, 1),
+(403, 35, 11),
+(404, 35, 13),
+(405, 35, 15),
+(406, 35, 34),
+(407, 35, 35),
+(408, 36, 1),
+(409, 36, 11),
+(410, 36, 13),
+(411, 36, 15),
+(412, 36, 34),
+(413, 36, 35),
+(414, 38, 1),
+(611, 38, 10),
+(415, 38, 11),
+(416, 38, 13),
+(417, 38, 15),
+(418, 38, 34),
+(419, 38, 35),
+(420, 39, 1),
+(421, 39, 11),
+(422, 39, 13),
+(423, 39, 15),
+(424, 39, 34),
+(425, 39, 35),
+(426, 40, 1),
+(612, 40, 10),
+(427, 40, 11),
+(428, 40, 13),
+(429, 40, 15),
+(430, 40, 34),
+(431, 40, 35),
+(432, 43, 1),
+(613, 43, 10),
+(433, 43, 11),
+(434, 43, 13),
+(435, 43, 15),
+(436, 43, 34),
+(437, 43, 35),
+(438, 44, 1),
+(439, 44, 11),
+(440, 44, 13),
+(441, 44, 15),
+(442, 44, 34),
+(443, 44, 35),
+(444, 45, 1),
+(614, 45, 10),
+(445, 45, 11),
+(446, 45, 13),
+(447, 45, 15),
+(448, 45, 34),
+(449, 45, 35),
 (248, 46, 1),
+(577, 46, 2),
+(578, 46, 4),
+(579, 46, 6),
 (250, 46, 7),
 (251, 46, 10),
 (252, 46, 11),
 (249, 46, 13),
+(580, 46, 14),
 (253, 46, 15),
 (254, 46, 28),
+(581, 46, 30),
 (255, 46, 33),
-(256, 46, 34);
+(256, 46, 34),
+(450, 46, 35),
+(451, 47, 1),
+(615, 47, 10),
+(452, 47, 11),
+(453, 47, 13),
+(454, 47, 15),
+(455, 47, 34),
+(456, 47, 35),
+(457, 48, 1),
+(616, 48, 10),
+(458, 48, 11),
+(459, 48, 13),
+(460, 48, 15),
+(461, 48, 34),
+(462, 48, 35),
+(463, 50, 1),
+(617, 50, 10),
+(464, 50, 11),
+(465, 50, 13),
+(466, 50, 15),
+(467, 50, 34),
+(468, 50, 35),
+(469, 51, 1),
+(618, 51, 10),
+(470, 51, 11),
+(471, 51, 13),
+(472, 51, 15),
+(473, 51, 34),
+(474, 51, 35),
+(475, 52, 1),
+(582, 52, 2),
+(583, 52, 4),
+(584, 52, 6),
+(585, 52, 7),
+(476, 52, 11),
+(477, 52, 13),
+(586, 52, 14),
+(478, 52, 15),
+(587, 52, 28),
+(588, 52, 30),
+(589, 52, 33),
+(479, 52, 34),
+(480, 52, 35),
+(481, 53, 1),
+(590, 53, 2),
+(591, 53, 4),
+(592, 53, 6),
+(593, 53, 7),
+(482, 53, 11),
+(483, 53, 13),
+(594, 53, 14),
+(484, 53, 15),
+(595, 53, 28),
+(596, 53, 30),
+(597, 53, 33),
+(485, 53, 34),
+(486, 53, 35),
+(487, 54, 1),
+(488, 54, 11),
+(489, 54, 13),
+(490, 54, 15),
+(491, 54, 34),
+(492, 54, 35),
+(493, 55, 1),
+(494, 55, 11),
+(495, 55, 13),
+(496, 55, 15),
+(497, 55, 34),
+(498, 55, 35),
+(499, 56, 1),
+(500, 56, 11),
+(501, 56, 13),
+(502, 56, 15),
+(503, 56, 34),
+(504, 56, 35);
 
 -- --------------------------------------------------------
 
@@ -17095,14 +17926,9 @@ CREATE TABLE `ventas` (
 --
 
 INSERT INTO `ventas` (`id`, `fecha`, `mesa_id`, `repartidor_id`, `tipo_entrega`, `usuario_id`, `total`, `estatus`, `entregado`, `estado_entrega`, `fecha_asignacion`, `fecha_inicio`, `fecha_entrega`, `seudonimo_entrega`, `foto_entrega`, `corte_id`, `cajero_id`, `observacion`, `sede_id`, `propina_efectivo`, `propina_cheque`, `propina_tarjeta`, `promocion_id`, `promocion_descuento`) VALUES
-(875, '2025-12-19 18:07:29', NULL, 2, 'domicilio', 1, 10.00, 'cerrada', 0, 'pendiente', '2025-12-19 18:07:29', '2025-12-19 18:07:29', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(876, '2025-12-19 20:36:56', NULL, 2, 'domicilio', 1, 125.00, 'cerrada', 0, 'pendiente', '2025-12-19 20:36:56', '2025-12-19 20:36:56', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(877, '2025-12-19 21:00:50', NULL, 1, 'domicilio', 1, 15.00, 'cerrada', 0, 'pendiente', '2025-12-19 21:00:50', '2025-12-19 21:00:50', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(878, '2025-12-19 21:27:15', NULL, 1, 'domicilio', 1, 823.00, 'cerrada', 0, 'pendiente', '2025-12-19 21:27:15', '2025-12-19 21:27:15', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(879, '2025-12-19 21:43:59', NULL, 4, 'domicilio', 1, 40.00, 'cerrada', 0, 'pendiente', '2025-12-19 21:43:59', '2025-12-19 21:43:59', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(880, '2025-12-19 21:58:52', 12, NULL, 'mesa', 1, 125.00, 'cerrada', 0, 'pendiente', NULL, '2025-12-19 21:58:52', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(881, '2025-12-20 13:27:04', NULL, 1, 'domicilio', 1, 319.00, 'activa', 0, 'pendiente', '2025-12-20 13:27:04', '2025-12-20 13:27:04', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
-(882, '2025-12-20 13:27:44', NULL, NULL, 'rapido', 1, 69.00, 'activa', 0, 'pendiente', NULL, '2025-12-20 13:27:44', NULL, NULL, NULL, 134, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00);
+(884, '2025-12-20 21:11:07', NULL, 4, 'domicilio', 1, 155.00, 'cerrada', 0, 'pendiente', '2025-12-20 21:11:07', '2025-12-20 21:11:07', NULL, NULL, NULL, 136, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00),
+(885, '2025-12-20 21:11:29', NULL, 4, 'domicilio', 46, 67.00, 'cerrada', 0, 'pendiente', '2025-12-20 21:11:29', '2025-12-20 21:11:29', NULL, NULL, NULL, 137, 46, '', 2, 0.00, 0.00, 0.00, NULL, 0.00),
+(886, '2025-12-26 09:46:16', NULL, NULL, 'rapido', 1, 1875.00, 'activa', 0, 'pendiente', NULL, '2025-12-26 09:46:16', NULL, NULL, NULL, 136, 1, '', 1, 0.00, 0.00, 0.00, NULL, 0.00);
 
 --
 -- Disparadores `ventas`
@@ -17142,20 +17968,11 @@ CREATE TABLE `venta_detalles` (
 --
 
 INSERT INTO `venta_detalles` (`id`, `venta_id`, `producto_id`, `cantidad`, `precio_unitario`, `insumos_descargados`, `created_at`, `entregado_hr`, `estado_producto`, `observaciones`) VALUES
-(3003, 875, 77, 1, 10.00, 0, '2025-12-19 18:07:29', NULL, 'pendiente', NULL),
-(3004, 876, 15, 1, 125.00, 0, '2025-12-19 20:36:56', NULL, 'pendiente', NULL),
-(3005, 877, 78, 1, 15.00, 0, '2025-12-19 21:00:50', NULL, 'pendiente', NULL),
-(3006, 878, 15, 4, 125.00, 0, '2025-12-19 21:27:15', NULL, 'pendiente', NULL),
-(3007, 878, 66, 3, 35.00, 0, '2025-12-19 21:27:15', NULL, 'pendiente', NULL),
-(3008, 878, 141, 1, 79.00, 0, '2025-12-19 21:27:15', NULL, 'pendiente', NULL),
-(3009, 878, 9025, 1, 139.00, 0, '2025-12-19 21:27:15', NULL, 'pendiente', NULL),
-(3010, 879, 77, 1, 10.00, 0, '2025-12-19 21:43:59', NULL, 'pendiente', NULL),
-(3011, 879, 9001, 1, 30.00, 0, '2025-12-19 21:43:59', NULL, 'entregado', NULL),
-(3012, 880, 15, 1, 125.00, 0, '2025-12-19 21:58:52', NULL, 'pendiente', NULL),
-(3013, 881, 15, 1, 125.00, 0, '2025-12-20 13:27:04', NULL, 'pendiente', NULL),
-(3014, 881, 106, 1, 159.00, 0, '2025-12-20 13:27:04', NULL, 'pendiente', NULL),
-(3015, 881, 66, 1, 35.00, 0, '2025-12-20 13:27:04', NULL, 'pendiente', NULL),
-(3016, 882, 37, 1, 69.00, 0, '2025-12-20 13:27:44', NULL, 'pendiente', NULL);
+(3023, 884, 15, 1, 125.00, 0, '2025-12-20 21:11:07', NULL, 'pendiente', NULL),
+(3024, 884, 9001, 1, 30.00, 0, '2025-12-20 21:11:07', NULL, 'entregado', NULL),
+(3025, 885, 72, 1, 37.00, 0, '2025-12-20 21:11:29', NULL, 'pendiente', NULL),
+(3026, 885, 9001, 1, 30.00, 0, '2025-12-20 21:11:29', NULL, 'entregado', NULL),
+(3027, 886, 15, 15, 125.00, 1, '2025-12-26 09:46:16', '2025-12-26 09:46:42', 'entregado', NULL);
 
 --
 -- Disparadores `venta_detalles`
@@ -17239,7 +18056,11 @@ CREATE TABLE `venta_detalles_log` (
 --
 
 INSERT INTO `venta_detalles_log` (`id`, `venta_detalle_id`, `estado_anterior`, `estado_nuevo`, `cambiado_en`) VALUES
-(1368, 3011, 'pendiente', 'entregado', '2025-12-19 21:43:59');
+(1369, 3024, 'pendiente', 'entregado', '2025-12-20 21:11:07'),
+(1370, 3026, 'pendiente', 'entregado', '2025-12-20 21:11:29'),
+(1371, 3027, 'pendiente', 'en_preparacion', '2025-12-26 09:46:40'),
+(1372, 3027, 'en_preparacion', 'listo', '2025-12-26 09:46:41'),
+(1373, 3027, 'listo', 'entregado', '2025-12-26 09:46:42');
 
 -- --------------------------------------------------------
 
@@ -17712,6 +18533,37 @@ ALTER TABLE `conekta_payments`
   ADD KEY `idx_locked_by` (`locked_by`);
 
 --
+-- Indices de la tabla `consumos_beneficios`
+--
+ALTER TABLE `consumos_beneficios`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_usuario_activo` (`usuario_id`,`activo`),
+  ADD KEY `idx_producto` (`producto_id`),
+  ADD KEY `idx_tipo_fecha` (`tipo_regla`,`fecha`),
+  ADD KEY `idx_tipo_dia` (`tipo_regla`,`dia_semana`),
+  ADD KEY `fk_cb_created_by` (`created_by`);
+
+--
+-- Indices de la tabla `consumos_empleado`
+--
+ALTER TABLE `consumos_empleado`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_usuario_fecha` (`usuario_id`,`fecha_consumo`),
+  ADD KEY `idx_nomina_estado` (`descuento_nomina`,`fecha_consumo`),
+  ADD KEY `idx_producto_fecha` (`producto_id`,`fecha_consumo`),
+  ADD KEY `fk_ce_sede` (`sede_id`),
+  ADD KEY `fk_ce_beneficio` (`beneficio_id`),
+  ADD KEY `fk_ce_registrado_by` (`registrado_por`);
+
+--
+-- Indices de la tabla `consumos_empleado_insumos`
+--
+ALTER TABLE `consumos_empleado_insumos`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `ux_consumo_insumo` (`consumo_id`,`insumo_id`),
+  ADD KEY `idx_insumo` (`insumo_id`);
+
+--
 -- Indices de la tabla `cortes_almacen`
 --
 ALTER TABLE `cortes_almacen`
@@ -17815,7 +18667,8 @@ ALTER TABLE `impresoras`
 -- Indices de la tabla `insumos`
 --
 ALTER TABLE `insumos`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_insumos_sede_id` (`sede_id`);
 
 --
 -- Indices de la tabla `logs_accion`
@@ -17870,14 +18723,16 @@ ALTER TABLE `movimientos_caja`
 -- Indices de la tabla `movimientos_insumos`
 --
 ALTER TABLE `movimientos_insumos`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_mov_consumo_empleado` (`consumo_empleado_id`);
 
 --
 -- Indices de la tabla `productos`
 --
 ALTER TABLE `productos`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_productos_categoria` (`categoria_id`);
+  ADD KEY `fk_productos_categoria` (`categoria_id`),
+  ADD KEY `idx_productos_sede_id` (`sede_id`);
 
 --
 -- Indices de la tabla `proveedores`
@@ -18097,6 +18952,24 @@ ALTER TABLE `conekta_payments`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
+-- AUTO_INCREMENT de la tabla `consumos_beneficios`
+--
+ALTER TABLE `consumos_beneficios`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `consumos_empleado`
+--
+ALTER TABLE `consumos_empleado`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `consumos_empleado_insumos`
+--
+ALTER TABLE `consumos_empleado_insumos`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `cortes_almacen`
 --
 ALTER TABLE `cortes_almacen`
@@ -18112,7 +18985,7 @@ ALTER TABLE `cortes_almacen_detalle`
 -- AUTO_INCREMENT de la tabla `corte_caja`
 --
 ALTER TABLE `corte_caja`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=136;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=138;
 
 --
 -- AUTO_INCREMENT de la tabla `corte_caja_historial`
@@ -18124,7 +18997,7 @@ ALTER TABLE `corte_caja_historial`
 -- AUTO_INCREMENT de la tabla `desglose_corte`
 --
 ALTER TABLE `desglose_corte`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=597;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=599;
 
 --
 -- AUTO_INCREMENT de la tabla `entradas_detalle`
@@ -18142,13 +19015,13 @@ ALTER TABLE `entradas_insumo`
 -- AUTO_INCREMENT de la tabla `facturas`
 --
 ALTER TABLE `facturas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=111;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=112;
 
 --
 -- AUTO_INCREMENT de la tabla `factura_detalles`
 --
 ALTER TABLE `factura_detalles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=315;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=317;
 
 --
 -- AUTO_INCREMENT de la tabla `horarios`
@@ -18166,13 +19039,13 @@ ALTER TABLE `impresoras`
 -- AUTO_INCREMENT de la tabla `insumos`
 --
 ALTER TABLE `insumos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=192;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=377;
 
 --
 -- AUTO_INCREMENT de la tabla `logs_accion`
 --
 ALTER TABLE `logs_accion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2040;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2048;
 
 --
 -- AUTO_INCREMENT de la tabla `log_asignaciones_mesas`
@@ -18214,7 +19087,7 @@ ALTER TABLE `movimientos_insumos`
 -- AUTO_INCREMENT de la tabla `productos`
 --
 ALTER TABLE `productos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9042;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9382;
 
 --
 -- AUTO_INCREMENT de la tabla `proveedores`
@@ -18244,7 +19117,7 @@ ALTER TABLE `repartidores`
 -- AUTO_INCREMENT de la tabla `rutas`
 --
 ALTER TABLE `rutas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT de la tabla `sedes`
@@ -18256,7 +19129,7 @@ ALTER TABLE `sedes`
 -- AUTO_INCREMENT de la tabla `tickets`
 --
 ALTER TABLE `tickets`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=564;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=566;
 
 --
 -- AUTO_INCREMENT de la tabla `ticket_descuentos`
@@ -18268,7 +19141,7 @@ ALTER TABLE `ticket_descuentos`
 -- AUTO_INCREMENT de la tabla `ticket_detalles`
 --
 ALTER TABLE `ticket_detalles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1467;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1471;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`
@@ -18280,19 +19153,19 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de la tabla `usuario_ruta`
 --
 ALTER TABLE `usuario_ruta`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=257;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=659;
 
 --
 -- AUTO_INCREMENT de la tabla `ventas`
 --
 ALTER TABLE `ventas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=883;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=887;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalles`
 --
 ALTER TABLE `venta_detalles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3017;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3028;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalles_cancelados`
@@ -18304,7 +19177,7 @@ ALTER TABLE `venta_detalles_cancelados`
 -- AUTO_INCREMENT de la tabla `venta_detalles_log`
 --
 ALTER TABLE `venta_detalles_log`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1369;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1374;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_promos`
@@ -18327,6 +19200,31 @@ ALTER TABLE `catalogo_categorias`
 --
 ALTER TABLE `clientes`
   ADD CONSTRAINT `fk_clientes_colonias` FOREIGN KEY (`colonia_id`) REFERENCES `colonias` (`id`);
+
+--
+-- Filtros para la tabla `consumos_beneficios`
+--
+ALTER TABLE `consumos_beneficios`
+  ADD CONSTRAINT `fk_cb_created_by` FOREIGN KEY (`created_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_cb_producto` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_cb_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `consumos_empleado`
+--
+ALTER TABLE `consumos_empleado`
+  ADD CONSTRAINT `fk_ce_beneficio` FOREIGN KEY (`beneficio_id`) REFERENCES `consumos_beneficios` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_ce_producto` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`),
+  ADD CONSTRAINT `fk_ce_registrado_by` FOREIGN KEY (`registrado_por`) REFERENCES `usuarios` (`id`),
+  ADD CONSTRAINT `fk_ce_sede` FOREIGN KEY (`sede_id`) REFERENCES `sedes` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_ce_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
+
+--
+-- Filtros para la tabla `consumos_empleado_insumos`
+--
+ALTER TABLE `consumos_empleado_insumos`
+  ADD CONSTRAINT `fk_cei_consumo` FOREIGN KEY (`consumo_id`) REFERENCES `consumos_empleado` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_cei_insumo` FOREIGN KEY (`insumo_id`) REFERENCES `insumos` (`id`);
 
 --
 -- Filtros para la tabla `cortes_almacen`
@@ -18409,6 +19307,12 @@ ALTER TABLE `impresoras`
   ADD CONSTRAINT `fk_impresoras_sede` FOREIGN KEY (`sede`) REFERENCES `sedes` (`id`) ON UPDATE CASCADE;
 
 --
+-- Filtros para la tabla `insumos`
+--
+ALTER TABLE `insumos`
+  ADD CONSTRAINT `fk_insumos_sede` FOREIGN KEY (`sede_id`) REFERENCES `sedes` (`id`) ON UPDATE CASCADE;
+
+--
 -- Filtros para la tabla `log_asignaciones_mesas`
 --
 ALTER TABLE `log_asignaciones_mesas`
@@ -18441,10 +19345,17 @@ ALTER TABLE `movimientos_caja`
   ADD CONSTRAINT `movimientos_caja_ibfk_2` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
 
 --
+-- Filtros para la tabla `movimientos_insumos`
+--
+ALTER TABLE `movimientos_insumos`
+  ADD CONSTRAINT `fk_mov_insumo_consumo_empleado` FOREIGN KEY (`consumo_empleado_id`) REFERENCES `consumos_empleado` (`id`) ON DELETE SET NULL;
+
+--
 -- Filtros para la tabla `productos`
 --
 ALTER TABLE `productos`
-  ADD CONSTRAINT `fk_productos_categoria` FOREIGN KEY (`categoria_id`) REFERENCES `catalogo_categorias` (`id`);
+  ADD CONSTRAINT `fk_productos_categoria` FOREIGN KEY (`categoria_id`) REFERENCES `catalogo_categorias` (`id`),
+  ADD CONSTRAINT `fk_productos_sede` FOREIGN KEY (`sede_id`) REFERENCES `sedes` (`id`) ON UPDATE CASCADE;
 
 --
 -- Filtros para la tabla `recetas`

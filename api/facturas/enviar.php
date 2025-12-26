@@ -33,6 +33,39 @@ function column_exists(mysqli $db, string $t, string $c): bool {
     return $ok;
 }
 
+function resolve_factura_path(string $baseDir, string $path): ?string {
+    $path = trim($path);
+    if ($path === '') return null;
+    if (is_file($path)) return $path;
+    $candidate = rtrim($baseDir, '/\\') . '/' . ltrim($path, '/\\');
+    if (is_file($candidate)) return $candidate;
+    $parent = dirname(rtrim($baseDir, '/\\'));
+    $candidate = rtrim($parent, '/\\') . '/' . ltrim($path, '/\\');
+    if (is_file($candidate)) return $candidate;
+    return null;
+}
+
+function add_attachment(array &$attachments, string $path, string $type): void {
+    foreach ($attachments as $att) {
+        if (!empty($att['path']) && $att['path'] === $path) return;
+    }
+    $attachments[] = [
+        'path' => $path,
+        'name' => basename($path),
+        'type' => $type
+    ];
+}
+
+function normalize_xml_binary(string $bin): string {
+    $trimmed = ltrim($bin);
+    if ($trimmed === '') return $bin;
+    if (strncmp($trimmed, "\xEF\xBB\xBF", 3) === 0) {
+        $trimmed = substr($trimmed, 3);
+    }
+    if ($trimmed !== '' && $trimmed[0] === '<') return $trimmed;
+    return $bin;
+}
+
 /**
  * Enviar correo usando SMTP de Gmail sin librerías externas
  */
@@ -227,24 +260,42 @@ try {
     if ($baseDir === false) $baseDir = __DIR__ . '/../../';
 
     if ($hasPdfPath && !empty($row['pdf_path'])) {
-        $pdfAbs = rtrim($baseDir, '/\\') . '/' . ltrim((string)$row['pdf_path'], '/\\');
-        if (is_file($pdfAbs)) {
-            $attachments[] = [
-                'path' => $pdfAbs,
-                'name' => basename($pdfAbs),
-                'type' => 'application/pdf'
-            ];
+        $pdfAbs = resolve_factura_path($baseDir, (string)$row['pdf_path']);
+        if ($pdfAbs) {
+            add_attachment($attachments, $pdfAbs, 'application/pdf');
         }
     }
 
     if ($hasXmlPath && !empty($row['xml_path'])) {
-        $xmlAbs = rtrim($baseDir, '/\\') . '/' . ltrim((string)$row['xml_path'], '/\\');
-        if (is_file($xmlAbs)) {
-            $attachments[] = [
-                'path' => $xmlAbs,
-                'name' => basename($xmlAbs),
-                'type' => 'application/xml'
-            ];
+        $xmlAbs = resolve_factura_path($baseDir, (string)$row['xml_path']);
+        if ($xmlAbs) {
+            add_attachment($attachments, $xmlAbs, 'application/xml');
+        }
+    }
+
+    // Fallback: buscar archivos en archivos/facturas si no se resolvieron por path.
+    $fechaBase = $row['fecha_emision'] ?? null;
+    try {
+        $fechaObj = $fechaBase ? new DateTime((string)$fechaBase) : null;
+    } catch (Throwable $e) {
+        $fechaObj = null;
+    }
+    $year = $fechaObj ? $fechaObj->format('Y') : date('Y');
+    $month = $fechaObj ? $fechaObj->format('m') : date('m');
+    $fallbackDir = rtrim($baseDir, '/\\') . '/archivos/facturas/' . $year . '/' . $month;
+    $uuidSafe = trim((string)$row['uuid'] ?? '');
+    $candidates = [];
+    if ($uuidSafe !== '') {
+        $candidates[] = [$fallbackDir . '/' . $uuidSafe . '.pdf', 'application/pdf'];
+        $candidates[] = [$fallbackDir . '/' . $uuidSafe . '.xml', 'application/xml'];
+    }
+    $candidates[] = [$fallbackDir . '/cfdi_' . $facturaId . '.pdf', 'application/pdf'];
+    $candidates[] = [$fallbackDir . '/cfdi_' . $facturaId . '.xml', 'application/xml'];
+    foreach ($candidates as $cand) {
+        $path = $cand[0];
+        $type = $cand[1];
+        if (is_file($path)) {
+            add_attachment($attachments, $path, $type);
         }
     }
 
@@ -268,6 +319,9 @@ try {
         foreach ($attachments as $att) {
             $bin = @file_get_contents($att['path']);
             if ($bin === false) continue;
+            if ($att['type'] === 'application/xml') {
+                $bin = normalize_xml_binary($bin);
+            }
 
             $body .= "--$boundary\r\n";
             $body .= "Content-Type: {$att['type']}; name=\"{$att['name']}\"\r\n";

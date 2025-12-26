@@ -545,8 +545,10 @@
     for (const r of pendientesData) {
       pendientesIndex.set(Number(r.id), r);
       const tr = document.createElement('tr');
+      const sedeTxt = r.sede ?? r.sede_nombre ?? r.sede_id ?? r.sedeId ?? '';
       const folio = r.folio || r.id;
       tr.innerHTML = `
+        <td>${sedeTxt ?? ''}</td>
         <td>${folio ?? ''}</td>
         <td>${(r.fecha || '').replace('T',' ')}</td>
         <td>${mostrarTipoPago(r.tipo_pago)}</td>

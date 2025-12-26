@@ -68,5 +68,3 @@ if (!class_exists('PDO')) {
         // Skip PDO fatal to allow mysqli-only pages
     }
 }
-?>
-
